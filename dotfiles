@@ -5,7 +5,7 @@ use warnings qw ( all );
 use lib "/home/tobinjt/lib/perl";
 
 use File::Find::Rule	qw ();
-use Pod::Usage		qw ();
+use Pod::Usage		qw ( pod2usage );
 use Getopt::Long	qw ();
 use File::stat		qw ( stat );
 use File::Compare	qw ( compare );
@@ -38,6 +38,7 @@ sub get_options () {
 			nodotfiles	=> 0,
 			onlydotfiles	=> 0,
 			dryrun		=> 0,
+			diff		=> 0,
 			fromdir		=> File::Spec->catfile ( $ENV{HOME},
 							".dotfiles" ),
 			todir		=> $ENV{HOME},
@@ -51,7 +52,8 @@ sub get_options () {
 					"force|f",
 					"nodotfiles|n",
 					"onlydotfiles|o",
-					"dryrun|d"
+					"dryrun|d",
+					"diff",
 				) or Pod::Usage::pod2usage ( 2 );
 	$Verbose->verbosity ( $Options{verbose} );
 	$Verbose->dump_level ( LOG_DUMP );
@@ -214,6 +216,10 @@ sub check_file ($$) {
 	}
 
 	warn "$0: $file_link exists but has different contents to $file\n";
+	if ( $Options{diff} ) {
+		my $diffprog = exists $ENV{DIFF} ? $ENV{DIFF} : "diff -u";
+		system "$diffprog $file $file_link";
+	}
 	$Options{force} or return;
 	LOG_FS "deleting $file_link which differs from $file\n";
 	$Options{dryrun} and return;
@@ -238,7 +244,7 @@ dotfiles - links files from a checked out CVS module to another directory.
 B<dotfiles> [-h|--help]
 
 B<dotfiles> [-v|--verbose] [-c|--cvs] [-f|--force] [-d|--dryrun]
-[-n|--nodotfiles] [-o|--onlydotfiles]
+[-n|--nodotfiles] [-o|--onlydotfiles] [--diff]
 [fromdir [todir]]
 
 --nodotfiles and --onlydotfiles are mutually exclusive. 
@@ -331,6 +337,11 @@ This changes the default behaviour so that if F<todir/foo> is not the correct
 file/directory it will be I<deleted> and directory created or file hardlinked
 to F<fromdir/foo>.  Obviously you need to be careful with this option.  This
 option is overridden by B<--dryrun> but exactly the same messages are printed.
+
+=item B<--diff>
+
+If the source and destination files differ, run B<$DIFF> to display the
+differences.  If B<$DIFF> is unset B<diff -u> will be used.
 
 =item B<-d>, B<--dryrun>
 
