@@ -4,6 +4,9 @@
 # TODO TODO cleanup the code.
 # TODO TODO save filenames for tempfiles
 # TODO TODO improve documentation.
+# TODO TODO I don't think I'm correctly removing the tempdir.
+# TODO TODO Add a --[no]headers flag to say that there are no mail headers.
+# TODO TODO Command line patterns aren't properly saved.
 
 # spell_check_mail is a program to seperate the mail you're composing
 # into quoted and non-quoted chunks, then run a spell checker on the
@@ -30,6 +33,7 @@ sub original (@);
 sub my_die (@);
 sub get_options ();
 sub save_pattern ($$$);
+sub close_tmp ($);
 
 
 get_options ();
@@ -84,6 +88,8 @@ ALL_FILES: foreach my $file ( @ARGV ) {
 			original ($_ );
 		}
 	}
+	close_tmp ( \$Check_me );
+	close_tmp ( \$Quoted );
 
 	unless ( spell_check () ) {
 		warn "$0: Spell check of $file failed\n";
@@ -116,7 +122,7 @@ rmdir $TempDir
 	or warn "$0: Failed to remove temporary directory $TempDir\: $!\n";
 
 unless ( @ARGV == $success ) {
-	my_die "$0: failed checking " . ( @ARGV - $success ) . "/"
+	die "$0: failed checking " . ( @ARGV - $success ) . "/"
 		. scalar @ARGV . " files\n";
 }
 exit 0;
@@ -140,6 +146,14 @@ sub spell_check () {
 	return 1;
 }
 
+sub close_tmp ($) {
+	my $tmp_ref = shift;
+	defined ${$tmp_ref} or return;
+	${$tmp_ref}->close ()
+		or my_die "$0: Failed to close tempfile: $!\n";
+	undef ${$tmp_ref};
+}
+
 sub cleanup () {
 	foreach my $tempfile ( @All_files ) {
 		unlink $tempfile
@@ -159,11 +173,7 @@ sub my_die (@) {
 # quoted and original are repetitive, but I got fed up with the fiddlyness of
 # doing it in one sub.
 sub original (@) {
-	if ( $Quoted ) {
-		$Quoted->close () or
-			my_die "$0: Failed to close tempfile: $!\n";
-		undef $Quoted;
-	}
+	close_tmp ( \$Quoted );
 
 	unless ( $Check_me ) {
 		my $file;
@@ -178,11 +188,7 @@ sub original (@) {
 }
 
 sub quoted (@) {
-	if ( $Check_me ) {
-		$Check_me->close () or
-			my_die "$0: Failed to close tempfile: $!\n";
-		undef $Check_me;
-	}
+	close_tmp ( \$Check_me );
 
 	unless ( $Quoted ) {
 		my $file;
