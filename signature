@@ -1,0 +1,41 @@
+#!/usr/bin/env perl
+
+# Randomly pick a signature from a file of signatures.
+# $Id$
+
+use strict;
+use warnings;
+
+use IO::File	qw ();
+use File::Spec	qw ();
+
+my $signature = ".signature";
+@ARGV or not -t STDIN or die <<USAGE;
+Usage: $0 sig_file[s]
+Signature files are expected to have any number of signatures
+seperated by a line consisting of just %
+E.g.
+My uncle is a rabid wolverine.
+%
+Dare you enter . . . House of 1000 Corpses
+%
+Giggly Gaggly Googly
+
+The contents of ~/$signature will be prepended to the randomly choosen
+signature, if it exists.
+USAGE
+
+my $sig = new IO::File ( File::Spec->catfile ( $ENV{HOME}, $signature ) );
+# Quietly ignore failure to open signature file.
+$sig and print <$sig>;
+
+my @sigs;
+# Enable file slurp mode.
+undef $/;
+while ( <> ) {
+	# /^%$/ won't consume the \n after the %, so I need to use /^%\n/
+	push @sigs, split /^%\n/m;
+}
+
+
+print $sigs [int rand @sigs];

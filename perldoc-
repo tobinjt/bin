@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+[ -z "$PAGER" ] && export PAGER=less
+exec pod2man | nroff -man | $PAGER

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+perl Makefile.PL LIB=$HOME/lib/perl
+make
+make test
+make $( < $HOME/lib/perl/manpages_hack ) install

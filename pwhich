@@ -1,0 +1,63 @@
+#!/usr/bin/env perl
+
+# $ID$
+# A version of which that'll handle file globs.
+
+use strict;
+use warnings;
+
+use File::Spec		qw ();
+use File::Glob		qw ( :glob );
+use Getopt::Long	qw ();
+use Pod::Usage		qw ();
+
+my $glob_options = GLOB_MARK | GLOB_BRACE | GLOB_QUOTE | GLOB_TILDE;
+
+my %Options = (	help		=> 0,
+		insensitive	=> 0,
+		prettyprint	=> 0,
+		sort		=> 0,
+	);
+Getopt::Long::Configure qw ( no_getopt_compat gnu_getopt );
+Getopt::Long::GetOptions (	\%Options,
+				"help|h",
+				"insensitive|i",
+				"prettyprint|p",
+				"sort|s",
+			) or Pod::Usage::pod2usage ( 2 );
+$Options{help} and Pod::Usage::pod2usage ( -verbose => 2 );
+$Options{insensitive} and $glob_options |= GLOB_NOCASE;
+
+my @bin_dirs = File::Spec->path ();
+my @found = ();
+foreach my $pattern ( @ARGV ) {
+	foreach my $bin_dir ( @bin_dirs ) {
+		my $glob = File::Spec->catfile ( $bin_dir, $pattern );
+		push @found, File::Glob::bsd_glob ( $glob, $glob_options );
+	}
+}
+
+if ( $Options{sort} ) {
+	my %map = map { ( File::Spec->splitpath ( $_ ) ) [2] => $_; } @found;
+	my @keys = sort keys %map;
+	@found = @map{@keys};
+}
+
+if ( not -t STDOUT and not $Options{prettyprint} ) {
+	foreach my $exe ( @found ) {
+		print "$exe\n";
+	}
+	exit 0;
+}
+
+# else pretty print
+my $length = 0;
+foreach my $exe ( @found ) {
+	my $dir = ( File::Spec->splitpath ( $exe ) )[1];
+	$length < length $dir and $length = length $dir;
+}
+foreach my $exe ( @found ) {
+	my $dir = ( File::Spec->splitpath ( $exe ) )[1];
+	print " " x ( $length - length $dir );
+	print "$exe\n";
+}

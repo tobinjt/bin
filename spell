@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for file in "$@"; do
+	aspell --dont-backup -c "$file"
+done
+#exec ispell -x "$@"

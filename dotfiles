@@ -1,0 +1,392 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings qw ( all );
+use lib "/home/tobinjt/lib/perl";
+
+use File::Find::Rule	qw ();
+use Pod::Usage		qw ();
+use Getopt::Long	qw ();
+use File::stat		qw ( stat );
+use File::Compare	qw ( compare );
+use File::Spec		qw ();
+use Debug::Verbose	qw ();
+
+use vars qw ( %Options $Verbose $Failed );
+BEGIN {
+	$Verbose = new Debug::Verbose ( #prefix		=> "$0: ",
+					add_level	=> 1,
+			) or die "Couldn't create logging object: $@\n";
+	$Verbose->export ( [ qw ( LOG_INFO LOG_FS LOG_DUMP LOG_DUMP_MORE ) ] );
+}
+
+sub get_options ();
+sub create_dirs ();
+sub hard_link_files ();
+
+$Failed = 0;
+get_options ();
+create_dirs ();
+hard_link_files ();
+exit $Failed;
+
+sub get_options () {
+	%Options = (	help		=> 0,
+			verbose		=> 0,
+			cvs		=> 0,
+			force		=> 0,
+			nodotfiles	=> 0,
+			onlydotfiles	=> 0,
+			dryrun		=> 0,
+			fromdir		=> File::Spec->catfile ( $ENV{HOME},
+							".dotfiles" ),
+			todir		=> $ENV{HOME},
+		);
+	
+	Getopt::Long::Configure qw ( no_getopt_compat gnu_getopt );
+	Getopt::Long::GetOptions (	\%Options,
+					"help|h",
+					"verbose|v+",
+					"cvs|c",
+					"force|f",
+					"nodotfiles|n",
+					"onlydotfiles|o",
+					"dryrun|d"
+				) or Pod::Usage::pod2usage ( 2 );
+	$Verbose->verbosity ( $Options{verbose} );
+	$Verbose->dump_level ( LOG_DUMP );
+	LOG_INFO "Processed options\n";
+	LOG_DUMP 'Options', \%Options;
+	$Options{help} and pod2usage ( -verbose => 2 );
+	$Options{nodotfiles} and $Options{onlydotfiles}
+		and warn "--nodotfiles and --onlydotfiles conflict\n"
+		and pod2usage ( 2 );
+	@ARGV and $Options{fromdir} = shift @ARGV;
+	@ARGV and $Options{todir} = shift @ARGV;
+	@ARGV and warn "$0: too many arguments:\n@ARGV\n" and pod2usage ( 2 );
+}
+
+sub create_dirs () {
+	my $find_dirs = File::Find::Rule->new;
+	my @exclude;
+	$Options{nodotfiles} and LOG_INFO "Skipping dotfiles\n"
+		and push @exclude, qr /^\./;
+	$Options{onlydotfiles} and LOG_INFO "Skipping non-dotfiles\n"
+		and push @exclude, qr /^[^.]/;
+	$Options{cvs} or LOG_INFO "Skipping CVS directories\n"
+		and push @exclude, 'CVS';
+	LOG_DUMP "exclusions", \@exclude;
+	@exclude and $find_dirs->or ( $find_dirs->new ()
+						->name ( @exclude )
+						->discard ()
+						->prune (),
+				$find_dirs->new ()
+						->directory ()
+						->not_name ( '.' )
+						->not_name ( '..' )
+			);
+
+	LOG_DUMP_MORE "directory search object", $find_dirs;
+	my @subdirs = sort $find_dirs->in ( $Options{fromdir} );
+	LOG_INFO "Generated list of directories\n";
+	LOG_DUMP 'subdirs', \@subdirs;
+
+	foreach my $directory ( @subdirs ) {
+		my $rel_dir = File::Spec->abs2rel ( $directory,
+				$Options{fromdir} );
+		my $new_dir = File::Spec->catdir ( $Options{todir}, $rel_dir );
+		-d $new_dir and next;
+		if ( -e $new_dir ) {
+			$Options{force} or warn "$0: $new_dir exists but ",
+				"isn't a directory\n" and ++$Failed and next;
+
+			warn "$0: $new_dir exists, deleting\n";
+			LOG_FS "about to delete non-directory $new_dir\n";
+			$Options{dryrun} and next;
+			unlink $new_dir or warn "$0: failed to delete ",
+				"$new_dir: $!\n" and ++$Failed and next;
+		}
+		LOG_FS "creating directory $new_dir\n";
+		$Options{dryrun} and next;
+		mkdir $new_dir or warn "$0: failed to create $new_dir: $!\n"
+			and ++$Failed;
+	}
+}
+
+sub hard_link_files () {
+	my $find_files = File::Find::Rule->new;
+	my @exclude;
+	$Options{nodotfiles} and LOG_INFO "Skipping dotfiles\n"
+		and push @exclude, qr /^\./;
+	$Options{onlydotfiles} and LOG_INFO "Skipping non-dotfiles\n"
+		and push @exclude, qr /^[^.]/;
+	$Options{cvs} or LOG_INFO "Skipping CVS directories\n"
+		and push @exclude, 'CVS', '.cvsignore';
+	LOG_DUMP "exclusions", \@exclude;
+	@exclude and $find_files->or (	$find_files->new ()
+							->name ( @exclude )
+							->discard ()
+							->prune (),
+					$find_files->new ()
+							->file
+				);
+	LOG_DUMP_MORE "file search object", $find_files;
+	my @files = sort $find_files->in ( $Options{fromdir} );
+	LOG_INFO "Generated list of files\n";
+	LOG_DUMP "File list", \@files;
+
+	foreach my $file ( @files ) {
+		LOG_FS "checking $file\n";
+		my $file_rel = File::Spec->abs2rel ( $file, $Options{fromdir} );
+		my $file_link = File::Spec->catfile ( $Options{todir},
+				$file_rel );
+
+		if ( -f $file_link ) {
+			my $result = check_file ( $file, $file_link );
+			defined $result or next;	# error
+			$result and next;		# no need to change
+		}
+		if ( -e $file_link and not -f $file_link ) {
+			my $result = check_non_file ( $file, $file_link );
+			defined $result or next;	# error
+			$result and next;		# no need to change
+		}
+
+		$Options{dryrun} and next;
+		LOG_FS "hardlinking $file_link to $file\n";
+		link $file, $file_link or warn "$0: linking $file to ",
+			"$file_link failed: $!\n";
+	}
+}
+
+# return vaules: undef == error, skip; 0 == link it; 1 == fine, skip;
+sub check_non_file ($$) {
+	my ( $file, $file_link ) = @_;
+
+	warn "$0: $file_link exists, but is not a file (it should be a link ",
+		"to $file\n";
+	$Options{force} or return;
+	if ( -d $file_link ) {
+		LOG_FS "deleting directory $file_link - should link to $file\n";
+		$Options{dryrun} and return;
+		rmdir $file_link
+			or warn "$0: failed deleting directory $file_link: $!\n"
+			and return;
+		return 0;
+	}
+
+
+	LOG_FS "deleting non-directory $file_link - should link to $file\n";
+	$Options{dryrun} and return;
+	unlink $file_link
+		or warn "$0: failed to delete $file_link: $!\n"
+		and return;
+	return 0;
+}
+
+# return vaules: undef == error, skip; 0 == link it; 1 == fine, skip;
+sub check_file ($$) {
+	my ( $file, $file_link ) = @_;
+
+	my $file_stat = stat $file
+		or warn "$0: failed to stat $file: $!\n"
+		and return;
+	my $file_link_stat = stat $file_link
+		or warn "$0: failed to stat $file_link: $!\n"
+		and return;
+
+	$file_stat->dev == $file_link_stat->dev
+		and $file_stat->ino == $file_link_stat->ino
+		# same file, already linked.
+		and return 1;
+
+	if ( compare ( $file, $file_link ) == 0 ) {
+		warn "$file and $file_link are different files but have the ",
+			"same contents; deleting and hard linking\n";
+		LOG_FS "deleting $file_link, a copy of $file\n";
+		$Options{dryrun} and return;
+		unlink $file_link
+			or warn "$0: failed to unlink $file_link ",
+				"(copy of $file): $!\n"
+			and return;
+		warn "$0: Deleted $file_link\n";
+		return 0;
+	}
+
+	warn "$0: $file_link exists but has different contents to $file\n";
+	$Options{force} or return;
+	LOG_FS "deleting $file_link which differs from $file\n";
+	$Options{dryrun} and return;
+	unlink $file_link
+		or warn "$0: failed to delete $file_link: $!\n"
+		and return;
+	warn "$0: Deleted $file_link\n";
+
+	return 0;
+}
+
+__END__
+
+=pod
+
+=head1 NAME
+
+dotfiles - links files from a checked out CVS module to another directory.
+
+=head1 SYNOPSIS
+
+B<dotfiles> [-h|--help]
+
+B<dotfiles> [-v|--verbose] [-c|--cvs] [-f|--force] [-d|--dryrun]
+[-n|--nodotfiles] [-o|--onlydotfiles]
+[fromdir [todir]]
+
+--nodotfiles and --onlydotfiles are mutually exclusive. 
+
+--force is overridden by --dryrun.
+
+=head1 DESCRIPTION
+
+B<dotfiles> is a Perl program to hardlink files from one directory tree
+(F<fromdir>) into another (F<todir>).  Files which exist in F<todir> but not in
+F<fromdir> will be silently ignored.  Its original purpose is to allow you to
+keep important dotfiles in a CVS module where they can be version tracked, and
+then hardlink those files into your home directory, creating containing
+directories as necessary.  Other uses for it include compiling in a different
+source directory . . . I'm sure someone will think of something else to do with
+it.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-h,> B<--help>
+
+Print this help message.
+
+=item B<-v,> B<--verbose>
+
+Verbose execution.  This option can be specified multiple times, and has the
+following effects:
+
+=over 4
+
+=item B<-v>
+
+Print a message when high level actions (processing options, generating lists of
+files, etc.) are complete.
+
+=item B<-v -v>
+
+Operations which change the filesystem are printed I<before> they're executed.
+Some operations normally happen silently - hardlinking files and making
+directories.  All other operations produce a warning to stderr, with or without
+--verbose.  This option causes a message to be printed for every operation
+which changes the filesystem.  These messages will be displayed even if
+no changes are actually made (you specified B<--dryrun>).
+
+=item B<-v -v -v>
+
+Data structures generated by my code are dumped to stdout.
+
+=item B<-v -v -v -v>
+
+Data structures and objects generated by other modules are dumped to stdout.
+
+=back
+
+=item B<-c,> B<--cvs>
+
+Normally F<.cvsignore> files, CVS directories and their contents are ignored,
+but they'll be processed to if you supply this switch.
+
+=item B<-f,> B<--force>
+
+Just do it, damnit, even if the file exists already and is different.  The
+default behaviour if a file/directory already exists in F<todir> is:
+
+=over 4
+
+=item *
+
+If it's a directory and should be a directory, ignore it.
+
+=item *
+
+If it's hardlinked to the correct file, ignore it.
+
+=item *
+
+If the contents are B<exactly the same> and the files are on the B<same
+device>, delete the duplicate and hardlink it.
+
+=item *
+
+If it's not the correct file, or should be a directory but isn't, print an
+error message to stderr and skip it.
+
+=back
+
+This changes the default behaviour so that if F<todir/foo> is not the correct
+file/directory it will be I<deleted> and directory created or file hardlinked
+to F<fromdir/foo>.  Obviously you need to be careful with this option.  This
+option is overridden by B<--dryrun> but exactly the same messages are printed.
+
+=item B<-d>, B<--dryrun>
+
+Don't actually make any changes to the filesystem, but do the normal processing
+and checks, including printing error and other messages.  This overrides
+B<--force>.
+
+=item B<-n>, B<--nodotfiles>
+
+Don't include dotfiles (files which start with a B<.>) when processing
+directories.  This also prevents directories starting with a B<.> I<and their
+subdirectories> from being processed.  This option and B<--onlydotfiles> are
+mutually exclusive.
+
+=item B<-o>, B<--onlydotfiles>
+
+Don't include non-dotfiles (files/directories which don't start with a B<.>)
+when processing directories.  This also prevents directories not starting with
+a B<.> I<and their subdirectories> from being processed.  This option and
+B<--nodotfiles> are mutually exclusive.
+
+=item B<fromdir>
+
+The source directory to find files and directories in.  Defaults to
+B<$HOME/.dotfiles>.
+
+=item B<todir>
+
+The destination directory, where directories will be created and files
+hardlinked.  Defaults to B<$HOME>.
+
+If F<todir> is a subdirectory of F<fromdir>, Bad Things will happen.
+
+=back
+
+Although this was written with the specific purpose of managing dotfiles in a
+CVS module, nothing should stop you using it for any other purpose.  E.g.
+extracting program source to B<fromdir>, linking it to B<todir1>, B<todir2>, etc
+so that it can compiled with different options, or for different architectures.
+
+=head1 AUTHOR
+
+John Tobin <tobinjt@netsoc.tcd.ie>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2003 John Tobin.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
+
+$Id$
+
+=head1 SEE ALSO
+
+L<perl(1)|perl>, L<Pod::Usage>, L<File::Find::Rule>, L<Getopt::Long>,
+L<File::stat>, L<File::Spec>, L<File::Compare>, L<Debug::Verbose>
+
+=cut
