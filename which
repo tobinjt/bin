@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # $Id$
-# A perl reimplementation of which that lists ALL occurances of the comamdn in
+# A perl reimplementation of which that lists ALL occurances of the command in
 # your path.
 
 use File::Spec	qw ();
@@ -18,4 +18,5 @@ foreach my $command ( @ARGV ) {
 		-x $path or next;
 		print $path, "\n";
 	}
+print "\n";
 }
