@@ -1,0 +1,126 @@
+#!/usr/bin/env perl
+
+# Perl reimplementation of GNU's stat(1), without any options.
+
+# $Id$
+
+use strict;
+use warnings;
+
+use File::stat;
+use POSIX;
+
+sub padding ( $$ );
+sub pad ( $$ );
+sub leftpad ( $$ );
+
+
+my $exit_value = 0;
+foreach my $file ( @ARGV ) {
+	my $stat = lstat $file;
+	unless ( defined $stat ) {
+		warn "$0: cannot stat '$file': $!\n";
+		$exit_value++;
+		next;
+	}
+
+	print "  File: '$file'\n";
+
+	print "  Size: " . pad ( 10, $stat->size () ) . "\t";
+	print "Blocks: " . pad ( 11, $stat->blocks () );
+	print "IO Block: " . pad ( 7, $stat->blksize () );
+	my $type = "-";
+	if ( S_ISREG ( $stat->mode ) ) {
+		print "regular file\n";
+		$type = "-";
+	} elsif ( S_ISCHR ( $stat->mode ) ) {
+		print "character special file\n";
+		$type = "c";
+	} elsif ( S_ISDIR ( $stat->mode ) ) {
+		print "directory\n";
+		$type = "d";
+	} elsif ( S_ISFIFO ( $stat->mode ) ) {
+		print "fifo\n";
+		$type = "p";
+	} elsif ( S_IFLNK ( $stat->mode ) ) {
+		print "symbolic link\n";
+		$type = "l";
+	} elsif ( S_ISBLK ( $stat->mode ) ) {
+		print "block special file\n";
+		$type = "b";
+	} elsif ( $stat->mode && 0140000 ) {
+		# This may be Linux specific :(
+		print "socket\n";
+		$type = "s";
+	} else {
+		print "weird file!\n";
+		$type = "?";
+	}
+
+	printf "Device: %lxh/%lud\t", $stat->dev (), $stat->dev ();
+	print "Inode: " . pad ( 12, $stat->ino () );
+	print "Links: " . $stat->nlink () . "\n";
+
+	my @perms = qw ( - x S s );
+	my $index;
+	my $perms;
+	$perms .= ( $stat->mode () & S_IRUSR ) ? "r" : "-" ;
+	$perms .= ( $stat->mode () & S_IWUSR ) ? "w" : "-" ;
+	$index  = ( $stat->mode () & S_ISUID ) ? 2 : 0 ;
+	$index += ( $stat->mode () & S_IXUSR ) ? 1 : 0 ;
+	$perms .= $perms[$index];
+	$perms .= ( $stat->mode () & S_IRGRP ) ? "r" : "-" ;
+	$perms .= ( $stat->mode () & S_IWGRP ) ? "w" : "-" ;
+	$index  = ( $stat->mode () & S_ISGID ) ? 2 : 0 ;
+	$index += ( $stat->mode () & S_IXGRP ) ? 1 : 0 ;
+	$perms .= $perms[$index];
+	$perms .= ( $stat->mode () & S_IROTH ) ? "r" : "-" ;
+	$perms .= ( $stat->mode () & S_IWOTH ) ? "w" : "-" ;
+	@perms = qw ( - x T t );
+	# More that may be Linux specific.  Probably not, I hope.
+	$index  = ( $stat->mode () & 01000 ) ? 2 : 0 ;
+	$index += ( $stat->mode () & S_IXOTH ) ? 1 : 0 ;
+	$perms .= $perms[$index];
+	# Again, this bitmask may be Linux specific.  Hopefully not.
+	printf "Access: (%.4o/%s%s)  ",
+		( $stat->mode () & 07777 ), $type, $perms;
+	print "Uid: (" . leftpad ( 5, $stat->uid () ) . "/"
+		. leftpad ( 8, getpwuid ( $stat->uid () ) || "UNKNOWN" )
+		. ")   ";
+	print "Gid: (" . leftpad ( 5, $stat->gid () ) . "/"
+		. leftpad ( 8, getgrgid ( $stat->gid () ) || "UNKNOWN" )
+		. ")\n";
+
+	my $format = "%Y-%m-%d %H:%M:%S.000000000 %z\n";
+	print "Access: " .
+		strftime ( $format, localtime ( $stat->atime () ) );
+	print "Modify: " .
+		strftime ( $format, localtime ( $stat->mtime () ) );
+	print "Change: " .
+		strftime ( $format, localtime ( $stat->ctime () ) );
+
+	print "\n";
+}
+
+exit $exit_value;
+
+
+sub padding ( $$ ) {
+	my ( $size, $string ) = @_;
+	if ( length $string > $size ) {
+		die "$0: pad: string too long\n";
+	}
+
+	return scalar ( " " x ( $size - length $string ) );
+}
+
+sub pad ( $$ ) {
+	my ( $size, $string ) = @_;
+	return $string . padding ( $size, $string );
+}
+
+sub leftpad ( $$ ) {
+	my ( $size, $string ) = @_;
+	return padding ( $size, $string ) . $string;
+}
+
