@@ -4,7 +4,6 @@
 # TODO TODO cleanup the code.
 # TODO TODO save filenames for tempfiles
 # TODO TODO improve documentation.
-# TODO TODO I don't think I'm correctly removing the tempdir.
 # TODO TODO Add a --[no]headers flag to say that there are no mail headers.
 # TODO TODO Command line patterns aren't properly saved.
 
@@ -21,6 +20,7 @@ use Getopt::Long	qw ();
 use IO::File		qw ();
 use File::Spec		qw ();
 use File::Temp		qw ( tempfile tempdir );
+use File::stat		qw ( stat );
 use Pod::Usage		qw ();
 use Fcntl		qw ( SEEK_SET );
 
@@ -49,6 +49,11 @@ ALL_FILES: foreach my $file ( @ARGV ) {
 	# Filehandles.
 	$Quoted = $Check_me = undef;
 
+	my $file_stats = stat $file;
+	unless ( $file_stats ) {
+		warn "$0: failed to stat $file\: $!\n";
+		next ALL_FILES;
+	}
 	my $file_fd = new IO::File ( "< $file" );
 	unless ( $file_fd ) {
 		warn "$0: failed to open $file\: $!\n";
@@ -109,6 +114,9 @@ ALL_FILES: foreach my $file ( @ARGV ) {
 		}
 	}
 
+	chmod $file_stats->mode (), $new_file 
+		or warn "$0: failed to set permissions on "
+			. "$new_file ($file\'s replacement): $!\n";
 	if ( rename $new_file, $file ) {
 		$success++;
 	} else {
