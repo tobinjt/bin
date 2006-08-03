@@ -1,0 +1,15 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+foreach my $errno (@ARGV) {
+    if ($errno =~ m/^\d+$/) {
+        $! = $errno;
+        print "$errno: $!\n";
+    } else {
+        warn "$0: $errno: bad argument, expecting a number\n";
+    }
+}
