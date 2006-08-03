@@ -25,7 +25,7 @@ create_dirs ();
 hard_link_files ();
 exit $Failed;
 
-sub get_options () {
+sub get_options {
 	%Options = (	help		=> 0,
 			verbose		=> 0,
 			cvs		=> 0,
@@ -63,7 +63,7 @@ sub get_options () {
 	@ARGV and warn "$0: too many arguments:\n@ARGV\n" and pod2usage ( 2 );
 }
 
-sub create_dirs () {
+sub create_dirs {
 	my $find_dirs = File::Find::Rule->new;
 	my @exclude;
 	$Options{nodotfiles} and LOG_INFO "Skipping dotfiles\n"
@@ -110,7 +110,7 @@ sub create_dirs () {
 	}
 }
 
-sub hard_link_files () {
+sub hard_link_files {
 	my $find_files = File::Find::Rule->new;
 	my @exclude;
 	$Options{nodotfiles} and LOG_INFO "Skipping dotfiles\n"
@@ -157,7 +157,7 @@ sub hard_link_files () {
 }
 
 # return vaules: undef == error, skip; 0 == link it; 1 == fine, skip;
-sub check_non_file ($$) {
+sub check_non_file {
 	my ( $file, $file_link ) = @_;
 
 	warn "$0: $file_link exists, but is not a file (it should be a link ",
@@ -182,7 +182,7 @@ sub check_non_file ($$) {
 }
 
 # return vaules: undef == error, skip; 0 == link it; 1 == fine, skip;
-sub check_file ($$) {
+sub check_file {
 	my ( $file, $file_link ) = @_;
 
 	my $file_stat = stat $file
