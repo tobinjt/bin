@@ -1,8 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
-use warnings qw ( all );
-use lib "/home/tobinjt/lib/perl";
+use warnings;
 
 use File::Find::Rule	qw ();
 use Pod::Usage		qw ( pod2usage );
@@ -19,10 +18,6 @@ BEGIN {
 			) or die "Couldn't create logging object: $@\n";
 	$Verbose->export ( [ qw ( LOG_INFO LOG_FS LOG_DUMP LOG_DUMP_MORE ) ] );
 }
-
-sub get_options ();
-sub create_dirs ();
-sub hard_link_files ();
 
 $Failed = 0;
 get_options ();
@@ -218,7 +213,7 @@ sub check_file ($$) {
 	warn "$0: $file_link exists but has different contents to $file\n";
 	if ( $Options{diff} ) {
 		my $diffprog = exists $ENV{DIFF} ? $ENV{DIFF} : "diff -u";
-		system "$diffprog $file $file_link";
+		system "$diffprog $file_link $file";
 	}
 	$Options{force} or return;
 	LOG_FS "deleting $file_link which differs from $file\n";
