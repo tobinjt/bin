@@ -8,3 +8,4 @@ use warnings;
 use Term::ANSIColor;
 
 print color(q{white on_black});
+print color(q{reset});

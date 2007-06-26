@@ -1,4 +1,0 @@
-#!/usr/bin/perl
-
-# I got this from Elena.
-print "\e]0;$ARGV[0]\a";
