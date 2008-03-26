@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 #
 #  This script was developed by Robin Barker (Robin.Barker@npl.co.uk),
 #  from Larry Wall's original script eg/rename from the perl source.
@@ -12,7 +12,10 @@
 # $RCSfile$$Revision$$Date$
 #
 # $Log$
-# Revision 1.2  2005-01-17 00:55:29  tobinjt
+# Revision 1.3  2008-03-26 11:44:01  tobinjt
+# Minor changes.
+#
+# Revision 1.2  2005/01/17 00:55:29  tobinjt
 # Fixed path
 #
 # Revision 1.1  2004/05/24 15:34:17  tobinjt

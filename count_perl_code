@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 
 # this program just counts how many lines of code, lines of comments, and 
 # blank lines there are in your program.

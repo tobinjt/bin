@@ -54,7 +54,7 @@ sub get_options {
 	$Verbose->dump_level ( LOG_DUMP );
 	LOG_INFO "Processed options\n";
 	LOG_DUMP 'Options', \%Options;
-	$Options{help} and pod2usage ( -verbose => 2 );
+	$Options{help} and pod2usage ( -verbose => 1 );
 	$Options{nodotfiles} and $Options{onlydotfiles}
 		and warn "--nodotfiles and --onlydotfiles conflict\n"
 		and pod2usage ( 2 );

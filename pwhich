@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 
 # $ID$
 # A version of which that'll handle file globs.
