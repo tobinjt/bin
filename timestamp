@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use POSIX;
+use Time::HiRes;
+
+$| = 1; 
+my $last_offset = 0;
+my $start_time  = Time::HiRes::time();
+
+while (<>) {
+    my $now     = Time::HiRes::time();
+    my $offset  = $now - $start_time;
+    printf qq{%s%06.3f %4.3f %4.3f %s},
+        # Hour and minute now.
+        POSIX::strftime("%H:%M:", localtime($now)),
+        # Seconds now.
+        $now - (int($now / 60) * 60),
+        # Seconds since last line.
+        $offset,
+        # How long has passed since the last line.
+        $offset - $last_offset,
+        # And finally the line.
+        $_;
+    $last_offset = $offset;
+}
