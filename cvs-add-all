@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -e
-
-FILES=$( cvs -q -n update | awk '$1 == "?" {print $2}' )
-# is there a better way to do this?  I need the files to be seperated into
-# individual arguments, but I don't want files with spaces screwed up.
-[ -n "$FILES" ] && cvs add $( cvs -q -n update | awk '$1 == "?" {print $2}' )
