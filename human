@@ -1,0 +1,14 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use Number::Format qw(format_number format_bytes);
+
+while (<>) {
+    chomp;
+    print join q{ }, $_, format_number($_), format_bytes($_);
+    print qq{\n};
+}

@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use List::Util qw(sum);
+
+my @values;
+push @values, <>;
+chomp @values;
+
+my $num_values = @values;
+my $mean = sum(@values) / $num_values;
+my $sum_of_differences = 0;
+foreach my $value (@values) {
+    $sum_of_differences += (($value - $mean) ** 2);
+}
+my $stddev = sqrt ($sum_of_differences / $num_values);
+my @sorted_values = sort {$a <=> $b } @values;
+my $median;
+if (@sorted_values % 2) {
+    my $index = int (@sorted_values / 2);
+    $median = $sorted_values[$index];
+} else {
+    my $index1 = int (@sorted_values / 2);
+    my $index2 = int ((@sorted_values - 1) / 2);
+    $median = ($sorted_values[$index1] + $sorted_values[$index2]) / 2;
+}
+print qq{Standard deviation: $stddev\n};
+print qq{Mean: $mean\n};
+print qq{Number of values: $num_values\n};
+print qq{Median: $median\n};

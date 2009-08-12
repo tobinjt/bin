@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+# This script munges the output of strace so that two outputs can be more easily
+# compared.
+
+my ($next_pid, %pid_map) = (1);
+
+while (<>) {
+    # Replace a pid at the start of the line, if there is one.
+    if (m/^(\d+)\s+/) {
+        my $pid = $1;
+        if (not exists $pid_map{$pid}) {
+            $pid_map{$pid} = $next_pid;
+            $next_pid++;
+        }
+        s/^\d+\s+/$pid_map{$pid} /;
+    }
+    # Replace memory addresses
+    s/0x[0-9a-fA-F]{8}/0x00000000/g;
+    # Change writev() lines
+    s/^(\d+ writev\(\d+,).*/$1)/;
+    # Change read() lines
+    #s/^(\d+ read\(3,).*/$1)/;
+    # times() lines will always be different
+    s/^(\d+ times\().*/$1)/;
+
+} continue {
+    print;
+}

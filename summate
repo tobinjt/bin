@@ -1,0 +1,13 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+my $sum = 0;
+while (<>) {
+    chomp;
+    $sum += $_;
+}
+print "$sum\n";

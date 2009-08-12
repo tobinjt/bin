@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+tarball=$( echo "$1" | sed -e 's,.*/,,' )
+dir=$( echo "$tarball" | sed -e 's/.tar.gz//' )
+wget "$1"
+tar zxf "$tarball"
+cd "$dir"
+perl Makefile.PL
+sleep 5
+cd ..
+dh-make-perl --email tobinjt@cs.tcd.ie --build "$dir"

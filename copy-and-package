@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+dh_testdir
+[ -d root ]
+name_version=$( sed -n -e '1s/^\(.*\) (\(.*\)).*/\1_\2/p' debian/changelog )
+rm -f ../"$name_version"*
+name=$( sed -n -e '1s/^\(.*\) (.*).*/\1/p' debian/changelog )
+rm -f ../"$name"*.orig.tar.gz
+dir=$( basename $( /bin/pwd ) )
+orig_dir="../$dir.orig"
+rm -rf "$orig_dir"
+mkdir "$orig_dir"
+tar cf - root | tar xf - -C "$orig_dir"
+debuild -sa
