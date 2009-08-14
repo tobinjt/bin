@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+my $bullet_number = 1;
+while (<>) {
+    s/^\d+/$bullet_number++/e;
+    print;
+}
