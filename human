@@ -6,9 +6,17 @@ use strict;
 use warnings;
 
 use Number::Format qw(format_number format_bytes);
+use Regexp::Common;
 
 while (<>) {
     chomp;
-    print join q{ }, $_, format_number($_), format_bytes($_);
+    my @parts = split /(^|\s)($RE{num}{real})(\s|$)/o;
+    foreach my $part (@parts) {
+        if ($part =~ m/^$RE{num}{real}$/o) {
+            printf q{%s (%s, %s)}, $part, format_number($part), format_bytes($part);
+        } else {
+            print $part;
+        }
+    }
     print qq{\n};
 }
