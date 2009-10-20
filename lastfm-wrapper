@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+# Use proxy if I'm in CS, go direct if not.
+if /sbin/ifconfig -a | grep -q -F 'inet addr:134.226'; then
+    cp -p -f "$HOME/.config/Last.fm.conf.proxy" "$HOME/.config/Last.fm.conf"
+else
+    cp -p -f "$HOME/.config/Last.fm.conf.no-proxy" "$HOME/.config/Last.fm.conf"
+fi
+exec lastfm
