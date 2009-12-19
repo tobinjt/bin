@@ -5,6 +5,7 @@ set -e
 DESTDIR="$HOME/perl/bleadperl"
 mkdir -p "$DESTDIR/bin"
 
+git clean -dfx
 ./Configure -des -Dusedevel -Dprefix="$DESTDIR"
 make
 make test
