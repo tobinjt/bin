@@ -6,7 +6,6 @@ use strict;
 use warnings;
 
 my (%attributes, $last_attribute);
-$attributes{version} = q{XXX-VERSION-XXX};
 
 LINE:
 while (<>) {
@@ -19,6 +18,9 @@ while (<>) {
         $attributes{$last_attribute} .= qq{\n} . $_;
     }
 }
+# We need two different versions
+$attributes{upstream_version} = $attributes{version};
+$attributes{upstream_version} =~ s/-\d+$//;
 
 my $output = <<"OUTPUT";
 [[!template id="debian-package"
@@ -35,7 +37,7 @@ foreach my $attribute (qw(recommends suggests)) {
 }
 
 $output .= <<"FILES";
-tarball="$attributes{package}_$attributes{version}.orig.tar.gz"
+tarball="$attributes{package}_$attributes{upstream_version}.orig.tar.gz"
 deb="$attributes{package}_$attributes{version}.deb"
 diff="$attributes{package}_$attributes{version}.diff.gz"
 FILES
