@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+mysql_cmd="mysql --skip-column-names rt3"
+priviliged_groupid=$( echo 'select Groups.id from Groups where Groups.Type = "Privileged";' | $mysql_cmd )
+echo 'select Users.id, Users.Name from Users, GroupMembers where GroupMembers.GroupId = ' $priviliged_groupid ' and GroupMembers.MemberId = Users.id and Users.EmailAddress = "";' \
+    | $mysql_cmd \
+    | awk '{print "delete from       GroupMembers where       GroupMembers.GroupId = '"$priviliged_groupid"' and       GroupMembers.MemberId = " $1 ";"}
+           {print "delete from CachedGroupMembers where CachedGroupMembers.GroupId = '"$priviliged_groupid"' and CachedGroupMembers.MemberId = " $1 ";"}
+           {print "update Users set Users.EmailAddress = \"" $2 "@tcd.ie\" where Users.id = " $1 ";"}' \
+    | $mysql_cmd
