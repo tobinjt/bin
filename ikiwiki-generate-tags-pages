@@ -1,0 +1,253 @@
+#!/usr/bin/env perl
+
+eval 'exec /usr/bin/perl  -S $0 ${1+"$@"}'
+    if 0; # not running under some shell
+
+use strict;
+use warnings;
+
+use IkiWiki 3.00;
+use IkiWiki::Setup;
+use File::Spec::Functions qw(catfile);
+use File::Slurp qw(read_file);
+use Getopt::Long;
+use Pod::Usage;
+
+my $VERSION = '0.05';
+
+use Data::Dumper;
+$Data::Dumper::Sortkeys = 1;
+
+my %options = get_options();
+
+my ($config_file, $output_directory) = @ARGV;
+IkiWiki::Setup::load($config_file);
+IkiWiki::checkconfig();
+IkiWiki::loadindex();
+check_output_directory($output_directory);
+my $template = read_template();
+
+my %_uniq_tags;
+my @tags =
+    grep { not $_uniq_tags{$_}++ and $_ =~ s/^\/$config{tagbase}\///o }
+        map { @{$_} }
+            values %links;
+
+# XXX MAYBE REPORT UNNECESSARY TAG PAGES?
+my $pages_created = 0;
+TAG:
+foreach my $tag (@tags) {
+    my $file = catfile($output_directory, qq{$tag.mdwn});
+    if (-e $file) {
+        next TAG;
+    }
+
+    if ($options{verbose}) {
+        print qq{$0: creating $file\n};
+    }
+    my $content = $tag_template;
+    $content =~ s/__TAG__/$tag/g;
+    write_file($file, {atomic => 1}, $content);
+    $pages_created++;
+}
+
+exit ($pages_created == 0);
+
+sub get_options {
+    my %options_accepted = (
+        q{help|h}       => 0,
+        q{version|V}    => 0,
+        q{verbose|v}    => 0,
+    );
+    my %options;
+    while (my ($key, $value) = each %options_accepted) {
+        $key =~ s/[|=].*//;
+        $options{$key} = $value;
+    }
+	Getopt::Long::Configure(qw(no_getopt_compat gnu_getopt));
+	Getopt::Long::GetOptions(\%options, keys %options_accepted)
+        or pod2usage(2);
+    if ($options{help}) {
+        pod2usage(1);
+    }
+    if ($options{version}) {
+        print qq{ikiwiki-generate-tags-pages version $VERSION\n};
+        exit 1;
+    }
+    if (@ARGV != 2) {
+        pod2usage(2);
+    }
+
+    return %options;
+}
+
+sub check_output_directory {
+    my ($output_directory) = @_;
+
+    if ($output_directory !~ m/\/$config{tagbase}(?:\/)?$/) {
+        die <<"BAD_DIRECTORY";
+$0: output directory '$output_directory' does not end with tagbase '$config{tagbase}'
+BAD_DIRECTORY
+    }
+
+    if (not -d $output_directory) {
+        die <<"MISSING_DIRECTORY";
+$0: output directory '$output_directory' does not exist
+MISSING_DIRECTORY
+    }
+}
+
+sub read_template {
+    my $template_name = q{tag_template.mdwn};
+    my ($template_filename) = IkiWiki::srcfile_stat($template_name, 1);
+    if (not $template_filename) {
+        return <<'TEMPLATE';
+[[!inline pages="tagged(__TAG__)" archive="yes"]]
+TEMPLATE
+    }
+
+    my $template = read_file($template_filename);
+    if ($template !~ m/__TAG__/) {
+        die <<"BAD_TEMPLATE"
+$0: template in $template_filename does not contain __TAG__
+BAD_TEMPLATE
+    }
+
+    return $template;
+}
+
+=pod
+
+=head1 NAME
+
+ikiwiki-generate-tags-pages - generate a page for every tag you use
+
+=head1 SYNOPSIS
+
+B<ikiwiki-generate-tags-pages> [OPTIONS] CONFIG_FILE OUTPUT_DIRECTORY
+
+CONFIG_FILE is the same config file you use with 'ikiwiki --setup CONFIG_FILE'
+
+OUTPUT_DIRECTORY is the directory you would write the pages in yourself,
+typically '.../tags' (unless you've changed the tagbase option in your
+CONFIG_FILE).
+
+=head1 DESCRIPTION
+
+IkiWiki's tag plugin lets you tag pages, but to see all the pages tagged with
+'foo', you need to manually create a page containing:
+
+    [[!inline pages="tagged(foo)" archive="yes"]]
+
+B<ikiwiki-generate-tags-pages> automatically creates those pages for you.
+
+=head2 Template
+
+The built-in template is:
+
+    [[!inline pages="tagged(__TAG__)" archive="yes"]]
+
+This can be overridden by creating a file named F<tag_template.mdwn> in your
+wiki, just like F<sidebar.mdwn> or F<shortcuts.mdwn>.  The template must contain
+B<__TAG__> at least once.
+
+The string B<__TAG__> will be replaced with the current tag when the template is
+written to each output file.
+
+=head2 Typical usage.
+
+You'll usually run B<ikiwiki-generate-tags-pages> after adding a new page to
+your wiki.  The sequence of steps will resemble the following:
+
+    write page
+    commit page to VCS
+    refresh wiki
+    ikiwiki-generate-tags-pages
+    commit any generated pages to VCS
+    refresh wiki
+
+=head2 post-commit hook
+
+You can automate the process of creating missing tag pages with a post-update
+hook, e.g.:
+
+    #!/bin/sh
+
+    set -e
+
+    # Run ikiwiki's post-update hook
+    /master/repository/.git/hooks/post-update.ikiwiki
+    cd /my/repository
+    if ikiwiki-generate-tags-pages --setup ~/.ikiwiki/my-setup tags; then
+        git add tags/*
+        git commit --message "Committed tag files"
+        git push
+    fi
+
+This has a few problems: it will commit anything you already have in your
+staging area; you need to change where ikiwiki writes its own post-update hook.
+
+=head1 EXIT STATUS
+
+If some pages were missing, and B<ikiwiki-generate-tags-pages> successfully
+generated them, it will exit successfully; otherwise, it will exit
+unsuccessfully.  This allows you to easily write post-update hooks like the
+example above.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-h,> B<--help>
+
+Print a help message, and exit.
+
+=item B<-V,> B<--version>
+
+Print a help message, and exit.
+
+=item B<-v,> B<--verbose>
+
+Enable verbose execution.
+
+=back
+
+=head1 DEPENDENCIES
+
+=over 4
+
+=item File::Slurp
+
+=item IkiWiki
+
+B<ikiwiki-generate-tags-pages> has been written for IkiWiki 3.0, but may work
+with earlier versions; if you successfully use it with earlier versions, please
+inform the author.
+
+=back
+
+=head1 AUTHOR
+
+John Tobin <john DOT tobin AT johntobin DOT ie>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to the author; patches or tests will
+be gratefully accepted.
+
+=head1 VERSION
+
+0.05
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (C) 2009 John Tobin.  All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
+
+=head1 SEE ALSO
+
+L<ikiwiki> 
+
+=cut
