@@ -88,7 +88,7 @@ TEMPLATE
         next FILE;
     }
 
-    if ($options{verbose}) {
+    if (($options{verbose} and $options{delete}) or $options{report}) {
         print qq{$0: removing $full_path\n};
     }
     if ($options{report}) {
