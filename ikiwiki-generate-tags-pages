@@ -29,12 +29,11 @@ my $template = read_template();
 
 my %_uniq_tags;
 my @tags =
-    grep { not $_uniq_tags{$_}++ and $_ =~ s/^\/$config{tagbase}\///o }
+    grep { $_ =~ s/^\/$config{tagbase}\///o and not $_uniq_tags{$_}++ }
         map { @{$_} }
             values %links;
 
-# XXX MAYBE REPORT UNNECESSARY TAG PAGES?
-my $pages_created = 0;
+my $changes_made = 0;
 TAG:
 foreach my $tag (@tags) {
     my $file = catfile($output_directory, qq{$tag.mdwn});
@@ -48,10 +47,18 @@ foreach my $tag (@tags) {
     my $content = $tag_template;
     $content =~ s/__TAG__/$tag/g;
     write_file($file, {atomic => 1}, $content);
+    $changes_made++;
     $pages_created++;
 }
 
-exit ($pages_created == 0);
+if ($options{report}) {
+    exit 0;
+}
+if ($changes_made) {
+    exit 0;
+}
+exit 1;
+
 
 sub get_options {
     my %options_accepted = (
