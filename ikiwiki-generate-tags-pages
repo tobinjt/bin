@@ -34,7 +34,11 @@ my $template = read_template();
 
 my %_uniq_tags;
 my @tags =
-    grep { $_ =~ s/^\/$config{tagbase}\///o and not $_uniq_tags{$_}++ }
+    grep {  $_ ne qq{$config{tagbase}/discussion}
+            and not m!/discussion$ !x
+            and s!^(?:/)?$config{tagbase}/!!o
+            and not $_uniq_tags{$_}++
+        }
         map { @{$_} }
             values %links;
 
