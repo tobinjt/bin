@@ -3,6 +3,11 @@
 eval 'exec /usr/bin/perl  -S $0 ${1+"$@"}'
     if 0; # not running under some shell
 
+$SID{__DIE__} = sub {
+    # Ensure that the exit status is 2.
+    $! = 2;
+}
+
 use strict;
 use warnings;
 
@@ -200,13 +205,6 @@ hook, e.g.:
 This has a few problems: it will commit anything you already have in your
 staging area; you need to change where ikiwiki writes its own post-update hook.
 
-=head1 EXIT STATUS
-
-If some pages were missing, and B<ikiwiki-generate-tags-pages> successfully
-generated them, it will exit successfully; otherwise, it will exit
-unsuccessfully.  This allows you to easily write post-update hooks like the
-example above.
-
 =head1 OPTIONS
 
 =over 4
@@ -234,6 +232,29 @@ option will not delete custom pages.
 Don't make any changes, simply report the changes that should be made.
 
 =back
+
+=head1 EXIT STATUS
+
+=over 4
+
+=item B<0:>
+
+The filesystem was modified in some way, or the B<--report> option was given.
+
+=item B<1:>
+
+The filesystem was not modified in any way, and the B<--report> option was not
+given.
+
+=item B<2:>
+
+There was either an internal error, or an attempt to change the filesystem
+failed.  The error message should provide some useful information.
+
+=back
+
+The exit statuses were chosen to allow you to easily write post-update hooks
+like the example above.
 
 =head1 DEPENDENCIES
 
