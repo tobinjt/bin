@@ -14,7 +14,7 @@ use warnings;
 use IkiWiki 3.00;
 use IkiWiki::Setup;
 use File::Spec::Functions qw(catfile);
-use File::Slurp qw(read_file);
+use File::Slurp qw(read_file write_file read_dir);
 use Getopt::Long;
 use Pod::Usage;
 
@@ -71,7 +71,7 @@ foreach my $file (read_dir($output_directory)) {
     }
 
     my $expected_content = $template;
-    $expected_content =~ s/__TAG__/$file/g;
+    $expected_content =~ s/__TAG__/$tag/g;
     my $full_path = catfile($output_directory, $file);
     my $actual_content = read_file($full_path);
     if (($options{delete} or $options{report})
@@ -202,7 +202,8 @@ IkiWiki's tag plugin lets you tag pages, but to see all the pages tagged with
 
     [[!inline pages="tagged(foo)" archive="yes"]]
 
-B<ikiwiki-generate-tags-pages> automatically creates those pages for you.
+B<ikiwiki-generate-tags-pages> creates those pages for you.  It uses data
+gathered by B<IkiWiki>, so you need to run it B<after> running B<IkiWiki>.
 
 =head2 Template
 
