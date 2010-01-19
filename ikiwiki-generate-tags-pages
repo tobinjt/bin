@@ -6,7 +6,7 @@ eval 'exec /usr/bin/perl  -S $0 ${1+"$@"}'
 $SID{__DIE__} = sub {
     # Ensure that the exit status is 2.
     $! = 2;
-}
+};
 
 use strict;
 use warnings;
@@ -49,11 +49,56 @@ foreach my $tag (@tags) {
     if ($options{verbose}) {
         print qq{$0: creating $file\n};
     }
-    my $content = $tag_template;
+    if ($options{report}) {
+        next TAG;
+    }
+
+    my $content = $template;
     $content =~ s/__TAG__/$tag/g;
     write_file($file, {atomic => 1}, $content);
     $changes_made++;
-    $pages_created++;
+}
+
+my %tags = map { ($_ => 1) } @tags;
+FILE:
+foreach my $file (read_dir($output_directory)) {
+    my $tag = $file;
+    if ($tag !~ s/\.mdwn$//) {
+        next FILE;
+    }
+    if (exists $tags{$tag}) {
+        next FILE;
+    }
+
+    my $expected_content = $template;
+    $expected_content =~ s/__TAG__/$file/g;
+    my $full_path = catfile($output_directory, $file);
+    my $actual_content = read_file($full_path);
+    if (($options{delete} or $options{report})
+            and $expected_content ne $actual_content) {
+        if ($options{verbose}) {
+            print <<"TEMPLATE";
+$0: $full_path is unnecessary, but it contains custom content, so it will not be removed
+TEMPLATE
+        }
+        next FILE;
+    }
+
+    if ($options{verbose}) {
+        print qq{$0: removing $full_path\n};
+    }
+    if ($options{report}) {
+        next FILE;
+    }
+    if (not $options{delete}) {
+        next FILE;
+    }
+
+    1 while (unlink $full_path);
+    if (-e $full_path) {
+        die qq{$0: failed deleting $full_path: $!\n};
+    }
+    $changes_made++;
 }
 
 if ($options{report}) {
