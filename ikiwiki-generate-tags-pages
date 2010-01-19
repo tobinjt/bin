@@ -58,12 +58,15 @@ sub get_options {
         q{help|h}       => 0,
         q{version|V}    => 0,
         q{verbose|v}    => 0,
+        q{delete|d}     => 0,
+        q{report|r}     => 0,
     );
     my %options;
     while (my ($key, $value) = each %options_accepted) {
         $key =~ s/[|=].*//;
         $options{$key} = $value;
     }
+
 	Getopt::Long::Configure(qw(no_getopt_compat gnu_getopt));
 	Getopt::Long::GetOptions(\%options, keys %options_accepted)
         or pod2usage(2);
@@ -73,6 +76,9 @@ sub get_options {
     if ($options{version}) {
         print qq{ikiwiki-generate-tags-pages version $VERSION\n};
         exit 1;
+    }
+    if ($options{report}) {
+        $options{verbose} = 1;
     }
     if (@ARGV != 2) {
         pod2usage(2);
@@ -209,6 +215,16 @@ Print a help message, and exit.
 =item B<-v,> B<--verbose>
 
 Enable verbose execution.
+
+=item B<-d>, B<--delete>
+
+Delete unnecessary tag pages, i.e. pages for tags that are no longer used.  A
+page will only be deleted if it exactly matches the rendered template, so this
+option will not delete custom pages.
+
+=item B<-r>, B<--report>, B<--debug>
+
+Don't make any changes, simply report the changes that should be made.
 
 =back
 
