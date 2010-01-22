@@ -14,35 +14,9 @@ if (@ARGV != 1) {
 }
 my $cache_file = $ARGV[0];
 
-my %auto_installed;
-my $state_file = q{/var/lib/apt/extended_states};
-my $state_fh = IO::File->new(q{< } . $state_file)
-	or die qq{$0: Failed opening $state_file: $!\n};
-my $package;
-while (<$state_fh>) {
-	m/^Package: (.*)$/ and $package = $1;
-	m/^Auto-Installed: 1$/ and $auto_installed{$package} = 1;
-}
-
-my $status_cmd = q{dpkg --get-selections};
-my $status_fh = IO::File->new($status_cmd . q{ |})
-	or die qq{$0: failed opening pipe from $status_cmd: $!\n};
-my %installed;
-while (<$status_fh>) {
-	m/^([^\s]+)\s+install$/ and $installed{$1} = 1;
-}
-
-my %essential_packages;
-my $lists_dir = q{/var/lib/apt/lists};
-foreach my $list_file (glob qq{$lists_dir/*_Packages}) {
-    my $list_fh = IO::File->new(qq{< $list_file})
-        or die qq{$0: failed opening $list_file: $!\n};
-    my $package;
-    while (<$list_fh>) {
-        m/^Package: (.*)$/ and $package = $1;
-        m/^Essential: yes$/ and $essential_packages{$package} = 1;
-    }
-}
+my %auto_installed = run_aptitude(q{~i ~M});
+my %installed = run_aptitude(q{~i ~M});
+my %essential_packages = run_aptitude(q{~E});
 
 my $dependencies = {};
 if (-e $cache_file) {
@@ -97,4 +71,19 @@ foreach my $package (keys %installed) {
 	if ($rdeps) {
 		print qq{$package: $rdeps\n};
 	}
+}
+
+sub run_aptitude {
+    my ($pattern) = @_;
+
+    my $command = qq{aptitude -F '%p' search '$pattern' |};
+    my %found;
+    my $command_fh = IO::File->new($command)
+        or die qq{$0: Failed running "$command": $?, $!\n};
+    while (<$command_fh>) {
+        chomp;
+        $found{$_} = 1;
+    }
+
+    return %found;
 }
