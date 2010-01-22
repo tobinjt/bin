@@ -1,0 +1,100 @@
+#!/usr/bin/perl
+
+# Display a list of packages which could possibly be marked as auto-installed.
+
+use strict;
+use warnings;
+
+use IO::File;
+use Storable;
+
+if (@ARGV != 1) {
+	die qq{Usage: $0 cache-file\n}
+		. qq{Results from apt-rdepends will be saved in cache-file\n};
+}
+my $cache_file = $ARGV[0];
+
+my %auto_installed;
+my $state_file = q{/var/lib/apt/extended_states};
+my $state_fh = IO::File->new(q{< } . $state_file)
+	or die qq{$0: Failed opening $state_file: $!\n};
+my $package;
+while (<$state_fh>) {
+	m/^Package: (.*)$/ and $package = $1;
+	m/^Auto-Installed: 1$/ and $auto_installed{$package} = 1;
+}
+
+my $status_cmd = q{dpkg --get-selections};
+my $status_fh = IO::File->new($status_cmd . q{ |})
+	or die qq{$0: failed opening pipe from $status_cmd: $!\n};
+my %installed;
+while (<$status_fh>) {
+	m/^([^\s]+)\s+install$/ and $installed{$1} = 1;
+}
+
+my %essential_packages;
+my $lists_dir = q{/var/lib/apt/lists};
+foreach my $list_file (glob qq{$lists_dir/*_Packages}) {
+    my $list_fh = IO::File->new(qq{< $list_file})
+        or die qq{$0: failed opening $list_file: $!\n};
+    my $package;
+    while (<$list_fh>) {
+        m/^Package: (.*)$/ and $package = $1;
+        m/^Essential: yes$/ and $essential_packages{$package} = 1;
+    }
+}
+
+my $dependencies = {};
+if (-e $cache_file) {
+	$dependencies = retrieve($cache_file)
+		or die qq{$0: failed loading $cache_file: $!\n};
+}
+
+my $dependency_cmd = q{apt-rdepends --reverse --state-follow=Installed --state-show=Installed };
+PACKAGE:
+foreach my $package (keys %installed) {
+	next if exists $auto_installed{$package};
+	next if exists $essential_packages{$package};
+	next if exists $dependencies->{$package};
+	my $dependency_fh = IO::File->new($dependency_cmd . $package . q{ |})
+		or die qq{$0: Failed running $dependency_cmd $package: $!\n};
+	my $pkg;
+	LINE:
+	while (<$dependency_fh>) {
+		chomp;
+		if (m/^([^\s]+)$/) {
+			$pkg = $1;
+			$dependencies->{$pkg} ||= {};
+			next LINE;
+		}
+		if (m/^\s+Reverse Depends: ([^\s]+)/) {
+			my $rdep = $1;
+            if ($rdep eq q{lg12-lab}) {
+                next LINE;
+            }
+			$dependencies->{$pkg}->{$rdep} = 1;
+			if (exists $dependencies->{$rdep}->{$pkg}) {
+				warn qq{$0: dependency loop: $rdep and $pkg\n};
+				$dependencies->{$pkg}->{q{dependency-loop}} = 1;
+				$dependencies->{$rdep}->{q{dependency-loop}} = 1;
+			}
+			next LINE;
+		}
+		if (m/Reverse PreDepends:/) {
+			next LINE;
+		}
+		die qq{$0: Unknown line from '$dependency_cmd $package': $_\n};
+	}
+}
+
+store($dependencies, $cache_file)
+	or die qq{$0: Failed updating $cache_file: $!\n};
+
+PACKAGE:
+foreach my $package (keys %installed) {
+	next PACKAGE if exists $auto_installed{$package};
+	my $rdeps = join q{ }, sort keys %{$dependencies->{$package}};
+	if ($rdeps) {
+		print qq{$package: $rdeps\n};
+	}
+}
