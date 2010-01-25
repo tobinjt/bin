@@ -16,12 +16,13 @@ with 'aptitude markauto PACKAGE'
 USAGE
 }
 
-my %essential_packages = run_aptitude(q{~E}, q{essential});
-my %auto_installed = run_aptitude(q{~i ~M}, q{autoinstalled});
-my %installed = run_aptitude(q{~i !~M ~E}, q{installed});
+my %essential_packages  = run_aptitude(q{~E},       q{essential});
+my %auto_installed      = run_aptitude(q{~i ~M},    q{autoinstalled});
+my %installed           = run_aptitude(q{~i},       q{installed});
 
 # exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
-my %reverse_dependencies;
+my %reverse_dependencies = read_package_lists();
+exit;
 
 PACKAGE:
 foreach my $package (keys %installed) {
@@ -37,15 +38,61 @@ sub run_aptitude {
     my ($pattern, $message) = @_;
 
     print STDERR qq{$0: searching for $message packages . . . };
-    my $command = qq{aptitude -F '%p' search '$pattern' |};
+    my $command = qq{aptitude -F '%p %v' search '$pattern' |};
     my %found;
     my $command_fh = IO::File->new($command)
         or die qq{$0: Failed running "$command": $?, $!\n};
     while (<$command_fh>) {
         chomp;
-        $found{$_} = 1;
+        m/^([^\s]+)\s+([^\s]+)\s*$/
+            or die <<"ERROR";
+$0: failed parsing output from aptitude:
+$_
+ERROR
+        $found{$1} = $2;
     }
 
     print STDERR qq{done\n};
     return %found;
+}
+
+sub read_package_lists {
+    local @ARGV = glob q{/var/lib/apt/lists/*_Packages};
+    # exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
+    my %reverse_dependencies;
+    my $package;
+
+    LINE:
+    while (<>) {
+        # Only collect information about installed packages.
+        if (m/^Package: (.+)$/
+            and exists $installed{$1}) {
+            $package = $1;
+            next LINE;
+        }
+        next LINE if not defined $package;
+
+        if (m/^Version: (.+)$/) {
+            my $version = $1;
+            # Skip other versions of $package; this relies on the Version line
+            # preceeding the Depends line, which is usually the case.
+            if ($installed{$package} ne $version) {
+                undef $package;
+            }
+            next LINE;
+        }
+
+        if (m/^(?:Pre-)?Depends: (.+)$/) {
+            foreach my $dep (split /[,|]/, $1) {
+                $dep =~ s/^\s+//;
+                $dep =~ s/\s.*//;
+                # exists $reverse_dependencies{FOO}->{BAR} means that
+                # BAR depends on FOO.
+                $reverse_dependencies{$dep} ||= {};
+                $reverse_dependencies{$dep}->{$package} = 1;
+            }
+        }
+    }
+
+    return %reverse_dependencies;
 }
