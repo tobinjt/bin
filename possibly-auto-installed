@@ -6,76 +6,77 @@ use strict;
 use warnings;
 
 use IO::File;
-use Storable;
+use Term::ProgressBar;
 
-if (@ARGV != 1) {
-	die qq{Usage: $0 cache-file\n}
-		. qq{Results from apt-rdepends will be saved in cache-file\n};
-}
-my $cache_file = $ARGV[0];
-
-my %auto_installed = run_aptitude(q{~i ~M});
-my %installed = run_aptitude(q{~i ~M});
-my %essential_packages = run_aptitude(q{~E});
-
-my $dependencies = {};
-if (-e $cache_file) {
-	$dependencies = retrieve($cache_file)
-		or die qq{$0: failed loading $cache_file: $!\n};
+if (@ARGV) {
+	die <<"USAGE";
+Usage: $0
+Show packages that are depended on by other packages; such packages might have
+been automatically installed as dependencies, and can be marked as autoinstalled
+with 'aptitude markauto PACKAGE'
+USAGE
 }
 
-my $dependency_cmd = q{apt-rdepends --reverse --state-follow=Installed --state-show=Installed };
+my %essential_packages = run_aptitude(q{~E}, q{essential});
+my %auto_installed = run_aptitude(q{~i ~M}, q{autoinstalled});
+my %installed = run_aptitude(q{~i !~M ~E}, q{installed});
+
+# exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
+my %reverse_dependencies;
+my $dependency_cmd = q{apt-rdepends --state-follow=Installed --state-show=Installed };
+my $num_to_process = scalar keys %installed;
+my $progressbar = Term::ProgressBar->new({
+                    count => $num_to_process,
+                    ETA => q{linear}
+                });
+$progressbar->minor(0);
+my $num_processed = 0;
 PACKAGE:
-foreach my $package (keys %installed) {
-	next if exists $auto_installed{$package};
-	next if exists $essential_packages{$package};
-	next if exists $dependencies->{$package};
-	my $dependency_fh = IO::File->new($dependency_cmd . $package . q{ |})
-		or die qq{$0: Failed running $dependency_cmd $package: $!\n};
+foreach my $package (sort keys %installed) {
+    $progressbar->update(++$num_processed);
+	next if exists $reverse_dependencies{$package};
+
+    my $full_command = qq{$dependency_cmd $package 2>/dev/null |};
+	my $dependency_fh = IO::File->new($full_command)
+		or die qq{$0: Failed running $full_command: $!\n};
+
 	my $pkg;
 	LINE:
 	while (<$dependency_fh>) {
 		chomp;
 		if (m/^([^\s]+)$/) {
 			$pkg = $1;
-			$dependencies->{$pkg} ||= {};
+			$reverse_dependencies{$pkg} ||= {};
 			next LINE;
 		}
-		if (m/^\s+Reverse Depends: ([^\s]+)/) {
-			my $rdep = $1;
-            if ($rdep eq q{lg12-lab}) {
-                next LINE;
-            }
-			$dependencies->{$pkg}->{$rdep} = 1;
-			if (exists $dependencies->{$rdep}->{$pkg}) {
-				warn qq{$0: dependency loop: $rdep and $pkg\n};
-				$dependencies->{$pkg}->{q{dependency-loop}} = 1;
-				$dependencies->{$rdep}->{q{dependency-loop}} = 1;
+		if (m/^\s+(?:Pre)?Depends: ([^\s]+)/) {
+			my $dep = $1;
+			$reverse_dependencies{$dep}->{$pkg}++;
+			if (exists $reverse_dependencies{$pkg}->{$dep}) {
+                #warn qq{$0: dependency loop: $dep and $pkg\n};
+				$reverse_dependencies{$pkg}->{q{dependency-loop}}++;
+				$reverse_dependencies{$dep}->{q{dependency-loop}}++;
 			}
-			next LINE;
-		}
-		if (m/Reverse PreDepends:/) {
 			next LINE;
 		}
 		die qq{$0: Unknown line from '$dependency_cmd $package': $_\n};
 	}
 }
 
-store($dependencies, $cache_file)
-	or die qq{$0: Failed updating $cache_file: $!\n};
-
 PACKAGE:
 foreach my $package (keys %installed) {
 	next PACKAGE if exists $auto_installed{$package};
-	my $rdeps = join q{ }, sort keys %{$dependencies->{$package}};
-	if ($rdeps) {
-		print qq{$package: $rdeps\n};
+	next PACKAGE if exists $essential_packages{$package};
+	my $deps = join q{ }, sort keys %{$reverse_dependencies{$package}};
+	if ($deps) {
+		print qq{$package: $deps\n};
 	}
 }
 
 sub run_aptitude {
-    my ($pattern) = @_;
+    my ($pattern, $message) = @_;
 
+    print STDERR qq{$0: searching for $message packages . . . };
     my $command = qq{aptitude -F '%p' search '$pattern' |};
     my %found;
     my $command_fh = IO::File->new($command)
@@ -85,5 +86,6 @@ sub run_aptitude {
         $found{$_} = 1;
     }
 
+    print STDERR qq{done\n};
     return %found;
 }
