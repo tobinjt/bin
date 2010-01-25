@@ -20,9 +20,10 @@ my %essential_packages  = run_aptitude(q{~E},       q{essential});
 my %auto_installed      = run_aptitude(q{~i ~M},    q{autoinstalled});
 my %installed           = run_aptitude(q{~i},       q{installed});
 
+progress(qq{$0: reading package lists . . . });
 # exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
 my %reverse_dependencies = read_package_lists();
-exit;
+progress(qq{done\n});
 
 PACKAGE:
 foreach my $package (keys %installed) {
@@ -37,7 +38,7 @@ foreach my $package (keys %installed) {
 sub run_aptitude {
     my ($pattern, $message) = @_;
 
-    print STDERR qq{$0: searching for $message packages . . . };
+    progress(qq{$0: searching for $message packages . . . });
     my $command = qq{aptitude -F '%p %v' search '$pattern' |};
     my %found;
     my $command_fh = IO::File->new($command)
@@ -52,7 +53,7 @@ ERROR
         $found{$1} = $2;
     }
 
-    print STDERR qq{done\n};
+    progress(qq{done\n});
     return %found;
 }
 
@@ -65,14 +66,18 @@ sub read_package_lists {
     LINE:
     while (<>) {
         # Only collect information about installed packages.
-        if (m/^Package: (.+)$/
-            and exists $installed{$1}) {
-            $package = $1;
+        my $line = $_;
+        if ($line =~ m/^Package: (.+)$/) {
+            if(exists $installed{$1}) {
+                $package = $1;
+            } else {
+                undef $package;
+            }
             next LINE;
         }
         next LINE if not defined $package;
 
-        if (m/^Version: (.+)$/) {
+        if ($line =~ m/^Version: (.+)$/) {
             my $version = $1;
             # Skip other versions of $package; this relies on the Version line
             # preceeding the Depends line, which is usually the case.
@@ -82,17 +87,27 @@ sub read_package_lists {
             next LINE;
         }
 
-        if (m/^(?:Pre-)?Depends: (.+)$/) {
-            foreach my $dep (split /[,|]/, $1) {
+        if ($line =~ m/^(?:Pre-)?(Depends): (.+)$/i or $line =~ m/^(Recommends): (.+)$/) {
+            my ($type, $deps) = ($1, $2);
+            DEP:
+            foreach my $dep (split /[,|]/, $deps) {
                 $dep =~ s/^\s+//;
                 $dep =~ s/\s.*//;
-                # exists $reverse_dependencies{FOO}->{BAR} means that
-                # BAR depends on FOO.
-                $reverse_dependencies{$dep} ||= {};
-                $reverse_dependencies{$dep}->{$package} = 1;
+                if (exists $reverse_dependencies{$package}->{$dep}) {
+#                        and $type eq q{Depends}
+#                        and not exists $auto_installed{$dep}) {
+                    delete $reverse_dependencies{$package}->{$dep};
+#                    warn qq{$0: skipping circular dependency: $package <-> $dep\n};
+                } else {
+                    $reverse_dependencies{$dep}->{$package} = 1;
+                }
             }
         }
     }
 
     return %reverse_dependencies;
+}
+
+sub progress {
+    print STDERR @_;
 }
