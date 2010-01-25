@@ -60,8 +60,7 @@ ERROR
 sub read_package_lists {
     local @ARGV = glob q{/var/lib/apt/lists/*_Packages};
     # exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
-    my %reverse_dependencies;
-    my $package;
+    my (%reverse_dependencies, %circular_dependencies, $package);
 
     LINE:
     while (<>) {
@@ -94,14 +93,20 @@ sub read_package_lists {
                 $dep =~ s/^\s+//;
                 $dep =~ s/\s.*//;
                 if (exists $reverse_dependencies{$package}->{$dep}) {
-#                        and $type eq q{Depends}
-#                        and not exists $auto_installed{$dep}) {
-                    delete $reverse_dependencies{$package}->{$dep};
+                    $circular_dependencies{$package}->{$dep} = 1;
 #                    warn qq{$0: skipping circular dependency: $package <-> $dep\n};
                 } else {
                     $reverse_dependencies{$dep}->{$package} = 1;
                 }
             }
+        }
+    }
+
+    # Remove circular dependencies from %reverse_dependencies.
+    foreach my $depender (keys %circular_dependencies) {
+        foreach my $dependency (keys %{$circular_dependencies{$depender}}) {
+            delete $reverse_dependencies{$depender}->{$dependency};
+            delete $reverse_dependencies{$dependency}->{$depender};
         }
     }
 
