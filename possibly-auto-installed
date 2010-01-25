@@ -6,7 +6,6 @@ use strict;
 use warnings;
 
 use IO::File;
-use Term::ProgressBar;
 
 if (@ARGV) {
 	die <<"USAGE";
@@ -23,45 +22,6 @@ my %installed = run_aptitude(q{~i !~M ~E}, q{installed});
 
 # exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
 my %reverse_dependencies;
-my $dependency_cmd = q{apt-rdepends --state-follow=Installed --state-show=Installed };
-my $num_to_process = scalar keys %installed;
-my $progressbar = Term::ProgressBar->new({
-                    count => $num_to_process,
-                    ETA => q{linear}
-                });
-$progressbar->minor(0);
-my $num_processed = 0;
-PACKAGE:
-foreach my $package (sort keys %installed) {
-    $progressbar->update(++$num_processed);
-	next if exists $reverse_dependencies{$package};
-
-    my $full_command = qq{$dependency_cmd $package 2>/dev/null |};
-	my $dependency_fh = IO::File->new($full_command)
-		or die qq{$0: Failed running $full_command: $!\n};
-
-	my $pkg;
-	LINE:
-	while (<$dependency_fh>) {
-		chomp;
-		if (m/^([^\s]+)$/) {
-			$pkg = $1;
-			$reverse_dependencies{$pkg} ||= {};
-			next LINE;
-		}
-		if (m/^\s+(?:Pre)?Depends: ([^\s]+)/) {
-			my $dep = $1;
-			$reverse_dependencies{$dep}->{$pkg}++;
-			if (exists $reverse_dependencies{$pkg}->{$dep}) {
-                #warn qq{$0: dependency loop: $dep and $pkg\n};
-				$reverse_dependencies{$pkg}->{q{dependency-loop}}++;
-				$reverse_dependencies{$dep}->{q{dependency-loop}}++;
-			}
-			next LINE;
-		}
-		die qq{$0: Unknown line from '$dependency_cmd $package': $_\n};
-	}
-}
 
 PACKAGE:
 foreach my $package (keys %installed) {
