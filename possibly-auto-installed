@@ -1,0 +1,121 @@
+#!/usr/bin/perl
+
+# Display a list of packages which could possibly be marked as auto-installed.
+
+use strict;
+use warnings;
+
+use IO::File;
+
+if (@ARGV) {
+	die <<"USAGE";
+Usage: $0
+Show packages that are depended on by other packages; such packages might have
+been automatically installed as dependencies, and can be marked as autoinstalled
+with 'aptitude markauto PACKAGE'
+USAGE
+}
+
+my %essential_packages  = run_aptitude(q{~E},       q{essential});
+my %auto_installed      = run_aptitude(q{~i ~M},    q{autoinstalled});
+my %installed           = run_aptitude(q{~i},       q{installed});
+
+progress(qq{$0: reading package lists . . . });
+# exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
+my %reverse_dependencies = read_package_lists();
+progress(qq{done\n});
+
+PACKAGE:
+foreach my $package (keys %installed) {
+	next PACKAGE if exists $auto_installed{$package};
+	next PACKAGE if exists $essential_packages{$package};
+	my $deps = join q{ }, sort keys %{$reverse_dependencies{$package}};
+	if ($deps) {
+		print qq{$package: $deps\n};
+	}
+}
+
+sub run_aptitude {
+    my ($pattern, $message) = @_;
+
+    progress(qq{$0: searching for $message packages . . . });
+    my $command = qq{aptitude -F '%p %v' search '$pattern'};
+    my %found;
+    my $command_fh = IO::File->new(qq{$command |})
+        or die qq{$0: Failed running "$command": $?, $!\n};
+    while (<$command_fh>) {
+        chomp;
+        m/^([^\s]+)\s+([^\s]+)\s*$/
+            or die <<"ERROR";
+$0: failed parsing output from aptitude:
+$_
+ERROR
+        $found{$1} = $2;
+    }
+    if ($?) {
+        die qq{failed to run "$command"\n};
+    }
+
+    progress(qq{done\n});
+    return %found;
+}
+
+sub read_package_lists {
+    local @ARGV = glob q{/var/lib/apt/lists/*_Packages};
+    # exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
+    my (%reverse_dependencies, %circular_dependencies, $package);
+
+    LINE:
+    while (<>) {
+        # Only collect information about installed packages.
+        my $line = $_;
+        if ($line =~ m/^Package: (.+)$/) {
+            if(exists $installed{$1}) {
+                $package = $1;
+            } else {
+                undef $package;
+            }
+            next LINE;
+        }
+        next LINE if not defined $package;
+
+        if ($line =~ m/^Version: (.+)$/) {
+            my $version = $1;
+            # Skip other versions of $package; this relies on the Version line
+            # preceeding the Depends line, which is usually the case.
+            if ($installed{$package} ne $version) {
+                undef $package;
+            }
+            next LINE;
+        }
+
+        if ($line =~ m/^(?:Pre-)?(Depends): (.+)$/i or $line =~ m/^(Recommends): (.+)$/) {
+            my ($type, $deps) = ($1, $2);
+            DEP:
+            foreach my $dep (split /[,|]/, $deps) {
+                $dep =~ s/^\s+//;
+                $dep =~ s/\s.*//;
+                if (exists $reverse_dependencies{$package}->{$dep}) {
+                    $circular_dependencies{$package}->{$dep} = 1;
+#                    warn qq{$0: skipping circular dependency: $package <-> $dep\n};
+                } else {
+                    $reverse_dependencies{$dep}->{$package} = 1;
+                }
+            }
+        }
+    }
+
+    # Remove circular dependencies from %reverse_dependencies.
+    foreach my $depender (keys %circular_dependencies) {
+        foreach my $dependency (keys %{$circular_dependencies{$depender}}) {
+            delete $reverse_dependencies{$depender}->{$dependency};
+            delete $reverse_dependencies{$dependency}->{$depender};
+        }
+    }
+
+    return %reverse_dependencies;
+}
+
+sub progress {
+    print STDERR @_;
+}

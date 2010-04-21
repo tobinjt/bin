@@ -38,7 +38,7 @@ foreach my $attribute (qw(recommends suggests)) {
 
 $output .= <<"FILES";
 tarball="$attributes{package}_$attributes{upstream_version}.orig.tar.gz"
-deb="$attributes{package}_$attributes{version}.deb"
+deb="$attributes{package}_$attributes{version}_$attributes{architecture}.deb"
 diff="$attributes{package}_$attributes{version}.diff.gz"
 FILES
 
