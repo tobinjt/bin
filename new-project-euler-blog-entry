@@ -1,0 +1,42 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+if (@ARGV != 1) {
+    die qq{Usage: $0 PROBLEM_NUMBER < lisp-code > foo.mdwn\n};
+}
+my $number = shift @ARGV;
+print <<"HEADER";
+[Project Euler problem
+$number:](http://projecteuler.net/index.php?section=problems&id=$number)
+
+HEADER
+
+PROBLEM_LINE:
+while (<>) {
+    unless (m/^;/ or m/^$/) {
+        last PROBLEM_LINE;
+    }
+    s/; \{\{\{//;
+    s/; \}\}\}//;
+    s/^;/>/;
+    print;
+}
+
+print <<"MIDDLE";
+Here's my LISP solution:
+
+MIDDLE
+
+do {
+    s/; \{\{\{//;
+    s/; \}\}\}//;
+    s/^/    /;
+    print;
+} while (<>);
+
+print <<"FOOTER"
+
+[[!tag LISP Project_Euler programming]]
+FOOTER
