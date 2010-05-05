@@ -1,0 +1,43 @@
+#!/bin/sh
+
+set -e
+
+list-files-to-link() {
+cat - <<'LIST'
+.bash_completion
+.bash_logout
+.bash_path
+.bash_profile
+.bashrc
+bin
+.cs_host
+.devscripts
+.flags
+.gitconfig
+.gitignore
+.gnupg
+.inputrc
+lib
+.lintianrc
+man
+src
+.ssh
+.subversion
+tmp
+.vim
+.viminfo
+.vimrc
+LIST
+}
+
+for file in $( list-files-to-link ); do
+    SRC="$HOME/home/$file"
+    DEST="$HOME/$file"
+    if [ -e "$DEST" ]; then
+        if [ ! -L "$DEST" ]; then
+            echo "$0: $file is not a link" >&2
+        fi
+    else
+        ln -s "$SRC" "$DEST"
+    fi
+done

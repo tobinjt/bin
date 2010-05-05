@@ -39,9 +39,9 @@ sub run_aptitude {
     my ($pattern, $message) = @_;
 
     progress(qq{$0: searching for $message packages . . . });
-    my $command = qq{aptitude -F '%p %v' search '$pattern' |};
+    my $command = qq{aptitude -F '%p %v' search '$pattern'};
     my %found;
-    my $command_fh = IO::File->new($command)
+    my $command_fh = IO::File->new(qq{$command |})
         or die qq{$0: Failed running "$command": $?, $!\n};
     while (<$command_fh>) {
         chomp;
@@ -51,6 +51,9 @@ $0: failed parsing output from aptitude:
 $_
 ERROR
         $found{$1} = $2;
+    }
+    if ($?) {
+        die qq{failed to run "$command"\n};
     }
 
     progress(qq{done\n});
