@@ -15,6 +15,7 @@ bin
 .flags
 .gitconfig
 .gitignore
+.gnupg
 .inputrc
 lib
 .lintianrc
