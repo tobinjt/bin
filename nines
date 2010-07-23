@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+
+import sys
+
+def format_number(number):
+  string = str(number)
+  if string.find(".") != -1:
+    string = string.rstrip("0").rstrip(".")
+  return string
+
+def main():
+  if len(sys.argv) <= 1:
+    sys.exit("Usage: %s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]" % sys.argv[0])
+
+  time_units = {}
+  seconds_so_far = 1
+  for (number, label) in ((60, "minutes"),
+                          (60, "hours"),
+                          (24, "days"),
+                          (365, "year")):
+    seconds_so_far *= number
+    time_units[seconds_so_far] = label
+  seconds_per_year = seconds_so_far
+
+  for num_nines in sys.argv[1:]:
+    try:
+      num_nines = int(num_nines)
+    except (ValueError):
+      sys.exit("Argument is not a number: %s" % str(num_nines))
+
+    downtime_fraction = 10 ** -num_nines
+    downtime_seconds = downtime_fraction * seconds_per_year
+
+    friendly_time = ""
+    keys = time_units.keys()
+    keys.sort()
+    for num_seconds in keys:
+      if num_seconds <= downtime_seconds:
+        friendly_num = 1.0 * downtime_seconds / num_seconds
+        friendly_time = " (%s %s)" % (format_number(friendly_num),
+                                      time_units[num_seconds])
+
+    print "%d: %s%%: %s seconds%s" \
+        % (num_nines,
+           format_number(100 * (1 - downtime_fraction)),
+           format_number(downtime_seconds),
+           friendly_time)
+
+if __name__ == "__main__":
+  main()
