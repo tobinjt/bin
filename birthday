@@ -3,6 +3,12 @@
 import sys
 import math
 
+def birthday(num_days, num_people):
+  numerator = math.factorial(num_days) / math.factorial(num_days - num_people)
+  denominator = num_days ** num_people
+  chance_of_no_collision = 1.0 * numerator / denominator
+  return 1 - chance_of_no_collision
+
 def main(argv):
   if len(argv) not in (2, 3):
     sys.exit("Usage: %s NUM_PEOPLE [NUM_DAYS]" % argv[0])
@@ -17,10 +23,7 @@ def main(argv):
   if len(argv) == 3:
     num_days = int(argv[2])
 
-  numerator = math.factorial(num_days) / math.factorial(num_days - num_people)
-  denominator = num_days ** num_people
-  chance_of_no_collision = 1.0 * numerator / denominator
-  print 1 - chance_of_no_collision
+  print birthday(num_days, num_people)
 
 if __name__ == "__main__":
   main(sys.argv)
