@@ -1,16 +1,37 @@
-#!/usr/bin/env python
+#!/usr/bin/python2.4
+#
+# Copyright 2010 Google Inc. All Rights Reserved.
+
+"""Display the number of seconds of downtime than N nines uptime allows.
+
+Uptime is usually described as N nines, e.g. 3 nines is 99.9% uptime, 6 nines is
+99.9999% uptime.  This program displays how much downtime per year is allowed by
+N nines uptime, e.g. 6 nines uptime allows 31.536 seconds per year of downtime.
+"""
+
+__author__ = "johntobin@google.com (John Tobin)"
 
 import sys
 
-def format_number(number):
+
+def StripTrailingZeros(number):
+  """Strip unnecessary trailing zeros from a number.
+
+  Args:
+    number: a number, either an integer or a string
+
+  Returns:
+    A string representing number, with any unnecessary trailing zeros removed.
+  """
   string = str(number)
   if string.find(".") != -1:
     string = string.rstrip("0").rstrip(".")
   return string
 
-def main():
-  if len(sys.argv) <= 1:
-    sys.exit("Usage: %s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]" % sys.argv[0])
+
+def main(argv):
+  if len(argv) <= 1:
+    sys.exit("Usage: %s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]" % argv[0])
 
   time_units = {}
   seconds_so_far = 1
@@ -22,10 +43,10 @@ def main():
     time_units[seconds_so_far] = label
   seconds_per_year = seconds_so_far
 
-  for num_nines in sys.argv[1:]:
+  for num_nines in argv[1:]:
     try:
       num_nines = int(num_nines)
-    except (ValueError):
+    except ValueError:
       sys.exit("Argument is not a number: %s" % str(num_nines))
 
     downtime_fraction = 10 ** -num_nines
@@ -37,14 +58,14 @@ def main():
     for num_seconds in keys:
       if num_seconds <= downtime_seconds:
         friendly_num = 1.0 * downtime_seconds / num_seconds
-        friendly_time = " (%s %s)" % (format_number(friendly_num),
+        friendly_time = " (%s %s)" % (StripTrailingZeros(friendly_num),
                                       time_units[num_seconds])
 
-    print "%d: %s%%: %s seconds%s" \
-        % (num_nines,
-           format_number(100 * (1 - downtime_fraction)),
-           format_number(downtime_seconds),
-           friendly_time)
+    print ("%d: %s%%: %s seconds%s"
+           % (num_nines,
+              StripTrailingZeros(100 * (1 - downtime_fraction)),
+              StripTrailingZeros(downtime_seconds),
+              friendly_time))
 
 if __name__ == "__main__":
-  main()
+  main(sys.argv)
