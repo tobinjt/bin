@@ -1,13 +1,57 @@
-#!/usr/bin/env python
+#!/usr/bin/python2.4
+#
+# Copyright 2010 Google Inc. All Rights Reserved.
+
+"""Show the probability of a birthday paradox collision.
+
+The probability of a birthday paradox collision happening is surprisingly high.
+This program calculates the probability of a birthday collision between N
+people, or the probability of a collision between N of M things.
+"""
+
+__author__ = "johntobin@google.com (John Tobin)"
 
 import sys
-import math
 
-def birthday(num_days, num_people):
-  numerator = math.factorial(num_days) / math.factorial(num_days - num_people)
+
+def Factorial(number):
+  """Calculate the factorial of a number.
+
+  Args:
+    number: an integer.  It will be coerced to an integer using int(), so you
+            can pass a string; if you pass a float, it will be rounded by int().
+
+  Returns:
+    The factorial of the argument.
+
+  Raises:
+    ValueError: the number argument could not be coerced to an integer.
+  """
+
+  number = int(number)
+  factorial = 1
+  while number > 1:
+    factorial *= number
+    number -= 1
+  return factorial
+
+
+def Birthday(num_days, num_people):
+  """Calculate the probability of a birthday collision.
+
+  Args:
+    num_days: the number of days in the year
+    num_people: the number of people
+
+  Returns:
+    A number between 0 and 1 giving the probability of a collision.
+  """
+
+  numerator = Factorial(num_days) / Factorial(num_days - num_people)
   denominator = num_days ** num_people
-  chance_of_no_collision = 1.0 * numerator / denominator
-  return 1 - chance_of_no_collision
+  probability_of_no_collision = 1.0 * numerator / denominator
+  return 1 - probability_of_no_collision
+
 
 def main(argv):
   if len(argv) not in (2, 3):
@@ -16,14 +60,14 @@ def main(argv):
   try:
     for number in argv[1:]:
       int(number)
-  except (ValueError):
+  except ValueError:
     sys.exit("Argument is not a number: %s" % str(number))
 
   (num_people, num_days) = (int(argv[1]), 365)
   if len(argv) == 3:
     num_days = int(argv[2])
 
-  print birthday(num_days, num_people)
+  print Birthday(num_days, num_people)
 
 if __name__ == "__main__":
   main(sys.argv)
