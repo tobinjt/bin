@@ -1,0 +1,263 @@
+#!/usr/bin/python2.4
+#
+# Copyright 2010 Google Inc. All Rights Reserved.
+
+"""%prog [OPTIONS] SOURCE_DIRECTORY DESTINATION_DIRECTORY.
+
+Link all files in SOURCE_DIRECTORY to DESTINATION_DIRECTORY, creating
+a directory hierarchy as necessary.
+"""
+
+import difflib
+import optparse
+import os
+import pipes
+import shutil
+import stat
+import sys
+import time
+
+__author__ = "johntobin@google.com (John Tobin)"
+
+
+class Error(Exception):
+  """Base class for exceptions."""
+  pass
+
+
+class ArgumentError(Error):
+  """Something was wrong with one of the arguments passed to a function.
+
+  Attributes:
+    args: the arguments passed when the exception was raised; in general,
+          this should be a single string argument.
+  """
+
+
+class UnexpectedFileError(Error):
+  """A file or directory was expected, but something else was found.
+
+  Attributes:
+    args: the arguments passed when the exception was raised; in general,
+          this should be a single string argument.
+  """
+
+
+def SafeUnlink(unlink_me, dryrun=True):
+  """Remove a file or directory, or return shell commands that would do so.
+
+  Args:
+    unlink_me: the file or directory to be removed.
+    dryrun:    if True, shell commands are returned; if False, unlink_me is
+               removed.  Defaults to True.
+
+  Returns:
+    None if dryrun is false, a string if dryrun is true.
+
+  Raises:
+    OSError: there was a problem removing unlink_me.
+  """
+
+  if os.path.islink(unlink_me) or not os.path.isdir(unlink_me):
+    if dryrun:
+      return "rm %s" % pipes.quote(unlink_me)
+    else:
+      os.unlink(unlink_me)
+  else:
+    if dryrun:
+      return "rm -r %s" % pipes.quote(unlink_me)
+    else:
+      shutil.rmtree(unlink_me)
+
+
+def PrintIfNotNone(something):
+  """Prints something if it is not None.
+
+  Args:
+    something: a thing to print if it is not None.
+
+  Returns:
+    Nothing.
+  """
+
+  if something:
+    print something
+
+
+def Diff(old_filename, new_filename):
+  """Return a diff between old and new files.
+
+  Args:
+    old_filename: the original file.
+    new_filename: the new file.
+
+  Returns:
+    An array of strings, possibly empty.
+
+  Raises:
+    OSError: an error occurred reading one of the files.
+  """
+
+  old_timestamp = time.ctime(os.stat(old_filename).st_mtime)
+  old_contents = open(old_filename, "r").readlines()
+  new_timestamp = time.ctime(os.stat(new_filename).st_mtime)
+  new_contents = open(new_filename, "r").readlines()
+  diff_generator = difflib.unified_diff(old_contents, new_contents,
+                                        old_filename, new_filename,
+                                        old_timestamp, new_timestamp)
+  diffs = [diff for diff in diff_generator]
+  return diffs
+
+
+def LinkDir(source, dest,
+            dirs_to_skip=("CVS", ".svn", ".hg", ".git"),
+            dryrun=False, force=False):
+  """Link source directory to dest directory.
+
+  Args:
+    source:       the source directory
+    dest:         the destination directory
+    dirs_to_skip: directories under source that will be skipped.
+                  Defaults to ("CVS", ".svn", ".hg", ".git")
+    dryrun:       if true, the filesystem will not be changed; shell commands
+                  will be printed instead.  Defaults to false.
+    force:        existing files will be removed if necessary.  dryrun overrides
+                  force.
+
+  Returns:
+    Nothing.
+
+  Raises:
+    ArgumentError:       something was wrong with source or dest argument.
+    OSError:             a filesystem operation failed.
+    UnexpectedFileError: a file or directory was expected, but something else
+                         was found instead.
+  """
+
+  for directory in (source, dest):
+    if not os.path.isdir(directory):
+      raise ArgumentError("%s is not a directory" % directory)
+  (source, dest) = (source.rstrip("/"), dest.rstrip("/"))
+
+  for directory, subdirs, files in os.walk(source, topdown=True):
+
+    for skip_dir in dirs_to_skip:
+      # Remove VCS dirs
+      if skip_dir in subdirs:
+        subdirs.remove(skip_dir)
+
+    for subdir in subdirs:
+      source_dir = os.path.join(directory, subdir)
+      dest_dir = source_dir.replace(source, dest, 1)
+      source_stat = os.stat(source_dir)
+      source_mode = stat.S_IMODE(source_stat.st_mode)
+
+      if os.path.isdir(dest_dir):
+        if not dryrun:
+          os.chmod(dest_dir, source_mode)
+        continue
+
+      if os.path.exists(dest_dir):
+        if force:
+          PrintIfNotNone(SafeUnlink(dest_dir, dryrun=dryrun))
+        else:
+          raise UnexpectedFileError("%s is not a directory" % dest_dir)
+
+      if dryrun:
+        # This allows us to intercept PrintIfNotNone for testing.
+        PrintIfNotNone("mkdir %s" % pipes.quote(dest_dir))
+      else:
+        os.mkdir(dest_dir, source_mode)
+        os.chmod(dest_dir, source_mode)
+
+    LinkFiles(source, dest, directory, files,
+              dryrun=dryrun, force=force)
+
+
+def LinkFiles(source, dest, directory, files,
+              dryrun=False, force=False):
+  """Link files from source to dest.
+
+  Args:
+    source:    the toplevel source directory.
+    dest:      the toplevel dest directory.
+    directory: the directory the files are in, relative to source and dest.
+    files:     the files in source/directory.
+    dryrun:    if true, the filesystem will not be changed.  Defaults to false.
+    force:     existing files will be removed if necessary.  dryrun overrides
+               force.
+
+  Returns:
+    Nothing
+
+  Raises:
+    UnexpectedFileError: A file or directory was expected, but something else
+                         was found instead.
+  """
+
+  for filename in files:
+    source_filename = os.path.join(directory, filename)
+    dest_filename = source_filename.replace(source, dest, 1)
+
+    # To correctly fake things during a dryrun, we need to remember when we
+    # delete a destination file.
+    file_was_removed = False
+
+    if (os.path.islink(dest_filename)
+        or (os.path.exists(dest_filename)
+            and not os.path.isfile(dest_filename))):
+      if force:
+        PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
+        file_was_removed = True
+      else:
+        raise UnexpectedFileError("%s: is not a file" % dest_filename)
+
+    if os.path.exists(dest_filename) and not file_was_removed:
+      if os.path.samefile(source_filename, dest_filename):
+        # The file is correctly linked.
+        continue
+
+      diffs = Diff(source_filename, dest_filename)
+      if not diffs:
+        print ("%s and %s are different files but have the same contents"
+               % (source_filename, dest_filename))
+      else:
+        print diffs
+
+      if force:
+        PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
+        file_was_removed = True
+
+    if file_was_removed or not os.path.exists(dest_filename):
+      if dryrun:
+        PrintIfNotNone("ln %s %s" % (pipes.quote(source_filename),
+                                     pipes.quote(dest_filename)))
+      else:
+        os.link(source_filename, dest_filename)
+
+
+def main(argv):
+  # __doc__ is written to pass pylint checks, so it must be changed before being
+  # used as a usage message.
+  usage = __doc__.rstrip().replace(".", "", 1)
+  argv_parser = optparse.OptionParser(usage=usage)
+  argv_parser.add_option("-d", "-n", "--dryrun",
+                         action="store_true", dest="dryrun", default=False,
+                         help="Perform a trial run with no changes made")
+  argv_parser.add_option("-f", "--force",
+                         action="store_true", dest="force", default=False,
+                         help="Remove existing files if necessary")
+  (options, args) = argv_parser.parse_args(argv[1:])
+  if len(args) != 2:
+    sys.exit("Usage: %s [OPTIONS] SOURCE_DIR DEST_DIR" % argv[0])
+
+  try:
+    LinkDir(args[0], args[1], dryrun=options.dryrun, force=options.force)
+  except ArgumentError, arg_error:
+    sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
+  except UnexpectedFileError, unexpected_file:
+    sys.exit("%s: %s" % (argv[0], unexpected_file.args[0]))
+
+
+if __name__ == "__main__":
+  main(sys.argv)
