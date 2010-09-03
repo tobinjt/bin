@@ -35,7 +35,7 @@ sub get_options {
 			dryrun		=> 0,
 			diff		=> 0,
 			fromdir		=> File::Spec->catdir ( $ENV{HOME},
-							".dotfiles", "trunk" ),
+							".dotfiles"),
 			todir		=> $ENV{HOME},
 		);
 	
@@ -71,7 +71,7 @@ sub create_dirs {
 	$Options{onlydotfiles} and LOG_INFO "Skipping non-dotfiles\n"
 		and push @exclude, qr /^[^.]/;
 	$Options{cvs} or LOG_INFO "Skipping CVS/.svn directories\n"
-		and push @exclude, 'CVS', '.svn';
+		and push @exclude, 'CVS', '.svn', '.git', '.gnupg';
 	LOG_DUMP "exclusions", \@exclude;
 	@exclude and $find_dirs->or ( $find_dirs->new ()
 						->name ( @exclude )
@@ -118,7 +118,7 @@ sub hard_link_files {
 	$Options{onlydotfiles} and LOG_INFO "Skipping non-dotfiles\n"
 		and push @exclude, qr /^[^.]/;
 	$Options{cvs} or LOG_INFO "Skipping CVS/.svn directories\n"
-		and push @exclude, 'CVS', '.svn';
+		and push @exclude, 'CVS', '.svn', '.git', '.gnupg';
 	LOG_DUMP "exclusions", \@exclude;
 	@exclude and $find_files->or (	$find_files->new ()
 							->name ( @exclude )

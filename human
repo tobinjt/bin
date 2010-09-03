@@ -13,7 +13,7 @@ while (<>) {
     my @parts = split /(^|\s)($RE{num}{real})(\s|$)/o;
     foreach my $part (@parts) {
         if ($part =~ m/^$RE{num}{real}$/o) {
-            printf q{%s (%s, %s)}, $part, format_number($part), format_bytes($part);
+            printf q{%s (%s; %s)}, $part, format_number($part), format_bytes($part);
         } else {
             print $part;
         }
