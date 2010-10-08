@@ -10,10 +10,16 @@ use Regexp::Common;
 
 while (<>) {
     chomp;
-    my @parts = split /(^|\s)($RE{num}{real})(\s|$)/o;
+    my @parts = split /\b($RE{num}{real})\b/o;
     foreach my $part (@parts) {
-        if ($part =~ m/^$RE{num}{real}$/o) {
-            printf q{%s (%s; %s)}, $part, format_number($part), format_bytes($part);
+        if ($part =~ m/^$RE{num}{real}$/o and $part ne q{.}) {
+            # Only humanise if it will help.
+            my $format_number = format_number($part);
+            if ($format_number eq $part) {
+                print $part;
+            } else {
+                printf q{%s (%s; %s)}, $part, $format_number, format_bytes($part);
+            }
         } else {
             print $part;
         }
