@@ -11,6 +11,7 @@ people, or the probability of a collision between N of M things.
 
 __author__ = "johntobin@google.com (John Tobin)"
 
+import decimal
 import sys
 
 
@@ -47,9 +48,10 @@ def Birthday(num_days, num_people):
     A number between 0 and 1 giving the probability of a collision.
   """
 
-  numerator = Factorial(num_days) / Factorial(num_days - num_people)
-  denominator = num_days ** num_people
-  probability_of_no_collision = 1.0 * numerator / denominator
+  numerator = (decimal.Decimal(Factorial(num_days))
+               / decimal.Decimal(Factorial(num_days - num_people)))
+  denominator = decimal.Decimal(num_days) ** decimal.Decimal(num_people)
+  probability_of_no_collision = numerator / denominator
   return 1 - probability_of_no_collision
 
 
