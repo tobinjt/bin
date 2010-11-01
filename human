@@ -5,8 +5,19 @@
 use strict;
 use warnings;
 
-use Number::Format qw(format_number format_bytes);
+use Number::Format qw(format_bytes);
 use Regexp::Common;
+
+sub format_number {
+  my ($number) = @_;
+
+  my ($before_dot, $after_dot) = split /\./, $number, 2;
+  1 while ($before_dot =~ s/(\d)(\d{3}(?:,|$))/$1,$2/);
+  if ($after_dot) {
+    return qq{$before_dot.$after_dot};
+  }
+  return $before_dot;
+}
 
 while (<>) {
     chomp;
