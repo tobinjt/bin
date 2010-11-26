@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-#
-# Copyright 2010 Google Inc. All Rights Reserved.
-
-# pylint: disable-msg=C6301
 
 """%prog [OPTIONS] FILENAME1 FILENAME2 [FILENAMES].
 
