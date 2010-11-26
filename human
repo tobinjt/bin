@@ -21,7 +21,7 @@ sub format_bytes {
     }
   }
 
-  return $big_number . $last_suffix;
+  return sprintf "%.3f%s", $big_number, $last_suffix;
 }
 
 sub format_number {
