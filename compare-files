@@ -38,18 +38,23 @@ def main(argv):
   sample_values = {}
   for filename in filenames:
     data[filename] = {}
+    keys_in_filename = {}
     line_number = 0
     try:
       file_handle = open(filename, "r")
     except IOError, e:
       sys.exit("%s: %s" % (filename, e.strerror))
     for line in file_handle:
-      line = line.rstrip("\n")
       line_number += 1
+      line = line.rstrip("\n")
       fields = re.split(options.delimiter, line, 1)
       if len(fields) != 2:
         sys.exit("%s: %s: missing delimiter" % (filename, line_number))
       key, value = fields
+      if key in keys_in_filename:
+        sys.exit("%s: %d: duplicate key \"%s\" previously seen at line %d" %
+            (key, line_number, key, keys_in_filename[key]))
+      keys_in_filename[key] = line_number
       data[filename][key] = value
       sample_values[key] = value
       all_keys[key] = 1
