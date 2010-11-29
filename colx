@@ -3,7 +3,7 @@
 """%prog [OPTIONS] COLUMN [COLUMNS] [FILES].
 
 Extract the specified columns from FILES or stdin.
-Column numbering starts at 1, not 0.
+Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
 """
 
 import fileinput
@@ -41,9 +41,7 @@ def main(argv):
       continue
     if re.match(r"^\d+$", arg):
       column = int(arg)
-      if column == 0:
-        sys.exit("Column numbering starts at 1, not 0")
-      options.columns.append(column - 1)
+      options.columns.append(column)
     else:
       remaining_args_are_filenames = True
       options.filenames.append(arg)
@@ -54,7 +52,8 @@ def main(argv):
 
   for line in fileinput.input(options.filenames):
     line = line.rstrip("\n")
-    input_columns = re.split(options.delimiter, line)
+    input_columns = [line]
+    input_columns.extend(re.split(options.delimiter, line))
     output_columns = []
     for column in options.columns:
       if column < len(input_columns):
