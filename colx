@@ -4,6 +4,7 @@
 
 Extract the specified columns from FILES or stdin.
 Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
+If a line starts with the delimiter, column 1 will be empty.
 """
 
 import fileinput
