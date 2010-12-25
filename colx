@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+
+"""%prog [OPTIONS] COLUMN [COLUMNS] [FILES].
+
+Extract the specified columns from FILES or stdin.
+Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
+If a line starts with the delimiter, column 1 will be empty.
+"""
+
+import fileinput
+import optparse
+import re
+import sys
+
+__author__ = "johntobin@johntobin.ie (John Tobin)"
+
+
+def main(argv):
+  # __doc__ is written to pass pylint checks, so it must be changed before being
+  # used as a usage message.
+  usage = __doc__.rstrip().replace(".", "", 1)
+  argv_parser = optparse.OptionParser(usage=usage)
+  argv_parser.add_option("-d", "--delimiter",
+                         action="store", dest="delimiter", default=r"\s+",
+                         help="Regex delimiting input columns; "
+                         "defaults to whitespace")
+  argv_parser.add_option("-s", "--separator",
+                         action="store", dest="separator", default=" ",
+                         help="Separator between output columns; "
+                         "defaults to a single space")
+  (options, args) = argv_parser.parse_args(argv[1:])
+
+  options.columns = []
+  options.filenames = []
+  remaining_args_are_filenames = False
+  for arg in args:
+    if arg == "--":
+      remaining_args_are_filenames = True
+      continue
+    if remaining_args_are_filenames:
+      options.filenames.append(arg)
+      continue
+    if re.match(r"^\d+$", arg):
+      column = int(arg)
+      options.columns.append(column)
+    else:
+      remaining_args_are_filenames = True
+      options.filenames.append(arg)
+      continue
+
+  if not options.columns:
+    sys.exit("At least one COLUMN argument is required.")
+
+  for line in fileinput.input(options.filenames):
+    line = line.rstrip("\n")
+    input_columns = [line]
+    input_columns.extend(re.split(options.delimiter, line))
+    output_columns = []
+    for column in options.columns:
+      if column < len(input_columns):
+        output_columns.append(input_columns[column])
+    print options.separator.join(output_columns)
+
+
+if __name__ == "__main__":
+  main(sys.argv)

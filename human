@@ -5,15 +5,48 @@
 use strict;
 use warnings;
 
-use Number::Format qw(format_number format_bytes);
+use Math::BigFloat;
 use Regexp::Common;
+
+sub format_bytes {
+  my ($number) = @_;
+
+  my ($big_number) = Math::BigFloat->new($number);
+  my ($last_suffix) = q{};
+
+  foreach my $suffix (qw(kb mb gb tb pb)) {
+    if ($big_number > 1024) {
+      $big_number /= 1024;
+      $last_suffix = $suffix;
+    }
+  }
+
+  return sprintf "%.3f%s", $big_number, $last_suffix;
+}
+
+sub format_number {
+  my ($number) = @_;
+
+  my ($before_dot, $after_dot) = split /\./, $number, 2;
+  1 while ($before_dot =~ s/(\d)(\d{3}(?:,|$))/$1,$2/);
+  if ($after_dot) {
+    return qq{$before_dot.$after_dot};
+  }
+  return $before_dot;
+}
 
 while (<>) {
     chomp;
-    my @parts = split /(^|\s)($RE{num}{real})(\s|$)/o;
+    my @parts = split /\b($RE{num}{real})\b/o;
     foreach my $part (@parts) {
-        if ($part =~ m/^$RE{num}{real}$/o) {
-            printf q{%s (%s; %s)}, $part, format_number($part), format_bytes($part);
+        if ($part =~ m/^$RE{num}{real}$/o and $part ne q{.}) {
+            # Only humanise if it will help.
+            my $format_number = format_number($part);
+            if ($format_number eq $part) {
+                print $part;
+            } else {
+                printf q{%s (%s; %s)}, $part, $format_number, format_bytes($part);
+            }
         } else {
             print $part;
         }

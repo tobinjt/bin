@@ -7,6 +7,6 @@ use warnings;
 
 my $bullet_number = 1;
 while (<>) {
-    s/^\d+/$bullet_number++/e;
+    s/^(\s*)\d+/$1 . $bullet_number++/e;
     print;
 }

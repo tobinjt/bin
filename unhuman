@@ -1,0 +1,42 @@
+#!/usr/bin/env perl
+
+# $Id$
+
+use strict;
+use warnings;
+
+use Math::BigFloat;
+use Regexp::Common;
+
+my %suffixes = (
+  k => 1024,
+  m => 1024 ** 2,
+  g => 1024 ** 3,
+  t => 1024 ** 4,
+  p => 1024 ** 5,
+);
+
+my $suffix_re = join q{}, q{[}, keys %suffixes, q{]};
+$suffix_re .= q{(?:b?)};
+
+sub un_format_bytes {
+  my ($number, $suffix) = @_;
+
+  my ($big_number) = Math::BigFloat->new($number);
+  $suffix =~ s/b$//;
+  $suffix = lc $suffix;
+  return $big_number * $suffixes{$suffix};
+}
+
+while (<>) {
+    chomp;
+    my @parts = split /\b($RE{num}{real}$suffix_re)\b/io;
+    foreach my $part (@parts) {
+        if ($part =~ m/^($RE{num}{real})($suffix_re)$/io) {
+            print un_format_bytes($1, $2);
+        } else {
+            print $part;
+        }
+    }
+    print qq{\n};
+}
