@@ -9,10 +9,10 @@ This program calculates the probability of a birthday collision between N
 people, or the probability of a collision between N of M things.
 """
 
-__author__ = "johntobin@google.com (John Tobin)"
-
 import decimal
 import sys
+
+__author__ = "johntobin@google.com (John Tobin)"
 
 
 def Factorial(number):
@@ -37,7 +37,7 @@ def Factorial(number):
   return factorial
 
 
-def Birthday(num_days, num_people):
+def Birthday(num_people, num_days):
   """Calculate the probability of a birthday collision.
 
   Args:
@@ -69,7 +69,7 @@ def main(argv):
   if len(argv) == 3:
     num_days = int(argv[2])
 
-  print Birthday(num_days, num_people)
+  print Birthday(num_people, num_days)
 
 if __name__ == "__main__":
   main(sys.argv)
