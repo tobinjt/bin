@@ -52,7 +52,7 @@ def SafeUnlink(unlink_me, dryrun=True):
                removed.  Defaults to True.
 
   Returns:
-    None if dryrun is false, a string if dryrun is true.
+    Nothing if dryrun is false, a string if dryrun is true.
 
   Raises:
     OSError: there was a problem removing unlink_me.
@@ -112,7 +112,7 @@ def Diff(old_filename, new_filename):
 def LinkDir(source, dest,
             dirs_to_skip=("CVS", ".svn", ".hg", ".git"),
             dryrun=False, force=False):
-  """Link source directory to dest directory.
+  """Recursively link files in source directory to dest directory.
 
   Args:
     source:       the source directory
@@ -219,12 +219,15 @@ def LinkFiles(source, dest, directory, files,
 
       diffs = Diff(source_filename, dest_filename)
       if not diffs:
-        print ("%s and %s are different files but have the same contents"
+        print ("%s and %s are different files but have the same contents; "
+               "deleting and linking"
                % (source_filename, dest_filename))
+        PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
+        file_was_removed = True
       else:
         print diffs
 
-      if force:
+      if force and not file_was_removed:
         PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
         file_was_removed = True
 
