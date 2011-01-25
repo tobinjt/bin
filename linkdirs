@@ -5,7 +5,7 @@
 """%prog [OPTIONS] SOURCE_DIRECTORY DESTINATION_DIRECTORY.
 
 Link all files in SOURCE_DIRECTORY to DESTINATION_DIRECTORY, creating
-a directory hierarchy as necessary.
+the destination directory hierarchy where necessary.
 """
 
 import difflib
@@ -134,10 +134,9 @@ def LinkDir(source, dest,
                          was found instead.
   """
 
-  for directory in (source, dest):
-    if not os.path.isdir(directory):
-      raise ArgumentError("%s is not a directory" % directory)
   (source, dest) = (source.rstrip("/"), dest.rstrip("/"))
+  if not os.path.isdir(source):
+    raise ArgumentError("%s is not a directory" % source)
 
   for directory, subdirs, files in os.walk(source, topdown=True):
 
@@ -255,7 +254,8 @@ def main(argv):
     sys.exit("Usage: %s [OPTIONS] SOURCE_DIR DEST_DIR" % argv[0])
 
   try:
-    LinkDir(args[0], args[1], dryrun=options.dryrun, force=options.force)
+    (source, dest) = (args[0], args[1])
+    LinkDir(source, dest, dryrun=options.dryrun, force=options.force)
   except ArgumentError, arg_error:
     sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
   except UnexpectedFileError, unexpected_file:
