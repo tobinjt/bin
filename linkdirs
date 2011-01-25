@@ -218,6 +218,12 @@ def LinkFiles(source, dest, directory, files,
 
       diffs = Diff(source_filename, dest_filename)
       if not diffs:
+
+        num_links = os.stat(dest_filename)[stat.ST_NLINK]
+        if num_links != 1 and not force:
+          raise UnexpectedFileError("%s: link count is %d"
+                                    % (dest_filename, num_links))
+
         print ("%s and %s are different files but have the same contents; "
                "deleting and linking"
                % (source_filename, dest_filename))
