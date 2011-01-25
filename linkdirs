@@ -230,7 +230,8 @@ def LinkFiles(source, dest, directory, files,
         PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
         file_was_removed = True
       else:
-        print diffs
+        for diff in diffs:
+          print diff,
 
       if force and not file_was_removed:
         PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
