@@ -219,22 +219,23 @@ def LinkFiles(source, dest, directory, files,
         # The file is correctly linked.
         continue
 
-      diffs = Diff(source_filename, dest_filename)
-      if not diffs:
+      if not force:
+        diffs = Diff(source_filename, dest_filename)
+        if not diffs:
 
-        num_links = os.stat(dest_filename)[stat.ST_NLINK]
-        if num_links != 1 and not force:
-          raise UnexpectedFileError("%s: link count is %d"
-                                    % (dest_filename, num_links))
+          num_links = os.stat(dest_filename)[stat.ST_NLINK]
+          if num_links != 1 and not force:
+            raise UnexpectedFileError("%s: link count is %d"
+                                      % (dest_filename, num_links))
 
-        print ("%s and %s are different files but have the same contents; "
-               "deleting and linking"
-               % (source_filename, dest_filename))
-        PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
-        file_was_removed = True
-      else:
-        for diff in diffs:
-          print diff,
+          print ("%s and %s are different files but have the same contents; "
+                 "deleting and linking"
+                 % (source_filename, dest_filename))
+          PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
+          file_was_removed = True
+        else:
+          for diff in diffs:
+            print diff,
 
       if force and not file_was_removed:
         PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
