@@ -109,16 +109,14 @@ def Diff(old_filename, new_filename):
   return diffs
 
 
-def LinkDir(source, dest,
-            dirs_to_skip=("CVS", ".svn", ".hg", ".git"),
-            dryrun=False, force=False):
+def LinkDir(source, dest, skip=None, dryrun=False, force=False):
   """Recursively link files in source directory to dest directory.
 
   Args:
     source:       the source directory
     dest:         the destination directory
-    dirs_to_skip: directories under source that will be skipped.
-                  Defaults to ("CVS", ".svn", ".hg", ".git")
+    skip:         files and directories under source that will be skipped.
+                  Defaults to None.
     dryrun:       if true, the filesystem will not be changed; shell commands
                   will be printed instead.  Defaults to false.
     force:        existing files will be removed if necessary.  dryrun overrides
@@ -140,10 +138,11 @@ def LinkDir(source, dest,
 
   for directory, subdirs, files in os.walk(source, topdown=True):
 
-    for skip_dir in dirs_to_skip:
-      # Remove VCS dirs
-      if skip_dir in subdirs:
-        subdirs.remove(skip_dir)
+    if skip:
+      for skip_dir in skip:
+        # Remove VCS dirs
+        if skip_dir in subdirs:
+          subdirs.remove(skip_dir)
 
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
@@ -170,11 +169,11 @@ def LinkDir(source, dest,
         os.chmod(dest_dir, source_mode)
 
     LinkFiles(source, dest, directory, files,
-              dryrun=dryrun, force=force)
+              dryrun=dryrun, force=force, skip=skip)
 
 
 def LinkFiles(source, dest, directory, files,
-              dryrun=False, force=False):
+              dryrun=False, force=False, skip=None):
   """Link files from source to dest.
 
   Args:
@@ -185,6 +184,7 @@ def LinkFiles(source, dest, directory, files,
     dryrun:    if true, the filesystem will not be changed.  Defaults to false.
     force:     existing files will be removed if necessary.  dryrun overrides
                force.
+    skip:      a list of filenames to skip.  Defaults to None.
 
   Returns:
     Nothing
@@ -195,6 +195,9 @@ def LinkFiles(source, dest, directory, files,
   """
 
   for filename in files:
+    if skip and filename in skip:
+      continue
+
     source_filename = os.path.join(directory, filename)
     dest_filename = source_filename.replace(source, dest, 1)
 
@@ -249,20 +252,31 @@ def main(argv):
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
   usage = __doc__.rstrip().replace(".", "", 1)
-  argv_parser = optparse.OptionParser(usage=usage)
+  argv_parser = optparse.OptionParser(usage=usage, version="%prog 1.0")
   argv_parser.add_option("-d", "-n", "--dryrun",
                          action="store_true", dest="dryrun", default=False,
-                         help="Perform a trial run with no changes made")
+                         help=("Perform a trial run with no changes made"
+                               " (default: %default)"))
   argv_parser.add_option("-f", "--force",
                          action="store_true", dest="force", default=False,
-                         help="Remove existing files if necessary")
+                         help=("Remove existing files if necessary"
+                               " (default: %default)"))
+  argv_parser.add_option("-s", "--skip",
+                         action="append", dest="skip",
+                         metavar="FILENAME",
+                         default=["CVS", ".svn", ".hg", ".git"],
+                         help=("Extra files or directories to skip"
+                               " (appended to this list: %default)."
+                               "  To specify multiple filenames, use this"
+                               " option multiple times."))
   (options, args) = argv_parser.parse_args(argv[1:])
   if len(args) != 2:
     sys.exit("Usage: %s [OPTIONS] SOURCE_DIR DEST_DIR" % argv[0])
 
   try:
     (source, dest) = (args[0], args[1])
-    LinkDir(source, dest, dryrun=options.dryrun, force=options.force)
+    LinkDir(source, dest, skip=options.skip, dryrun=options.dryrun,
+            force=options.force)
   except ArgumentError, arg_error:
     sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
   except UnexpectedFileError, unexpected_file:
