@@ -49,7 +49,7 @@ def main(argv):
       key, value = fields
       if key in keys_in_filename:
         sys.exit("%s: %d: duplicate key \"%s\" previously seen at line %d" %
-            (key, line_number, key, keys_in_filename[key]))
+                 (filename, line_number, key, keys_in_filename[key]))
       keys_in_filename[key] = line_number
       data[filename][key] = value
       sample_values[key] = value
