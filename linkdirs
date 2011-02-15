@@ -102,9 +102,9 @@ def Diff(old_filename, new_filename):
   old_contents = open(old_filename, "r").readlines()
   new_timestamp = time.ctime(os.stat(new_filename).st_mtime)
   new_contents = open(new_filename, "r").readlines()
-  diff_generator = difflib.unified_diff(old_contents, new_contents,
-                                        old_filename, new_filename,
-                                        old_timestamp, new_timestamp)
+  diff_generator = difflib.unified_diff(new_contents, old_contents,
+                                        new_filename, old_filename,
+                                        new_timestamp, old_timestamp)
   diffs = [diff for diff in diff_generator]
   return diffs
 
