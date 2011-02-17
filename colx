@@ -4,7 +4,8 @@
 
 Extract the specified columns from FILES or stdin.
 Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
-If a line starts with the delimiter, column 1 will be empty.
+When each line is split, empty leading columns will be discarded _before_
+columns are extracted.
 """
 
 import fileinput
@@ -54,7 +55,11 @@ def main(argv):
   for line in fileinput.input(options.filenames):
     line = line.rstrip("\n")
     input_columns = [line]
-    input_columns.extend(re.split(options.delimiter, line))
+    split_columns = re.split(options.delimiter, line)
+    first_index = 0
+    while len(split_columns) >= first_index and not split_columns[first_index]:
+      first_index += 1
+    input_columns.extend(split_columns[first_index:])
     output_columns = []
     for column in options.columns:
       if column < len(input_columns):
