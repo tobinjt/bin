@@ -4,6 +4,11 @@
 
 Extract the specified columns from FILES or stdin.
 Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
+Negative column numbers are accepted; -1 is the last column, -2 is the second
+last, etc.  Note that negative column numbers may not behave as you expect when
+files have a variable number of columns per line: e.g. in line 1 column -1 is
+column 10, but in line 2 column -1 is column 5.
+Column numbers that are out of bounds are silently ignored.
 When each line is split, empty leading columns will be discarded _before_
 columns are extracted.
 """
@@ -35,34 +40,30 @@ def main(argv):
   options.filenames = []
   remaining_args_are_filenames = False
   for arg in args:
-    if arg == "--":
-      remaining_args_are_filenames = True
-      continue
     if remaining_args_are_filenames:
       options.filenames.append(arg)
       continue
-    if re.match(r"^\d+$", arg):
+    try:
       column = int(arg)
       options.columns.append(column)
-    else:
+    except ValueError:
       remaining_args_are_filenames = True
       options.filenames.append(arg)
-      continue
 
   if not options.columns:
-    sys.exit("At least one COLUMN argument is required.")
+    argv_parser.error("At least one COLUMN argument is required.")
 
   for line in fileinput.input(options.filenames):
     line = line.rstrip("\n")
     input_columns = [line]
     split_columns = re.split(options.delimiter, line)
     first_index = 0
-    while len(split_columns) >= first_index and not split_columns[first_index]:
+    while len(split_columns) > first_index and not split_columns[first_index]:
       first_index += 1
     input_columns.extend(split_columns[first_index:])
     output_columns = []
     for column in options.columns:
-      if column < len(input_columns):
+      if abs(column) < len(input_columns):
         output_columns.append(input_columns[column])
     print options.separator.join(output_columns)
 
