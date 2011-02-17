@@ -3,12 +3,18 @@
 """%prog [OPTIONS] COLUMN [COLUMNS] [FILES].
 
 Extract the specified columns from FILES or stdin.
+
 Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
+
 Negative column numbers are accepted; -1 is the last column, -2 is the second
 last, etc.  Note that negative column numbers may not behave as you expect when
 files have a variable number of columns per line: e.g. in line 1 column -1 is
-column 10, but in line 2 column -1 is column 5.
+column 10, but in line 2 column -1 is column 5.  You need to put -- before the
+first negative column number, otherwise it will be interpreted as a non-existen
+option.
+
 Column numbers that are out of bounds are silently ignored.
+
 When each line is split, empty leading columns will be discarded _before_
 columns are extracted.
 """
