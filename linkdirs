@@ -8,6 +8,8 @@ Link all files in SOURCE_DIRECTORY to DESTINATION_DIRECTORY, creating
 the destination directory hierarchy where necessary.
 """
 
+# XXX add an option to skip file patterns, and make *.swp part of the default.
+
 import difflib
 import optparse
 import os
@@ -123,7 +125,7 @@ def LinkDir(source, dest, skip=None, dryrun=False, force=False):
                   force.
 
   Returns:
-    Nothing.
+    A list of files and directories that should exist in the destination.
 
   Raises:
     ArgumentError:       something was wrong with source or dest argument.
@@ -136,6 +138,7 @@ def LinkDir(source, dest, skip=None, dryrun=False, force=False):
   if not os.path.isdir(source):
     raise ArgumentError("%s is not a directory" % source)
 
+  expected_files = []
   for directory, subdirs, files in os.walk(source, topdown=True):
 
     if skip:
@@ -147,6 +150,7 @@ def LinkDir(source, dest, skip=None, dryrun=False, force=False):
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
       dest_dir = source_dir.replace(source, dest, 1)
+      expected_files.append(dest_dir)
       source_stat = os.stat(source_dir)
       source_mode = stat.S_IMODE(source_stat.st_mode)
 
@@ -168,8 +172,10 @@ def LinkDir(source, dest, skip=None, dryrun=False, force=False):
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
 
-    LinkFiles(source, dest, directory, files,
-              dryrun=dryrun, force=force, skip=skip)
+    expected_files.extend(LinkFiles(source, dest, directory, files,
+                                    dryrun=dryrun, force=force, skip=skip))
+
+  return expected_files
 
 
 def LinkFiles(source, dest, directory, files,
@@ -187,19 +193,22 @@ def LinkFiles(source, dest, directory, files,
     skip:      a list of filenames to skip.  Defaults to None.
 
   Returns:
-    Nothing
+    A list of files and directories that should exist in the destination,
+    excluding files that are skipped.
 
   Raises:
     UnexpectedFileError: A file or directory was expected, but something else
                          was found instead.
   """
 
+  expected_files = []
   for filename in files:
     if skip and filename in skip:
       continue
 
     source_filename = os.path.join(directory, filename)
     dest_filename = source_filename.replace(source, dest, 1)
+    expected_files.append(dest_filename)
 
     # To correctly fake things during a dryrun, we need to remember when we
     # delete a destination file.
@@ -248,6 +257,59 @@ def LinkFiles(source, dest, directory, files,
       else:
         os.link(source_filename, dest_filename)
 
+  return expected_files
+
+
+def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list,
+                                   ignore_unexpected_children=False):
+  """Check for files in destdir that aren't in source_dir.
+
+  Args:
+    dest_dir: the destination directory.
+    expected_files_list: a list of files expected to exist in the destination.
+    ignore_unexpected_children: Ignore unexpected top level files and
+                                directories.  Defaults to false.
+
+  Returns:
+    (dirs, files): A list of files and directories in dest_dir that aren't in
+                   source_dir.
+  """
+
+  expected_files = {dest_dir: 1}
+  for entry in expected_files_list:
+    expected_files[entry] = 1
+
+  for directory, subdirs, files in os.walk(dest_dir, topdown=True):
+    if directory == dest_dir and ignore_unexpected_children:
+      unexpected = [subdir for subdir in subdirs
+                    if os.path.join(directory, subdir) not in expected_files]
+      for subdir in unexpected:
+        subdirs.remove(subdir)
+      for filename in files:
+        expected_files[os.path.join(directory, filename)] = 1
+
+    for (my_list, my_type) in ((subdirs, "directory"), (files, "file")):
+      for entry in my_list:
+        full_path = os.path.join(directory, entry)
+        if full_path not in expected_files:
+          print >> sys.stderr, "Unexpected %s: %s" % (my_type, full_path)
+
+
+def UnLineWrapString(a_string):
+  """Undo line wrapping.
+
+  Replace all whitespace sequences with a single space, and strip leading and
+  trailing whitespace.
+
+  Args:
+    a_string: the string to be unwrapped.
+
+  Returns:
+    A string.
+  """
+
+  return " ".join(a_string.split()).strip()
+
 
 def main(argv):
   # __doc__ is written to pass pylint checks, so it must be changed before being
@@ -256,28 +318,50 @@ def main(argv):
   argv_parser = optparse.OptionParser(usage=usage, version="%prog 1.0")
   argv_parser.add_option("-d", "-n", "--dryrun",
                          action="store_true", dest="dryrun", default=False,
-                         help=("Perform a trial run with no changes made"
-                               " (default: %default)"))
+                         help=UnLineWrapString("""Perform a trial run with no
+                                               changes made (default:
+                                               %default)"""))
   argv_parser.add_option("-f", "--force",
                          action="store_true", dest="force", default=False,
-                         help=("Remove existing files if necessary"
-                               " (default: %default)"))
+                         help=UnLineWrapString("""Remove existing files if
+                                               necessary (default:
+                                               %default)"""))
+  argv_parser.add_option("-i", "--ignore_unexpected_children",
+                         action="store_true", dest="ignore_unexpected_children",
+                         default=False,
+                         help=UnLineWrapString("""When checking for unexpected
+                                               files or directories, ignore
+                                               children of
+                                               DESTINATION_DIRECTORY;
+                                               grandchildren of
+                                               DESTINATION_DIRECTORY will not be
+                                               ignored (default: %default)"""))
+  argv_parser.add_option("-r", "--report_unexpected_files",
+                         action="store_true", dest="report_unexpected_files",
+                         default=False,
+                         help=UnLineWrapString("""Report unexpected files in
+                                               DESTINATION_DIRECTORY (default:
+                                               %default)"""))
   argv_parser.add_option("-s", "--skip",
                          action="append", dest="skip",
                          metavar="FILENAME",
                          default=["CVS", ".svn", ".hg", ".git"],
-                         help=("Extra files or directories to skip"
-                               " (appended to this list: %default)."
-                               "  To specify multiple filenames, use this"
-                               " option multiple times."))
+                         help=UnLineWrapString("""Extra files or directories to
+                                               skip (appended to this list:
+                                               %default).  To specify multiple
+                                               filenames, use this option
+                                               multiple times."""))
   (options, args) = argv_parser.parse_args(argv[1:])
   if len(args) != 2:
     sys.exit("Usage: %s [OPTIONS] SOURCE_DIR DEST_DIR" % argv[0])
 
   try:
     (source, dest) = (args[0], args[1])
-    LinkDir(source, dest, skip=options.skip, dryrun=options.dryrun,
-            force=options.force)
+    expected_files = LinkDir(source, dest, skip=options.skip,
+                             dryrun=options.dryrun, force=options.force)
+    if options.report_unexpected_files:
+      ReportUnexpectedFilesInDestDir(dest, expected_files,
+                                     options.ignore_unexpected_children)
   except ArgumentError, arg_error:
     sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
   except UnexpectedFileError, unexpected_file:
