@@ -17,7 +17,7 @@ def MakeNaturalSortKey(something):
   converted_fields = []
   for field in fields:
     try:
-      converted_fields.append(int(field))
+      converted_fields.append(float(field))
     except ValueError:
       converted_fields.append(field)
   return converted_fields
