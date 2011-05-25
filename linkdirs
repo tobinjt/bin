@@ -1,6 +1,4 @@
-#!/usr/bin/python2.4
-#
-# Copyright 2010 Google Inc. All Rights Reserved.
+#!/usr/bin/python
 
 """%prog [OPTIONS] SOURCE_DIRECTORY DESTINATION_DIRECTORY.
 
