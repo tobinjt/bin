@@ -1,0 +1,11 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+while (<>) {
+    chomp;
+    my @parts = split /'/;
+    my $output = join q{'\''}, @parts;
+    print qq{'${output}'\n};
+}

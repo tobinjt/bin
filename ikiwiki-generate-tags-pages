@@ -151,7 +151,7 @@ sub get_options {
 sub check_output_directory {
     my ($output_directory) = @_;
 
-    if ($output_directory !~ m/\/$config{tagbase}(?:\/)?$/) {
+    if ($output_directory !~ m/(^|\/)$config{tagbase}(?:\/)?$/) {
         die <<"BAD_DIRECTORY";
 $0: output directory '$output_directory' does not end with tagbase '$config{tagbase}'
 BAD_DIRECTORY

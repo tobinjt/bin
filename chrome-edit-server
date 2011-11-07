@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -e
+
+exec "${HOME}/src/emacs_chrome/servers/pycl.py" --editor="gvim,--nofork"
