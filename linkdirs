@@ -28,21 +28,11 @@ class Error(Exception):
 
 
 class ArgumentError(Error):
-  """Something was wrong with one of the arguments passed to a function.
-
-  Attributes:
-    args: the arguments passed when the exception was raised; in general,
-          this should be a single string argument.
-  """
+  """Something was wrong with one of the arguments passed to a function."""
 
 
 class UnexpectedFileError(Error):
-  """A file or directory was expected, but something else was found.
-
-  Attributes:
-    args: the arguments passed when the exception was raised; in general,
-          this should be a single string argument.
-  """
+  """A file or directory was expected, but something else was found."""
 
 
 def SafeUnlink(unlink_me, dryrun=True):
