@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable-msg=C6304
 
 """%prog [OPTIONS] COLUMN [COLUMNS] [FILES].
 
@@ -63,10 +64,16 @@ def main(argv):
     line = line.rstrip("\n")
     input_columns = [line]
     split_columns = re.split(options.delimiter, line)
+
+    # Strip leading and trailing empty fields.
     first_index = 0
     while len(split_columns) > first_index and not split_columns[first_index]:
       first_index += 1
-    input_columns.extend(split_columns[first_index:])
+    last_index = len(split_columns) - 1
+    while last_index > first_index and not split_columns[last_index]:
+      last_index -= 1
+    input_columns.extend(split_columns[first_index:last_index + 1])
+
     output_columns = []
     for column in options.columns:
       if abs(column) < len(input_columns):
