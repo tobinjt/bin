@@ -255,8 +255,8 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list,
   Args:
     dest_dir: the destination directory.
     expected_files_list: a list of files expected to exist in the destination.
-    ignore_unexpected_children: Ignore unexpected top level files and
-                                directories.  Defaults to false.
+    ignore_unexpected_children: Ignore unexpected top level directories.
+                                Defaults to false.
 
   Returns:
     (dirs, files): A list of files and directories in dest_dir that aren't in
@@ -273,11 +273,9 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list,
                     if os.path.join(directory, subdir) not in expected_files]
       for subdir in unexpected:
         subdirs.remove(subdir)
-      for filename in files:
-        expected_files[os.path.join(directory, filename)] = 1
 
     for (my_list, my_type) in ((subdirs, "directory"), (files, "file")):
-      for entry in my_list:
+      for entry in sorted(my_list):
         full_path = os.path.join(directory, entry)
         if full_path not in expected_files:
           print >> sys.stderr, "Unexpected %s: %s" % (my_type, full_path)
@@ -319,9 +317,9 @@ def main(argv):
                          default=False,
                          help=UnLineWrapString("""When checking for unexpected
                                                files or directories, ignore
-                                               children of
-                                               DESTINATION_DIRECTORY;
-                                               grandchildren of
+                                               unexpected child directories in
+                                               DESTINATION_DIRECTORY; unexpected
+                                               grandchild directories of
                                                DESTINATION_DIRECTORY will not be
                                                ignored (default: %default)"""))
   argv_parser.add_option("-r", "--report_unexpected_files",
