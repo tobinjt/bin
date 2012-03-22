@@ -275,7 +275,10 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list,
         subdirs.remove(subdir)
 
     for (my_list, my_type) in ((subdirs, "directory"), (files, "file")):
-      for entry in sorted(my_list):
+      # Sort in-place so that os.walk will traverse subdirs in sorted order,
+      # and the output will be sorted.
+      my_list.sort()
+      for entry in my_list:
         full_path = os.path.join(directory, entry)
         if full_path not in expected_files:
           print >> sys.stderr, "Unexpected %s: %s" % (my_type, full_path)
