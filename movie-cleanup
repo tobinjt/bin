@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use feature qw(say);
+
+use File::Spec::Functions;
+
+my @banned_words = qw(dvdrip dvd-rip klaxxon axxo divx avi xvid fxg unrated
+                      stealthmaster dvdscr ac3 repack r5 maxspeed www torentz
+                      3xforum ro dvd rip vomit uncut fxm screener {1337x} hdtv
+                      1080p brrip x264 yify);
+my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
+my %new_filenames;
+foreach my $filename (glob q{*}) {
+    $filename =~ m/^(.*)\.([^.]+)$/;
+    my ($name, $ext) = ($1, $2);
+    if (not defined $ext) {
+        warn qq{Strange filename: $filename\n};
+    }
+    $ext = lc $ext;
+
+    # Remove [stuff in square brackets]
+    $name =~ s/\[[^]]*\]/ /g;
+    # Remove (stuff in parentheses)
+    $name =~ s/\([^)]*\)/ /g;
+    # Substitute "&" with "and"
+    $name =~ s/&/and/g;
+    # mangle each word, discarding words we don't want.
+    my @words = map { ucfirst }
+                    map { s/^(?:part|cd)([123])$/p$1/; $_; }
+                        grep { not exists $banned_words{$_} }
+                            grep { not m/^20[01][0-9]$/ }
+                                grep { length }
+                                    split /[- ._]+/,
+                                        lc $name;
+
+    my $newname = join q{ }, @words;
+    $newname .= qq{.$ext};
+    next if $newname eq $filename;
+
+    if ($new_filenames{$newname}++) {
+        warn qq{Already used: $filename -> $newname\n};
+        next;
+    }
+    if (-e $newname) {
+        if (lc $newname ne lc $filename) {
+            warn qq{Already exists: $filename -> $newname\n};
+            next;
+        }
+    }
+
+    # Work around Windows' case-insensitivity
+    my $temp_newname = qq{X$newname};
+    say qq{$filename -> $temp_newname -> $newname};
+    if ($new_filenames{$temp_newname}++) {
+        warn qq{Already used: $filename -> $temp_newname\n};
+        next;
+    }
+    if (-e $temp_newname) {
+        warn qq{Already exists: $filename -> $temp_newname\n};
+        next;
+    }
+    rename $filename, $temp_newname
+        or die qq{$0: failed renaming $filename -> $temp_newname: $!\n};
+    rename $temp_newname, $newname
+        or die qq{$0: failed renaming $temp_newname -> $newname: $!\n};
+}
