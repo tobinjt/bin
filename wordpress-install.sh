@@ -4,7 +4,7 @@ set -e
 set -u
 
 die() {
-    echo "$@" 1>&2
+    echo -e "$@" 1>&2
     exit 1
 }
 usage() {
@@ -33,10 +33,12 @@ SEPARATORS[theme]="."
 readonly SUBDIRS SEPARATORS
 WORDPRESS_BASE="/var/www/sites/arianetobin.ie/blog"
 readonly WORDPRESS_BASE
-cd "${WORDPRESS_BASE}/wp-content/${SUBDIRS[${TYPE}]}"
-if [[ -n "$( git status --short )" ]]; then
-    die "Uncommitted changes."
+cd "${WORDPRESS_BASE}"
+git_status="$( git status --short )"
+if [[ -n "${git_status}" ]]; then
+    die "Uncommitted changes:\n" "${git_status}"
 fi
+cd "${WORDPRESS_BASE}/wp-content/${SUBDIRS[${TYPE}]}"
 
 DOWNLOAD_DIR="/home/ariane/wordpress"
 DOWNLOAD_FILE="${NAME}${SEPARATORS[${TYPE}]}${VERSION}.zip"
@@ -58,6 +60,8 @@ if [[ "${TYPE}" == "wordpress" ]]; then
     # delete it.
     tar cf - -C wordpress . | tar xf -
     rm -rf wordpress
+    echo "You must go to dashboard/updates for a database update."
+    echo "If that loops, rename wp-super-cache plugin, or force reload."
 fi
 git add .
 (unset LESS; git diff --cached --shortstat)
