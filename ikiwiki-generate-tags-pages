@@ -3,7 +3,7 @@
 eval 'exec /usr/bin/perl  -S $0 ${1+"$@"}'
     if 0; # not running under some shell
 
-$SID{__DIE__} = sub {
+$SIG{__DIE__} = sub {
     # Ensure that the exit status is 2.
     $! = 2;
 };

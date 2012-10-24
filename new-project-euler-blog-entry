@@ -42,8 +42,7 @@ do {
 } while (<>);
 
 print <<"HEADER";
-[Project Euler problem
-$number:](http://projecteuler.net/index.php?section=problems&id=$number)
+[Project Euler problem $number:](http://projecteuler.net/problem=$number)
 
 HEADER
 print @output;
