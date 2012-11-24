@@ -8,16 +8,17 @@ die() {
     exit 1
 }
 usage() {
-    die "Usage: $0 [theme|plugin|wordpress] NAME VERSION"
+    die "Usage: $0 WORDPRESS-DIRECTORY [theme|plugin|wordpress] NAME VERSION"
 }
 
-if [[ "$#" -ne 3 ]]; then
+if [[ "$#" -ne 4 ]]; then
     usage
 fi
-TYPE="$1"
-NAME="$2"
-VERSION="$3"
-readonly TYPE NAME VERSION SUBDIR
+WORDPRESS_BASE="$1"
+TYPE="$2"
+NAME="$3"
+VERSION="$4"
+readonly WORDPRESS_BASE TYPE NAME VERSION SUBDIR
 if [[ "${TYPE}" != "plugin" && "${TYPE}" != "theme" \
         && "${TYPE}" != "wordpress" ]]; then
     usage
@@ -31,8 +32,6 @@ SEPARATORS[wordpress]="-"
 SEPARATORS[plugin]="."
 SEPARATORS[theme]="."
 readonly SUBDIRS SEPARATORS
-WORDPRESS_BASE="/var/www/sites/arianetobin.ie/blog"
-readonly WORDPRESS_BASE
 cd "${WORDPRESS_BASE}"
 git_status="$( git status --short )"
 if [[ -n "${git_status}" ]]; then
@@ -40,14 +39,16 @@ if [[ -n "${git_status}" ]]; then
 fi
 cd "${WORDPRESS_BASE}/wp-content/${SUBDIRS[${TYPE}]}"
 
-DOWNLOAD_DIR="/home/ariane/wordpress"
+DOWNLOAD_DIR="${HOME}/wordpress"
 DOWNLOAD_FILE="${NAME}${SEPARATORS[${TYPE}]}${VERSION}.zip"
 DOWNLOAD_PATH="${DOWNLOAD_DIR}/${DOWNLOAD_FILE}"
+readonly DOWNLOAD_DIR DOWNLOAD_FILE DOWNLOAD_PATH
 declare -A DOWNLOAD_URLS
 DOWNLOAD_URLS[wordpress]="http://wordpress.org/${DOWNLOAD_FILE}"
 DOWNLOAD_URLS[plugin]="http://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
 DOWNLOAD_URLS[theme]="http://wordpress.org/extend/themes/download/${DOWNLOAD_FILE}"
-readonly DOWNLOAD_URLS DOWNLOAD_DIR DOWNLOAD_FILE DOWNLOAD_PATH
+readonly DOWNLOAD_URLS
+mkdir -p "${DOWNLOAD_DIR}"
 if [[ ! -f "${DOWNLOAD_PATH}" ]]; then
     curl --output "${DOWNLOAD_PATH}" "${DOWNLOAD_URLS[${TYPE}]}" \
         || rm "${DOWNLOAD_PATH}"
