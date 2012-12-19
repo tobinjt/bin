@@ -49,9 +49,14 @@ DOWNLOAD_URLS[plugin]="http://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
 DOWNLOAD_URLS[theme]="http://wordpress.org/extend/themes/download/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_URLS
 mkdir -p "${DOWNLOAD_DIR}"
-if [[ ! -f "${DOWNLOAD_PATH}" ]]; then
-    curl --output "${DOWNLOAD_PATH}" "${DOWNLOAD_URLS[${TYPE}]}" \
-        || rm "${DOWNLOAD_PATH}"
+if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
+    if ! curl --output "${DOWNLOAD_PATH}" "${DOWNLOAD_URLS[${TYPE}]}" ; then
+        rm "${DOWNLOAD_PATH}"
+        die "Failed to download: ${DOWNLOAD_URLS[${TYPE}]}"
+    fi
+    if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
+        die "Missing or empty file: ${DOWNLOAD_PATH}"
+    fi
 fi
 
 unzip -q -o "${DOWNLOAD_PATH}"
