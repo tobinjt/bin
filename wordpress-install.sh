@@ -36,6 +36,10 @@ SUBDIRS[theme]="themes"
 SEPARATORS[wordpress]="-"
 SEPARATORS[plugin]="."
 SEPARATORS[theme]="."
+if [[ -z "${VERSION}" ]]; then
+    # This happens with WP Minify.
+    SEPARATORS[plugin]=""
+fi
 readonly SUBDIRS SEPARATORS
 cd "${WORDPRESS_BASE}/wp-content/${SUBDIRS[${TYPE}]}"
 
