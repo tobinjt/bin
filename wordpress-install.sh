@@ -23,6 +23,11 @@ if [[ "${TYPE}" != "plugin" && "${TYPE}" != "theme" \
         && "${TYPE}" != "wordpress" ]]; then
     usage
 fi
+cd "${WORDPRESS_BASE}"
+git_status="$( git status --short )"
+if [[ -n "${git_status}" ]]; then
+    die "Uncommitted changes:\n" "${git_status}"
+fi
 
 declare -A SUBDIRS SEPARATORS
 SUBDIRS[wordpress]=".."
@@ -32,11 +37,6 @@ SEPARATORS[wordpress]="-"
 SEPARATORS[plugin]="."
 SEPARATORS[theme]="."
 readonly SUBDIRS SEPARATORS
-cd "${WORDPRESS_BASE}"
-git_status="$( git status --short )"
-if [[ -n "${git_status}" ]]; then
-    die "Uncommitted changes:\n" "${git_status}"
-fi
 cd "${WORDPRESS_BASE}/wp-content/${SUBDIRS[${TYPE}]}"
 
 DOWNLOAD_DIR="${HOME}/wordpress"
