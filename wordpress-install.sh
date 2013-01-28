@@ -41,7 +41,7 @@ if [[ -z "${VERSION}" ]]; then
     SEPARATORS[plugin]=""
 fi
 readonly SUBDIRS SEPARATORS
-cd "${WORDPRESS_BASE}/wp-content/${SUBDIRS[${TYPE}]}"
+cd "wp-content/${SUBDIRS[${TYPE}]}"
 
 DOWNLOAD_DIR="${HOME}/wordpress"
 DOWNLOAD_FILE="${NAME}${SEPARATORS[${TYPE}]}${VERSION}.zip"
