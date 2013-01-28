@@ -1,0 +1,47 @@
+#!/bin/bash
+
+set -e
+usage() {
+  echo "Usage: $0 PATH [PATH . . .]"
+}
+warn() {
+  echo "$@" >&2
+}
+die() {
+  warn "$@"
+  exit 1
+}
+
+if [[ "$#" -eq 0 ]]; then
+  die "$( usage )"
+fi
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+for path in "$@"; do
+  echo "${path}";
+done \
+  | awk -F / '
+    { # Handle the presence or absence of leading slashes.
+      if ($0 ~ /^\//) {
+        path = "/";
+      } else {
+        path = "";
+      }
+      for (i = 1; i <= NF; i++) {
+        subdir = $i;
+        # Skip empty subdirs.  These come from repeated slashes, but also from
+        # before leading slashes.
+        if (subdir != "") {
+          if (length(path) > 0 && path !~ /\/$/) {
+            # The path already has contents and does not end with a slash, so we
+            # need one as a separator.
+            path = path "/";
+          }
+          path = path subdir;
+          print path;
+        }
+      }
+    }'
