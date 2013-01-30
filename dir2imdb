@@ -8,8 +8,10 @@ echo "    <title>${PWD} $@</title>"
 echo '  </head>'
 echo '  <body>'
 
-ls "$@" \
+command ls "$@" \
   | sed -e 's/\.[^.]*$//' \
+        -e 's/ S[0-9]\{1,2\}$//' \
+        -e 's/ Season [0-9]\{1,2\}$//' \
         -e 'h' \
         -e 's/ /+/g' \
         -e 's,^,<a href="http://www.imdb.com/find?q=,' \
@@ -17,7 +19,8 @@ ls "$@" \
         -e 'G' \
         -e 's/\n//' \
         -e 's,$,</a> <br/>,' \
-        -e 's/^/    /'
+        -e 's/^/    /' \
+  | uniq
 
 echo '  </body>'
 echo '</html>'
