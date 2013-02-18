@@ -2,7 +2,11 @@
 
 set -e
 usage() {
-  echo "Usage: $0 PATH [PATH . . .]"
+  cat <<USAGE
+Usage: $0 [-s N] PATH [PATH . . .]
+Args:
+  -s N: Skip output of paths with N or fewer components (/bin has 1 component).
+USAGE
 }
 warn() {
   echo "$@" >&2
@@ -12,10 +16,24 @@ die() {
   exit 1
 }
 
+SKIP=0
+while getopts hs: flag; do
+  case "${flag}" in
+    h)
+      usage
+      exit 0
+      ;;
+    s)
+      SKIP="${OPTARG}"
+      ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
+
 if [[ "$#" -eq 0 ]]; then
   die "$( usage )"
 fi
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+if [[ "$1" == "--help" ]]; then
   usage
   exit 0
 fi
@@ -30,18 +48,22 @@ done \
       } else {
         path = "";
       }
+      num_components = 0;
       for (i = 1; i <= NF; i++) {
         subdir = $i;
         # Skip empty subdirs.  These come from repeated slashes, but also from
         # before leading slashes.
         if (subdir != "") {
+          num_components++;
           if (length(path) > 0 && path !~ /\/$/) {
             # The path already has contents and does not end with a slash, so we
             # need one as a separator.
             path = path "/";
           }
           path = path subdir;
-          print path;
+          if (num_components > '"${SKIP}"') {
+            print path;
+          }
         }
       }
     }'
