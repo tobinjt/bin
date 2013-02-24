@@ -1,0 +1,49 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+if (@ARGV) {
+    die qq{Usage: $0 < go-code > foo.mdwn\n};
+}
+
+my @output;
+
+PROBLEM_LINE:
+while (<>) {
+    unless (m/^\*/ or m/^\/\*/ or m/^ \*\// or m/^$/) {
+        last PROBLEM_LINE;
+    }
+    next if m/^\/\*/ or m/^ \*\//;
+    s/^\*/>/;
+    push @output, $_;
+}
+
+push @output, <<"MIDDLE";
+Here's my Go solution:
+
+MIDDLE
+
+my $number;
+do {
+    if (m/func\s+projectEuler(\d+)/) {
+        if (defined $number) {
+            warn qq{$0: input contains more than one projectEuler function.\n};
+        }
+        $number = $1;
+    }
+    if (not m/^$/) {
+        s/^/    /;
+    }
+    push @output, $_;
+} while (<>);
+
+print <<"HEADER";
+[Project Euler problem $number:](http://projecteuler.net/problem=$number)
+
+HEADER
+print @output;
+print <<"FOOTER"
+
+[[!tag Go Project_Euler programming]]
+FOOTER
