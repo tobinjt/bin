@@ -14,7 +14,9 @@ while (<>) {
     unless (m/^\*/ or m/^\/\*/ or m/^ \*\// or m/^$/) {
         last PROBLEM_LINE;
     }
-    next if m/^\/\*/ or m/^ \*\//;
+    # Leave blank lines between blocks of comments.
+    s/^\/\*//;
+    s/^ \*\///;
     s/^\*/>/;
     push @output, $_;
 }
@@ -45,5 +47,5 @@ HEADER
 print @output;
 print <<"FOOTER"
 
-[[!tag Go Project_Euler programming]]
+[[!tag Golang Project_Euler programming]]
 FOOTER
