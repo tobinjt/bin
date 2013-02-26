@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Requires https://github.com/stsquad/emacs_chrome.git
+
 set -e
 
 exec "${HOME}/src/emacs_chrome/servers/pycl.py" --editor="gvim,--nofork"
