@@ -1,0 +1,9 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+foreach my $arg (@ARGV) {
+  $arg =~ s/%(..)/chr(hex($1))/eg;
+  print $arg, qq{\n};
+}
