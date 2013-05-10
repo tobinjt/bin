@@ -7,19 +7,11 @@ use feature qw(say);
 
 use File::Spec::Functions;
 
-my @banned_words = qw(dvdrip dvd-rip klaxxon axxo divx avi xvid fxg unrated
-                      stealthmaster dvdscr ac3 repack r5 maxspeed www torentz
-                      3xforum ro dvd rip vomit uncut fxm screener {1337x} hdtv
-                      1080p brrip x264 yify extended bdrip etrg);
+my @banned_words = qw();
 my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
 my %new_filenames;
 foreach my $filename (glob q{*}) {
-    $filename =~ m/^(.*)\.([^.]+)$/;
-    my ($name, $ext) = ($1, $2);
-    if (not defined $ext) {
-        warn qq{Strange filename: $filename\n};
-    }
-    $ext = lc $ext;
+    my ($name) = ($filename);
 
     # Remove [stuff in square brackets]
     $name =~ s/\[[^]]*\]/ /g;
@@ -33,12 +25,22 @@ foreach my $filename (glob q{*}) {
                         grep { not exists $banned_words{$_} }
                             grep { not m/^20[01][0-9]$/ }
                                 grep { length }
-                                    split /[- ._]+/,
+                                    split /[ ._]+/,
                                         lc $name;
 
     my $newname = join q{ }, @words;
-    $newname .= qq{.$ext};
     next if $newname eq $filename;
+
+    if ($newname =~ s, - | -|- ,/,) {
+        my $subdir = $newname;
+        $subdir =~ s,/.*,,;
+        if (not -d $subdir) {
+            if (not mkdir $subdir) {
+                warn qq{mkdir $subdir failed: $!\n};
+                next;
+            }
+        }
+    }
 
     if ($new_filenames{$newname}++) {
         warn qq{Already used: $filename -> $newname\n};
@@ -52,7 +54,7 @@ foreach my $filename (glob q{*}) {
     }
 
     # Work around Windows' case-insensitivity
-    my $temp_newname = qq{X$newname};
+    my $temp_newname = $newname . q{X};
     say qq{$filename -> $temp_newname -> $newname};
     if ($new_filenames{$temp_newname}++) {
         warn qq{Already used: $filename -> $temp_newname\n};
