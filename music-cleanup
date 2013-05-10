@@ -68,10 +68,10 @@ sub rename_dir {
         warn qq{Already exists: $oldname -> $temp_newname\n};
         return;
     }
-    # rename $oldname, $temp_newname
-        # or die qq{$0: failed renaming $oldname -> $temp_newname: $!\n};
-    # rename $temp_newname, $newname
-        # or die qq{$0: failed renaming $temp_newname -> $newname: $!\n};
+    rename $oldname, $temp_newname
+        or die qq{$0: failed renaming $oldname -> $temp_newname: $!\n};
+    rename $temp_newname, $newname
+        or die qq{$0: failed renaming $temp_newname -> $newname: $!\n};
 }
 
 foreach my $filename (glob q{*}) {
