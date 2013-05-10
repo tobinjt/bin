@@ -74,7 +74,7 @@ sub rename_dir {
         or die qq{$0: failed renaming $temp_newname -> $newname: $!\n};
 }
 
-foreach my $filename (glob q{*}) {
+foreach my $filename (sort glob q{*}) {
     my $newname = mangle_name($filename);
     next if $newname eq $filename;
     rename_dir($filename, $newname);
