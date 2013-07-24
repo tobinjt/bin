@@ -1,0 +1,81 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use feature qw(say);
+
+use File::Spec::Functions;
+
+my @banned_words = qw();
+my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
+my %new_names;
+
+sub mangle_name {
+    my ($name) = @_;
+
+    # Remove [stuff in square brackets]
+    $name =~ s/\[[^]]*\]/ /g;
+    # Remove (stuff in parentheses)
+    $name =~ s/\([^)]*\)/ /g;
+    # Substitute "&" with "and"
+    $name =~ s/&/and/g;
+    # mangle each word, discarding words we don't want.
+    my @words = map { ucfirst }
+                    map { s/^(?:part|cd)([123])$/p$1/; $_; }
+                        grep { not exists $banned_words{$_} }
+                            grep { not m/^20[01][0-9]$/ }
+                                grep { length }
+                                    split /[ ._]+/,
+                                        lc $name;
+
+    my $newname = join q{ }, @words;
+    return $newname;
+}
+
+sub rename_dir {
+    my ($oldname, $newname) = @_;
+    if ($newname =~ s, - | -|- ,/,) {
+        my $subdir = $newname;
+        $subdir =~ s,/.*,,;
+        if (not -d $subdir) {
+            if (not mkdir $subdir) {
+                warn qq{mkdir $subdir failed: $!\n};
+                return;
+            }
+        }
+    }
+
+    if ($new_names{$newname}++) {
+        warn qq{Already used: $oldname -> $newname\n};
+        return;
+    }
+    if (-e $newname) {
+        if (lc $newname ne lc $oldname) {
+            warn qq{Already exists: $oldname -> $newname\n};
+            return;
+        }
+    }
+
+    # Work around Windows' case-insensitivity
+    my $temp_newname = $newname . q{X};
+    say qq{$oldname -> $temp_newname -> $newname};
+    if ($new_names{$temp_newname}++) {
+        warn qq{Already used: $oldname -> $temp_newname\n};
+        return;
+    }
+    if (-e $temp_newname) {
+        warn qq{Already exists: $oldname -> $temp_newname\n};
+        return;
+    }
+    rename $oldname, $temp_newname
+        or die qq{$0: failed renaming $oldname -> $temp_newname: $!\n};
+    rename $temp_newname, $newname
+        or die qq{$0: failed renaming $temp_newname -> $newname: $!\n};
+}
+
+foreach my $filename (sort glob q{*}) {
+    my $newname = mangle_name($filename);
+    next if $newname eq $filename;
+    rename_dir($filename, $newname);
+}
