@@ -2,5 +2,7 @@
 
 set -e
 
-pkill nm-applet
-nm-applet &
+# pkill will fail if it can't find any jobs.
+pkill nm-applet || true
+nm-applet < /dev/null >& /dev/null &
+disown
