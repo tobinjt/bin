@@ -1,5 +1,0 @@
-#!/bin/sh
-
-set -e
-
-exec nc -x socks-proxy.cs.tcd.ie "$@"
