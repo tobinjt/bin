@@ -30,6 +30,9 @@ sub mangle_name {
                                         lc $name;
 
     my $newname = join q{ }, @words;
+    if ($name !~ m/[[:lower:]]/) {
+        $newname = uc $newname;
+    }
     return $newname;
 }
 
