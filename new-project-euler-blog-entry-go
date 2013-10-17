@@ -28,7 +28,7 @@ MIDDLE
 
 my $number;
 do {
-    if (m/func\s+projectEuler(\d+)/) {
+    if (m/func\s+projectEuler(\d+)\(/) {
         if (defined $number) {
             warn qq{$0: input contains more than one projectEuler function.\n};
         }
