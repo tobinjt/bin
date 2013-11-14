@@ -8,7 +8,7 @@ use warnings;
 use POSIX;
 use Time::HiRes;
 
-$| = 1; 
+$| = 1;
 my $last_offset = 0;
 my $start_time  = Time::HiRes::time();
 
