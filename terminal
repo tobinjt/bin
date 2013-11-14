@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-#exec aterm "$@"
-#exec mlterm "$@"
-#exec rxvt-unicode --reverseVideo -sh 50 -tint black --loginShell +sb -si +sk \
-#    -sl 1000 -bl --tripleclickwords "$@"
-#exec mrxvt -tr +sb -sl 5000 -bgfade 70 -fg white -bg black -sh -ps -tcw -ls "$@"
-exec gnome-terminal "$@"

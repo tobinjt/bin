@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e -u -f -o pipefail
+
+DESTDIR="src/dotfiles"
+readonly DESTDIR
+cd "${HOME}"
+if [ ! -d "${DESTDIR}" ]; then
+  mkdir -p "$(dirname "${DESTDIR}")"
+  git clone https://github.com/tobinjt/dotfiles.git "${DESTDIR}"
+fi
+cd "${DESTDIR}"
+git pull
+git submodule init
+git submodule update
+source .bash_profile
+source .bash_aliases
+dotfiles
+sed -i -e 's!https://github.com/!git@github.com:!' .git/config

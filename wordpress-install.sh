@@ -50,12 +50,20 @@ readonly DOWNLOAD_DIR DOWNLOAD_FILE DOWNLOAD_PATH
 declare -A DOWNLOAD_URLS
 DOWNLOAD_URLS[wordpress]="http://wordpress.org/${DOWNLOAD_FILE}"
 DOWNLOAD_URLS[plugin]="http://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
-DOWNLOAD_URLS[theme]="http://wordpress.org/extend/themes/download/${DOWNLOAD_FILE}"
+DOWNLOAD_URLS[theme]="http://wordpress.org/themes/download/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_URLS
 mkdir -p "${DOWNLOAD_DIR}"
+# Deal with corrupt downloads or HTML output.
+if [[ -s "${DOWNLOAD_PATH}" ]]; then
+    if ! unzip -l "${DOWNLOAD_PATH}" > /dev/null; then
+        rm -f "${DOWNLOAD_PATH}"
+    fi
+fi
 if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
-    if ! curl --output "${DOWNLOAD_PATH}" "${DOWNLOAD_URLS[${TYPE}]}" ; then
-        rm "${DOWNLOAD_PATH}"
+    echo "Downloading ${DOWNLOAD_URLS[${TYPE}]}"
+    if ! curl --fail --location --output "${DOWNLOAD_PATH}" \
+            "${DOWNLOAD_URLS[${TYPE}]}" ; then
+        rm -f "${DOWNLOAD_PATH}"
         die "Failed to download: ${DOWNLOAD_URLS[${TYPE}]}"
     fi
     if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
