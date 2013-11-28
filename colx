@@ -74,7 +74,6 @@ onwards (unless you have a *very* long line).
         increment = 1
         last += 1
       columns = range(first, last, increment)
-      print columns
       options.columns.extend(columns)
       continue
 
