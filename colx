@@ -38,7 +38,7 @@ You need to put -- before the first negative column number, otherwise it will be
 interpreted as a non-existent option.
 
 Column ranges of the form 3:8, -3:1, 7:-7, and -1:-3 are accepted.  Both start
-and end are required in each range.  It is not an error to specify an end point
+and end are required for each range.  It is not an error to specify an end point
 that is out of bounds for a line, so 3:1000 will print all columns from 3
 onwards (unless you have a *very* long line).
 """
