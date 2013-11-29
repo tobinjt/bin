@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -e
-
-perl Makefile.PL LIB="$HOME/lib/perl"
-make
-make test
-make $( < "$HOME/lib/perl/manpages_hack" ) PERLPREFIX="$HOME" SITEPREFIX="$HOME" VENDORPREFIX="$HOME" install

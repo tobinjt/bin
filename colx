@@ -4,20 +4,6 @@
 """%prog [OPTIONS] COLUMN [COLUMNS] [FILES].
 
 Extract the specified columns from FILES or stdin.
-
-Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
-
-Negative column numbers are accepted; -1 is the last column, -2 is the second
-last, etc.  Note that negative column numbers may not behave as you expect when
-files have a variable number of columns per line: e.g. in line 1 column -1 is
-column 10, but in line 2 column -1 is column 5.  You need to put -- before the
-first negative column number, otherwise it will be interpreted as a non-existen
-option.
-
-Column numbers that are out of bounds are silently ignored.
-
-When each line is split, empty leading columns will be discarded _before_
-columns are extracted.
 """
 
 import fileinput
@@ -28,11 +14,38 @@ import sys
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
+class MyHelpFormatter(optparse.IndentedHelpFormatter):
+  def format_description(self, description):
+    """Override description formatting to prevent wrapping."""
+    return description.lstrip()
+
+
 def main(argv):
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
   usage = __doc__.rstrip().replace(".", "", 1)
-  argv_parser = optparse.OptionParser(usage=usage)
+  description = """
+Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
+Column numbers that are out of bounds are silently ignored.  When each line is
+split, empty leading or trailing columns will be discarded _before_ columns are
+extracted.
+
+Negative column numbers are accepted; -1 is the last column, -2 is the second
+last, etc.  Note that negative column numbers may not behave as you expect when
+files have a variable number of columns per line: e.g. in line 1 column -1 is
+column 10, but in line 2 column -1 is column 5.
+You need to put -- before the first negative column number, otherwise it will be
+interpreted as a non-existent option.
+
+Column ranges of the form 3:8, -3:1, 7:-7, and -1:-3 are accepted.  Both start
+and end are required for each range.  It is not an error to specify an end point
+that is out of bounds for a line, so 3:1000 will print all columns from 3
+onwards (unless you have a *very* long line).
+"""
+
+  formatter = MyHelpFormatter()
+  argv_parser = optparse.OptionParser(usage=usage, description=description,
+                                      formatter=formatter)
   argv_parser.add_option("-d", "--delimiter",
                          action="store", dest="delimiter", default=r"\s+",
                          help="Regex delimiting input columns; "
@@ -40,8 +53,10 @@ def main(argv):
   argv_parser.add_option("-s", "--separator",
                          action="store", dest="separator", default=" ",
                          help="Separator between output columns; "
-                         "defaults to a single space")
+                         "defaults to a single space; backslash escape "
+                         "sequences will be expanded")
   (options, args) = argv_parser.parse_args(argv[1:])
+  options.separator = options.separator.decode("string-escape")
 
   options.columns = []
   options.filenames = []
@@ -50,6 +65,21 @@ def main(argv):
     if remaining_args_are_filenames:
       options.filenames.append(arg)
       continue
+
+    # Support 3:8 style columns.
+    column_range = re.search(r'^(-?\d+):(-?\d+)$', arg)
+    if column_range:
+      first, last = int(column_range.group(1)) , int(column_range.group(2))
+      if first > last:
+        increment = -1
+        last -= 1
+      else:
+        increment = 1
+        last += 1
+      columns = range(first, last, increment)
+      options.columns.extend(columns)
+      continue
+
     try:
       column = int(arg)
       options.columns.append(column)
