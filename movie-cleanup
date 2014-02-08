@@ -15,12 +15,11 @@ my @banned_words = qw(dvdrip dvd-rip klaxxon axxo divx avi xvid fxg unrated
 my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
 my %new_filenames;
 foreach my $filename (glob q{*}) {
-    $filename =~ m/^(.*)\.([^.]+)$/;
-    my ($name, $ext) = ($1, $2);
-    if (not defined $ext) {
+    if ($filename !~ m/^(.*)\.([^.]+)$/) {
         warn qq{Strange filename: $filename\n};
         next;
     }
+    my ($name, $ext) = ($1, $2);
     $ext = lc $ext;
 
     # Remove [stuff in square brackets]
