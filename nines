@@ -1,6 +1,4 @@
-#!/usr/bin/python2.4
-#
-# Copyright 2010 Google Inc. All Rights Reserved.
+#!/usr/bin/env python
 
 """Display the number of seconds of downtime than N nines uptime allows.
 
