@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e -u -f -o pipefail
+DIR="$(mktemp -d /tmp/check-links-XXXXXXXXXX)"
+cd "${DIR}"
+# --spider
+wget \
+     --output-file wget.log \
+     --execute robots=off \
+     --wait 1 \
+     --recursive \
+     --page-requisites \
+     http://www.arianetobin.ie/
+echo "${DIR}/wget.log"
