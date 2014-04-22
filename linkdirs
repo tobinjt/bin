@@ -17,7 +17,7 @@ import stat
 import sys
 import time
 
-__author__ = "johntobin@google.com (John Tobin)"
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
 class Error(Exception):
@@ -334,7 +334,9 @@ def main(argv):
   argv_parser.add_option("-s", "--skip",
                          action="append", dest="skip",
                          metavar="FILENAME",
-                         default=["CVS", ".svn", ".hg", ".git"],
+                         default=["CVS", ".git", ".gitmodules", ".hg", ".svn",
+                                  "tags",
+                                  ],
                          help=UnLineWrapString("""Extra files or directories to
                                                skip (appended to this list:
                                                %default).  To specify multiple
