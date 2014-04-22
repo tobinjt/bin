@@ -26,7 +26,7 @@ while getopts hs: flag; do
     s)
       SKIP="${OPTARG}"
       if ! expr match "${SKIP}" '^[[:digit:]]\+$' > /dev/null; then
-        die "Bar arguement '${SKIP}'; argument to -s must be an integer."
+        die "Bar argument '${SKIP}'; argument to -s must be an integer."
       fi
       ;;
   esac
