@@ -341,7 +341,7 @@ def main(argv):
                             (default: %default)"""))
   argv_parser.add_option(
       "-s", "--skip", action="append", dest="skip", metavar="FILENAME",
-      default=["CVS", ".git", ".gitmodules", ".hg", ".svn", "tags"],
+      default=["CVS", ".git", ".gitmodules", ".hg", ".svn"],
       help=UnLineWrapString("""Extra shell patterns to skip (appended to this
                             list: %default).  To specify multiple filenames, use
                             this option multiple times."""))
