@@ -9,6 +9,7 @@ the destination directory hierarchy where necessary.
 # XXX add an option to skip file patterns, and make *.swp part of the default.
 
 import difflib
+import fnmatch
 import optparse
 import os
 import pipes
@@ -99,16 +100,38 @@ def Diff(old_filename, new_filename):
   return diffs
 
 
-def LinkDir(source, dest, skip=None, dryrun=False, force=False):
+def RemoveSkipPatterns(files, skip):
+  """Remove any files matching shell patterns.
+
+  Args:
+    files: a list of filenames.
+    skip: a list of shell patterns.
+
+  Returns:
+    An array of filenames.
+  """
+
+  if not skip:
+    return files
+  unmatched = []
+  for filename in files:
+    for pattern in skip:
+      if fnmatch.fnmatch(filename, pattern):
+        break
+    else:
+      unmatched.append(filename)
+  return unmatched
+
+
+def LinkDir(source, dest, skip, dryrun, force):
   """Recursively link files in source directory to dest directory.
 
   Args:
     source:       the source directory
     dest:         the destination directory
     skip:         files and directories under source that will be skipped.
-                  Defaults to None.
     dryrun:       if true, the filesystem will not be changed; shell commands
-                  will be printed instead.  Defaults to false.
+                  will be printed instead.
     force:        existing files will be removed if necessary.  dryrun overrides
                   force.
 
@@ -122,19 +145,14 @@ def LinkDir(source, dest, skip=None, dryrun=False, force=False):
                          was found instead.
   """
 
-  (source, dest) = (source.rstrip("/"), dest.rstrip("/"))
   if not os.path.isdir(source):
     raise ArgumentError("%s is not a directory" % source)
 
   expected_files = []
   for directory, subdirs, files in os.walk(source, topdown=True):
-
-    if skip:
-      for skip_dir in skip:
-        # Remove VCS dirs
-        if skip_dir in subdirs:
-          subdirs.remove(skip_dir)
-
+    # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
+    # from descending into the skipped subdirs.
+    subdirs[:] = RemoveSkipPatterns(subdirs, skip)
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
       dest_dir = source_dir.replace(source, dest, 1)
@@ -154,7 +172,6 @@ def LinkDir(source, dest, skip=None, dryrun=False, force=False):
           raise UnexpectedFileError("%s is not a directory" % dest_dir)
 
       if dryrun:
-        # This allows us to intercept PrintIfNotNone for testing.
         PrintIfNotNone("mkdir %s" % pipes.quote(dest_dir))
       else:
         os.mkdir(dest_dir, source_mode)
@@ -166,8 +183,7 @@ def LinkDir(source, dest, skip=None, dryrun=False, force=False):
   return expected_files
 
 
-def LinkFiles(source, dest, directory, files,
-              dryrun=False, force=False, skip=None):
+def LinkFiles(source, dest, directory, files, dryrun, force, skip):
   """Link files from source to dest.
 
   Args:
@@ -175,10 +191,10 @@ def LinkFiles(source, dest, directory, files,
     dest:      the toplevel dest directory.
     directory: the directory the files are in, relative to source and dest.
     files:     the files in source/directory.
-    dryrun:    if true, the filesystem will not be changed.  Defaults to false.
+    dryrun:    if true, the filesystem will not be changed.
     force:     existing files will be removed if necessary.  dryrun overrides
                force.
-    skip:      a list of filenames to skip.  Defaults to None.
+    skip:      a list of filenames to skip.
 
   Returns:
     A list of files and directories that should exist in the destination,
@@ -190,10 +206,7 @@ def LinkFiles(source, dest, directory, files,
   """
 
   expected_files = []
-  for filename in files:
-    if skip and filename in skip:
-      continue
-
+  for filename in RemoveSkipPatterns(files, skip):
     source_filename = os.path.join(directory, filename)
     dest_filename = source_filename.replace(source, dest, 1)
     expected_files.append(dest_filename)
@@ -219,12 +232,10 @@ def LinkFiles(source, dest, directory, files,
       if not force:
         diffs = Diff(source_filename, dest_filename)
         if not diffs:
-
           num_links = os.stat(dest_filename)[stat.ST_NLINK]
           if num_links != 1 and not force:
             raise UnexpectedFileError("%s: link count is %d"
                                       % (dest_filename, num_links))
-
           print ("%s and %s are different files but have the same contents; "
                  "deleting and linking"
                  % (source_filename, dest_filename))
@@ -248,13 +259,14 @@ def LinkFiles(source, dest, directory, files,
   return expected_files
 
 
-def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list,
+def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
                                    ignore_unexpected_children=False):
   """Check for files in destdir that aren't in source_dir.
 
   Args:
     dest_dir: the destination directory.
     expected_files_list: a list of files expected to exist in the destination.
+    skip: files and directories under source that will be skipped.
     ignore_unexpected_children: Ignore unexpected top level directories.
                                 Defaults to false.
 
@@ -268,6 +280,9 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list,
     expected_files[entry] = 1
 
   for directory, subdirs, files in os.walk(dest_dir, topdown=True):
+    subdirs[:] = RemoveSkipPatterns(subdirs, skip)
+    files = RemoveSkipPatterns(files, skip)
+
     if directory == dest_dir and ignore_unexpected_children:
       unexpected = [subdir for subdir in subdirs
                     if os.path.join(directory, subdir) not in expected_files]
@@ -275,8 +290,6 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list,
         subdirs.remove(subdir)
 
     for (my_list, my_type) in ((subdirs, "directory"), (files, "file")):
-      # Sort in-place so that os.walk will traverse subdirs in sorted order,
-      # and the output will be sorted.
       my_list.sort()
       for entry in my_list:
         full_path = os.path.join(directory, entry)
@@ -305,53 +318,44 @@ def main(argv):
   # used as a usage message.
   usage = __doc__.rstrip().replace(".", "", 1)
   argv_parser = optparse.OptionParser(usage=usage, version="%prog 1.0")
-  argv_parser.add_option("-d", "-n", "--dryrun",
-                         action="store_true", dest="dryrun", default=False,
-                         help=UnLineWrapString("""Perform a trial run with no
-                                               changes made (default:
-                                               %default)"""))
-  argv_parser.add_option("-f", "--force",
-                         action="store_true", dest="force", default=False,
-                         help=UnLineWrapString("""Remove existing files if
-                                               necessary (default:
-                                               %default)"""))
-  argv_parser.add_option("-i", "--ignore_unexpected_children",
-                         action="store_true", dest="ignore_unexpected_children",
-                         default=False,
-                         help=UnLineWrapString("""When checking for unexpected
-                                               files or directories, ignore
-                                               unexpected child directories in
-                                               DESTINATION_DIRECTORY; unexpected
-                                               grandchild directories of
-                                               DESTINATION_DIRECTORY will not be
-                                               ignored (default: %default)"""))
-  argv_parser.add_option("-r", "--report_unexpected_files",
-                         action="store_true", dest="report_unexpected_files",
-                         default=False,
-                         help=UnLineWrapString("""Report unexpected files in
-                                               DESTINATION_DIRECTORY (default:
-                                               %default)"""))
-  argv_parser.add_option("-s", "--skip",
-                         action="append", dest="skip",
-                         metavar="FILENAME",
-                         default=["CVS", ".git", ".gitmodules", ".hg", ".svn",
-                                  "tags",
-                                  ],
-                         help=UnLineWrapString("""Extra files or directories to
-                                               skip (appended to this list:
-                                               %default).  To specify multiple
-                                               filenames, use this option
-                                               multiple times."""))
+  argv_parser.add_option(
+      "-d", "-n", "--dryrun", action="store_true", dest="dryrun", default=False,
+      help=UnLineWrapString("""Perform a trial run with no changes made
+                            (default: %default)"""))
+  argv_parser.add_option(
+      "-f", "--force", action="store_true", dest="force", default=False,
+      help=UnLineWrapString("""Remove existing files if necessary (default:
+                            %default)"""))
+  argv_parser.add_option(
+      "-i", "--ignore_unexpected_children", action="store_true",
+      dest="ignore_unexpected_children", default=False,
+      help=UnLineWrapString("""When checking for unexpected files or
+                            directories, ignore unexpected child directories in
+                            DESTINATION_DIRECTORY; unexpected grandchild
+                            directories of DESTINATION_DIRECTORY will not be
+                            ignored (default: %default)"""))
+  argv_parser.add_option(
+      "-r", "--report_unexpected_files", action="store_true",
+      dest="report_unexpected_files", default=False,
+      help=UnLineWrapString("""Report unexpected files in DESTINATION_DIRECTORY
+                            (default: %default)"""))
+  argv_parser.add_option(
+      "-s", "--skip", action="append", dest="skip", metavar="FILENAME",
+      default=["CVS", ".git", ".gitmodules", ".hg", ".svn", "tags"],
+      help=UnLineWrapString("""Extra shell patterns to skip (appended to this
+                            list: %default).  To specify multiple filenames, use
+                            this option multiple times."""))
+
   (options, args) = argv_parser.parse_args(argv[1:])
   if len(args) != 2:
     sys.exit("Usage: %s [OPTIONS] SOURCE_DIR DEST_DIR" % argv[0])
 
   try:
-    (source, dest) = (args[0], args[1])
+    (source, dest) = (args[0].rstrip(os.sep), args[1].rstrip(os.sep))
     expected_files = LinkDir(source, dest, skip=options.skip,
                              dryrun=options.dryrun, force=options.force)
     if options.report_unexpected_files:
-      ReportUnexpectedFilesInDestDir(dest, expected_files,
+      ReportUnexpectedFilesInDestDir(dest, expected_files, options.skip,
                                      options.ignore_unexpected_children)
   except ArgumentError, arg_error:
     sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
