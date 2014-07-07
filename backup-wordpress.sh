@@ -11,3 +11,4 @@ mysqlcheck --analyze --auto-repair --check --repair --silent \
 mysqldump --add-drop-table -h localhost -u ariane --password="${db_password}" \
         ariane_blog \
     | bzip2 -c > ariane_blog_"${date}"_sql.bz2
+tmpreaper --mtime 30d .
