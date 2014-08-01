@@ -11,7 +11,7 @@ my @banned_words = qw(dvdrip dvd-rip klaxxon axxo divx avi xvid fxg unrated
                       stealthmaster dvdscr ac3 repack r5 maxspeed www torentz
                       3xforum ro dvd rip vomit uncut fxm screener {1337x} hdtv
                       1080p brrip x264 yify extended bdrip etrg aac p2p hdrip
-                      h264 720p starlets xxx jiggly bluray);
+                      h264 720p starlets xxx jiggly bluray 480p);
 my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
 my %new_filenames;
 foreach my $filename (glob q{*}) {
