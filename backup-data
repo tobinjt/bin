@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+sudo rsync -a --info=progress2,stats \
+  --hard-links \
+  --exclude='.*' --exclude='hourly.*' \
+  /Volumes/Data/ /Volumes/Backup/
