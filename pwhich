@@ -47,12 +47,22 @@ foreach my $pattern (@ARGV) {
 }
 
 if ($Options{sort}) {
-    my %map = map { (File::Spec->splitpath($_))[2] => $_; } @found;
-    my @keys = sort keys %map;
-    @found = @map{@keys};
+    my %map;
+    foreach my $exe ( @found ) {
+      my $key = (File::Spec->splitpath($exe))[2];
+      if (not exists $map{$key}) {
+        $map{$key} = [];
+      }
+      push @{$map{$key}}, $exe;
+    }
+    @found = ();
+    foreach my $key ( sort keys %map ) {
+      push @found, sort @{$map{$key}};
+    }
 }
 
-# Don't pretty print if output is to a terminal, unless --prettyprint was used.
+# Don't pretty print if output is not to a terminal, unless --prettyprint was
+# used.
 if (not -t STDOUT and not $Options{prettyprint}) {
     foreach my $exe ( @found ) {
         print "$exe\n";
