@@ -99,5 +99,5 @@ When NUMBER_OF_NINES does not end with %%, it is the number of nines, e.g:
               StripTrailingZeros(downtime_seconds),
               FormatDuration(downtime_seconds)))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   main(sys.argv)
