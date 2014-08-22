@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -e -f -u -o pipefail
 usage() {
   cat <<USAGE
 Usage: $0 [-s N] PATH [PATH . . .]
@@ -26,8 +26,11 @@ while getopts hs: flag; do
     s)
       SKIP="${OPTARG}"
       if ! expr match "${SKIP}" '^[[:digit:]]\+$' > /dev/null; then
-        die "Bar argument '${SKIP}'; argument to -s must be an integer."
+        die "Bad argument '${SKIP}'; argument to -s must be an integer."
       fi
+      ;;
+    ?)
+      die "$(usage)"
       ;;
   esac
 done
@@ -36,7 +39,7 @@ readonly SKIP
 
 
 if [[ "$#" -eq 0 ]]; then
-  die "$( usage )"
+  die "$(usage)"
 fi
 if [[ "$1" == "--help" ]]; then
   usage
