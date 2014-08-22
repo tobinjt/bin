@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Display the number of seconds of downtime than N nines uptime allows.
+"""Display the number of seconds of downtime that N nines uptime allows.
 
 Uptime is usually described as N nines, e.g. 3 nines is 99.9% uptime, 6 nines is
 99.9999% uptime.  This program displays how much downtime per year is allowed by
