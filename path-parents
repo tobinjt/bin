@@ -62,7 +62,7 @@ echo "$@" \
         # from between repeated slashes.
         if (subdir != "") {
           num_components++;
-          if (path ~ /[^/]$/) {
+          if (path ~ /[^\/]$/) {
             # The path already has contents and does not end with a slash, so we
             # need one as a separator.
             path = path "/";
