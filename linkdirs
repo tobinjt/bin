@@ -6,8 +6,6 @@ Link all files in SOURCE_DIRECTORY to DESTINATION_DIRECTORY, creating
 the destination directory hierarchy where necessary.
 """
 
-# XXX add an option to skip file patterns, and make *.swp part of the default.
-
 import difflib
 import fnmatch
 import optparse
@@ -341,7 +339,7 @@ def main(argv):
                             (default: %default)"""))
   argv_parser.add_option(
       "-s", "--skip", action="append", dest="skip", metavar="FILENAME",
-      default=["CVS", ".git", ".gitmodules", ".hg", ".svn"],
+      default=["CVS", ".git", ".gitmodules", ".hg", ".svn", "*.swp"],
       help=UnLineWrapString("""Extra shell patterns to skip (appended to this
                             list: %default).  To specify multiple filenames, use
                             this option multiple times."""))
