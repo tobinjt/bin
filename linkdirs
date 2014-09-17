@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
-"""%prog [OPTIONS] SOURCE_DIRECTORY DESTINATION_DIRECTORY.
+"""%prog [OPTIONS] SOURCE_DIRECTORY [SOURCE_DIRECTORY...] DESTINATION_DIRECTORY.
 
-Link all files in SOURCE_DIRECTORY to DESTINATION_DIRECTORY, creating
-the destination directory hierarchy where necessary.
+Link all files in SOURCE_DIRECTORY [SOURCE_DIRECTORY...] to
+DESTINATION_DIRECTORY, creating the destination directory hierarchy where
+necessary.
 """
 
 import difflib
@@ -345,13 +346,17 @@ def main(argv):
                             this option multiple times."""))
 
   (options, args) = argv_parser.parse_args(argv[1:])
-  if len(args) != 2:
-    sys.exit("Usage: %s [OPTIONS] SOURCE_DIR DEST_DIR" % argv[0])
+  if len(args) < 2:
+    sys.exit("Usage: %s [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR"
+             % argv[0])
 
   try:
-    (source, dest) = (args[0].rstrip(os.sep), args[1].rstrip(os.sep))
-    expected_files = LinkDir(source, dest, skip=options.skip,
-                             dryrun=options.dryrun, force=options.force)
+    dest = args.pop().rstrip(os.sep)
+    expected_files = []
+    for source in args:
+      source = source.rstrip(os.sep)
+      expected_files.extend(LinkDir(source, dest, skip=options.skip,
+                                    dryrun=options.dryrun, force=options.force))
     if options.report_unexpected_files:
       ReportUnexpectedFilesInDestDir(dest, expected_files, options.skip,
                                      options.ignore_unexpected_children)
