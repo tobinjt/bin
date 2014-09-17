@@ -16,7 +16,7 @@ git submodule update
 # shell profile assumes that ~/.ssh exists.
 mkdir -p "${HOME}/.ssh"
 # Remove .bashrc that linkdirs will not overwrite.
-rm "${HOME}/.bashrc"
+rm -f "${HOME}/.bashrc"
 # Lots of stuff will fail until dotfiles are set up.
 set +u +e
 source .bash_profile
