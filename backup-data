@@ -2,7 +2,15 @@
 
 set -e -f -u -o pipefail
 
+readonly destdir=/Volumes/Backup/
+
+if [[ ! -d "${destdir}" ]]; then
+  echo "Missing destination: ${destdir}" >&2
+  exit 1
+fi
+
 sudo rsync -a --info=progress2,stats \
   --hard-links \
+  --delete \
   --exclude='.*' --exclude='hourly.*' \
-  /Volumes/Data/ /Volumes/Backup/
+  /Volumes/Data/ "${destdir}"
