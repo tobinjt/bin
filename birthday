@@ -1,6 +1,4 @@
-#!/usr/bin/python2.4
-#
-# Copyright 2010 Google Inc. All Rights Reserved.
+#!/usr/bin/python
 
 """Show the probability of a birthday paradox collision.
 
@@ -12,7 +10,7 @@ people, or the probability of a collision between N of M things.
 import decimal
 import sys
 
-__author__ = "johntobin@google.com (John Tobin)"
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
 def Factorial(number):
