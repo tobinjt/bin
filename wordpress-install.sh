@@ -16,7 +16,8 @@ if [[ "$#" -ne 4 ]]; then
 fi
 WORDPRESS_BASE="$1"
 TYPE="$2"
-NAME="$3"
+# Tab completion will add a trailing slash, remove it if present.
+NAME="${3%/}"
 VERSION="$4"
 readonly WORDPRESS_BASE TYPE NAME VERSION SUBDIR
 if [[ "${TYPE}" != "plugin" && "${TYPE}" != "theme" \
@@ -36,10 +37,6 @@ SUBDIRS[theme]="themes"
 SEPARATORS[wordpress]="-"
 SEPARATORS[plugin]="."
 SEPARATORS[theme]="."
-if [[ -z "${VERSION}" ]]; then
-    # This happens with WP Minify.
-    SEPARATORS[plugin]=""
-fi
 readonly SUBDIRS SEPARATORS
 cd "wp-content/${SUBDIRS[${TYPE}]}"
 
