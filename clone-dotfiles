@@ -19,9 +19,12 @@ mkdir -p "${HOME}/.ssh"
 rm -f "${HOME}/.bashrc"
 # Lots of stuff will fail until dotfiles are set up.
 set +u +e
-source .bash_profile
+source .shell_functions
 source .shell_profile
 source .shell_aliases
-set -u -e
+source .bash_profile
+set -u -e +f
 dotfiles
-sed -i -e 's!https://github.com/!git@github.com:!' .git/config
+if [ "${USER}" == "johntobin" ]; then
+  sed -i -e 's!https://github.com/!git@github.com:!' .git/config
+fi
