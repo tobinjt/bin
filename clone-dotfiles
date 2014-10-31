@@ -22,7 +22,6 @@ set +u +e
 source .shell_functions
 source .shell_profile
 source .shell_aliases
-source .bash_profile
 set -u -e +f
 dotfiles
 if [ "${USER}" == "johntobin" ]; then
