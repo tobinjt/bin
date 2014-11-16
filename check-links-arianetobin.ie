@@ -13,4 +13,5 @@ wget \
      http://www.arianetobin.ie/ || true
 log="${DIR}/wget.log"
 echo "${log}"
-grep --perl-regex 'HTTP request sent, awaiting response... (?!200)' "${log}"
+regex='HTTP request sent, awaiting response... (?!200)'
+grep -B 2 --perl-regex "${regex}" "${log}"
