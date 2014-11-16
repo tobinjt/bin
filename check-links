@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e -u -f -o pipefail
+
+if [ "$#" != 1 -o "${1:-}" == '-h' -o "${1:-}" == '--help' ]; then
+  echo "Usage: $0 http://SOME-WEBSITE/" >&2
+  echo "Links outside SOME-WEBSITE will not be checked." >&2
+  echo "Page contents will be downloaded and saved for investigation." >&2
+  exit 1
+fi
+
+WEBSITE="$1"
+DIR="$(mktemp -d /tmp/check-links-XXXXXXXXXX)"
+LOG="${DIR}/wget.log"
+REGEX='HTTP request sent, awaiting response... (?!200)'
+readonly WEBSITE DIR LOG REGEX
+
+cd "${DIR}"
+wget \
+     --output-file wget.log \
+     --execute robots=off \
+     --wait 1 \
+     --recursive \
+     --page-requisites \
+     "${WEBSITE}" || true
+grep -B 2 --perl-regex "${REGEX}" "${LOG}" || true
+echo "See ${LOG} and the contents of ${DIR} for further investigation"
