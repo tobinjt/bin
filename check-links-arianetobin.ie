@@ -10,5 +10,7 @@ wget \
      --wait 1 \
      --recursive \
      --page-requisites \
-     http://www.arianetobin.ie/
-echo "${DIR}/wget.log"
+     http://www.arianetobin.ie/ || true
+log="${DIR}/wget.log"
+echo "${log}"
+grep --perl-regex 'HTTP request sent, awaiting response... (?!200)' "${log}"
