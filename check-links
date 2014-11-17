@@ -17,11 +17,11 @@ readonly WEBSITE DIR LOG REGEX
 
 cd "${DIR}"
 wget \
-     --output-file wget.log \
-     --execute robots=off \
-     --wait 1 \
-     --recursive \
-     --page-requisites \
-     "${WEBSITE}" || true
+  --output-file wget.log \
+  --execute robots=off \
+  --wait 1 \
+  --recursive \
+  --page-requisites \
+  "${WEBSITE}" || true
 grep -B 2 --perl-regex "${REGEX}" "${LOG}" || true
 echo "See ${LOG} and the contents of ${DIR} for further investigation"
