@@ -12,8 +12,7 @@ fi
 WEBSITE="$1"
 DIR="$(mktemp -d /tmp/check-links-XXXXXXXXXX)"
 LOG="${DIR}/wget.log"
-REGEX='HTTP request sent, awaiting response... (?!200)'
-readonly WEBSITE DIR LOG REGEX
+readonly WEBSITE DIR LOG
 
 cd "${DIR}"
 wget \
@@ -23,5 +22,8 @@ wget \
   --recursive \
   --page-requisites \
   "${WEBSITE}" || true
-grep -B 2 --perl-regex "${REGEX}" "${LOG}" || true
+sed -n \
+  -e '/^--/ h' \
+  -e '/HTTP request sent, awaiting response... 200/ d' \
+  -e '/HTTP request sent, awaiting response.../ { H; g; p; }' "${LOG}"
 echo "See ${LOG} and the contents of ${DIR} for further investigation"
