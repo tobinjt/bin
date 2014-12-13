@@ -68,6 +68,7 @@ if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
     fi
 fi
 
+rm -rf "${NAME}"
 unzip -q -o "${DOWNLOAD_PATH}"
 if [[ "${TYPE}" == "wordpress" ]]; then
     # Wordpress extracts into a directory named wordpress, and unzip doesn't
@@ -78,6 +79,6 @@ if [[ "${TYPE}" == "wordpress" ]]; then
     echo "You must go to dashboard/updates for a database update."
     echo "If that loops, rename wp-super-cache plugin, or force reload."
 fi
-git add .
+git add -A .
 (unset LESS; git diff --cached --shortstat)
 git commit --quiet --message "Installed ${NAME} ${VERSION}"
