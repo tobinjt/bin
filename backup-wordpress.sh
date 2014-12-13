@@ -4,8 +4,8 @@ set -e -f -u -o pipefail
 
 PATH="${PATH}:/usr/sbin"
 
-db_password="$( awk -F \' '/DB_PASSWORD/ { print $4 }' \
-                /home/ariane/arianetobin.ie/blog/wp-config.php )"
+db_password="$(awk -F \' '/DB_PASSWORD/ { print $4 }' \
+                "${HOME}/arianetobin.ie/wp-config.php")"
 date="$( date +%Y-%m-%d-%H-%M )"
 cd "${HOME}/wordpress-backups"
 for command in --check --repair --analyze; do
