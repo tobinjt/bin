@@ -10,11 +10,25 @@ main() {
   local SKIP_FLAGS="--skip=tags --skip=*.pyc --skip=*.spl"
   readonly SKIP_FLAGS
 
-  local dryrun= report_unexpected= opt=
-  while getopts ":dr" opt "$@"; do
+  local dryrun= force= report_unexpected= opt=
+  while getopts ":dfhr" opt "$@"; do
     case "${opt}" in
       d)
         dryrun="--dryrun"
+        ;;
+      f)
+        force="--force"
+        ;;
+      h)
+        cat <<END_OF_HELP
+Usage: $0 [-d] [-f] [-r]
+Links files in ${HOME}/src/*dotfiles* to ${HOME}
+Options:
+  -f: force overwrite of files that differ.
+  -d: dry run, overrides -f.
+  -r: report unexpected files in destination.
+END_OF_HELP
+        exit 0
         ;;
       r)
         report_unexpected="--report_unexpected_files"
@@ -26,7 +40,7 @@ main() {
     esac
   done
 
-  linkdirs ${SKIP_FLAGS} ${dryrun} ${report_unexpected} \
+  linkdirs ${SKIP_FLAGS} ${dryrun} ${force} ${report_unexpected} \
     $(dotfiles_sources) "${HOME}"
   if [ -n "${report_unexpected}" ]; then
     return
