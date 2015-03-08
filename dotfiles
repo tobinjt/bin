@@ -3,7 +3,7 @@
 set -e -u -o pipefail
 
 dotfiles_sources() {
-  find "${HOME}/src" -iname '*dotfiles*' -type d -maxdepth 1
+  find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
 }
 
 main() {
