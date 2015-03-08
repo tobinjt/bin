@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -e -u -o pipefail
+
+dotfiles_sources() {
+  find "${HOME}/src" -iname '*dotfiles*' -type d -maxdepth 1
+}
+
+main() {
+  local SKIP_FLAGS="--skip=tags --skip=*.pyc --skip=*.spl"
+  readonly SKIP_FLAGS
+
+  local dryrun= report_unexpected= opt=
+  while getopts ":dr" opt "$@"; do
+    case "${opt}" in
+      d)
+        dryrun="--dryrun"
+        ;;
+      r)
+        report_unexpected="--report_unexpected_files"
+        report_unexpected+=" --ignore_unexpected_children"
+        ;;
+      *)
+        echo "Unrecognised flag: ${opt}" >&2
+        exit 1
+    esac
+  done
+
+  linkdirs ${SKIP_FLAGS} ${dryrun} ${report_unexpected} \
+    $(dotfiles_sources) "${HOME}"
+  if [ -n "${report_unexpected}" ]; then
+    return
+  fi
+  chmod 600 "${HOME}/.ssh/id_rsa"
+  cat "${HOME}"/.ssh/config-??-* > /dev/null
+  cat "${HOME}"/.ssh/config-??-* > "${HOME}/.ssh/config"
+  vim -c 'call UpdateBundleHelptags() | call UpdateSpellFiles() | :quit'
+}
+
+main "$@"
