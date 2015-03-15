@@ -7,6 +7,7 @@ DESTINATION_DIRECTORY, creating the destination directory hierarchy where
 necessary.
 """
 
+import collections
 import difflib
 import fnmatch
 import optparse
@@ -31,6 +32,11 @@ class ArgumentError(Error):
 
 class UnexpectedFileError(Error):
   """A file or directory was expected, but something else was found."""
+
+
+# expected_files is a list of files and directories that should exist in the
+# destination.  diffs is a list of diffs between source and destination files.
+LinkResults = collections.namedtuple('LinkResults', 'expected_files diffs')
 
 
 def SafeUnlink(unlink_me, dryrun=True):
@@ -135,7 +141,7 @@ def LinkDir(source, dest, skip, dryrun, force):
                   force.
 
   Returns:
-    A list of files and directories that should exist in the destination.
+    LinkResults.
 
   Raises:
     ArgumentError:       something was wrong with source or dest argument.
@@ -148,6 +154,7 @@ def LinkDir(source, dest, skip, dryrun, force):
     raise ArgumentError("%s is not a directory" % source)
 
   expected_files = []
+  diffs = []
   for directory, subdirs, files in os.walk(source, topdown=True):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
@@ -176,10 +183,12 @@ def LinkDir(source, dest, skip, dryrun, force):
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
 
-    expected_files.extend(LinkFiles(source, dest, directory, files,
-                                    dryrun=dryrun, force=force, skip=skip))
+    results = LinkFiles(source, dest, directory, files,
+                        dryrun=dryrun, force=force, skip=skip)
+    expected_files.extend(results.expected_files)
+    diffs.extend(results.diffs)
 
-  return expected_files
+  return LinkResults(expected_files, diffs)
 
 
 def LinkFiles(source, dest, directory, files, dryrun, force, skip):
@@ -196,8 +205,7 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
     skip:      a list of filenames to skip.
 
   Returns:
-    A list of files and directories that should exist in the destination,
-    excluding files that are skipped.
+    LinkResults.  expected_files will not include files that are skipped.
 
   Raises:
     UnexpectedFileError: A file or directory was expected, but something else
@@ -205,6 +213,7 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
   """
 
   expected_files = []
+  diffs = []
   for filename in RemoveSkipPatterns(files, skip):
     source_filename = os.path.join(directory, filename)
     dest_filename = source_filename.replace(source, dest, 1)
@@ -229,8 +238,8 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
         continue
 
       if not force:
-        diffs = Diff(source_filename, dest_filename)
-        if not diffs:
+        file_diffs = Diff(source_filename, dest_filename)
+        if not file_diffs:
           num_links = os.stat(dest_filename)[stat.ST_NLINK]
           if num_links != 1 and not force:
             raise UnexpectedFileError("%s: link count is %d"
@@ -241,8 +250,7 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
           PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
           file_was_removed = True
         else:
-          for diff in diffs:
-            print diff,
+          diffs.extend(file_diffs)
 
       if force and not file_was_removed:
         PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
@@ -255,7 +263,7 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
       else:
         os.link(source_filename, dest_filename)
 
-  return expected_files
+  return LinkResults(expected_files, diffs)
 
 
 def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
@@ -350,20 +358,28 @@ def main(argv):
     sys.exit("Usage: %s [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR"
              % argv[0])
 
+  all_results = LinkResults([], [])
   try:
     dest = args.pop().rstrip(os.sep)
-    expected_files = []
     for source in args:
       source = source.rstrip(os.sep)
-      expected_files.extend(LinkDir(source, dest, skip=options.skip,
-                                    dryrun=options.dryrun, force=options.force))
+      results = LinkDir(source, dest, skip=options.skip,
+                        dryrun=options.dryrun, force=options.force)
+      all_results.expected_files.extend(results.expected_files)
+      all_results.diffs.extend(results.diffs)
     if options.report_unexpected_files:
-      ReportUnexpectedFilesInDestDir(dest, expected_files, options.skip,
+      ReportUnexpectedFilesInDestDir(dest, all_results.expected_files,
+                                     options.skip,
                                      options.ignore_unexpected_children)
   except ArgumentError, arg_error:
     sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
   except UnexpectedFileError, unexpected_file:
     sys.exit("%s: %s" % (argv[0], unexpected_file.args[0]))
+
+  if all_results.diffs:
+    for diff in all_results.diffs:
+      print diff,
+    sys.exit(1)
 
 
 if __name__ == "__main__":
