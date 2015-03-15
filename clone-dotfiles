@@ -13,17 +13,9 @@ cd "${DESTDIR}"
 git pull
 git submodule init
 git submodule update
-# shell profile assumes that ~/.ssh exists.
-mkdir -p "${HOME}/.ssh"
 # Remove .bashrc that linkdirs will not overwrite.
 rm -f "${HOME}/.bashrc"
-# Lots of stuff will fail until dotfiles are set up.
-set +u +e
-source .shell_functions
-source .shell_profile
-source .shell_aliases
-set -u -e +f
-dotfiles
+"${HOME}/bin/dotfiles"
 if [ "${USER}" == "johntobin" ]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
 fi
