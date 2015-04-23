@@ -361,6 +361,8 @@ def main(argv):
   all_results = LinkResults([], [])
   try:
     dest = args.pop().rstrip(os.sep)
+    if not os.path.isdir(dest):
+      os.mkdir(dest)
     for source in args:
       source = source.rstrip(os.sep)
       results = LinkDir(source, dest, skip=options.skip,
