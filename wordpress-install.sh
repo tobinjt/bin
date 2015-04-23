@@ -3,14 +3,21 @@
 set -e
 set -u
 
-die() {
+warn() {
     echo -e "$@" 1>&2
+}
+die() {
+    warn "$@"
     exit 1
 }
 usage() {
-    die "Usage: $0 WORDPRESS-DIRECTORY [theme|plugin|wordpress] NAME VERSION"
+    warn "Usage: $0 WORDPRESS-DIRECTORY wordpress VERSION"
+    die "Usage: $0 WORDPRESS-DIRECTORY [theme|plugin] NAME VERSION"
 }
 
+if [[ "$#" -eq 3 && "$2" == "wordpress" ]]; then
+    exec "$0" "$1" "$2" "wordpress" "$3"
+fi
 if [[ "$#" -ne 4 ]]; then
     usage
 fi
