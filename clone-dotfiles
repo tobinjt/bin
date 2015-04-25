@@ -15,7 +15,9 @@ git submodule init
 git submodule update
 # Remove .bashrc that linkdirs will not overwrite.
 rm -f "${HOME}/.bashrc"
-"${HOME}/bin/dotfiles"
+PATH="${PATH}:${HOME}/bin"
+export PATH
+dotfiles
 if [ "${USER}" == "johntobin" ]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
 fi
