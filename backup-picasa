@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+readonly destdir="mini:/Volumes/Data/backups/Picasa/"
+readonly srcdir="/Volumes/Ariane Stuff/Picasa/"
+
+if [[ ! -d "${srcdir}" ]]; then
+  echo "Missing source: ${srcdir}" >&2
+  exit 1
+fi
+
+rsync --archive --info=progress2,stats --human-readable \
+  --exclude='.*' --one-file-system \
+  --delete \
+  --rsh="ssh -l arianetobin" --rsync-path=/usr/local/bin/rsync \
+  "${srcdir}" "${destdir}"
