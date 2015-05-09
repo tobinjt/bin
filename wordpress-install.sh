@@ -12,7 +12,7 @@ die() {
 }
 usage() {
     warn "Usage: $0 WORDPRESS-DIRECTORY wordpress VERSION"
-    die "Usage: $0 WORDPRESS-DIRECTORY [theme|plugin] NAME VERSION"
+    die "Usage: $0 WORDPRESS-DIRECTORY [theme[s]|plugin[s]] NAME VERSION"
 }
 
 if [[ "$#" -eq 3 && "$2" == "wordpress" ]]; then
@@ -23,6 +23,9 @@ if [[ "$#" -ne 4 ]]; then
 fi
 WORDPRESS_BASE="$1"
 TYPE="$2"
+# Support plurals.
+TYPE="${TYPE/plugins/plugin}"
+TYPE="${TYPE/themes/theme}"
 # Tab completion will add a trailing slash, remove it if present.
 NAME="${3%/}"
 VERSION="$4"
