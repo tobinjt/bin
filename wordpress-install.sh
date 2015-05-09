@@ -55,9 +55,9 @@ DOWNLOAD_FILE="${NAME}${SEPARATORS[${TYPE}]}${VERSION}.zip"
 DOWNLOAD_PATH="${DOWNLOAD_DIR}/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_DIR DOWNLOAD_FILE DOWNLOAD_PATH
 declare -A DOWNLOAD_URLS
-DOWNLOAD_URLS[wordpress]="http://wordpress.org/${DOWNLOAD_FILE}"
-DOWNLOAD_URLS[plugin]="http://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
-DOWNLOAD_URLS[theme]="http://wordpress.org/themes/download/${DOWNLOAD_FILE}"
+DOWNLOAD_URLS[wordpress]="https://wordpress.org/${DOWNLOAD_FILE}"
+DOWNLOAD_URLS[plugin]="https://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
+DOWNLOAD_URLS[theme]="https://downloads.wordpress.org/theme/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_URLS
 mkdir -p "${DOWNLOAD_DIR}"
 # Deal with corrupt downloads or HTML output.
