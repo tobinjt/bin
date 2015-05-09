@@ -15,11 +15,12 @@ usage() {
     die "Usage: $0 WORDPRESS-DIRECTORY [theme[s]|plugin[s]] NAME VERSION"
 }
 
-if [[ "$#" -eq 3 && "$2" == "wordpress" ]]; then
-    exec "$0" "$1" "$2" "wordpress" "$3"
-fi
 if [[ "$#" -ne 4 ]]; then
-    usage
+    if [[ "$#" -eq 3 && "$2" == "wordpress" ]]; then
+        set -- "$1" "wordpress" "wordpress" "$3"
+    else
+        usage
+    fi
 fi
 WORDPRESS_BASE="$1"
 TYPE="$2"
