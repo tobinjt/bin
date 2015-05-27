@@ -12,17 +12,21 @@ die() {
 }
 usage() {
     warn "Usage: $0 WORDPRESS-DIRECTORY wordpress VERSION"
-    die "Usage: $0 WORDPRESS-DIRECTORY [theme|plugin] NAME VERSION"
+    die "Usage: $0 WORDPRESS-DIRECTORY [theme[s]|plugin[s]] NAME VERSION"
 }
 
-if [[ "$#" -eq 3 && "$2" == "wordpress" ]]; then
-    exec "$0" "$1" "$2" "wordpress" "$3"
-fi
 if [[ "$#" -ne 4 ]]; then
-    usage
+    if [[ "$#" -eq 3 && "$2" == "wordpress" ]]; then
+        set -- "$1" "wordpress" "wordpress" "$3"
+    else
+        usage
+    fi
 fi
 WORDPRESS_BASE="$1"
 TYPE="$2"
+# Support plurals.
+TYPE="${TYPE/plugins/plugin}"
+TYPE="${TYPE/themes/theme}"
 # Tab completion will add a trailing slash, remove it if present.
 NAME="${3%/}"
 VERSION="$4"
@@ -52,9 +56,9 @@ DOWNLOAD_FILE="${NAME}${SEPARATORS[${TYPE}]}${VERSION}.zip"
 DOWNLOAD_PATH="${DOWNLOAD_DIR}/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_DIR DOWNLOAD_FILE DOWNLOAD_PATH
 declare -A DOWNLOAD_URLS
-DOWNLOAD_URLS[wordpress]="http://wordpress.org/${DOWNLOAD_FILE}"
-DOWNLOAD_URLS[plugin]="http://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
-DOWNLOAD_URLS[theme]="http://wordpress.org/themes/download/${DOWNLOAD_FILE}"
+DOWNLOAD_URLS[wordpress]="https://wordpress.org/${DOWNLOAD_FILE}"
+DOWNLOAD_URLS[plugin]="https://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
+DOWNLOAD_URLS[theme]="https://downloads.wordpress.org/theme/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_URLS
 mkdir -p "${DOWNLOAD_DIR}"
 # Deal with corrupt downloads or HTML output.
