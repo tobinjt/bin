@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-# $Id$
-
 use strict;
 use warnings;
 
@@ -17,15 +15,23 @@ my %suffixes = (
 );
 
 my $suffix_re = join q{}, q{[}, keys %suffixes, q{]};
-$suffix_re .= q{(?:b?)};
+$suffix_re = qr/(?:$suffix_re(?:b?)|e\+\d+)/i;
 
 sub un_format_bytes {
   my ($number, $suffix) = @_;
 
   my ($big_number) = Math::BigFloat->new($number);
-  $suffix =~ s/b$//;
+  $suffix =~ s/b$//i;
   $suffix = lc $suffix;
   return $big_number * $suffixes{$suffix};
+}
+
+sub un_format_scientific {
+  my ($number, $suffix) = @_;
+
+  $suffix =~ s/^e\+//i;
+  my ($big_number) = Math::BigFloat->new($number);
+  $big_number->bpow($suffix);
 }
 
 while (<>) {
@@ -33,7 +39,12 @@ while (<>) {
     my @parts = split /\b($RE{num}{real}$suffix_re)\b/io;
     foreach my $part (@parts) {
         if ($part =~ m/^($RE{num}{real})($suffix_re)$/io) {
-            print un_format_bytes($1, $2);
+            my ($number, $suffix) = ($1, $2);
+            if ($suffix =~ m/^e/i) {
+                print un_format_scientific($number, $suffix);
+            } else {
+                print un_format_bytes($number, $suffix);
+            }
         } else {
             print $part;
         }
