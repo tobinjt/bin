@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# This will be executed periodically by screen.
-exit 0
