@@ -301,7 +301,7 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
       for entry in my_list:
         full_path = os.path.join(directory, entry)
         if full_path not in expected_files:
-          print >> sys.stderr, "Unexpected %s: %s" % (my_type, full_path)
+          print "Unexpected %s: %s" % (my_type, full_path)
 
 
 def UnLineWrapString(a_string):
