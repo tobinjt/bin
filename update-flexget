@@ -6,4 +6,4 @@ cd "${HOME}/src/upstream-flexget"
 set -x
 git pull upstream develop
 git merge develop
-git merge develop
+git push origin
