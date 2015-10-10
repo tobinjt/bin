@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+cd "${HOME}/src/upstream-flexget"
+set -x
+git pull upstream develop
+git merge develop
+git merge develop
