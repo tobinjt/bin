@@ -4,6 +4,7 @@ set -e -f -u -o pipefail
 
 cd "${HOME}/src/upstream-flexget"
 set -x
+git checkout develop
 git pull upstream develop
 git merge develop
 git push origin
