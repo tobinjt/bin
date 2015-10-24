@@ -5,7 +5,13 @@ use warnings;
 
 use feature qw(say);
 
+use Cwd;
 use File::Spec::Functions;
+
+my $cwd = getcwd();
+if ($cwd !~ m,/movies/,i) {
+    die qq{$0: bad current directory: $cwd; it must contain '/movies/'\n};
+}
 
 my @banned_words = qw(1080p 264 3xforum 480p 720p aac ac3 acab avi axxo bdrip
                       bluray brrip divx dl dvd dvd-rip dvdrip dvdscr etrg evo
@@ -13,6 +19,7 @@ my @banned_words = qw(1080p 264 3xforum 480p 720p aac ac3 acab avi axxo bdrip
                       maxspeed p2p r5 rarbg repack rip ro screener starlets
                       stealthmaster torentz uncut unrated vomit web www x264
                       xvid xxx yify {1337x});
+# For every banned WORD, we'll discard WORD and (WORD).
 my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
 my %new_filenames;
 foreach my $filename (glob q{*}) {
@@ -29,11 +36,15 @@ foreach my $filename (glob q{*}) {
     $name =~ s/\([^)]*\)/ /g;
     # Substitute "&" with "and"
     $name =~ s/&/and/g;
-    # mangle each word, discarding words we don't want.
+    # Mangle each word, discarding words we don't want.
     my @words = map { ucfirst }
+                    # Mangle part numbers.
                     map { s/^(?:part|cd)([123])$/p$1/; $_; }
+                        # Drop banned words.
                         grep { not exists $banned_words{$_} }
+                            # Drop years; occasional false positives :/
                             grep { not m/^20[01][0-9]$/ }
+                                # Drop empty words.
                                 grep { length }
                                     split /[- ._]+/,
                                         lc $name;
