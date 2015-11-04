@@ -256,6 +256,9 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
         PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
         file_was_removed = True
 
+    if os.path.islink(source_filename):
+      print "Skipping symbolic link %s" % source_filename
+      continue
     if file_was_removed or not os.path.exists(dest_filename):
       if dryrun:
         PrintIfNotNone("ln %s %s" % (pipes.quote(source_filename),
