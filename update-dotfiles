@@ -1,0 +1,49 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+warn() {
+    echo -e "$@" 1>&2
+}
+die() {
+    warn "$@"
+    exit 1
+}
+
+dotfiles_sources() {
+  find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
+}
+
+update_git_checkout_and_push() {
+  if [[ "$#" -ne 1 ]]; then
+    die "update_git_checkout_and_push needs one argument, got $#"
+  fi
+  local dir="$1"
+  cd "${dir}"
+  local git_status
+  git_status="$(git status --short)"
+  if [[ -n "${git_status}" ]]; then
+      die "Uncommitted changes in ${dir}:\n" "${git_status}"
+  fi
+  git pull
+  git push
+}
+
+main() {
+  if [[ "$#" -ne 0 ]]; then
+    warn "Unexpected arguments: $@"
+    die "Usage: $0"
+  fi
+  # First make sure we're up to date so that current diffs aren't mixed in with
+  # future diffs.
+  dotfiles
+  update_git_checkout_and_push "${HOME}/bin"
+  # Do it again with possibly new binaries.
+  dotfiles
+  for dir in $(dotfiles_sources); do
+    update_git_checkout_and_push "${dir}"
+  done
+  dotfiles
+}
+
+main "$@"
