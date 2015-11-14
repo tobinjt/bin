@@ -20,13 +20,27 @@ update_git_checkout_and_push() {
   fi
   local dir="$1"
   cd "${dir}"
+
+  # Refuse to do anything if there are uncommitted changes.
   local git_status
   git_status="$(git status --short)"
   if [[ -n "${git_status}" ]]; then
       die "Uncommitted changes in ${dir}:\n" "${git_status}"
   fi
+
+  # Always pull and update submodules.  Note that if we fail before submodules
+  # are completely updated there will be uncomitted changes that must be dealt
+  # with manually.
   git pull
-  git push
+  git submodule init
+  git submodule update
+
+  # We can't push to https:// URLs.
+  local repo_url
+  repo_url="$(git config --get remote.origin.url)"
+  if [[ "${repo_url:0:8}" != "https://" ]]; then
+    git push
+  fi
 }
 
 main() {
@@ -40,10 +54,14 @@ main() {
   update_git_checkout_and_push "${HOME}/bin"
   # Do it again with possibly new binaries.
   dotfiles
+  # Update everything.
   for dir in $(dotfiles_sources); do
     update_git_checkout_and_push "${dir}"
   done
-  dotfiles
+  # Forcibly update.  There is a risk that we clobber a file in our home
+  # directory with a file we've just checked out, but the alternative is for the
+  # user to forcibly update manually.
+  dotfiles -f
 }
 
 main "$@"
