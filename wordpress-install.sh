@@ -12,14 +12,17 @@ die() {
 }
 usage() {
     warn "Usage: $0 WORDPRESS-DIRECTORY wordpress VERSION"
-    die "Usage: $0 WORDPRESS-DIRECTORY [theme[s]|plugin[s]] NAME VERSION"
+    die "Usage: $0 WORDPRESS-DIRECTORY theme[s]|plugin[s] NAME [VERSION]"
 }
 
-if [[ "$#" -ne 4 ]]; then
-    if [[ "$#" -eq 3 && "$2" == "wordpress" ]]; then
+if [[ "$#" -ne 4 && "$#" -ne 3 ]]; then
+      usage
+fi
+if [[ "$#" -eq 3 ]]; then
+    if [[ "$2" == "wordpress" ]]; then
         set -- "$1" "wordpress" "wordpress" "$3"
     else
-        usage
+        set -- "$1" "$2" "$3" ""
     fi
 fi
 WORDPRESS_BASE="$1"
@@ -46,8 +49,13 @@ SUBDIRS[wordpress]=".."
 SUBDIRS[plugin]="plugins"
 SUBDIRS[theme]="themes"
 SEPARATORS[wordpress]="-"
-SEPARATORS[plugin]="."
-SEPARATORS[theme]="."
+if [[ -n "${VERSION}" ]]; then
+    SEPARATORS[plugin]="."
+    SEPARATORS[theme]="."
+else
+    SEPARATORS[plugin]=""
+    SEPARATORS[theme]=""
+fi
 readonly SUBDIRS SEPARATORS
 cd "wp-content/${SUBDIRS[${TYPE}]}"
 
@@ -60,6 +68,11 @@ DOWNLOAD_URLS[wordpress]="https://wordpress.org/${DOWNLOAD_FILE}"
 DOWNLOAD_URLS[plugin]="https://downloads.wordpress.org/plugin/${DOWNLOAD_FILE}"
 DOWNLOAD_URLS[theme]="https://downloads.wordpress.org/theme/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_URLS
+declare -A BROWSER_URLS
+BROWSER_URLS[wordpress]="https://wordpress.org/download"
+BROWSER_URLS[plugin]="https://wordpress.org/plugins/${NAME}/"
+BROWSER_URLS[theme]="https://wordpress.org/themes/${NAME}/"
+readonly BROWSER_URLS
 mkdir -p "${DOWNLOAD_DIR}"
 # Deal with corrupt downloads or HTML output.
 if [[ -s "${DOWNLOAD_PATH}" ]]; then
@@ -72,7 +85,13 @@ if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
     if ! curl --fail --location --output "${DOWNLOAD_PATH}" \
             "${DOWNLOAD_URLS[${TYPE}]}" ; then
         rm -f "${DOWNLOAD_PATH}"
-        die "Failed to download: ${DOWNLOAD_URLS[${TYPE}]}"
+        warn "Failed to download: ${DOWNLOAD_URLS[${TYPE}]}"
+        if [[ -n "${VERSION}" && "${TYPE}" != "wordpress" ]]; then
+            warn "Trying again without explicit version"
+            exec "$0" "${WORDPRESS_BASE}" "${TYPE}" "${NAME}" ""
+        else
+            die "Visit ${BROWSER_URLS[${TYPE}]}"
+        fi
     fi
     if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
         die "Missing or empty file: ${DOWNLOAD_PATH}"
