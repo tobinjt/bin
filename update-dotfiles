@@ -57,11 +57,11 @@ main() {
   # Update everything.
   for dir in $(dotfiles_sources); do
     update_git_checkout_and_push "${dir}"
+    # Forcibly update.  There is a risk that we clobber a file in our home
+    # directory with a file we've just checked out, but the alternative is for
+    # the user to forcibly update manually.
+    dotfiles -f
   done
-  # Forcibly update.  There is a risk that we clobber a file in our home
-  # directory with a file we've just checked out, but the alternative is for the
-  # user to forcibly update manually.
-  dotfiles -f
 }
 
 main "$@"
