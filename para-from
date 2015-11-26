@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-set -e
+set -e -f -u -o pipefail
 
 if [[ "$#" = 0 ]]; then
     cat <<USAGE >&2
