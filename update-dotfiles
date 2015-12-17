@@ -62,6 +62,7 @@ main() {
     # the user to forcibly update manually.
     dotfiles -f
   done
+  dotfiles -r
 }
 
 main "$@"
