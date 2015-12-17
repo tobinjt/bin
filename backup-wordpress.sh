@@ -8,7 +8,7 @@ db_password="$(awk -F \' '/DB_PASSWORD/ { print $4 }' \
                 "${HOME}/arianetobin.ie/wp-config.php")"
 date="$( date +%Y-%m-%d-%H-%M )"
 cd "${HOME}/wordpress-backups"
-for command in --check --repair --analyze; do
+for command in --check --analyze; do
   mysqlcheck "${command}" --auto-repair --silent \
     --password="${db_password}" --databases ariane_blog
 done
