@@ -11,13 +11,13 @@ my @output;
 
 PROBLEM_LINE:
 while (<>) {
-    unless (m/^\*/ or m/^\/\*/ or m/^ \*\// or m/^$/) {
+    unless (m/^\/\*/ or m/^ ?\*/ or m/^ \*\// or m/^$/) {
         last PROBLEM_LINE;
     }
     # Leave blank lines between blocks of comments.
     s/^\/\*//;
     s/^ \*\///;
-    s/^\*/>/;
+    s/^ ?\*/>/;
     push @output, $_;
 }
 
