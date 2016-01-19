@@ -14,12 +14,20 @@ dotfiles_sources() {
   find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
 }
 
+bin_sources() {
+  find "${HOME}" -maxdepth 1 -iname '*bin*' -type d
+}
+
 update_git_checkout_and_push() {
   if [[ "$#" -ne 1 ]]; then
     die "update_git_checkout_and_push needs one argument, got $#"
   fi
   local dir="$1"
   cd "${dir}"
+  if [[ ! -d ".git" ]]; then
+    # Not a git repository.
+    return
+  fi
 
   # Refuse to do anything if there are uncommitted changes.
   local git_status
@@ -51,10 +59,17 @@ main() {
   # First make sure we're up to date so that current diffs aren't mixed in with
   # future diffs.
   dotfiles
-  update_git_checkout_and_push "${HOME}/bin"
-  # Do it again with possibly new binaries.
+
+  # Update bin dirs.
+  local dir
+  for dir in $(bin_sources); do
+    update_git_checkout_and_push "${dir}"
+  done
+
+  # Check for diffs again with possibly new binaries.
   dotfiles
-  # Update everything.
+
+  # Update all dotfiles.
   for dir in $(dotfiles_sources); do
     update_git_checkout_and_push "${dir}"
     # Forcibly update.  There is a risk that we clobber a file in our home
@@ -62,6 +77,8 @@ main() {
     # the user to forcibly update manually.
     dotfiles -f
   done
+
+  # Report unexpected files.
   dotfiles -r
 }
 
