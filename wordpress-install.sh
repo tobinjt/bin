@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -e
-set -u
+set -e -f -u -o pipefail
 
 warn() {
     echo -e "$@" 1>&2
@@ -22,6 +21,7 @@ if [[ "$#" -eq 3 ]]; then
     if [[ "$2" == "wordpress" ]]; then
         set -- "$1" "wordpress" "wordpress" "$3"
     else
+        # Make $4 empty but defined because of -u.
         set -- "$1" "$2" "$3" ""
     fi
 fi
@@ -106,8 +106,6 @@ if [[ "${TYPE}" == "wordpress" ]]; then
     # delete it.
     tar cf - -C wordpress . | tar xf -
     rm -rf wordpress
-    echo "You must go to dashboard/updates for a database update."
-    echo "If that loops, rename wp-super-cache plugin, or force reload."
 fi
 git add -A .
 (unset LESS; git diff --cached --shortstat)
