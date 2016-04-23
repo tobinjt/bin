@@ -45,7 +45,8 @@ END_OF_HELP
   if [ -n "${report_unexpected}" ]; then
     return
   fi
-  chmod 600 "${HOME}/.ssh/id_rsa"
+  chmod 600 "${HOME}"/.ssh/*
+  chmod 700 "${HOME}"/.ssh
   cat "${HOME}"/.ssh/config-??-* > /dev/null
   cat "${HOME}"/.ssh/config-??-* > "${HOME}/.ssh/config"
   vim -c 'call UpdateBundleHelptags() | call UpdateSpellFiles() | :quit'
