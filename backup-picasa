@@ -2,8 +2,8 @@
 
 set -e -f -u -o pipefail
 
-readonly destdir="mini:/Volumes/Data/backups/Picasa/"
-readonly srcdir="/Volumes/Ariane Stuff/Picasa/"
+readonly destdir="mini:/Volumes/Data/backups/Photos/"
+readonly srcdir="/Volumes/Ariane Stuff/Photos/"
 
 if [[ ! -d "${srcdir}" ]]; then
   echo "Missing source: ${srcdir}" >&2
