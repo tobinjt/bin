@@ -9,8 +9,8 @@ use Cwd;
 use File::Spec::Functions;
 
 my $cwd = getcwd();
-if ($cwd !~ m,/movies/,i) {
-    die qq{$0: bad current directory: $cwd; it must contain '/movies/'\n};
+if ($cwd !~ m,/movies,i) {
+    die qq{$0: bad current directory: $cwd; it must contain '/movies'\n};
 }
 
 my @banned_words = qw(1080p 264 3xforum 480p 720p aac ac3 acab avi axxo bdrip
@@ -18,7 +18,7 @@ my @banned_words = qw(1080p 264 3xforum 480p 720p aac ac3 acab avi axxo bdrip
                       extended fxg fxm h264 hc hdrip hdtv jiggly juggs klaxxon
                       maxspeed p2p r5 rarbg repack rip ro screener starlets
                       stealthmaster torentz uncut unrated vomit web www x264
-                      xvid xxx yify {1337x});
+                      xvid xxx yify {1337x} 1980 redblade);
 # For every banned WORD, we'll discard WORD and (WORD).
 my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
 my %new_filenames;
