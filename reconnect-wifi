@@ -2,7 +2,7 @@
 
 set -e -f -u -o pipefail
 
-PATH="${PATH}:/usr/sbin"
+PATH="${PATH}:/usr/sbin:/sbin"
 
 if ! ping -c 5 -o -q www.google.com >& /dev/null; then
   echo "Reconnecting wifi"
