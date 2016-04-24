@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+if ! ping -c 5 -o -q www.google.com >& /dev/null; then
+  echo "Reconnecting wifi"
+  # Figure out which network interface is wifi from the output of
+  # networksetup -listnetworkserviceorder
+  networksetup -setairportnetwork en1 burrow - \
+    < "${HOME}/Documents/burrow-password.txt"
+  sleep 30
+  ping -c 5 www.google.com
+fi
