@@ -5,6 +5,7 @@ set -e -f -u -o pipefail
 PATH="${PATH}:/usr/sbin:/sbin"
 
 if ! ping -c 5 -o -q www.google.com >& /dev/null; then
+  ping -c 5 www.google.com
   echo "Reconnecting wifi"
   # Figure out which network interface is wifi from the output of
   # networksetup -listnetworkserviceorder
