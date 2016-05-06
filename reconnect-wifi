@@ -2,15 +2,30 @@
 
 set -e -f -u -o pipefail
 
+# Figure out which network interface is wifi from the output of
+# networksetup -listnetworkserviceorder
+readonly WIFI_DEV="en1"
+readonly EXTERNAL_HOST="8.8.8.8"
+readonly SSID="burrow"
 PATH="${PATH}:/usr/sbin:/sbin"
 
-if ! ping -c 5 -o -q www.google.com >& /dev/null; then
-  ping -c 5 www.google.com
-  echo "Reconnecting wifi"
-  # Figure out which network interface is wifi from the output of
-  # networksetup -listnetworkserviceorder
-  networksetup -setairportnetwork en1 burrow - \
-    < "${HOME}/Documents/burrow-password.txt"
-  sleep 30
-  ping -c 5 www.google.com
-fi
+# Make 5 separate attempts with delays between then to cope with some transient
+# failures.
+for i in 1 2 3 4 5; do
+  if ping -c 5 -o -q "${EXTERNAL_HOST}" >& /dev/null; then
+    exit 0
+  fi
+  sleep 10
+done
+
+ping -c 5 "${EXTERNAL_HOST}"
+echo "Reconnecting wifi"
+# Sometimes disabling the wifi is necessary to make everything work again :/
+networksetup -setairportpower "${WIFI_DEV}" off
+sleep 10
+networksetup -setairportpower "${WIFI_DEV}" on
+sleep 10
+networksetup -setairportnetwork "${WIFI_DEV}" "${SSID}" - \
+  < "${HOME}/Documents/${SSID}-password.txt"
+sleep 30
+ping -c 5 "${EXTERNAL_HOST}"
