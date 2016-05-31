@@ -2,7 +2,7 @@
 
 set -e -f -u -o pipefail
 
-readonly destdir="mini:/Volumes/Data/backups/Photos/"
+readonly destdir="mini:/Volumes/Data/backups/ArianePhotos/"
 readonly srcdir="/Volumes/Ariane Stuff/Photos/"
 
 if [[ ! -d "${srcdir}" ]]; then

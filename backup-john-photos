@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+readonly destdir="mini:/Volumes/Data/backups/JohnPhotos/"
+readonly srcdir="/Volumes/Johns Stuff/My Photos/"
+
+if [[ ! -d "${srcdir}" ]]; then
+  echo "Missing source: ${srcdir}" >&2
+  exit 1
+fi
+
+rsync --archive --info=progress2,stats --human-readable \
+  --exclude='.*' --one-file-system \
+  --delete --rsync-path=/usr/local/bin/rsync \
+  "${srcdir}" "${destdir}"
