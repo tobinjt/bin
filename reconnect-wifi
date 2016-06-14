@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e -f -u -o pipefail
+# NOTE: Not using -e because we want to continue regardless of failure.
+set -f -u -o pipefail
 
 # Figure out which network interface is wifi from the output of
 # networksetup -listnetworkserviceorder
@@ -12,10 +13,12 @@ PATH="${PATH}:/usr/sbin:/sbin"
 # Make 5 separate attempts with delays between then to cope with some transient
 # failures.
 for i in 1 2 3 4 5; do
+  if [[ "${i}" -gt 1 ]]; then
+    sleep 10
+  fi
   if ping -c 5 -o -q "${EXTERNAL_HOST}" >& /dev/null; then
     exit 0
   fi
-  sleep 10
 done
 
 ping -c 5 "${EXTERNAL_HOST}"
