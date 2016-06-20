@@ -2,6 +2,12 @@
 
 set -e -u -f -o pipefail
 
+if [[ -z "$(type -a vim)" ]]; then
+  echo "Missing vim :(" >&2
+  echo "apt-get install vim-nox" >&2
+  exit 1
+fi
+
 DESTDIR="src/dotfiles"
 readonly DESTDIR
 cd "${HOME}"
