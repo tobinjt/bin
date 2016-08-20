@@ -3,8 +3,11 @@
 set -e -f -u -o pipefail
 
 cd "${HOME}/src/upstream-flexget"
-set -x
 git checkout develop
 git pull upstream develop
 git merge develop
 git push origin
+# Dummy values for bin/activate
+export PS1="dummy"
+source bin/activate
+pip install -e .
