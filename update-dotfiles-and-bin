@@ -10,12 +10,16 @@ die() {
     exit 1
 }
 
+find_sources() {
+  find "$1" -maxdepth 1 -mindepth 1 -iname "$2" -type d | sort
+}
+
 dotfiles_sources() {
-  find "${HOME}/src" -maxdepth 1 -mindepth 1 -iname '*dotfiles*' -type d
+  find_sources "${HOME}/src" '*dotfiles*'
 }
 
 bin_sources() {
-  find "${HOME}" -maxdepth 1 -mindepth 1 -iname '*bin*' -type d
+  find_sources "${HOME}" '*bin*'
 }
 
 update_git_checkout_and_push() {
