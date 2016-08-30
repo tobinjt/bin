@@ -30,7 +30,7 @@ update_git_checkout_and_push() {
   echo "Processing ${dir}"
   cd "${dir}"
   if [[ ! -d ".git" ]]; then
-    # Not a git repository.
+    echo "Not a git repository: ${dir}"
     return
   fi
 
