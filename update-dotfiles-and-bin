@@ -11,11 +11,11 @@ die() {
 }
 
 dotfiles_sources() {
-  find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
+  find "${HOME}/src" -maxdepth 1 -mindepth 1 -iname '*dotfiles*' -type d
 }
 
 bin_sources() {
-  find "${HOME}" -maxdepth 1 -iname '*bin*' -type d
+  find "${HOME}" -maxdepth 1 -mindepth 1 -iname '*bin*' -type d
 }
 
 update_git_checkout_and_push() {
