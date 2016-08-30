@@ -23,6 +23,7 @@ update_git_checkout_and_push() {
     die "update_git_checkout_and_push needs one argument, got $#"
   fi
   local dir="$1"
+  echo "Processing ${dir}"
   cd "${dir}"
   if [[ ! -d ".git" ]]; then
     # Not a git repository.
