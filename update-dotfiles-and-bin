@@ -53,6 +53,8 @@ update_git_checkout_and_push() {
   repo_url="$(git config --get remote.origin.url)"
   if [[ "${repo_url:0:8}" != "https://" ]]; then
     git push
+  else
+    echo "Cannot push to https:// URLs."
   fi
 }
 
