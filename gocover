@@ -4,8 +4,13 @@ set -e -f -u -o pipefail
 
 filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
 go test --coverprofile="${filename}" --covermode=count
-go tool cover --func="${filename}" | grep -v -e '100.0%$' -e '-main.go:'
-if [[ -z "${NO_BROWSER:-}" ]]; then
+if [[ -n "${PRESUBMIT_MODE}" ]]; then
+  if go tool cover --func="${filename}" \
+       | grep -v -e '100.0%$' -e '-main.go:' -e '^total:'; then
+    exit 1
+  fi
+else
+  go tool cover --func="${filename}" | grep -v -e '100.0%$' -e '-main.go:'
   go tool cover --html="${filename}"
 fi
 rm -f "${filename}"
