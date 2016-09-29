@@ -2,15 +2,15 @@
 
 set -e -f -u -o pipefail
 
-readonly destdir="mini:/Volumes/Data/backups/ArianePhotos/"
-readonly srcdir="/Volumes/Ariane Stuff/Photos/"
+readonly destdir="mini:/Volumes/Data/backups/ArianeStuff/"
+readonly srcdir="/Volumes/Ariane Stuff/"
 
 if [[ ! -d "${srcdir}" ]]; then
   echo "Missing source: ${srcdir}" >&2
   exit 1
 fi
 
-rsync --archive --info=progress2,stats --human-readable \
+rsync --archive --verbose --human-readable \
   --exclude='.*' --one-file-system \
   --delete \
   --rsh="ssh -l arianetobin" --rsync-path=/usr/local/bin/rsync \
