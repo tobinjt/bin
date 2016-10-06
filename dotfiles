@@ -7,9 +7,8 @@ dotfiles_sources() {
 }
 
 main() {
-  local SKIP_FLAGS="--skip=tags --skip=*.pyc --skip=*.spl"
-  readonly SKIP_FLAGS
-
+  local IGNORE_FILENAME=".dotfiles.ignore"
+  readonly IGNORE_FILENAME
   local dryrun= force= report_unexpected= opt=
   while getopts ":dfhr" opt "$@"; do
     case "${opt}" in
@@ -23,6 +22,10 @@ main() {
         cat <<END_OF_HELP
 Usage: $0 [-d] [-f] [-r]
 Links files in ${HOME}/src/*dotfiles* to ${HOME}
+Files and directories listed in ${HOME}/src/*dotfiles*/${IGNORE_FILENAME} will
+be ignored.  Note: ${IGNORE_FILENAME} lists are global, not scoped to the
+directory containing them.
+
 Options:
   -f: force overwrite of files that differ.
   -d: dry run, overrides -f.
@@ -40,7 +43,18 @@ END_OF_HELP
     esac
   done
 
-  linkdirs ${SKIP_FLAGS} ${dryrun} ${force} ${report_unexpected} \
+  local SKIP_FLAGS="--ignore_pattern=tags --ignore_pattern=*.pyc"
+  SKIP_FLAGS+=" --ignore_pattern=*.spl"
+  readonly SKIP_FLAGS
+  local SKIP_FILES="" dir 
+  for dir in $(dotfiles_sources); do
+    if [[ -f "${dir}/${IGNORE_FILENAME}" ]]; then
+      SKIP_FILES+=" --ignore_file=${dir}/${IGNORE_FILENAME}"
+    fi
+  done
+  readonly SKIP_FILES
+
+  linkdirs ${SKIP_FLAGS} ${SKIP_FILES} ${dryrun} ${force} ${report_unexpected} \
     $(dotfiles_sources) "${HOME}"
   if [ -n "${report_unexpected}" ]; then
     return
