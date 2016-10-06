@@ -46,7 +46,7 @@ END_OF_HELP
   local SKIP_FLAGS="--ignore_pattern=tags --ignore_pattern=*.pyc"
   SKIP_FLAGS+=" --ignore_pattern=*.spl"
   readonly SKIP_FLAGS
-  local SKIP_FILES="" dir 
+  local SKIP_FILES="" dir
   for dir in $(dotfiles_sources); do
     if [[ -f "${dir}/${IGNORE_FILENAME}" ]]; then
       SKIP_FILES+=" --ignore_file=${dir}/${IGNORE_FILENAME}"
