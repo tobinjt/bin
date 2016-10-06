@@ -323,8 +323,10 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
     print line
   unexpected_paths["file"].sort()
   unexpected_paths["directory"].sort()
-  print "rm %s" % " ".join(unexpected_paths["file"])
-  print "rmdir %s" % " ".join(unexpected_paths["directory"])
+  if unexpected_paths["file"]:
+    print "rm %s" % " ".join(unexpected_paths["file"])
+  if unexpected_paths["directory"]:
+    print "rmdir %s" % " ".join(unexpected_paths["directory"])
 
 
 def UnLineWrapString(a_string):
