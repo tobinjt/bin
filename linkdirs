@@ -289,7 +289,11 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
   for entry in expected_files_list:
     expected_files[entry] = 1
 
-  unexpected_files = []
+  unexpected_msgs = []
+  unexpected_paths = {
+    "directory": [],
+    "file": []
+  }
   for directory, subdirs, files in os.walk(dest_dir, topdown=True):
     subdirs[:] = RemoveSkipPatterns(subdirs, skip)
     files = RemoveSkipPatterns(files, skip)
@@ -304,11 +308,16 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
       for entry in my_list:
         full_path = os.path.join(directory, entry)
         if full_path not in expected_files:
-          unexpected_files.append("Unexpected %s: %s" % (my_type, full_path))
+          unexpected_msgs.append("Unexpected %s: %s" % (my_type, full_path))
+          unexpected_paths[my_type].append(full_path)
 
-  unexpected_files.sort()
-  for line in unexpected_files:
+  unexpected_msgs.sort()
+  for line in unexpected_msgs:
     print line
+  unexpected_paths["file"].sort()
+  unexpected_paths["directory"].sort()
+  print "rm %s" % " ".join(unexpected_paths["file"])
+  print "rmdir %s" % " ".join(unexpected_paths["directory"])
 
 
 def UnLineWrapString(a_string):
