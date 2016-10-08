@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e -u -o pipefail
+set -e -f -u -o pipefail
 
 dotfiles_sources() {
   find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
@@ -59,6 +59,7 @@ END_OF_HELP
   if [ -n "${report_unexpected}" ]; then
     return
   fi
+  set +f
   chmod 600 "${HOME}"/.ssh/*
   chmod 700 "${HOME}"/.ssh
   cat "${HOME}"/.ssh/config-??-* > /dev/null
