@@ -9,7 +9,7 @@ dotfiles_sources() {
 cat_ssh_configs() {
   find "${HOME}"/.ssh \
       -name 'config-??-*' \
-      -a \( -not -name '*-os-*' -o -name '*-os-"$(uname -s)"-*' \) \
+      -a \( -not -name '*-os-*' -o -name '*-os-'"$(uname -s)"'-*' \) \
       -print0 \
     | sort --zero-terminated \
     | xargs -0 cat
