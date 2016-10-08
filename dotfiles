@@ -6,6 +6,15 @@ dotfiles_sources() {
   find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
 }
 
+cat_ssh_configs() {
+  find "${HOME}"/.ssh \
+      -name 'config-??-*' \
+      -a \( -not -name '*-os-*' -o -name '*-os-"$(uname -s)"-*' \) \
+      -print0 \
+    | sort --zero-terminated \
+    | xargs -0 cat
+}
+
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
@@ -61,9 +70,10 @@ END_OF_HELP
   fi
   set +f
   chmod 600 "${HOME}"/.ssh/*
+  set -f
   chmod 700 "${HOME}"/.ssh
-  cat "${HOME}"/.ssh/config-??-* > /dev/null
-  cat "${HOME}"/.ssh/config-??-* > "${HOME}/.ssh/config"
+  cat_ssh_configs > /dev/null
+  cat_ssh_configs > "${HOME}/.ssh/config"
   vim -c 'call UpdateBundleHelptags() | call UpdateSpellFiles() | :quit'
 }
 
