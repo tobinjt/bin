@@ -10,7 +10,9 @@ if [[ ! -d "${srcdir}" ]]; then
   exit 1
 fi
 
-rsync --archive --info=progress2,stats --human-readable \
-  --exclude='.*' --one-file-system \
-  --delete --rsync-path=/usr/local/bin/rsync \
+# --exclude='.*' is used to skip various directories like .Trashes and
+# .Spotlight-* that Mac OS manages.
+rsync --archive --verbose --human-readable \
+  --one-file-system --delete --exclude='.*' \
+  --rsync-path=/usr/local/bin/rsync \
   "${srcdir}" "${destdir}"
