@@ -15,7 +15,7 @@ if [[ ! -d "${srcdir}" ]]; then
   exit 1
 fi
 
-sudo rsync -a --info=progress2,stats \
+sudo rsync -a --verbose \
   --hard-links \
   --delete \
   --exclude='.*' --exclude='hourly.*' \
