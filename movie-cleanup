@@ -18,9 +18,10 @@ my @banned_words = qw(1080p 264 3xforum 480p 720p aac ac3 acab avi axxo bdrip
                       extended fxg fxm h264 hc hdrip hdtv jiggly juggs klaxxon
                       maxspeed p2p r5 rarbg repack rip ro screener starlets
                       stealthmaster torentz uncut unrated vomit web www x264
-                      xvid xxx yify {1337x} 1980 redblade);
+                      xvid xxx yify {1337x} 1980 redblade Webrip Hd Ts Cpg
+                      Badassmedia Lkrg Bitloks X0r Gly);
 # For every banned WORD, we'll discard WORD and (WORD).
-my %banned_words = map { ($_ => 1, qq{($_)} => 1) } @banned_words;
+my %banned_words = map { (lc($_) => 1, lc(qq{($_)}) => 1) } @banned_words;
 my %new_filenames;
 foreach my $filename (glob q{*}) {
     if ($filename !~ m/^(.*)\.([^.]+)$/) {
