@@ -74,7 +74,10 @@ END_OF_HELP
   chmod 700 "${HOME}"/.ssh
   cat_ssh_configs > /dev/null
   cat_ssh_configs > "${HOME}/.ssh/config"
-  vim -c 'call UpdateBundleHelptags() | call UpdateSpellFiles() | :quit'
+  # Stop TmuxSetWindowName loading: it's not useful and it doesn't work properly
+  # when tmux is focused on a different pane.
+  vim --cmd 'let g:loaded_TmuxSetWindowName=1' \
+    -c 'call UpdateBundleHelptags() | call UpdateSpellFiles() | :quit'
 }
 
 main "$@"
