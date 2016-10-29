@@ -326,6 +326,9 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
   if unexpected_paths["file"]:
     print "rm %s" % " ".join(unexpected_paths["file"])
   if unexpected_paths["directory"]:
+    # Descending sort by length, so that child directories are removed before
+    # parent directories.
+    unexpected_paths["directory"].sort(key=lambda x: len(x), reverse=True)
     print "rmdir %s" % " ".join(unexpected_paths["directory"])
 
 
