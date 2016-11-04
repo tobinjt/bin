@@ -1,26 +1,36 @@
 #!/bin/bash
 
+# To start over from scratch, rm -rf "${DIR}" and run this.
+
 set -e -f -u -o pipefail
 
-DIR="${HOME}/src/upstream-flexget"
-readonly DIR
+readonly DIR="${HOME}/src/upstream-flexget"
+readonly SCRIPT="bin/activate"
 
-# Initial setup
-# rm -rf "${DIR}"
-# This will take a long time.
-# git clone git@github.com:tobinjt/Flexget.git "${DIR}"
-# cd "${DIR}"
-# git remote add upstream https://github.com/Flexget/Flexget
-# Follow the sync instructions below but stop before sourcing bin/activate.
-# pip install virtualenv
-# virtualenv --clear "${DIR}"
+if [ ! -d "${DIR}" ]; then
+  # Initial setup
+  brew update
+  brew upgrade
+  brew install python
+  echo "Cloning will take a long time"
+  git clone git@github.com:tobinjt/Flexget.git "${DIR}"
+  cd "${DIR}"
+  git remote add upstream https://github.com/Flexget/Flexget
+fi
 
 cd "${DIR}"
 git checkout develop
 git pull upstream develop
 git merge develop
 git push origin
-# Dummy values for bin/activate
+
+if [ ! -f "${SCRIPT}" ]; then
+  # Set up virtualenv.
+  pip install virtualenv
+  virtualenv --clear "${DIR}"
+fi
+
+# Dummy values needed by ${SCRIPT}.
 export PS1="dummy"
-source bin/activate
+source "${SCRIPT}"
 pip install -e .
