@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # To start over from scratch, rm -rf "${DIR}" and run this.
+# See https://flexget.readthedocs.io/en/latest/develop/index.html#how-do-i-get-started
 
 set -e -f -u -o pipefail
 
@@ -34,3 +35,4 @@ fi
 export PS1="dummy"
 source "${SCRIPT}"
 pip install -e .
+pip install -r dev-requirements.txt
