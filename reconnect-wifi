@@ -3,12 +3,14 @@
 # NOTE: Not using -e because we want to continue regardless of failure.
 set -f -u -o pipefail
 
+readonly DRYRUN="no"
 # Figure out which network interface is wifi from the output of
 # networksetup -listnetworkserviceorder
 readonly WIFI_DEV="en1"
+readonly SSID="burrow"
+
 readonly EXTERNAL_IP="8.8.8.8"
 readonly EXTERNAL_HOSTNAME="www.google.com"
-readonly SSID="burrow"
 PATH="${PATH}:/usr/sbin:/sbin"
 
 # Make 5 separate attempts with delays between then to cope with some transient
@@ -27,14 +29,18 @@ done
 
 ping -c 5 "${EXTERNAL_IP}"
 host "${EXTERNAL_HOSTNAME}"
-echo "Reconnecting wifi"
-# Sometimes disabling the wifi is necessary to make everything work again :/
-networksetup -setairportpower "${WIFI_DEV}" off
-sleep 10
-networksetup -setairportpower "${WIFI_DEV}" on
-sleep 10
-networksetup -setairportnetwork "${WIFI_DEV}" "${SSID}" - \
-  < "${HOME}/Documents/${SSID}-password.txt"
-sleep 30
-ping -c 5 "${EXTERNAL_IP}"
-host "${EXTERNAL_HOSTNAME}"
+if [ "${DRYRUN}" == "no" ]; then
+  echo "Reconnecting wifi"
+  # Sometimes disabling the wifi is necessary to make everything work again :/
+  networksetup -setairportpower "${WIFI_DEV}" off
+  sleep 10
+  networksetup -setairportpower "${WIFI_DEV}" on
+  sleep 10
+  networksetup -setairportnetwork "${WIFI_DEV}" "${SSID}" - \
+    < "${HOME}/Documents/${SSID}-password.txt"
+  sleep 30
+  ping -c 5 "${EXTERNAL_IP}"
+  host "${EXTERNAL_HOSTNAME}"
+else
+  echo "Dryrun is true, not making changes."
+fi
