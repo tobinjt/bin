@@ -6,7 +6,8 @@ set -f -u -o pipefail
 # Figure out which network interface is wifi from the output of
 # networksetup -listnetworkserviceorder
 readonly WIFI_DEV="en1"
-readonly EXTERNAL_HOST="8.8.8.8"
+readonly EXTERNAL_IP="8.8.8.8"
+readonly EXTERNAL_HOSTNAME="www.google.com"
 readonly SSID="burrow"
 PATH="${PATH}:/usr/sbin:/sbin"
 
@@ -16,12 +17,16 @@ for i in 1 2 3 4 5; do
   if [[ "${i}" -gt 1 ]]; then
     sleep 10
   fi
-  if ping -c 5 -o -q "${EXTERNAL_HOST}" >& /dev/null; then
+  if ping -c 5 -o -q "${EXTERNAL_IP}" >& /dev/null; then
+    exit 0
+  fi
+  if host "${EXTERNAL_HOSTNAME}" >& /dev/null; then
     exit 0
   fi
 done
 
-ping -c 5 "${EXTERNAL_HOST}"
+ping -c 5 "${EXTERNAL_IP}"
+host "${EXTERNAL_HOSTNAME}"
 echo "Reconnecting wifi"
 # Sometimes disabling the wifi is necessary to make everything work again :/
 networksetup -setairportpower "${WIFI_DEV}" off
@@ -31,4 +36,5 @@ sleep 10
 networksetup -setairportnetwork "${WIFI_DEV}" "${SSID}" - \
   < "${HOME}/Documents/${SSID}-password.txt"
 sleep 30
-ping -c 5 "${EXTERNAL_HOST}"
+ping -c 5 "${EXTERNAL_IP}"
+host "${EXTERNAL_HOSTNAME}"
