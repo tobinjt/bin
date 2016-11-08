@@ -63,6 +63,7 @@ main() {
     warn "Unexpected arguments: $@"
     die "Usage: $0"
   fi
+  echo "Running dotfiles to check for pre-existing diffs."
   # First make sure we're up to date so that current diffs aren't mixed in with
   # future diffs.
   dotfiles
