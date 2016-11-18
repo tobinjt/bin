@@ -37,6 +37,7 @@ for i in $(seq 1 10); do
 done
 
 log "All attempts failed :("
+set -x
 ping -c 5 "${EXTERNAL_IP}"
 host "${EXTERNAL_HOSTNAME}"
 if [ "${DRYRUN}" == "no" ]; then
