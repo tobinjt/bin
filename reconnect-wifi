@@ -27,16 +27,21 @@ for i in $(seq 1 10); do
     sleep 20
   fi
   if ping -c 5 -o -q "${EXTERNAL_IP}" >& /dev/null; then
-    log "attempt ${i}: ping succeeded"
+    if [[ "${i}" -gt 1 ]]; then
+      log "attempt ${i}: ping succeeded"
+    fi
     exit 0
   fi
   if host "${EXTERNAL_HOSTNAME}" >& /dev/null; then
-    log "attempt ${i}: host succeeded"
+    if [[ "${i}" -gt 1 ]]; then
+      log "attempt ${i}: host succeeded"
+    fi
     exit 0
   fi
 done
 
 log "All attempts failed :("
+set -x
 ping -c 5 "${EXTERNAL_IP}"
 host "${EXTERNAL_HOSTNAME}"
 if [ "${DRYRUN}" == "no" ]; then
