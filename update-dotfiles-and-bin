@@ -53,10 +53,6 @@ update_git_checkout_and_push() {
   git submodule init
   git submodule update
 
-  # Check for unfinished changes; this happens when submodules are removed
-  # because git won't delete the submodule directory.
-  check_git_status "${dir}"
-
   # We can't push to https:// URLs.
   local repo_url
   repo_url="$(git config --get remote.origin.url)"
@@ -81,6 +77,9 @@ main() {
   local dir
   for dir in $(bin_sources); do
     update_git_checkout_and_push "${dir}"
+    # Check for unfinished changes; this happens when submodules are removed
+    # because git won't delete the submodule directory.
+    check_git_status "${dir}"
   done
 
   # Check for diffs again with possibly new binaries.
@@ -93,6 +92,11 @@ main() {
     # directory with a file we've just checked out, but the alternative is for
     # the user to forcibly update manually.
     dotfiles -f
+    # Check for unfinished changes; this happens when submodules are removed
+    # because git won't delete the submodule directory.  Do this after running
+    # dotfiles, otherwise there is a high chance that the next run of this
+    # program will find diffs and will exit.
+    check_git_status "${dir}"
   done
 
   # Report unexpected files.
