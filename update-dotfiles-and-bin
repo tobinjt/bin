@@ -22,6 +22,15 @@ bin_sources() {
   find_sources "${HOME}" '*bin*'
 }
 
+check_git_status() {
+  local git_status
+  local dir="${dir}"
+  git_status="$(git status --short)"
+  if [[ -n "${git_status}" ]]; then
+      die "Uncommitted changes in ${dir}:\n" "${git_status}"
+  fi
+}
+
 update_git_checkout_and_push() {
   if [[ "$#" -ne 1 ]]; then
     die "update_git_checkout_and_push needs one argument, got $#"
@@ -35,11 +44,7 @@ update_git_checkout_and_push() {
   fi
 
   # Refuse to do anything if there are uncommitted changes.
-  local git_status
-  git_status="$(git status --short)"
-  if [[ -n "${git_status}" ]]; then
-      die "Uncommitted changes in ${dir}:\n" "${git_status}"
-  fi
+  check_git_status "${dir}"
 
   # Always pull and update submodules.  Note that if we fail before submodules
   # are completely updated there will be uncomitted changes that must be dealt
@@ -47,6 +52,10 @@ update_git_checkout_and_push() {
   git pull
   git submodule init
   git submodule update
+
+  # Check for unfinished changes; this happens when submodules are removed
+  # because git won't delete the submodule directory.
+  check_git_status "${dir}"
 
   # We can't push to https:// URLs.
   local repo_url
