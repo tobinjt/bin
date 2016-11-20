@@ -23,8 +23,12 @@ bin_sources() {
 }
 
 check_git_status() {
+  local dir="${1}"
+  cd "${dir}"
+  if [[ ! -d ".git" ]]; then
+    return
+  fi
   local git_status
-  local dir="${dir}"
   git_status="$(git status --short)"
   if [[ -n "${git_status}" ]]; then
       die "Uncommitted changes in ${dir}:\n" "${git_status}"
