@@ -78,6 +78,8 @@ main() {
   dotfiles
 
   # Update bin dirs.
+  local orig_code
+  orig_code="$(cat "${BASH_SOURCE[0]}")"
   local dir
   for dir in $(bin_sources); do
     update_git_checkout_and_push "${dir}"
@@ -85,6 +87,12 @@ main() {
     # because git won't delete the submodule directory.
     check_git_status "${dir}"
   done
+  local new_code
+  new_code="$(cat "${BASH_SOURCE[0]}")"
+  if [[ "${orig_code}" != "${new_code}" ]]; then
+    echo "Restarting with updated tools"
+    exec "${BASH_SOURCE[0]}"
+  fi
 
   # Check for diffs again with possibly new binaries.
   dotfiles
