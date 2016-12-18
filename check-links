@@ -18,12 +18,21 @@ cd "${DIR}"
 wget \
   --output-file wget.log \
   --execute robots=off \
+  --reject-regex '/jquery.selectBox-arrow.gif|/xmlrpc.php' \
   --wait 1 \
   --recursive \
   --page-requisites \
   "${WEBSITE}" || true
-sed -n \
-  -e '/^--/ h' \
-  -e '/HTTP request sent, awaiting response... 200/ d' \
-  -e '/HTTP request sent, awaiting response.../ { H; g; p; }' "${LOG}"
-echo "See ${LOG} and the contents of ${DIR} for further investigation"
+# -- marks the start of a request; replace the hold space with that line.
+# Delete successful request (200) logs.
+# When any other status is seen, append the line to the hold space, swap the
+# hold and pattern spaces, then print the pattern space.
+PROBLEMS="$(sed -n \
+              -e '/^--/ h' \
+              -e '/HTTP request sent, awaiting response... 200/ d' \
+              -e '/HTTP request sent, awaiting response.../ { H; g; p; }' \
+              "${LOG}")"
+if [[ -n "${PROBLEMS}" ]]; then
+  echo "${PROBLEMS}"
+  echo "See ${LOG} and the contents of ${DIR} for further investigation"
+fi
