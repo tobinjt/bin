@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+check_redirects() {
+  local expected_url="$1"
+  shift
+  local failures=0 url
+  for url in "$@"; do
+    if curl --silent --show-error --head "${url}" \
+        | grep -q "^Location: ${expected_url}"; then
+      continue
+    fi
+    failures=$((failures + 1))
+    printf "Bad/missing redirect for %s, expected %s\n" \
+      "${url}" "${expected_url}"
+    curl --head "${url}"
+  done
+  return "${failures}"
+}
+
+main() {
+  check_redirects "https://www.arianetobin.ie" \
+    "http://arianetobin.ie" \
+    "https://arianetobin.ie" \
+    "http://arianetobin.com" \
+    "https://arianetobin.com" \
+    "http://www.arianetobin.com" \
+    "https://www.arianetobin.com" \
+    "http://metalatplay.com" \
+    "http://metalatwork.com" \
+    "http://nakedmetalsmith.com"
+
+  check_redirects "https://dev.arianetobin.ie" "http://dev.arianetobin.ie"
+
+  check_redirects "https://www.johntobin.ie" \
+    "http://www.johntobin.ie" \
+    "http://johntobin.ie" \
+    "https://johntobin.ie"
+}
+
+main
