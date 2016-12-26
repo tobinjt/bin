@@ -5,7 +5,7 @@
 
 set -e -f -u -o pipefail
 
-readonly DIR="${HOME}/src/upstream-flexget"
+readonly DIR="${1:-${HOME}/src/upstream-flexget}"
 readonly SCRIPT="bin/activate"
 
 if [ ! -d "${DIR}" ]; then
@@ -23,6 +23,7 @@ cd "${DIR}"
 git checkout develop
 git pull upstream develop
 git merge develop
+git pull origin
 git push origin
 
 if [ ! -f "${SCRIPT}" ]; then
