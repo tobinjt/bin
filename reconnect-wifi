@@ -20,9 +20,11 @@ log() {
   echo "${now} $@" >> "${LOG_FILE}"
 }
 
-# Make 5 separate attempts with delays between then to cope with some transient
+readonly ATTEMPTS="${1:-10}"
+
+# Make separate attempts with delays between then to cope with some transient
 # failures.
-for i in $(seq 1 10); do
+for i in $(seq 1 "${ATTEMPTS}"); do
   if [[ "${i}" -gt 1 ]]; then
     sleep 20
   fi
