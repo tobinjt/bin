@@ -28,8 +28,11 @@ main() {
     "http://www.arianetobin.com" \
     "https://www.arianetobin.com" \
     "http://metalatplay.com" \
+    "http://www.metalatplay.com" \
     "http://metalatwork.com" \
-    "http://nakedmetalsmith.com"
+    "http://www.metalatwork.com" \
+    "http://nakedmetalsmith.com" \
+    "http://www.nakedmetalsmith.com"
 
   check_redirects "https://dev.arianetobin.ie" "http://dev.arianetobin.ie"
 
