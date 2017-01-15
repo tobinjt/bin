@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+check_dns_for_host() {
+  local hostname="$1" ipv4_address="$2" ipv6_address="$3"
+  readonly hostname ipv4_address ipv6_address
+
+  # www.johntobin.ie has address 88.99.86.190
+  # www.johntobin.ie has IPv6 address 2a01:4f8:c17:7156::2
+  local host_output retval=0
+  host_output="$(host "${hostname}")"
+  if ! echo "${host_output}" \
+      | grep -q "${hostname} has address ${ipv4_address}\$"; then
+    echo "Bad ipv4 address for ${hostname}: expected ${ipv4_address}, " \
+      "got ${host_output}" >&2
+    retval=1
+  fi
+  if ! echo "${host_output}" \
+      | grep -q "${hostname} has IPv6 address ${ipv6_address}\$"; then
+    echo "Bad ipv6 address for ${hostname}: expected ${ipv6_address}," \
+      "got ${host_output}" >&2
+    retval=1
+  fi
+
+  return "${retval}"
+}
+
+main() {
+  local hostname
+  for hostname in "$@"; do
+    check_dns_for_host "${hostname}" "88.99.86.190" "2a01:4f8:c17:7156::2"
+    if ! echo "${hostname}" | grep -q '\..*\.'; then
+      check_dns_for_host "www.${hostname}" "88.99.86.190" "2a01:4f8:c17:7156::2"
+    fi
+  done
+}
+
+main \
+  "arianetobin.com" \
+  "arianetobin.ie" \
+  "dev.arianetobin.ie" \
+  "johntobin.ie" \
+  "metalatwork.com" \
+  "nakedmetalsmith.com"
