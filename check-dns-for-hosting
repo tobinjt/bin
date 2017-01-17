@@ -8,18 +8,18 @@ check_dns_for_host() {
 
   # www.johntobin.ie has address 88.99.86.190
   # www.johntobin.ie has IPv6 address 2a01:4f8:c17:7156::2
-  local host_output retval=0
+  local host_output pattern retval=0
   host_output="$(host "${hostname}")"
-  if ! echo "${host_output}" \
-      | grep -q "${hostname} has address ${ipv4_address}\$"; then
-    echo "Bad ipv4 address for ${hostname}: expected ${ipv4_address}, " \
-      "got ${host_output}" >&2
+  pattern="${hostname} has address ${ipv4_address}\$"
+  if ! echo "${host_output}" | grep -q "${pattern}"; then
+    echo "Bad ipv4 address for ${hostname}: pattern '${pattern}' " \
+      "does not match '${host_output}'" >&2
     retval=1
   fi
-  if ! echo "${host_output}" \
-      | grep -q "${hostname} has IPv6 address ${ipv6_address}\$"; then
-    echo "Bad ipv6 address for ${hostname}: expected ${ipv6_address}," \
-      "got ${host_output}" >&2
+  pattern="${hostname} has IPv6 address ${ipv6_address}\$"
+  if ! echo "${host_output}" | grep -q "${pattern}"; then
+    echo "Bad ipv6 address for ${hostname}: pattern '${pattern}' " \
+      "does not match '${host_output}'" >&2
     retval=1
   fi
 
