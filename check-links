@@ -15,10 +15,12 @@ LOG="${DIR}/wget.log"
 readonly WEBSITE DIR LOG
 
 cd "${DIR}"
+reject_regex="/jquery.selectBox-arrow.gif|/xmlrpc.php"
+reject_regex+="|/blog/2010/03/Smarter_HTTP_redirects/"
 wget \
   --output-file wget.log \
   --execute robots=off \
-  --reject-regex '/jquery.selectBox-arrow.gif|/xmlrpc.php' \
+  --reject-regex "${reject_regex}" \
   --wait 1 \
   --recursive \
   --page-requisites \
