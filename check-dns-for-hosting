@@ -2,38 +2,62 @@
 
 set -e -f -u -o pipefail
 
+debug_host_output() {
+  local host_output_file="$1"
+  sed -e 's/^/->/' -e 's/$/<-/' "${host_output_file}"
+}
+
+find_address() {
+  local atype="$1" pattern="$2" host_output_file="$3"
+  readonly atype pattern host_output_file hostname
+  if ! grep -q "${pattern}" "${host_output_file}"; then
+    echo "Bad ${atype} address: pattern '${pattern}' not found" >&2
+    debug_host_output "${host_output_file}" >&2
+    return 1
+  fi
+}
+
 check_dns_for_host() {
   local hostname="$1" ipv4_address="$2" ipv6_address="$3"
   readonly hostname ipv4_address ipv6_address
 
   # www.johntobin.ie has address 88.99.86.190
   # www.johntobin.ie has IPv6 address 2a01:4f8:c17:7156::2
-  local host_output pattern retval=0
-  host_output="$(host "${hostname}")"
-  pattern="${hostname} has address ${ipv4_address}\$"
-  if ! echo "${host_output}" | grep -q "${pattern}"; then
-    echo "Bad ipv4 address for ${hostname}: pattern '${pattern}' " \
-      "does not match '${host_output}'" >&2
+  local host_output_file pattern retval=0
+  host_output_file="$(mktemp /tmp/check-dns.XXXXXXXXXXXX)"
+  readonly host_output_file
+  host "${hostname}" > "${host_output_file}"
+
+  pattern="^${hostname} has address ${ipv4_address}\$"
+  if ! find_address "ipv4" "${pattern}" "${host_output_file}"; then
     retval=1
   fi
-  pattern="${hostname} has IPv6 address ${ipv6_address}\$"
-  if ! echo "${host_output}" | grep -q "${pattern}"; then
-    echo "Bad ipv6 address for ${hostname}: pattern '${pattern}' " \
-      "does not match '${host_output}'" >&2
+  pattern="^${hostname} has IPv6 address ${ipv6_address}\$"
+  if ! find_address "ipv6" "${pattern}" "${host_output_file}"; then
     retval=1
   fi
 
+  rm "${host_output_file}"
   return "${retval}"
 }
 
 main() {
-  local hostname
+  local hostname retval=0
+  local ipv4_address="88.99.86.190" ipv6_address="2a01:4f8:c17:7156::2"
   for hostname in "$@"; do
-    check_dns_for_host "${hostname}" "88.99.86.190" "2a01:4f8:c17:7156::2"
-    if ! echo "${hostname}" | grep -q '\..*\.'; then
-      check_dns_for_host "www.${hostname}" "88.99.86.190" "2a01:4f8:c17:7156::2"
+    if ! check_dns_for_host "${hostname}" \
+        "${ipv4_address}" "${ipv6_address}"; then
+      retval=1
+    fi
+    if echo "${hostname}" | grep -q '\..*\.'; then
+      continue
+    fi
+    if ! check_dns_for_host "www.${hostname}" \
+        "${ipv4_address}" "${ipv6_address}"; then
+      retval=1
     fi
   done
+  return "${retval}"
 }
 
 main \
