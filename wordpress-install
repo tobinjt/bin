@@ -14,9 +14,15 @@ usage() {
   die "Usage: $0 WORDPRESS-DIRECTORY theme[s]|plugin[s] NAME [VERSION]"
 }
 
+# Don't require a version for wordpress.
+if [[ "$#" -eq 2 && "$2" == "wordpress" ]]; then
+  # Make $4 empty but defined because of -u.
+  set -- "$1" "wordpress" "wordpress" ""
+fi
 if [[ "$#" -ne 4 && "$#" -ne 3 ]]; then
    usage
 fi
+
 if [[ "$#" -eq 3 ]]; then
   if [[ "$2" == "wordpress" ]]; then
     set -- "$1" "wordpress" "wordpress" "$3"
@@ -39,7 +45,7 @@ if [[ "${TYPE}" != "plugin" && "${TYPE}" != "theme" \
   usage
 fi
 cd "${WORDPRESS_BASE}"
-git_status="$( git status --short )"
+git_status="$(git status --short)"
 if [[ -n "${git_status}" ]]; then
   die "Uncommitted changes:\n" "${git_status}"
 fi
@@ -57,10 +63,15 @@ else
   SEPARATORS[theme]=""
 fi
 readonly SUBDIRS SEPARATORS
+readonly WORDPRESS_LATEST="latest.zip"
 cd "wp-content/${SUBDIRS[${TYPE}]}"
 
 DOWNLOAD_DIR="${HOME}/wordpress"
-DOWNLOAD_FILE="${NAME}${SEPARATORS[${TYPE}]}${VERSION}.zip"
+if [[ "${TYPE}" == "wordpress" && -z "${VERSION}" ]]; then
+  DOWNLOAD_FILE="${WORDPRESS_LATEST}"
+else
+  DOWNLOAD_FILE="${NAME}${SEPARATORS[${TYPE}]}${VERSION}.zip"
+fi
 DOWNLOAD_PATH="${DOWNLOAD_DIR}/${DOWNLOAD_FILE}"
 readonly DOWNLOAD_DIR DOWNLOAD_FILE DOWNLOAD_PATH
 declare -A DOWNLOAD_URLS
@@ -73,7 +84,14 @@ BROWSER_URLS[wordpress]="https://wordpress.org/download"
 BROWSER_URLS[plugin]="https://wordpress.org/plugins/${NAME}/"
 BROWSER_URLS[theme]="https://wordpress.org/themes/${NAME}/"
 readonly BROWSER_URLS
+
 mkdir -p "${DOWNLOAD_DIR}"
+# If we're grabbing the latest version of wordpress rather than a specific
+# version, delete the destination file because we want to download the newer
+# version rather than using a previously downloaded one.
+if [[ "${DOWNLOAD_FILE}" == "${WORDPRESS_LATEST}" ]]; then
+  rm -f "${DOWNLOAD_PATH}"
+fi
 # Deal with corrupt downloads or HTML output.
 if [[ -s "${DOWNLOAD_PATH}" ]]; then
   if ! unzip -l "${DOWNLOAD_PATH}" > /dev/null; then
@@ -108,4 +126,7 @@ if [[ "${TYPE}" == "wordpress" ]]; then
 fi
 git add -A .
 (unset LESS; git diff --cached --shortstat)
-git commit --quiet --message "Installed ${NAME} ${VERSION}"
+git_status="$(git status --short)"
+if [[ -n "${git_status}" ]]; then
+  git commit --quiet --message "Installed ${NAME} ${VERSION}"
+fi
