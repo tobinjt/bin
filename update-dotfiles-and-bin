@@ -115,4 +115,8 @@ main() {
   dotfiles -r
 }
 
+# Make sure $HOME/bin is in $PATH to support running
+#   "ssh foo@bar update-dotfiles-and-bin"
+PATH="${PATH}:${HOME}/bin"
+export PATH
 main "$@"
