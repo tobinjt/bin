@@ -1,8 +1,0 @@
-#!/bin/sh
-
-set -e
-
-# pkill will fail if it can't find any jobs.
-pkill nm-applet || true
-nm-applet < /dev/null >& /dev/null &
-disown
