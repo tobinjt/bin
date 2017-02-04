@@ -284,8 +284,7 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
                                 Defaults to false.
 
   Returns:
-    (dirs, files): A list of files and directories in dest_dir that aren't in
-                   source_dir.
+    list(str), the messages to print.
   """
 
   expected_files = {dest_dir: 1}
@@ -319,17 +318,16 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
           unexpected_paths[my_type].append(entry)
 
   unexpected_msgs.sort()
-  for line in unexpected_msgs:
-    print line
   unexpected_paths["file"].sort()
   unexpected_paths["directory"].sort()
   if unexpected_paths["file"]:
-    print "rm %s" % " ".join(unexpected_paths["file"])
+    unexpected_msgs.append("rm %s" % " ".join(unexpected_paths["file"]))
   if unexpected_paths["directory"]:
     # Descending sort by length, so that child directories are removed before
     # parent directories.
     unexpected_paths["directory"].sort(key=lambda x: len(x), reverse=True)
-    print "rmdir %s" % " ".join(unexpected_paths["directory"])
+    unexpected_msgs.append("rmdir %s" % " ".join(unexpected_paths["directory"]))
+  return unexpected_msgs
 
 
 def UnLineWrapString(a_string):
@@ -409,6 +407,7 @@ def main(argv):
     ignore_patterns.extend(ReadSkipPatternsFromFile(filename))
 
   all_results = LinkResults([], [])
+  unexpected_msgs = []
   try:
     dest = args.pop().rstrip(os.sep)
     if not os.path.isdir(dest):
@@ -420,19 +419,23 @@ def main(argv):
       all_results.expected_files.extend(results.expected_files)
       all_results.diffs.extend(results.diffs)
     if options.report_unexpected_files:
-      ReportUnexpectedFilesInDestDir(
+      unexpected_msgs.extend(ReportUnexpectedFilesInDestDir(
           dest, expected_files_list=all_results.expected_files,
           skip=ignore_patterns,
-          ignore_unexpected_children=options.ignore_unexpected_children)
+          ignore_unexpected_children=options.ignore_unexpected_children))
   except ArgumentError, arg_error:
     sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
   except UnexpectedFileError, unexpected_file:
     sys.exit("%s: %s" % (argv[0], unexpected_file.args[0]))
 
-  if all_results.diffs:
-    for diff in all_results.diffs:
-      print diff,
-    sys.exit(1)
+  exit = 0
+  for diff in all_results.diffs:
+    print diff,
+    exit = 1
+  for line in unexpected_msgs:
+    print line
+    exit = 1
+  sys.exit(exit)
 
 
 if __name__ == "__main__":
