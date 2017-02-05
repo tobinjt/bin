@@ -1,29 +1,22 @@
 #!/usr/bin/env python
 
-"""%prog [OPTIONS] COLUMN [COLUMNS] [FILES].
+"""%(prog)s [OPTIONS] COLUMN [COLUMNS] [FILES].
 
 Extract the specified columns from FILES or stdin.
 """
 
+import argparse
 import fileinput
-import optparse
 import re
 import sys
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
-class MyHelpFormatter(optparse.IndentedHelpFormatter):
-  def format_description(self, description):
-    """Override description formatting to prevent wrapping."""
-    return description.lstrip()
-
-
 def main(argv):
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
-  usage = __doc__.rstrip().replace(".", "", 1)
-  description = """
+  description = __doc__.rstrip().replace(".", "", 1) + """
 Column numbering starts at 1, not 0; column 0 is the entire line, just like awk.
 Column numbers that are out of bounds are silently ignored.  When each line is
 split, empty leading or trailing columns will be discarded _before_ columns are
@@ -42,25 +35,25 @@ that is out of bounds for a line, so 3:1000 will print all columns from 3
 onwards (unless you have a *very* long line).
 """
 
-  formatter = MyHelpFormatter()
-  argv_parser = optparse.OptionParser(usage=usage, description=description,
-                                      formatter=formatter)
-  argv_parser.add_option("-d", "--delimiter",
-                         action="store", dest="delimiter", default=r"\s+",
-                         help="Regex delimiting input columns; "
-                         "defaults to whitespace")
-  argv_parser.add_option("-s", "--separator",
-                         action="store", dest="separator", default=" ",
-                         help="Separator between output columns; "
-                         "defaults to a single space; backslash escape "
-                         "sequences will be expanded")
-  (options, args) = argv_parser.parse_args(argv[1:])
+  #  formatter = MyHelpFormatter()
+  argv_parser = argparse.ArgumentParser(
+      description=description,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+  argv_parser.add_argument("-d", "--delimiter", default=r"\s+",
+                           help="Regex delimiting input columns; "
+                           "defaults to whitespace")
+  argv_parser.add_argument("-s", "--separator", default=" ",
+                           help="Separator between output columns; "
+                           "defaults to a single space; backslash escape "
+                           "sequences will be expanded")
+  argv_parser.add_argument("args", nargs="*")
+  options = argv_parser.parse_args(argv[1:])
   options.separator = options.separator.decode("string-escape")
 
   options.columns = []
   options.filenames = []
   remaining_args_are_filenames = False
-  for arg in args:
+  for arg in options.args:
     if remaining_args_are_filenames:
       options.filenames.append(arg)
       continue
