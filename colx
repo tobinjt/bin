@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# pylint: disable-msg=C6304
 
 """%prog [OPTIONS] COLUMN [COLUMNS] [FILES].
 
@@ -69,7 +68,7 @@ onwards (unless you have a *very* long line).
     # Support 3:8 style columns.
     column_range = re.search(r'^(-?\d+):(-?\d+)$', arg)
     if column_range:
-      first, last = int(column_range.group(1)) , int(column_range.group(2))
+      first, last = int(column_range.group(1)), int(column_range.group(2))
       if first > last:
         increment = -1
         last -= 1
