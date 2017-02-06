@@ -1,0 +1,16 @@
+[run]
+# Trace branch coverage.
+branch = True
+omit =
+  # Exclude everything installed with pip.
+  */site-packages/*
+
+[report]
+# Fail if less that this percentage of lines are covered.
+fail_under = 90
+# In reports, show which lines are missing.
+show_missing = True
+
+[html]
+# Where to write output.
+directory = /Users/johntobin/tmp/coverage
