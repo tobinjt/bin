@@ -30,7 +30,14 @@ import sys
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
-def main(argv):
+def parse_arguments(argv):
+  """Parse the arguments provided by the user.
+
+  Args:
+    argv: list(str), the arguments to parse.
+  Returns:
+    argparse.Namespace, with attributes set based on the arguments.
+  """
   description = '\n'.join(__doc__.split('\n')[1:])
   usage = __doc__.split('\n')[0]
 
@@ -48,7 +55,7 @@ def main(argv):
                            help="Any argument that looks like a column "
                            "specifier is used as one, then remaining arguments"
                            " are used as filenames")
-  options = argv_parser.parse_args(argv[1:])
+  options = argv_parser.parse_args(argv)
   options.separator = options.separator.decode("string-escape")
 
   options.columns = []
@@ -83,6 +90,11 @@ def main(argv):
   if not options.columns:
     argv_parser.error("At least one COLUMN argument is required.")
 
+  return options
+
+
+def main(argv):
+  options = parse_arguments(argv[1:])
   for line in fileinput.input(options.filenames):
     line = line.rstrip("\n")
     input_columns = [line]
