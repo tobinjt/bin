@@ -27,7 +27,7 @@ import fileinput
 import re
 import sys
 
-__author__ = "johntobin@johntobin.ie (John Tobin)"
+__author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 
 def parse_arguments(argv):
@@ -45,18 +45,18 @@ def parse_arguments(argv):
       description=description, usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      "-d", "--delimiter", default=r"\s+",
-      help="Regex delimiting input columns; defaults to whitespace")
+      '-d', '--delimiter', default=r'\s+',
+      help='Regex delimiting input columns; defaults to whitespace')
   argv_parser.add_argument(
-      "-s", "--separator", default=" ",
-      help="Separator between output columns; defaults to a single space; backslash escape "
-           "sequences will be expanded")
-  argv_parser.add_argument("args", nargs="*", metavar="COLUMNS_THEN_FILES",
-                           help="Any argument that looks like a column "
-                           "specifier is used as one, then remaining arguments"
-                           " are used as filenames")
+      '-s', '--separator', default=' ',
+      help='Separator between output columns; defaults to a single space; backslash escape '
+           'sequences will be expanded')
+  argv_parser.add_argument('args', nargs='*', metavar='COLUMNS_THEN_FILES',
+                           help='Any argument that looks like a column '
+                           'specifier is used as one, then remaining arguments'
+                           ' are used as filenames')
   options = argv_parser.parse_args(argv)
-  options.separator = options.separator.decode("string-escape")
+  options.separator = options.separator.decode('string-escape')
 
   options.columns = []
   options.filenames = []
@@ -88,7 +88,7 @@ def parse_arguments(argv):
       options.filenames.append(arg)
 
   if not options.columns:
-    argv_parser.error("At least one COLUMN argument is required.")
+    argv_parser.error('At least one COLUMN argument is required.')
 
   return options
 
@@ -96,7 +96,7 @@ def parse_arguments(argv):
 def main(argv):
   options = parse_arguments(argv[1:])
   for line in fileinput.input(options.filenames):
-    line = line.rstrip("\n")
+    line = line.rstrip('\n')
     input_columns = [line]
     split_columns = re.split(options.delimiter, line)
 
@@ -116,5 +116,5 @@ def main(argv):
     print options.separator.join(output_columns)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   main(sys.argv)
