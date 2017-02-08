@@ -1,5 +1,6 @@
 """Tests for colx."""
 
+import StringIO
 import unittest
 
 import mock
@@ -72,9 +73,41 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
     self.setUpPyfakefs()
 
   def test_simple(self):
-    """Tests for basic processing."""
+    """Test basic processing."""
+    filename = 'input'
+    with open(filename, 'w') as tfh:
+      tfh.write('one two three\n')
+    output = colx.process_files([filename], [1, 3], ' ', ':')
+    self.assertEqual(['one:three'], output)
+
+  def test_strip_empty_columns(self):
+    """Test that empty leading and trailing columns are stripped."""
+    filename = 'input'
+    with open(filename, 'w') as tfh:
+      tfh.write('  one two  \n')
+    output = colx.process_files([filename], [2], ' ', ':')
+    self.assertEqual(['two'], output)
+
+  def test_column_too_large(self):
+    """Test columns larger than input."""
     filename = 'input'
     with open(filename, 'w') as tfh:
       tfh.write('one two\n')
-    output = colx.process_files([filename], [1], ' ', ':')
-    self.assertEqual(['one'], output)
+    output = colx.process_files([filename], [1, 2, 7], ' ', ':')
+    self.assertEqual(['one:two'], output)
+
+
+class TestMain(fake_filesystem_unittest.TestCase):
+  """Tests for main."""
+
+  def setUp(self):
+    self.setUpPyfakefs()
+
+  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  def test_main(self, mock_stdout):
+    """Test main."""
+    filename = 'input'
+    with open(filename, 'w') as tfh:
+      tfh.write('one two three\n')
+    colx.main(['argv0', '2', '1', filename])
+    self.assertEqual('two one\n', mock_stdout.getvalue())
