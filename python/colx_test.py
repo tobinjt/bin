@@ -3,6 +3,7 @@
 import unittest
 
 import mock
+from pyfakefs import fake_filesystem_unittest
 
 import colx
 
@@ -62,3 +63,18 @@ class TestArgumentParsing(unittest.TestCase):
       colx.parse_arguments(['asdf'])
       mock_error.assert_called_once_with(
           'At least one COLUMN argument is required.')
+
+
+class TestProcessFiles(fake_filesystem_unittest.TestCase):
+  """Tests for file processing."""
+
+  def setUp(self):
+    self.setUpPyfakefs()
+
+  def test_simple(self):
+    """Tests for basic processing."""
+    filename = 'input'
+    with open(filename, 'w') as tfh:
+      tfh.write('one two\n')
+    output = colx.process_files([filename], [1], ' ', ':')
+    self.assertEqual(['one'], output)

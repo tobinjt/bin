@@ -93,12 +93,23 @@ def parse_arguments(argv):
   return options
 
 
-def main(argv):
-  options = parse_arguments(argv[1:])
-  for line in fileinput.input(options.filenames):
+def process_files(filenames, columns, delimiter, separator):
+  """Process files and return specified columns.
+
+  Args:
+    filenames: list(str), list of files to process.  If empty, sys.stdin will be
+               processed.
+    columns: list(int), columns to output.
+    delimiter: str, delimiter for splitting input lines into columns.
+    separator: str, separator for combining columns into output lines.
+  Returns:
+    list(str): strings to output.
+  """
+  output = []
+  for line in fileinput.input(filenames):
     line = line.rstrip('\n')
     input_columns = [line]
-    split_columns = re.split(options.delimiter, line)
+    split_columns = re.split(delimiter, line)
 
     # Strip leading and trailing empty fields.
     first_index = 0
@@ -110,10 +121,20 @@ def main(argv):
     input_columns.extend(split_columns[first_index:last_index + 1])
 
     output_columns = []
-    for column in options.columns:
+    for column in columns:
       if abs(column) < len(input_columns):
         output_columns.append(input_columns[column])
-    print options.separator.join(output_columns)
+    output.append(separator.join(output_columns))
+
+  return output
+
+
+def main(argv):
+  options = parse_arguments(argv[1:])
+  output = process_files(options.filenames, options.columns, options.delimiter,
+                         options.separator)
+  for line in output:
+    print line
 
 
 if __name__ == '__main__':
