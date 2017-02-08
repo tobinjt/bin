@@ -49,8 +49,8 @@ def parse_arguments(argv):
       help='Regex delimiting input columns; defaults to whitespace')
   argv_parser.add_argument(
       '-s', '--separator', default=' ',
-      help='Separator between output columns; defaults to a single space; backslash escape '
-           'sequences will be expanded')
+      help='Separator between output columns; defaults to a single space; '
+           'backslash escape sequences will be expanded')
   argv_parser.add_argument('args', nargs='*', metavar='COLUMNS_THEN_FILES',
                            help='Any argument that looks like a column '
                            'specifier is used as one, then remaining arguments'

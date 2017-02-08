@@ -1,6 +1,5 @@
 """Tests for colx."""
 
-import argparse
 import unittest
 
 import mock
@@ -10,7 +9,7 @@ import colx
 class TestArgumentParsing(unittest.TestCase):
   """Tests for argument parsing."""
 
-  def test_argument_parsing(self):
+  def test_successful_parsing(self):
     """Tests for argument parsing."""
 
     tests = [
@@ -56,6 +55,8 @@ class TestArgumentParsing(unittest.TestCase):
       for key in expected.iterkeys():
         self.assertEqual(getattr(actual, key), expected[key])
 
+  def test_error_checking(self):  # pylint: disable=no-self-use
+    """Tests for error checking."""
     # At least one column is required.
     with mock.patch('argparse.ArgumentParser.error') as mock_error:
       colx.parse_arguments(['asdf'])
