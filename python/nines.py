@@ -7,13 +7,17 @@ Uptime is usually described as N nines, e.g. 3 nines is 99.9% uptime, 6 nines is
 N nines uptime, e.g. 6 nines uptime allows 31.536 seconds per year of downtime.
 """
 
-__author__ = 'johntobin@google.com (John Tobin)'
+__author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 import sys
 
 
 def strip_trailing_zeros(number):
   """Strip unnecessary trailing zeros from a number.
+
+  %d formats integers only.  %f formats floats, but has way too many digits.
+  There's no format suitable for displaying a number that might be a floar or an
+  integer, hence this function.
 
   Args:
     number: a number, either an integer or a string
@@ -39,21 +43,16 @@ def format_duration(seconds):
     seconds_so_far *= number
     time_units[seconds_so_far] = label
 
-  keys = time_units.keys()
-  keys.sort()
-  keys.reverse()
   durations = []
-  for seconds_per_time_unit in keys:
+  for seconds_per_time_unit in sorted(time_units, reverse=True):
     if seconds_per_time_unit <= seconds:
-      remaining_seconds = seconds % seconds_per_time_unit
-      num_time_units = (seconds - remaining_seconds) / seconds_per_time_unit
+      num_time_units, seconds = divmod(seconds, seconds_per_time_unit)
       plural = ''
       if num_time_units > 1:
         plural = 's'
       durations.append('%d %s%s' % (num_time_units,
                                     time_units[seconds_per_time_unit],
                                     plural))
-      seconds = remaining_seconds
   return ', '.join(durations)
 
 
