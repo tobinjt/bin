@@ -18,4 +18,7 @@ class TestMain(unittest.TestCase):
     nines.main(['argv0', '2', '7'])
     expected = ('99%: 315360 seconds (3 days, 15 hours, 36 minutes)\n'
                 '99.99999%: 3.1536 seconds (3 seconds)\n')
-    self.assertEqual(expected, mock_stdout.getvalue())
+    self.assertMultiLineEqual(expected, mock_stdout.getvalue())
+
+if __name__ == '__main__':
+  unittest.main()
