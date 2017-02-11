@@ -57,6 +57,45 @@ def FormatDuration(seconds):
   return ', '.join(durations)
 
 
+def nines(num_nines):
+  """Calculate nines for a number
+
+  Args:
+    num_nines: str, either N or N%.
+  Returns:
+    str, result to print.
+  """
+  orig_num_nines = num_nines
+  if num_nines[-1] == '%':
+    num_nines_is_percentage = True
+    num_nines = num_nines[:-1]
+  else:
+    num_nines_is_percentage = False
+
+  try:
+    num_nines = float(num_nines)
+  except ValueError:
+    sys.exit('Argument is not a number: %s' % str(num_nines))
+
+  if num_nines < 0:
+    sys.exit('You cannot have a negative downtime: %s' % orig_num_nines)
+  if num_nines_is_percentage:
+    if num_nines > 100:
+      sys.exit('You cannot have more that 100%% uptime: %s' % orig_num_nines)
+    downtime_fraction = (100 - num_nines) / 100
+    uptime_percentage = num_nines
+  else:
+    downtime_fraction = 10 ** -num_nines
+    uptime_percentage = 100 * (1 - downtime_fraction)
+
+  seconds_per_year = 60 * 60 * 24 * 365
+  downtime_seconds = downtime_fraction * seconds_per_year
+
+  return ('%s%%: %s seconds (%s)'
+          % (StripTrailingZeros(uptime_percentage),
+             StripTrailingZeros(downtime_seconds),
+             FormatDuration(downtime_seconds)))
+
 def main(argv):
   if len(argv) <= 1:
     sys.exit(
@@ -66,38 +105,8 @@ When NUMBER_OF_NINES does not end with %%, it is the number of nines, e.g:
   3 => 99.9%%, 7 => 99.99999%%"""
         % argv[0])
 
-  seconds_per_year = 60 * 60 * 24 * 365
-
   for num_nines in argv[1:]:
-    orig_num_nines = num_nines
-    if num_nines[-1] == '%':
-      num_nines_is_percentage = True
-      num_nines = num_nines[:-1]
-    else:
-      num_nines_is_percentage = False
-
-    try:
-      num_nines = float(num_nines)
-    except ValueError:
-      sys.exit('Argument is not a number: %s' % str(num_nines))
-
-    if num_nines < 0:
-      sys.exit('You cannot have a negative downtime: %s' % orig_num_nines)
-    if num_nines_is_percentage:
-      if num_nines > 100:
-        sys.exit('You cannot have more that 100%% uptime: %s' % orig_num_nines)
-      downtime_fraction = (100 - num_nines) / 100
-      uptime_percentage = num_nines
-    else:
-      downtime_fraction = 10 ** -num_nines
-      uptime_percentage = 100 * (1 - downtime_fraction)
-
-    downtime_seconds = downtime_fraction * seconds_per_year
-
-    print ('%s%%: %s seconds (%s)'
-           % (StripTrailingZeros(uptime_percentage),
-              StripTrailingZeros(downtime_seconds),
-              FormatDuration(downtime_seconds)))
+    print nines(num_nines)
 
 if __name__ == '__main__':
   main(sys.argv)
