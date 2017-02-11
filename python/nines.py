@@ -12,7 +12,7 @@ __author__ = 'johntobin@google.com (John Tobin)'
 import sys
 
 
-def StripTrailingZeros(number):
+def strip_trailing_zeros(number):
   """Strip unnecessary trailing zeros from a number.
 
   Args:
@@ -27,7 +27,7 @@ def StripTrailingZeros(number):
   return string
 
 
-def FormatDuration(seconds):
+def format_duration(seconds):
   """Format a number of seconds as "x hours, y minutes, z seconds"."""
   time_units = {}
   seconds_so_far = 1
@@ -92,9 +92,9 @@ def nines(num_nines):
   downtime_seconds = downtime_fraction * seconds_per_year
 
   return ('%s%%: %s seconds (%s)'
-          % (StripTrailingZeros(uptime_percentage),
-             StripTrailingZeros(downtime_seconds),
-             FormatDuration(downtime_seconds)))
+          % (strip_trailing_zeros(uptime_percentage),
+             strip_trailing_zeros(downtime_seconds),
+             format_duration(downtime_seconds)))
 
 def main(argv):
   if len(argv) <= 1:
