@@ -1,15 +1,26 @@
 #!/usr/bin/env python
 
-"""Display the number of seconds of downtime that N nines uptime allows.
+"""Usage: %(prog)s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]
 
-Uptime is usually described as N nines, e.g. 3 nines is 99.9% uptime, 6 nines is
-99.9999% uptime.  This program displays how much downtime per year is allowed by
-N nines uptime, e.g. 6 nines uptime allows 31.536 seconds per year of downtime.
+Display the number of seconds of downtime that N nines uptime allows.  Uptime is
+usually described as N nines, e.g. 3 nines is 99.9%% uptime, 6 nines is
+99.9999%% uptime.  This program displays how much downtime per year is allowed
+by N nines uptime, e.g. 6 nines uptime allows 31.536 seconds per year of
+downtime.
+
+Arguments >= %(PT)s (e.g. 75) are interpreted as percentages, arguments < %(PT)s
+are interpreted as a number of nines.
 """
 
 __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
+import itertools
 import sys
+
+
+# Args >= PERCENT_THRESHOLD are interpreted as percentages, < PERCENT_THRESHOLD
+# are interpreted as a number of nines.
+PERCENT_THRESHOLD = 20
 
 
 def strip_trailing_zeros(number):
@@ -32,7 +43,13 @@ def strip_trailing_zeros(number):
 
 
 def format_duration(seconds):
-  """Format a number of seconds as "x hours, y minutes, z seconds"."""
+  """Format a number of seconds as "x hours, y minutes, z seconds".
+
+  Args:
+    seconds: int, number of seconds.
+  Returns:
+    str, string to print.
+  """
   time_units = {}
   seconds_so_far = 1
   for (number, label) in ((1, 'second'),
@@ -56,56 +73,80 @@ def format_duration(seconds):
   return ', '.join(durations)
 
 
+def parse_nines_arg(num_nines):
+  """Parse an CLI argument, converting it into a percentage.
+
+  Args:
+    num_nines: str(num), argument to parse.
+  Returns:
+    float, parsed nines value.
+  Raises:
+    ValueError, when an invalid argument is provided.
+  """
+  orig_num_nines = num_nines
+  try:
+    num_nines = float(num_nines)
+  except ValueError:
+    raise ValueError('Argument is not a number: %s' % num_nines)
+  if num_nines < 0:
+    raise ValueError('You cannot have a negative uptime: %s' % orig_num_nines)
+  if num_nines > 100:
+    raise ValueError('You cannot have more that 100%% uptime: %s'
+                     % orig_num_nines)
+  if num_nines >= PERCENT_THRESHOLD:
+    return num_nines
+  return nines_into_percent(num_nines)
+
+
+def nines_into_percent(num_nines):
+  """Turn 3.5 into 99.95.
+
+  1 -> 90
+  2 -> 99
+  2.5 -> 99.5
+  3 -> 99.9
+  4 -> 99.99
+
+  Args:
+    num_nines: float, argument to parse.
+  Returns:
+    float, parsed nines value.
+  """
+  num, remainder = divmod(num_nines, 1)
+  digits = ['0.'] + list(itertools.repeat('9', int(num)))
+  # 0 -> '', 0.5 -> 5
+  digits.append(str(remainder).lstrip('0.').lstrip('.'))
+  result = 100 * float(''.join(digits))
+  return result
+
+
 def nines(num_nines):
   """Calculate nines for a number
 
   Args:
-    num_nines: str, either N or N%.
+    num_nines: float, nines to calculate.
   Returns:
     str, result to print.
   """
-  orig_num_nines = num_nines
-  if num_nines[-1] == '%':
-    num_nines_is_percentage = True
-    num_nines = num_nines[:-1]
-  else:
-    num_nines_is_percentage = False
-
-  try:
-    num_nines = float(num_nines)
-  except ValueError:
-    sys.exit('Argument is not a number: %s' % str(num_nines))
-
-  if num_nines < 0:
-    sys.exit('You cannot have a negative downtime: %s' % orig_num_nines)
-  if num_nines_is_percentage:
-    if num_nines > 100:
-      sys.exit('You cannot have more that 100%% uptime: %s' % orig_num_nines)
-    downtime_fraction = (100 - num_nines) / 100
-    uptime_percentage = num_nines
-  else:
-    downtime_fraction = 10 ** -num_nines
-    uptime_percentage = 100 * (1 - downtime_fraction)
-
+  downtime_fraction = (100 - num_nines) / 100
   seconds_per_year = 60 * 60 * 24 * 365
   downtime_seconds = downtime_fraction * seconds_per_year
 
   return ('%s%%: %s seconds (%s)'
-          % (strip_trailing_zeros(uptime_percentage),
+          % (strip_trailing_zeros(num_nines),
              strip_trailing_zeros(downtime_seconds),
              format_duration(downtime_seconds)))
 
 def main(argv):
+  # TODO: use argparse.
   if len(argv) <= 1:
-    sys.exit(
-        """Usage: %s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]
-When NUMBER_OF_NINES ends with %%, it is a raw percentage.
-When NUMBER_OF_NINES does not end with %%, it is the number of nines, e.g:
-  3 => 99.9%%, 7 => 99.99999%%"""
-        % argv[0])
+    sys.exit(__doc__ % {
+        'prog': argv[0],
+        'PT': PERCENT_THRESHOLD,
+        })
 
   for num_nines in argv[1:]:
-    print nines(num_nines)
+    print nines(parse_nines_arg(num_nines))
 
 if __name__ == '__main__':
   main(sys.argv)
