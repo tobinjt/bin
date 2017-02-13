@@ -91,7 +91,7 @@ def parse_nines_arg(num_nines):
   if num_nines < 0:
     raise ValueError('You cannot have a negative uptime: %s' % orig_num_nines)
   if num_nines > 100:
-    raise ValueError('You cannot have more that 100%% uptime: %s'
+    raise ValueError('You cannot have more than 100%% uptime: %s'
                      % orig_num_nines)
   if num_nines >= PERCENT_THRESHOLD:
     return num_nines
