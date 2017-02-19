@@ -3,11 +3,11 @@
 set -e -f -u -o pipefail
 
 warn() {
-    echo -e "$@" 1>&2
+  echo -e "$@" 1>&2
 }
 die() {
-    warn "$@"
-    exit 1
+  warn "$@"
+  exit 1
 }
 
 find_sources() {
@@ -31,7 +31,7 @@ check_git_status() {
   local git_status
   git_status="$(git status --short)"
   if [[ -n "${git_status}" ]]; then
-      die "Uncommitted changes in ${dir}:\n" "${git_status}"
+    die "Uncommitted changes in ${dir}:\n" "${git_status}"
   fi
 }
 
