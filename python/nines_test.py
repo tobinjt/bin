@@ -25,6 +25,7 @@ class TestParsing(unittest.TestCase):
 
   def test_parse_nines_arg(self):
     """Test general parsing."""
+    self.assertEqual(80, nines.parse_nines_arg('80'))
     for nine, message in [
         ('as', 'Argument is not a number'),
         ('-5', 'You cannot have a negative uptime'),
@@ -60,6 +61,15 @@ class TestMain(unittest.TestCase):
     expected = ('99%: 315360 seconds (3 days, 15 hours, 36 minutes)\n'
                 '99.99999%: 3.15359999652 seconds (3 seconds)\n')
     self.assertMultiLineEqual(expected, mock_stdout.getvalue())
+
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  def test_no_args(self, mock_stdout, mock_exit):
+    """Test main."""
+    nines.main(['argv0'])
+    mock_exit.assert_called_once()
+    self.assertEqual('', mock_stdout.getvalue())
+
 
 if __name__ == '__main__':
   unittest.main()
