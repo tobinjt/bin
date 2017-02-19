@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+git_status="$(git status --short)"
+if [[ -n "${git_status}" ]]; then
+  echo "Uncommitted changes in /etc:\n" "${git_status}" >&2
+  exit 1
+fi
+
+certbot renew \
+  --pre-hook "service apache2 stop" \
+  --post-hook "service apache2 start" \
+  --standalone
+
+git_status="$(git status --short)"
+if [[ -n "${git_status}" ]]; then
+  etckeeper commit 'Renew some certs.'
+fi
+
+sleep 5
+curl --head https://www.arianetobin.ie/
