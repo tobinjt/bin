@@ -11,6 +11,10 @@ omit =
 fail_under = 90
 # In reports, show which lines are missing.
 show_missing = True
+# Exclude some untestable lines from coverage.
+exclude_lines =
+  if __name__ == .__main__.:
+  pragma: no cover
 
 [html]
 # Where to write output.
