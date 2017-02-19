@@ -111,3 +111,6 @@ class TestMain(fake_filesystem_unittest.TestCase):
       tfh.write('one two three\n')
     colx.main(['argv0', '2', '1', filename])
     self.assertEqual('two one\n', mock_stdout.getvalue())
+
+if __name__ == '__main__':
+  unittest.main()

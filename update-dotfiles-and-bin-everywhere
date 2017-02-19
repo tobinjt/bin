@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+update-dotfiles-and-bin
+echo "password for root:"
+sudo --set-home update-dotfiles-and-bin
+
+ssh -t mini update-dotfiles-and-bin
+echo "password for root@mini:"
+ssh -t mini sudo -i update-dotfiles-and-bin
+ssh -t arianetobin@mini update-dotfiles-and-bin
+
+ssh -t hosting update-dotfiles-and-bin
+echo "password for root@hosting:"
+ssh -t hosting sudo -i update-dotfiles-and-bin
+ssh -t ariane@hosting update-dotfiles-and-bin
