@@ -16,6 +16,7 @@ import pipes
 import shutil
 import stat
 import sys
+import textwrap
 import time
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -330,23 +331,6 @@ def report_unexpected_files(dest_dir, expected_files_list, skip,
   return unexpected_msgs
 
 
-# TODO: use textwrap.dedent instead.
-def un_line_wrap_string(a_string):
-  """Undo line wrapping.
-
-  Replace all whitespace sequences with a single space, and strip leading and
-  trailing whitespace.
-
-  Args:
-    a_string: the string to be unwrapped.
-
-  Returns:
-    A string.
-  """
-
-  return " ".join(a_string.split()).strip()
-
-
 def read_skip_patterns_from_file(filename):
   """Read skip patterns from filename, ignoring comments and empty lines."""
   patterns = []
@@ -366,39 +350,39 @@ def real_main(argv):
   argv_parser = optparse.OptionParser(usage=usage, version="%prog 1.0")
   argv_parser.add_option(
       "--dryrun", action="store_true", dest="dryrun", default=False,
-      help=un_line_wrap_string("""Perform a trial run with no changes made
-                            (default: %default)"""))
+      help=textwrap.fill("""Perform a trial run with no changes made
+                         (default: %default)"""))
   argv_parser.add_option(
       "--force", action="store_true", dest="force", default=False,
-      help=un_line_wrap_string("""Remove existing files if necessary (default:
-                            %default)"""))
+      help=textwrap.fill("""Remove existing files if necessary (default:
+                         %default)"""))
   argv_parser.add_option(
       "--ignore_file", action="append", dest="ignore_file", metavar="FILENAME",
       default=[],
-      help=un_line_wrap_string("""File containing shell patterns to ignore.  To
-                            specify multiple filenames, use this option multiple
-                            times."""))
+      help=textwrap.fill("""File containing shell patterns to ignore.  To
+                         specify multiple filenames, use this option multiple
+                         times."""))
   argv_parser.add_option(
       "--ignore_pattern", action="append", dest="ignore_pattern",
       metavar="FILENAME",
       default=[
           "CVS", ".git", ".gitignore", ".gitmodules", ".hg", ".svn", "*.swp"],
-      help=un_line_wrap_string("""Extra shell patterns to ignore (appended to
-                               this list: %default).  To specify multiple
-                               filenames, use this option multiple times."""))
+      help=textwrap.fill("""Extra shell patterns to ignore (appended to this
+                         list: %default).  To specify multiple filenames, use
+                         this option multiple times."""))
   argv_parser.add_option(
       "--ignore_unexpected_children", action="store_true",
       dest="ignore_unexpected_children", default=False,
-      help=un_line_wrap_string("""When checking for unexpected files or
-                            directories, ignore unexpected child directories in
-                            DESTINATION_DIRECTORY; unexpected grandchild
-                            directories of DESTINATION_DIRECTORY will not be
-                            ignored (default: %default)"""))
+      help=textwrap.fill("""When checking for unexpected files or directories,
+                         ignore unexpected child directories in
+                         DESTINATION_DIRECTORY; unexpected grandchild
+                         directories of DESTINATION_DIRECTORY will not be
+                         ignored (default: %default)"""))
   argv_parser.add_option(
       "--report_unexpected_files", action="store_true",
       dest="report_unexpected_files", default=False,
-      help=un_line_wrap_string("""Report unexpected files in
-                               DESTINATION_DIRECTORY (default: %default)"""))
+      help=textwrap.fill("""Report unexpected files in DESTINATION_DIRECTORY
+                         (default: %default)"""))
 
   (options, args) = argv_parser.parse_args(argv[1:])
   if len(args) < 2:
