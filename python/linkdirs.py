@@ -356,7 +356,9 @@ def ReadSkipPatternsFromFile(filename):
         patterns.append(line)
   return patterns
 
-def main(argv):
+
+def RealMain(argv):
+  """The real main function, it just doesn't print anything or exit."""
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
   usage = __doc__.rstrip().replace(".", "", 1)
@@ -428,14 +430,16 @@ def main(argv):
   except UnexpectedFileError, unexpected_file:
     sys.exit("%s: %s" % (argv[0], unexpected_file.args[0]))
 
-  exit = 0
-  for diff in all_results.diffs:
-    print diff,
-    exit = 1
-  for line in unexpected_msgs:
+  return all_results.diffs + unexpected_msgs
+
+
+def main(argv):
+  messages = RealMain(argv)
+  for line in messages:
     print line
-    exit = 1
-  sys.exit(exit)
+  if messages:
+    sys.exit(1)
+  sys.exit(0)
 
 
 if __name__ == "__main__":
