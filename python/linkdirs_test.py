@@ -8,7 +8,7 @@ import linkdirs
 
 
 class TestMain(fake_filesystem_unittest.TestCase):
-  """Tests for RealMain and main."""
+  """Tests for real_main and main."""
 
   def setUp(self):
     self.setUpPyfakefs()
@@ -21,6 +21,6 @@ class TestMain(fake_filesystem_unittest.TestCase):
     self.fs.CreateFile(src_file, contents=src_content)
     os.makedirs(dest_dir)
 
-    linkdirs.RealMain(['linkdirs', os.path.dirname(src_file), dest_dir])
+    linkdirs.real_main(['linkdirs', os.path.dirname(src_file), dest_dir])
     with open(os.path.join(dest_dir, os.path.basename(src_file)), 'r') as tfh:
       self.assertEqual(src_content, tfh.read())

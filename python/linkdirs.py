@@ -39,7 +39,7 @@ class UnexpectedFileError(Error):
 LinkResults = collections.namedtuple('LinkResults', 'expected_files diffs')
 
 
-def SafeUnlink(unlink_me, dryrun=True):
+def safe_unlink(unlink_me, dryrun=True):
   """Remove a file or directory, or return shell commands that would do so.
 
   Args:
@@ -66,7 +66,7 @@ def SafeUnlink(unlink_me, dryrun=True):
       shutil.rmtree(unlink_me)
 
 
-def PrintIfNotNone(something):
+def print_if_not_none(something):
   """Prints something if it is not None.
 
   Args:
@@ -80,7 +80,7 @@ def PrintIfNotNone(something):
     print something
 
 
-def Diff(old_filename, new_filename):
+def diff(old_filename, new_filename):
   """Return a diff between old and new files.
 
   Args:
@@ -101,11 +101,11 @@ def Diff(old_filename, new_filename):
   diff_generator = difflib.unified_diff(new_contents, old_contents,
                                         new_filename, old_filename,
                                         new_timestamp, old_timestamp)
-  diffs = [diff for diff in diff_generator]
+  diffs = [d for d in diff_generator]
   return diffs
 
 
-def RemoveSkipPatterns(files, skip):
+def remove_skip_patterns(files, skip):
   """Remove any files matching shell patterns.
 
   Args:
@@ -128,7 +128,7 @@ def RemoveSkipPatterns(files, skip):
   return unmatched
 
 
-def LinkDir(source, dest, skip, dryrun, force):
+def link_dir(source, dest, skip, dryrun, force):
   """Recursively link files in source directory to dest directory.
 
   Args:
@@ -158,7 +158,7 @@ def LinkDir(source, dest, skip, dryrun, force):
   for directory, subdirs, files in os.walk(source, topdown=True):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
-    subdirs[:] = RemoveSkipPatterns(subdirs, skip)
+    subdirs[:] = remove_skip_patterns(subdirs, skip)
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
       dest_dir = source_dir.replace(source, dest, 1)
@@ -173,25 +173,25 @@ def LinkDir(source, dest, skip, dryrun, force):
 
       if os.path.exists(dest_dir):
         if force:
-          PrintIfNotNone(SafeUnlink(dest_dir, dryrun=dryrun))
+          print_if_not_none(safe_unlink(dest_dir, dryrun=dryrun))
         else:
           raise UnexpectedFileError("%s is not a directory" % dest_dir)
 
       if dryrun:
-        PrintIfNotNone("mkdir %s" % pipes.quote(dest_dir))
+        print_if_not_none("mkdir %s" % pipes.quote(dest_dir))
       else:
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
 
-    results = LinkFiles(source, dest, directory, files,
-                        dryrun=dryrun, force=force, skip=skip)
+    results = link_files(source, dest, directory, files,
+                         dryrun=dryrun, force=force, skip=skip)
     expected_files.extend(results.expected_files)
     diffs.extend(results.diffs)
 
   return LinkResults(expected_files, diffs)
 
 
-def LinkFiles(source, dest, directory, files, dryrun, force, skip):
+def link_files(source, dest, directory, files, dryrun, force, skip):
   """Link files from source to dest.
 
   Args:
@@ -214,10 +214,10 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
 
   expected_files = []
   diffs = []
-  files = RemoveSkipPatterns(files, skip)
+  files = remove_skip_patterns(files, skip)
   files = [os.path.join(directory, filename) for filename in files]
   skip_more = ["*%s%s" % (os.sep, pattern) for pattern in skip]
-  files = RemoveSkipPatterns(files, skip_more)
+  files = remove_skip_patterns(files, skip_more)
   for source_filename in files:
     dest_filename = source_filename.replace(source, dest, 1)
     expected_files.append(dest_filename)
@@ -230,7 +230,7 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
         or (os.path.exists(dest_filename)
             and not os.path.isfile(dest_filename))):
       if force:
-        PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
+        print_if_not_none(safe_unlink(dest_filename, dryrun=dryrun))
         file_was_removed = True
       else:
         raise UnexpectedFileError("%s: is not a file" % dest_filename)
@@ -241,7 +241,7 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
         continue
 
       if not force:
-        file_diffs = Diff(source_filename, dest_filename)
+        file_diffs = diff(source_filename, dest_filename)
         if not file_diffs:
           num_links = os.stat(dest_filename)[stat.ST_NLINK]
           if num_links != 1 and not force:
@@ -250,13 +250,13 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
           print ("%s and %s are different files but have the same contents; "
                  "deleting and linking"
                  % (source_filename, dest_filename))
-          PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
+          print_if_not_none(safe_unlink(dest_filename, dryrun=dryrun))
           file_was_removed = True
         else:
           diffs.extend(file_diffs)
 
       if force and not file_was_removed:
-        PrintIfNotNone(SafeUnlink(dest_filename, dryrun=dryrun))
+        print_if_not_none(safe_unlink(dest_filename, dryrun=dryrun))
         file_was_removed = True
 
     if os.path.islink(source_filename):
@@ -264,16 +264,16 @@ def LinkFiles(source, dest, directory, files, dryrun, force, skip):
       continue
     if file_was_removed or not os.path.exists(dest_filename):
       if dryrun:
-        PrintIfNotNone("ln %s %s" % (pipes.quote(source_filename),
-                                     pipes.quote(dest_filename)))
+        print_if_not_none("ln %s %s" % (pipes.quote(source_filename),
+                                        pipes.quote(dest_filename)))
       else:
         os.link(source_filename, dest_filename)
 
   return LinkResults(expected_files, diffs)
 
 
-def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
-                                   ignore_unexpected_children=False):
+def report_unexpected_files(dest_dir, expected_files_list, skip,
+                            ignore_unexpected_children=False):
   """Check for files in destdir that aren't in source_dir.
 
   Args:
@@ -293,12 +293,12 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
 
   unexpected_msgs = []
   unexpected_paths = {
-    "directory": [],
-    "file": []
+      "directory": [],
+      "file": []
   }
   for directory, subdirs, files in os.walk(dest_dir, topdown=True):
-    subdirs[:] = RemoveSkipPatterns(subdirs, skip)
-    files = RemoveSkipPatterns(files, skip)
+    subdirs[:] = remove_skip_patterns(subdirs, skip)
+    files = remove_skip_patterns(files, skip)
 
     if directory == dest_dir and ignore_unexpected_children:
       unexpected = [subdir for subdir in subdirs
@@ -309,9 +309,9 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
     full_subdirs = [os.path.join(directory, entry) for entry in subdirs]
     full_files = [os.path.join(directory, entry) for entry in files]
     skip_more = ["*%s%s" % (os.sep, pattern) for pattern in skip]
-    full_files = RemoveSkipPatterns(full_files, skip_more)
+    full_files = remove_skip_patterns(full_files, skip_more)
     for (my_list, my_type) in ((full_subdirs, "directory"),
-        (full_files, "file")):
+                               (full_files, "file")):
       for entry in my_list:
         if entry not in expected_files:
           unexpected_msgs.append("Unexpected %s: %s" % (my_type, entry))
@@ -330,7 +330,8 @@ def ReportUnexpectedFilesInDestDir(dest_dir, expected_files_list, skip,
   return unexpected_msgs
 
 
-def UnLineWrapString(a_string):
+# TODO: use textwrap.dedent instead.
+def un_line_wrap_string(a_string):
   """Undo line wrapping.
 
   Replace all whitespace sequences with a single space, and strip leading and
@@ -346,18 +347,18 @@ def UnLineWrapString(a_string):
   return " ".join(a_string.split()).strip()
 
 
-def ReadSkipPatternsFromFile(filename):
+def read_skip_patterns_from_file(filename):
   """Read skip patterns from filename, ignoring comments and empty lines."""
   patterns = []
-  with open(filename) as f:
-    for line in f.readlines():
+  with open(filename) as pfh:
+    for line in pfh.readlines():
       line = line.strip()
       if line and not line.startswith("#"):
         patterns.append(line)
   return patterns
 
 
-def RealMain(argv):
+def real_main(argv):
   """The real main function, it just doesn't print anything or exit."""
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
@@ -365,30 +366,30 @@ def RealMain(argv):
   argv_parser = optparse.OptionParser(usage=usage, version="%prog 1.0")
   argv_parser.add_option(
       "--dryrun", action="store_true", dest="dryrun", default=False,
-      help=UnLineWrapString("""Perform a trial run with no changes made
+      help=un_line_wrap_string("""Perform a trial run with no changes made
                             (default: %default)"""))
   argv_parser.add_option(
       "--force", action="store_true", dest="force", default=False,
-      help=UnLineWrapString("""Remove existing files if necessary (default:
+      help=un_line_wrap_string("""Remove existing files if necessary (default:
                             %default)"""))
   argv_parser.add_option(
       "--ignore_file", action="append", dest="ignore_file", metavar="FILENAME",
       default=[],
-      help=UnLineWrapString("""File containing shell patterns to ignore.  To
+      help=un_line_wrap_string("""File containing shell patterns to ignore.  To
                             specify multiple filenames, use this option multiple
                             times."""))
   argv_parser.add_option(
       "--ignore_pattern", action="append", dest="ignore_pattern",
       metavar="FILENAME",
       default=[
-        "CVS", ".git", ".gitignore", ".gitmodules", ".hg", ".svn", "*.swp"],
-      help=UnLineWrapString("""Extra shell patterns to ignore (appended to this
-                            list: %default).  To specify multiple filenames, use
-                            this option multiple times."""))
+          "CVS", ".git", ".gitignore", ".gitmodules", ".hg", ".svn", "*.swp"],
+      help=un_line_wrap_string("""Extra shell patterns to ignore (appended to
+                               this list: %default).  To specify multiple
+                               filenames, use this option multiple times."""))
   argv_parser.add_option(
       "--ignore_unexpected_children", action="store_true",
       dest="ignore_unexpected_children", default=False,
-      help=UnLineWrapString("""When checking for unexpected files or
+      help=un_line_wrap_string("""When checking for unexpected files or
                             directories, ignore unexpected child directories in
                             DESTINATION_DIRECTORY; unexpected grandchild
                             directories of DESTINATION_DIRECTORY will not be
@@ -396,8 +397,8 @@ def RealMain(argv):
   argv_parser.add_option(
       "--report_unexpected_files", action="store_true",
       dest="report_unexpected_files", default=False,
-      help=UnLineWrapString("""Report unexpected files in DESTINATION_DIRECTORY
-                            (default: %default)"""))
+      help=un_line_wrap_string("""Report unexpected files in
+                               DESTINATION_DIRECTORY (default: %default)"""))
 
   (options, args) = argv_parser.parse_args(argv[1:])
   if len(args) < 2:
@@ -406,7 +407,7 @@ def RealMain(argv):
 
   ignore_patterns = options.ignore_pattern[:]
   for filename in options.ignore_file:
-    ignore_patterns.extend(ReadSkipPatternsFromFile(filename))
+    ignore_patterns.extend(read_skip_patterns_from_file(filename))
 
   all_results = LinkResults([], [])
   unexpected_msgs = []
@@ -416,12 +417,12 @@ def RealMain(argv):
       os.mkdir(dest)
     for source in args:
       source = source.rstrip(os.sep)
-      results = LinkDir(source, dest, skip=ignore_patterns,
-                        dryrun=options.dryrun, force=options.force)
+      results = link_dir(source, dest, skip=ignore_patterns,
+                         dryrun=options.dryrun, force=options.force)
       all_results.expected_files.extend(results.expected_files)
       all_results.diffs.extend(results.diffs)
     if options.report_unexpected_files:
-      unexpected_msgs.extend(ReportUnexpectedFilesInDestDir(
+      unexpected_msgs.extend(report_unexpected_files(
           dest, expected_files_list=all_results.expected_files,
           skip=ignore_patterns,
           ignore_unexpected_children=options.ignore_unexpected_children))
@@ -434,7 +435,7 @@ def RealMain(argv):
 
 
 def main(argv):
-  messages = RealMain(argv)
+  messages = real_main(argv)
   for line in messages:
     print line
   if messages:
