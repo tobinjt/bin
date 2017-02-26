@@ -27,10 +27,6 @@ class Error(Exception):
   pass
 
 
-class ArgumentError(Error):
-  """Something was wrong with one of the arguments passed to a function."""
-
-
 class UnexpectedFileError(Error):
   """A file or directory was expected, but something else was found."""
 
@@ -100,8 +96,6 @@ def remove_skip_patterns(files, skip):
     An array of filenames.
   """
 
-  if not skip:
-    return files
   unmatched = []
   for filename in files:
     for pattern in skip:
@@ -128,14 +122,10 @@ def link_dir(source, dest, skip, dryrun, force):
     LinkResults.
 
   Raises:
-    ArgumentError:       something was wrong with source or dest argument.
     OSError:             a filesystem operation failed.
     UnexpectedFileError: a file or directory was expected, but something else
                          was found instead.
   """
-
-  if not os.path.isdir(source):
-    raise ArgumentError("%s is not a directory" % source)
 
   expected_files = []
   diffs = []
@@ -369,8 +359,8 @@ def real_main(argv):
 
   (options, args) = argv_parser.parse_args(argv[1:])
   if len(args) < 2:
-    sys.exit("Usage: %s [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR"
-             % argv[0])
+    return ["Usage: %s [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR"
+            % argv[0]]
 
   ignore_patterns = options.ignore_pattern[:]
   for filename in options.ignore_file:
@@ -378,31 +368,29 @@ def real_main(argv):
 
   all_results = LinkResults([], [])
   unexpected_msgs = []
-  try:
-    dest = args.pop().rstrip(os.sep)
-    if not os.path.isdir(dest):
-      os.mkdir(dest)
-    for source in args:
-      source = source.rstrip(os.sep)
-      results = link_dir(source, dest, skip=ignore_patterns,
-                         dryrun=options.dryrun, force=options.force)
-      all_results.expected_files.extend(results.expected_files)
-      all_results.diffs.extend(results.diffs)
-    if options.report_unexpected_files:
-      unexpected_msgs.extend(report_unexpected_files(
-          dest, expected_files_list=all_results.expected_files,
-          skip=ignore_patterns,
-          ignore_unexpected_children=options.ignore_unexpected_children))
-  except ArgumentError, arg_error:
-    sys.exit("%s: %s" % (argv[0], arg_error.args[0]))
-  except UnexpectedFileError, unexpected_file:
-    sys.exit("%s: %s" % (argv[0], unexpected_file.args[0]))
+  dest = args.pop().rstrip(os.sep)
+  if not os.path.isdir(dest):
+    os.makedirs(dest)
+  for source in args:
+    source = source.rstrip(os.sep)
+    results = link_dir(source, dest, skip=ignore_patterns,
+                       dryrun=options.dryrun, force=options.force)
+    all_results.expected_files.extend(results.expected_files)
+    all_results.diffs.extend(results.diffs)
+  if options.report_unexpected_files:
+    unexpected_msgs.extend(report_unexpected_files(
+        dest, expected_files_list=all_results.expected_files,
+        skip=ignore_patterns,
+        ignore_unexpected_children=options.ignore_unexpected_children))
 
   return all_results.diffs + unexpected_msgs
 
 
 def main(argv):
-  messages = real_main(argv)
+  try:
+    messages = real_main(argv)
+  except UnexpectedFileError, unexpected_file:
+    messages = ["%s: %s" % (argv[0], unexpected_file)]
   for line in messages:
     print line
   if messages:
