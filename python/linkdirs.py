@@ -45,11 +45,8 @@ def safe_unlink(unlink_me, dryrun=True):
 
   Args:
     unlink_me: the file or directory to be removed.
-    dryrun:    if True, shell commands are returned; if False, unlink_me is
+    dryrun:    if True, shell commands are printed; if False, unlink_me is
                removed.  Defaults to True.
-
-  Returns:
-    Nothing if dryrun is false, a string if dryrun is true.
 
   Raises:
     OSError: there was a problem removing unlink_me.
@@ -57,28 +54,14 @@ def safe_unlink(unlink_me, dryrun=True):
 
   if os.path.islink(unlink_me) or not os.path.isdir(unlink_me):
     if dryrun:
-      return "rm %s" % pipes.quote(unlink_me)
+      print "rm %s" % pipes.quote(unlink_me)
     else:
       os.unlink(unlink_me)
   else:
     if dryrun:
-      return "rm -r %s" % pipes.quote(unlink_me)
+      print "rm -r %s" % pipes.quote(unlink_me)
     else:
       shutil.rmtree(unlink_me)
-
-
-def print_if_not_none(something):
-  """Prints something if it is not None.
-
-  Args:
-    something: a thing to print if it is not None.
-
-  Returns:
-    Nothing.
-  """
-
-  if something:
-    print something
 
 
 def diff(old_filename, new_filename):
@@ -174,12 +157,12 @@ def link_dir(source, dest, skip, dryrun, force):
 
       if os.path.exists(dest_dir):
         if force:
-          print_if_not_none(safe_unlink(dest_dir, dryrun=dryrun))
+          safe_unlink(dest_dir, dryrun=dryrun)
         else:
           raise UnexpectedFileError("%s is not a directory" % dest_dir)
 
       if dryrun:
-        print_if_not_none("mkdir %s" % pipes.quote(dest_dir))
+        print "mkdir %s" % pipes.quote(dest_dir)
       else:
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
@@ -231,7 +214,7 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
         or (os.path.exists(dest_filename)
             and not os.path.isfile(dest_filename))):
       if force:
-        print_if_not_none(safe_unlink(dest_filename, dryrun=dryrun))
+        safe_unlink(dest_filename, dryrun=dryrun)
         file_was_removed = True
       else:
         raise UnexpectedFileError("%s: is not a file" % dest_filename)
@@ -251,13 +234,13 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
           print ("%s and %s are different files but have the same contents; "
                  "deleting and linking"
                  % (source_filename, dest_filename))
-          print_if_not_none(safe_unlink(dest_filename, dryrun=dryrun))
+          safe_unlink(dest_filename, dryrun=dryrun)
           file_was_removed = True
         else:
           diffs.extend(file_diffs)
 
       if force and not file_was_removed:
-        print_if_not_none(safe_unlink(dest_filename, dryrun=dryrun))
+        safe_unlink(dest_filename, dryrun=dryrun)
         file_was_removed = True
 
     if os.path.islink(source_filename):
@@ -265,8 +248,8 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
       continue
     if file_was_removed or not os.path.exists(dest_filename):
       if dryrun:
-        print_if_not_none("ln %s %s" % (pipes.quote(source_filename),
-                                        pipes.quote(dest_filename)))
+        print "ln %s %s" % (pipes.quote(source_filename),
+                            pipes.quote(dest_filename))
       else:
         os.link(source_filename, dest_filename)
 
@@ -326,7 +309,7 @@ def report_unexpected_files(dest_dir, expected_files_list, skip,
   if unexpected_paths["directory"]:
     # Descending sort by length, so that child directories are removed before
     # parent directories.
-    unexpected_paths["directory"].sort(key=lambda x: len(x), reverse=True)
+    unexpected_paths["directory"].sort(key=len, reverse=True)
     unexpected_msgs.append("rmdir %s" % " ".join(unexpected_paths["directory"]))
   return unexpected_msgs
 
