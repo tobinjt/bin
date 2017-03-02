@@ -33,18 +33,6 @@ class TestMain(unittest.TestCase):
     # the flow control continues and it is called twice.
     mock_sys_exit.assert_has_calls([mock.call(1), mock.call(0)])
 
-  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
-  @mock.patch('linkdirs.real_main', return_value=['a message'],
-              side_effect=linkdirs.UnexpectedFileError('a file problem'))
-  @mock.patch('sys.exit')
-  def test_exception(self, mock_sys_exit, unused_mock_real_main, mock_stdout):
-    """Exception is raised."""
-    linkdirs.main(['arg'])
-    self.assertEqual('arg: a file problem\n', mock_stdout.getvalue())
-    # In reality sys.exit will only be called once, but because we mock it out
-    # the flow control continues and it is called twice.
-    mock_sys_exit.assert_has_calls([mock.call(1), mock.call(0)])
-
 
 class TestIntegration(fake_filesystem_unittest.TestCase):
   """Integration tests: exercise as much code as possible.
@@ -202,15 +190,19 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_force_deletes_dest(self):
     """Force deletes existing files and directories."""
-    filenames = ['file1', 'file2', 'file3']
+    filenames = ['file1', 'file2', 'file3', 'file4']
+    subdir = 'dir1'
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
     self.fs.CreateFile(os.path.join(src_dir, filenames[0]), contents='qwerty')
     self.fs.CreateFile(os.path.join(src_dir, filenames[1]), contents='asdf')
     self.fs.CreateFile(os.path.join(src_dir, filenames[2]), contents='pinky')
+    self.fs.CreateFile(os.path.join(src_dir, subdir, filenames[3]))
     self.fs.CreateFile(os.path.join(dest_dir, filenames[0]), contents='12345')
     os.makedirs(os.path.join(dest_dir, filenames[1]))
     self.fs.CreateFile(os.path.join(dest_dir, filenames[2]), contents='pinky')
+    # Subdir in src, file in dest.
+    self.fs.CreateFile(os.path.join(dest_dir, subdir), contents='pinky')
 
     with mock.patch('sys.stdout',
                     new_callable=StringIO.StringIO) as mock_stdout:
@@ -225,14 +217,16 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   def test_dryrun(self):
     """Dry-run."""
     filenames = ['file1', 'file2', 'file3']
+    subdir = 'dir1'
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
     self.fs.CreateFile(os.path.join(src_dir, filenames[0]), contents='qwerty\n')
     self.fs.CreateFile(os.path.join(src_dir, filenames[1]), contents='asdf')
     self.fs.CreateFile(os.path.join(src_dir, filenames[2]), contents='pinky')
+    self.fs.CreateFile(os.path.join(src_dir, subdir, filenames[0]))
     self.fs.CreateFile(os.path.join(dest_dir, filenames[0]), contents='12345\n')
-    #  os.makedirs(os.path.join(dest_dir, filenames[1]))
     self.fs.CreateFile(os.path.join(dest_dir, filenames[2]), contents='pinky')
+    os.makedirs(os.path.join(dest_dir, subdir))
 
     with mock.patch('sys.stdout',
                     new_callable=StringIO.StringIO) as mock_stdout:
@@ -256,6 +250,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           'rm /z/y/x/file3',
           'ln /a/b/c/file3 /z/y/x/file3',
           'ln /a/b/c/file2 /z/y/x/file2',
+          'ln /a/b/c/dir1/file1 /z/y/x/dir1/file1',
           '',
       ])
       self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
