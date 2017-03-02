@@ -11,16 +11,54 @@ from pyfakefs import fake_filesystem_unittest
 import linkdirs
 
 
+class TestMain(unittest.TestCase):
+  """Tests for main()."""
+
+  @mock.patch('linkdirs.real_main', return_value=[])
+  @mock.patch('sys.exit')
+  # pylint: disable=no-self-use
+  def test_success(self, mock_sys_exit, unused_mock_real_main):
+    """Successful run."""
+    linkdirs.main([])
+    mock_sys_exit.assert_called_once_with(0)
+
+  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  @mock.patch('linkdirs.real_main', return_value=['a message'])
+  @mock.patch('sys.exit')
+  def test_failure(self, mock_sys_exit, unused_mock_real_main, mock_stdout):
+    """Failed run."""
+    linkdirs.main([])
+    self.assertEqual('a message\n', mock_stdout.getvalue())
+    # In reality sys.exit will only be called once, but because we mock it out
+    # the flow control continues and it is called twice.
+    mock_sys_exit.assert_has_calls([mock.call(1), mock.call(0)])
+
+  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  @mock.patch('linkdirs.real_main', return_value=['a message'],
+              side_effect=linkdirs.UnexpectedFileError('a file problem'))
+  @mock.patch('sys.exit')
+  def test_exception(self, mock_sys_exit, unused_mock_real_main, mock_stdout):
+    """Exception is raised."""
+    linkdirs.main(['arg'])
+    self.assertEqual('arg: a file problem\n', mock_stdout.getvalue())
+    # In reality sys.exit will only be called once, but because we mock it out
+    # the flow control continues and it is called twice.
+    mock_sys_exit.assert_has_calls([mock.call(1), mock.call(0)])
+
+
 class TestIntegration(fake_filesystem_unittest.TestCase):
   """Integration tests: exercise as much code as possible.
 
   Use cases to test:
+  - Nothing needs to be done.
   - Missing file gets created.
   - File with same contents is replaced with link.
   - Excluded files/dirs are skipped.
   - Report unexpected files.
   - Report diffs.
   - Bad arguments are caught.
+  - Force deletes existing files and directories.
+  - Dry-run.
   """
 
   def assert_files_are_linked(self, file1, file2):
@@ -29,6 +67,19 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def setUp(self):
     self.setUpPyfakefs()
+
+  def test_nothing_changes(self):
+    """Nothing needs to be done."""
+    src_file = '/a/b/c/file'
+    dest_file = '/z/y/x/file'
+    self.fs.CreateFile(src_file, contents='qwerty')
+    os.makedirs(os.path.dirname(dest_file))
+    os.link(src_file, dest_file)
+    self.assert_files_are_linked(src_file, dest_file)
+
+    linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
+                        os.path.dirname(dest_file)])
+    self.assert_files_are_linked(src_file, dest_file)
 
   def test_missing_file_is_created(self):
     """Missing file gets created."""
@@ -148,6 +199,66 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.assertEqual(
         ['Usage: linkdirs [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR'],
         linkdirs.real_main(['linkdirs', '--force', '/asdf']))
+
+  def test_force_deletes_dest(self):
+    """Force deletes existing files and directories."""
+    filenames = ['file1', 'file2', 'file3']
+    src_dir = '/a/b/c'
+    dest_dir = '/z/y/x'
+    self.fs.CreateFile(os.path.join(src_dir, filenames[0]), contents='qwerty')
+    self.fs.CreateFile(os.path.join(src_dir, filenames[1]), contents='asdf')
+    self.fs.CreateFile(os.path.join(src_dir, filenames[2]), contents='pinky')
+    self.fs.CreateFile(os.path.join(dest_dir, filenames[0]), contents='12345')
+    os.makedirs(os.path.join(dest_dir, filenames[1]))
+    self.fs.CreateFile(os.path.join(dest_dir, filenames[2]), contents='pinky')
+
+    with mock.patch('sys.stdout',
+                    new_callable=StringIO.StringIO) as mock_stdout:
+      messages = linkdirs.real_main(['linkdirs', '--force', src_dir, dest_dir])
+      self.assertEqual([], messages)
+      self.assert_files_are_linked(os.path.join(src_dir, filenames[0]),
+                                   os.path.join(dest_dir, filenames[0]))
+      self.assert_files_are_linked(os.path.join(src_dir, filenames[1]),
+                                   os.path.join(dest_dir, filenames[1]))
+      self.assertEqual('', mock_stdout.getvalue())
+
+  def test_dryrun(self):
+    """Dry-run."""
+    filenames = ['file1', 'file2', 'file3']
+    src_dir = '/a/b/c'
+    dest_dir = '/z/y/x'
+    self.fs.CreateFile(os.path.join(src_dir, filenames[0]), contents='qwerty\n')
+    self.fs.CreateFile(os.path.join(src_dir, filenames[1]), contents='asdf')
+    self.fs.CreateFile(os.path.join(src_dir, filenames[2]), contents='pinky')
+    self.fs.CreateFile(os.path.join(dest_dir, filenames[0]), contents='12345\n')
+    #  os.makedirs(os.path.join(dest_dir, filenames[1]))
+    self.fs.CreateFile(os.path.join(dest_dir, filenames[2]), contents='pinky')
+
+    with mock.patch('sys.stdout',
+                    new_callable=StringIO.StringIO) as mock_stdout:
+      messages = linkdirs.real_main(['linkdirs', '--dryrun', src_dir, dest_dir])
+      # Strip off timestamps.
+      messages = [re.sub(r'\t.*\n', '\t\n', x) for x in messages]
+      expected = [
+          '--- /z/y/x/file1\t\n',
+          '+++ /a/b/c/file1\t\n',
+          '@@ -1 +1 @@\n',
+          '-12345\n',
+          '+qwerty\n',
+      ]
+      self.assertEqual(expected, messages)
+      self.assertFalse(os.path.samefile(os.path.join(src_dir, filenames[0]),
+                                        os.path.join(dest_dir, filenames[0])))
+      self.assertFalse(os.path.exists(os.path.join(dest_dir, filenames[1])))
+      stdout = '\n'.join([
+          '/a/b/c/file3 and /z/y/x/file3 are different files but have the same'
+          ' contents; deleting and linking',
+          'rm /z/y/x/file3',
+          'ln /a/b/c/file3 /z/y/x/file3',
+          'ln /a/b/c/file2 /z/y/x/file2',
+          '',
+      ])
+      self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
 
 
 if __name__ == '__main__':

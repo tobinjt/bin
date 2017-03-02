@@ -133,6 +133,7 @@ def link_dir(source, dest, skip, dryrun, force):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
     subdirs[:] = remove_skip_patterns(subdirs, skip)
+    subdirs.sort()
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
       dest_dir = source_dir.replace(source, dest, 1)
@@ -234,8 +235,7 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
         file_was_removed = True
 
     if os.path.islink(source_filename):
-      print "Skipping symbolic link %s" % source_filename
-      continue
+      raise UnexpectedFileError("Skipping symbolic link %s" % source_filename)
     if file_was_removed or not os.path.exists(dest_filename):
       if dryrun:
         print "ln %s %s" % (pipes.quote(source_filename),
@@ -272,7 +272,9 @@ def report_unexpected_files(dest_dir, expected_files_list, skip,
   }
   for directory, subdirs, files in os.walk(dest_dir, topdown=True):
     subdirs[:] = remove_skip_patterns(subdirs, skip)
+    subdirs.sort()
     files = remove_skip_patterns(files, skip)
+    files.sort()
 
     if directory == dest_dir and ignore_unexpected_children:
       unexpected = [subdir for subdir in subdirs
