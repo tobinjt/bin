@@ -2,6 +2,7 @@
 
 set -e -f -u -o pipefail
 
+cd /etc
 git_status="$(git status --short)"
 if [[ -n "${git_status}" ]]; then
   echo "Uncommitted changes in /etc:\n" "${git_status}" >&2
