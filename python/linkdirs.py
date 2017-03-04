@@ -27,11 +27,26 @@ class Error(Exception):
   pass
 
 
-# expected_files is a list of files and directories that should exist in the
-# destination.  diffs is a list of diffs between source and destination files.
-# errors is a list of error messages.
-LinkResults = collections.namedtuple('LinkResults',
-                                     'expected_files diffs errors')
+class LinkResults(collections.namedtuple('LinkResults',
+                                         'expected_files diffs errors')):
+  """Container for the results of linking files and directories.
+
+  Attributes:
+    expected_files: list(str), files and directories that should exist in the
+                    destination.
+    diffs: list(str), diffs between source and destination files.
+    errors: list(str), error messages.
+  """
+
+  def extend(self, other):
+    """Extend self with the data from other.
+
+    Args:
+      other: LinkResults, data to append.
+    """
+    self.expected_files.extend(other.expected_files)
+    self.diffs.extend(other.diffs)
+    self.errors.extend(other.errors)
 
 
 def safe_unlink(unlink_me, dryrun=True):
@@ -142,9 +157,7 @@ def link_dir(source, dest, skip, dryrun, force):
     OSError:             a filesystem operation failed.
   """
 
-  expected_files = []
-  diffs = []
-  errors = []
+  results = LinkResults([], [], [])
   for directory, subdirs, files in os.walk(source, topdown=True):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
@@ -153,7 +166,7 @@ def link_dir(source, dest, skip, dryrun, force):
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
       dest_dir = source_dir.replace(source, dest, 1)
-      expected_files.append(dest_dir)
+      results.expected_files.append(dest_dir)
       source_stat = os.stat(source_dir)
       source_mode = stat.S_IMODE(source_stat.st_mode)
 
@@ -166,7 +179,7 @@ def link_dir(source, dest, skip, dryrun, force):
         if force:
           safe_unlink(dest_dir, dryrun=dryrun)
         else:
-          errors.append("%s is not a directory" % dest_dir)
+          results.errors.append("%s is not a directory" % dest_dir)
           continue
 
       if dryrun:
@@ -175,13 +188,10 @@ def link_dir(source, dest, skip, dryrun, force):
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
 
-    results = link_files(source, dest, directory, files,
-                         dryrun=dryrun, force=force, skip=skip)
-    expected_files.extend(results.expected_files)
-    diffs.extend(results.diffs)
-    errors.extend(results.errors)
+    results.extend(link_files(source, dest, directory, files,
+                              dryrun=dryrun, force=force, skip=skip))
 
-  return LinkResults(expected_files, diffs, errors)
+  return results
 
 
 def link_files(source, dest, directory, files, dryrun, force, skip):
@@ -201,9 +211,7 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
     LinkResults.  expected_files will not include files that are skipped.
   """
 
-  expected_files = []
-  diffs = []
-  errors = []
+  results = LinkResults([], [], [])
   files = remove_skip_patterns(files, skip)
   files = [os.path.join(directory, filename) for filename in files]
   skip = ["*%s%s" % (os.sep, pattern) for pattern in skip]
@@ -211,11 +219,11 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
   files.sort()
   for source_filename in files:
     dest_filename = source_filename.replace(source, dest, 1)
-    expected_files.append(dest_filename)
+    results.expected_files.append(dest_filename)
 
     if os.path.islink(source_filename):
       # Skip source symlinks.
-      errors.append("Skipping symbolic link %s" % source_filename)
+      results.errors.append("Skipping symbolic link %s" % source_filename)
       continue
 
     if not os.path.exists(dest_filename) and not os.path.islink(dest_filename):
@@ -233,7 +241,7 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
         safe_unlink(dest_filename, dryrun=dryrun)
         file_was_removed = True
       else:
-        errors.append("%s: is not a file" % dest_filename)
+        results.errors.append("%s: is not a file" % dest_filename)
         continue
 
     if os.path.exists(dest_filename) and not file_was_removed:
@@ -249,12 +257,13 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
         # If the destination is already linked don't change it without --force.
         num_links = os.stat(dest_filename)[stat.ST_NLINK]
         if num_links != 1:
-          errors.append("%s: link count is %d" % (dest_filename, num_links))
+          results.errors.append("%s: link count is %d"
+                                % (dest_filename, num_links))
           continue
         # Check for diffs.
         file_diffs = diff(source_filename, dest_filename)
         if file_diffs:
-          diffs.extend(file_diffs)
+          results.diffs.extend(file_diffs)
           continue
         print ("%s and %s are different files but have the same contents; "
                "deleting and linking"
@@ -265,7 +274,7 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
     if file_was_removed or not os.path.exists(dest_filename):
       safe_link(source_filename, dest_filename, dryrun)
 
-  return LinkResults(expected_files, diffs, errors)
+  return results
 
 
 def report_unexpected_files(dest_dir, expected_files_list, skip,
@@ -397,11 +406,8 @@ def real_main(argv):
     os.makedirs(dest)
   for source in args:
     source = source.rstrip(os.sep)
-    results = link_dir(source, dest, skip=ignore_patterns,
-                       dryrun=options.dryrun, force=options.force)
-    all_results.expected_files.extend(results.expected_files)
-    all_results.diffs.extend(results.diffs)
-    all_results.errors.extend(results.errors)
+    all_results.extend(link_dir(source, dest, skip=ignore_patterns,
+                                dryrun=options.dryrun, force=options.force))
   if options.report_unexpected_files:
     unexpected_msgs.extend(report_unexpected_files(
         dest, expected_files_list=all_results.expected_files,
