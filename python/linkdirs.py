@@ -227,52 +227,47 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
       continue
 
     if not os.path.exists(dest_filename) and not os.path.islink(dest_filename):
+      # Destination doesn't already exist, and it's not a dangling symlink, so
+      # just link it.
       safe_link(source_filename, dest_filename, dryrun)
       continue
 
-    # To correctly fake things during a dryrun, we need to remember when we
-    # delete a destination file.
-    file_was_removed = False
-
-    if (os.path.islink(dest_filename)
-        or not os.path.isfile(dest_filename)):
+    if os.path.islink(dest_filename) or not os.path.isfile(dest_filename):
       # Destination exists and is not a file.
       if force:
         safe_unlink(dest_filename, dryrun=dryrun)
-        file_was_removed = True
+        safe_link(source_filename, dest_filename, dryrun)
       else:
         results.errors.append("%s: is not a file" % dest_filename)
-        continue
+      continue
 
-    if os.path.exists(dest_filename) and not file_was_removed:
-      if os.path.samefile(source_filename, dest_filename):
-        # The file is correctly linked.
-        continue
+    if os.path.samefile(source_filename, dest_filename):
+      # The file is correctly linked.
+      continue
 
-      if force:
-        # Don't bother checking anything if --force was used.
-        safe_unlink(dest_filename, dryrun=dryrun)
-        file_was_removed = True
-      else:
-        # If the destination is already linked don't change it without --force.
-        num_links = os.stat(dest_filename)[stat.ST_NLINK]
-        if num_links != 1:
-          results.errors.append("%s: link count is %d"
-                                % (dest_filename, num_links))
-          continue
-        # Check for diffs.
-        file_diffs = diff(source_filename, dest_filename)
-        if file_diffs:
-          results.diffs.extend(file_diffs)
-          continue
-        print ("%s and %s are different files but have the same contents; "
-               "deleting and linking"
-               % (source_filename, dest_filename))
-        safe_unlink(dest_filename, dryrun)
-        file_was_removed = True
-
-    if file_was_removed or not os.path.exists(dest_filename):
+    if force:
+      # Don't bother checking anything if --force was used.
+      safe_unlink(dest_filename, dryrun=dryrun)
       safe_link(source_filename, dest_filename, dryrun)
+      continue
+
+    # If the destination is already linked don't change it without --force.
+    num_links = os.stat(dest_filename)[stat.ST_NLINK]
+    if num_links != 1:
+      results.errors.append("%s: link count is %d"
+                            % (dest_filename, num_links))
+      continue
+
+    # Check for diffs.
+    file_diffs = diff(source_filename, dest_filename)
+    if file_diffs:
+      results.diffs.extend(file_diffs)
+      continue
+
+    print ("%s and %s are different files but have the same contents; "
+           "deleting and linking" % (source_filename, dest_filename))
+    safe_unlink(dest_filename, dryrun)
+    safe_link(source_filename, dest_filename, dryrun)
 
   return results
 
