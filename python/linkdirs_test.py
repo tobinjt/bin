@@ -93,7 +93,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       self.assert_files_are_linked(src_file, dest_file)
       expected = ('/a/b/c/file and /z/y/x/file are different files but have the'
                   ' same contents; deleting and linking\n')
-      self.assertEqual(expected, mock_stdout.getvalue())
+      self.assertMultiLineEqual(expected, mock_stdout.getvalue())
 
   def test_report_unexpected_files(self):
     """Report unexpected files."""
@@ -216,16 +216,29 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_dryrun(self):
     """Dry-run."""
-    filenames = ['file1', 'file2', 'file3']
+    filenames = ['file1', 'file2', 'file3', 'file4', 'file5', 'file6']
     subdir = 'dir1'
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
     self.fs.CreateFile(os.path.join(src_dir, filenames[0]), contents='qwerty\n')
     self.fs.CreateFile(os.path.join(src_dir, filenames[1]), contents='asdf')
     self.fs.CreateFile(os.path.join(src_dir, filenames[2]), contents='pinky')
+    self.fs.CreateFile(os.path.join(src_dir, filenames[3]), contents='brain')
+    self.fs.CreateFile(os.path.join(src_dir, filenames[4]), contents='3 links')
     self.fs.CreateFile(os.path.join(src_dir, subdir, filenames[0]))
+    # Test handling of source symlinks.
+    os.symlink(os.path.join(src_dir, filenames[4]),
+               os.path.join(src_dir, filenames[5]))
+
     self.fs.CreateFile(os.path.join(dest_dir, filenames[0]), contents='12345\n')
     self.fs.CreateFile(os.path.join(dest_dir, filenames[2]), contents='pinky')
+    # Test handling a destination that isn't a file.
+    os.makedirs(os.path.join(dest_dir, filenames[3]))
+    # Test handling of multiply linked destination files.
+    self.fs.CreateFile(os.path.join(dest_dir, filenames[4]), contents='3 links')
+    os.link(os.path.join(dest_dir, filenames[4]),
+            os.path.join(dest_dir, '%s-%s' % (filenames[4], filenames[4])))
+    # Test handling of subdirectories.
     os.makedirs(os.path.join(dest_dir, subdir))
 
     with mock.patch('sys.stdout',
@@ -239,17 +252,22 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           '@@ -1 +1 @@\n',
           '-12345\n',
           '+qwerty\n',
+          '/z/y/x/file4: is not a file',
+          '/z/y/x/file5: link count is 2',
+          'Skipping symbolic link /a/b/c/file6',
       ]
       self.assertEqual(expected, messages)
       self.assertFalse(os.path.samefile(os.path.join(src_dir, filenames[0]),
                                         os.path.join(dest_dir, filenames[0])))
+      self.assertTrue(os.path.exists(os.path.join(dest_dir, filenames[0])))
       self.assertFalse(os.path.exists(os.path.join(dest_dir, filenames[1])))
+      self.assertTrue(os.path.exists(os.path.join(dest_dir, filenames[2])))
       stdout = '\n'.join([
+          'ln /a/b/c/file2 /z/y/x/file2',
           '/a/b/c/file3 and /z/y/x/file3 are different files but have the same'
           ' contents; deleting and linking',
           'rm /z/y/x/file3',
           'ln /a/b/c/file3 /z/y/x/file3',
-          'ln /a/b/c/file2 /z/y/x/file2',
           'ln /a/b/c/dir1/file1 /z/y/x/dir1/file1',
           '',
       ])

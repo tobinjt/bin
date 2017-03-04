@@ -35,7 +35,7 @@ LinkResults = collections.namedtuple('LinkResults',
 
 
 def safe_unlink(unlink_me, dryrun=True):
-  """Remove a file or directory, or return shell commands that would do so.
+  """Remove a file or directory, or print shell commands that would do so.
 
   Args:
     unlink_me: the file or directory to be removed.
@@ -56,6 +56,25 @@ def safe_unlink(unlink_me, dryrun=True):
       print "rm -r %s" % pipes.quote(unlink_me)
     else:
       shutil.rmtree(unlink_me)
+
+
+def safe_link(source_filename, dest_filename, dryrun=True):
+  """Link one file to another, or print shell commands that would do so.
+
+  Args:
+    source_filename: str, existing filename.
+    dest_filename:   str, new filename.
+    dryrun:          bool, if True, shell commands are printed; if False, files
+                     are linked.  Defaults to True.
+  Raises:
+    OSError: there was a problem linking files.
+  """
+
+  if dryrun:
+    print "ln %s %s" % (pipes.quote(source_filename),
+                        pipes.quote(dest_filename))
+  else:
+    os.link(source_filename, dest_filename)
 
 
 def diff(old_filename, new_filename):
@@ -187,19 +206,29 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
   errors = []
   files = remove_skip_patterns(files, skip)
   files = [os.path.join(directory, filename) for filename in files]
-  skip_more = ["*%s%s" % (os.sep, pattern) for pattern in skip]
-  files = remove_skip_patterns(files, skip_more)
+  skip = ["*%s%s" % (os.sep, pattern) for pattern in skip]
+  files = remove_skip_patterns(files, skip)
+  files.sort()
   for source_filename in files:
     dest_filename = source_filename.replace(source, dest, 1)
     expected_files.append(dest_filename)
+
+    if os.path.islink(source_filename):
+      # Skip source symlinks.
+      errors.append("Skipping symbolic link %s" % source_filename)
+      continue
+
+    if not os.path.exists(dest_filename) and not os.path.islink(dest_filename):
+      safe_link(source_filename, dest_filename, dryrun)
+      continue
 
     # To correctly fake things during a dryrun, we need to remember when we
     # delete a destination file.
     file_was_removed = False
 
     if (os.path.islink(dest_filename)
-        or (os.path.exists(dest_filename)
-            and not os.path.isfile(dest_filename))):
+        or not os.path.isfile(dest_filename)):
+      # Destination exists and is not a file.
       if force:
         safe_unlink(dest_filename, dryrun=dryrun)
         file_was_removed = True
@@ -212,34 +241,29 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
         # The file is correctly linked.
         continue
 
-      if not force:
-        file_diffs = diff(source_filename, dest_filename)
-        if not file_diffs:
-          num_links = os.stat(dest_filename)[stat.ST_NLINK]
-          if num_links != 1 and not force:
-            errors.append("%s: link count is %d" % (dest_filename, num_links))
-            continue
-          print ("%s and %s are different files but have the same contents; "
-                 "deleting and linking"
-                 % (source_filename, dest_filename))
-          safe_unlink(dest_filename, dryrun=dryrun)
-          file_was_removed = True
-        else:
-          diffs.extend(file_diffs)
-
-      if force and not file_was_removed:
+      if force:
+        # Don't bother checking anything if --force was used.
         safe_unlink(dest_filename, dryrun=dryrun)
         file_was_removed = True
-
-    if os.path.islink(source_filename):
-      errors.append("Skipping symbolic link %s" % source_filename)
-      continue
-    if file_was_removed or not os.path.exists(dest_filename):
-      if dryrun:
-        print "ln %s %s" % (pipes.quote(source_filename),
-                            pipes.quote(dest_filename))
       else:
-        os.link(source_filename, dest_filename)
+        # If the destination is already linked don't change it without --force.
+        num_links = os.stat(dest_filename)[stat.ST_NLINK]
+        if num_links != 1:
+          errors.append("%s: link count is %d" % (dest_filename, num_links))
+          continue
+        # Check for diffs.
+        file_diffs = diff(source_filename, dest_filename)
+        if file_diffs:
+          diffs.extend(file_diffs)
+          continue
+        print ("%s and %s are different files but have the same contents; "
+               "deleting and linking"
+               % (source_filename, dest_filename))
+        safe_unlink(dest_filename, dryrun)
+        file_was_removed = True
+
+    if file_was_removed or not os.path.exists(dest_filename):
+      safe_link(source_filename, dest_filename, dryrun)
 
   return LinkResults(expected_files, diffs, errors)
 
