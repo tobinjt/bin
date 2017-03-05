@@ -184,9 +184,12 @@ def link_dir(source, dest, options):
       if os.path.isdir(dest_dir):
         if not options.dryrun:
           os.chmod(dest_dir, source_mode)
+        else:
+          print "chmod %s %s" % (oct(source_mode), pipes.quote(dest_dir))
         continue
 
       if os.path.exists(dest_dir):
+        # Destination isn't a directory.
         if options.force:
           safe_unlink(dest_dir, options.dryrun)
         else:
