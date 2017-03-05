@@ -49,6 +49,21 @@ class LinkResults(collections.namedtuple('LinkResults',
     self.errors.extend(other.errors)
 
 
+class Options(collections.namedtuple(
+    'Options', 'dryrun force ignore_unexpected_children skip')):
+  """Container for options.
+
+  Attributes:
+    dryrun: bool, True if no actions should be taken.  Overrides force.
+    force: bool, True if existing files should be deleted.  Overridden by
+           dryrun.
+    ignore_unexpected_children: bool, Ignore unexpected top level directories.
+    skip: list(str), if a file or directory matches any of these shell patterns
+          it will be skipped.
+  """
+  pass
+
+
 def safe_unlink(unlink_me, dryrun=True):
   """Remove a file or directory, or print shell commands that would do so.
 
@@ -138,30 +153,26 @@ def remove_skip_patterns(files, skip):
   return unmatched
 
 
-def link_dir(source, dest, skip, dryrun, force):
+def link_dir(source, dest, options):
   """Recursively link files in source directory to dest directory.
 
   Args:
-    source:       the source directory
-    dest:         the destination directory
-    skip:         files and directories under source that will be skipped.
-    dryrun:       if true, the filesystem will not be changed; shell commands
-                  will be printed instead.
-    force:        existing files will be removed if necessary.  dryrun overrides
-                  force.
+    source:  str, the source directory
+    dest:    str, the destination directory
+    options: Options, options requested by the user.
 
   Returns:
     LinkResults.
 
   Raises:
-    OSError:             a filesystem operation failed.
+    OSError: a filesystem operation failed.
   """
 
   results = LinkResults([], [], [])
   for directory, subdirs, files in os.walk(source, topdown=True):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
-    subdirs[:] = remove_skip_patterns(subdirs, skip)
+    subdirs[:] = remove_skip_patterns(subdirs, options.skip)
     subdirs.sort()
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
@@ -171,50 +182,46 @@ def link_dir(source, dest, skip, dryrun, force):
       source_mode = stat.S_IMODE(source_stat.st_mode)
 
       if os.path.isdir(dest_dir):
-        if not dryrun:
+        if not options.dryrun:
           os.chmod(dest_dir, source_mode)
         continue
 
       if os.path.exists(dest_dir):
-        if force:
-          safe_unlink(dest_dir, dryrun=dryrun)
+        if options.force:
+          safe_unlink(dest_dir, options.dryrun)
         else:
           results.errors.append("%s is not a directory" % dest_dir)
           continue
 
-      if dryrun:
+      if options.dryrun:
         print "mkdir %s" % pipes.quote(dest_dir)
       else:
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
 
-    results.extend(link_files(source, dest, directory, files,
-                              dryrun=dryrun, force=force, skip=skip))
+    results.extend(link_files(source, dest, directory, files, options))
 
   return results
 
 
-def link_files(source, dest, directory, files, dryrun, force, skip):
+def link_files(source, dest, directory, files, options):
   """Link files from source to dest.
 
   Args:
-    source:    the toplevel source directory.
-    dest:      the toplevel dest directory.
-    directory: the directory the files are in, relative to source and dest.
-    files:     the files in source/directory.
-    dryrun:    if true, the filesystem will not be changed.
-    force:     existing files will be removed if necessary.  dryrun overrides
-               force.
-    skip:      a list of filenames to skip.
+    source:    str, the toplevel source directory.
+    dest:      str, the toplevel dest directory.
+    directory: str, the directory the files are in, relative to source and dest.
+    files:     list(str), the files in source/directory.
+    options:   Options, options requested by the user.
 
   Returns:
     LinkResults.  expected_files will not include files that are skipped.
   """
 
   results = LinkResults([], [], [])
-  files = remove_skip_patterns(files, skip)
+  files = remove_skip_patterns(files, options.skip)
   files = [os.path.join(directory, filename) for filename in files]
-  skip = ["*%s%s" % (os.sep, pattern) for pattern in skip]
+  skip = ["*%s%s" % (os.sep, pattern) for pattern in options.skip]
   files = remove_skip_patterns(files, skip)
   files.sort()
   for source_filename in files:
@@ -229,14 +236,14 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
     if not os.path.exists(dest_filename) and not os.path.islink(dest_filename):
       # Destination doesn't already exist, and it's not a dangling symlink, so
       # just link it.
-      safe_link(source_filename, dest_filename, dryrun)
+      safe_link(source_filename, dest_filename, options.dryrun)
       continue
 
     if os.path.islink(dest_filename) or not os.path.isfile(dest_filename):
       # Destination exists and is not a file.
-      if force:
-        safe_unlink(dest_filename, dryrun=dryrun)
-        safe_link(source_filename, dest_filename, dryrun)
+      if options.force:
+        safe_unlink(dest_filename, options.dryrun)
+        safe_link(source_filename, dest_filename, options.dryrun)
       else:
         results.errors.append("%s: is not a file" % dest_filename)
       continue
@@ -245,17 +252,16 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
       # The file is correctly linked.
       continue
 
-    if force:
+    if options.force:
       # Don't bother checking anything if --force was used.
-      safe_unlink(dest_filename, dryrun=dryrun)
-      safe_link(source_filename, dest_filename, dryrun)
+      safe_unlink(dest_filename, options.dryrun)
+      safe_link(source_filename, dest_filename, options.dryrun)
       continue
 
     # If the destination is already linked don't change it without --force.
     num_links = os.stat(dest_filename)[stat.ST_NLINK]
     if num_links != 1:
-      results.errors.append("%s: link count is %d"
-                            % (dest_filename, num_links))
+      results.errors.append("%s: link count is %d" % (dest_filename, num_links))
       continue
 
     # Check for diffs.
@@ -266,22 +272,19 @@ def link_files(source, dest, directory, files, dryrun, force, skip):
 
     print ("%s and %s are different files but have the same contents; "
            "deleting and linking" % (source_filename, dest_filename))
-    safe_unlink(dest_filename, dryrun)
-    safe_link(source_filename, dest_filename, dryrun)
+    safe_unlink(dest_filename, options.dryrun)
+    safe_link(source_filename, dest_filename, options.dryrun)
 
   return results
 
 
-def report_unexpected_files(dest_dir, expected_files_list, skip,
-                            ignore_unexpected_children=False):
+def report_unexpected_files(dest_dir, expected_files_list, options):
   """Check for files in destdir that aren't in source_dir.
 
   Args:
-    dest_dir: the destination directory.
-    expected_files_list: a list of files expected to exist in the destination.
-    skip: files and directories under source that will be skipped.
-    ignore_unexpected_children: Ignore unexpected top level directories.
-                                Defaults to false.
+    dest_dir: str, the destination directory.
+    expected_files_list: list(str), files expected to exist in the destination.
+    options: Options, options requested by the user.
 
   Returns:
     list(str), the messages to print.
@@ -297,12 +300,12 @@ def report_unexpected_files(dest_dir, expected_files_list, skip,
       "file": []
   }
   for directory, subdirs, files in os.walk(dest_dir, topdown=True):
-    subdirs[:] = remove_skip_patterns(subdirs, skip)
+    subdirs[:] = remove_skip_patterns(subdirs, options.skip)
     subdirs.sort()
-    files = remove_skip_patterns(files, skip)
+    files = remove_skip_patterns(files, options.skip)
     files.sort()
 
-    if directory == dest_dir and ignore_unexpected_children:
+    if directory == dest_dir and options.ignore_unexpected_children:
       unexpected = [subdir for subdir in subdirs
                     if os.path.join(directory, subdir) not in expected_files]
       for subdir in unexpected:
@@ -310,7 +313,7 @@ def report_unexpected_files(dest_dir, expected_files_list, skip,
 
     full_subdirs = [os.path.join(directory, entry) for entry in subdirs]
     full_files = [os.path.join(directory, entry) for entry in files]
-    skip_more = ["*%s%s" % (os.sep, pattern) for pattern in skip]
+    skip_more = ["*%s%s" % (os.sep, pattern) for pattern in options.skip]
     full_files = remove_skip_patterns(full_files, skip_more)
     for (my_list, my_type) in ((full_subdirs, "directory"),
                                (full_files, "file")):
@@ -399,15 +402,17 @@ def real_main(argv):
   dest = args.pop().rstrip(os.sep)
   if not os.path.isdir(dest):
     os.makedirs(dest)
+
+  # TODO: use options returned by argument parsing?
+  opts = Options(dryrun=options.dryrun, force=options.force,
+                 ignore_unexpected_children=options.ignore_unexpected_children,
+                 skip=ignore_patterns)
   for source in args:
     source = source.rstrip(os.sep)
-    all_results.extend(link_dir(source, dest, skip=ignore_patterns,
-                                dryrun=options.dryrun, force=options.force))
+    all_results.extend(link_dir(source, dest, opts))
   if options.report_unexpected_files:
     unexpected_msgs.extend(report_unexpected_files(
-        dest, expected_files_list=all_results.expected_files,
-        skip=ignore_patterns,
-        ignore_unexpected_children=options.ignore_unexpected_children))
+        dest, all_results.expected_files, opts))
 
   return all_results.diffs + all_results.errors + unexpected_msgs
 
