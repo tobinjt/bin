@@ -287,5 +287,20 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
 
 
+class TestMisc(fake_filesystem_unittest.TestCase):
+  """Tests for code that can't otherwise be tested."""
+
+  def setUp(self):
+    self.setUpPyfakefs()
+
+  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  def test_safe_unlink_prints(self, mock_stdout):
+    """Integration tests cannot make safe_unlink print for directories."""
+    test_dir = '/a/b/c'
+    os.makedirs(test_dir)
+    linkdirs.safe_unlink(test_dir, True)
+    self.assertEqual('rm -r %s\n' % test_dir, mock_stdout.getvalue())
+
+
 if __name__ == '__main__':
   unittest.main()
