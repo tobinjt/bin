@@ -49,21 +49,6 @@ class LinkResults(collections.namedtuple('LinkResults',
     self.errors.extend(other.errors)
 
 
-class Options(collections.namedtuple(
-    'Options', 'dryrun force ignore_unexpected_children skip')):
-  """Container for options.
-
-  Attributes:
-    dryrun: bool, True if no actions should be taken.  Overrides force.
-    force: bool, True if existing files should be deleted.  Overridden by
-           dryrun.
-    ignore_unexpected_children: bool, Ignore unexpected top level directories.
-    skip: list(str), if a file or directory matches any of these shell patterns
-          it will be skipped.
-  """
-  pass
-
-
 def safe_unlink(unlink_me, dryrun=True):
   """Remove a file or directory, or print shell commands that would do so.
 
@@ -159,7 +144,7 @@ def link_dir(source, dest, options):
   Args:
     source:  str, the source directory
     dest:    str, the destination directory
-    options: Options, options requested by the user.
+    options: argparse.Namespace, options requested by the user.
 
   Returns:
     LinkResults.
@@ -215,7 +200,7 @@ def link_files(source, dest, directory, files, options):
     dest:      str, the toplevel dest directory.
     directory: str, the directory the files are in, relative to source and dest.
     files:     list(str), the files in source/directory.
-    options:   Options, options requested by the user.
+    options:   argparse.Namespace, options requested by the user.
 
   Returns:
     LinkResults.  expected_files will not include files that are skipped.
@@ -287,7 +272,7 @@ def report_unexpected_files(dest_dir, expected_files_list, options):
   Args:
     dest_dir: str, the destination directory.
     expected_files_list: list(str), files expected to exist in the destination.
-    options: Options, options requested by the user.
+    options: argparse.Namespace, options requested by the user.
 
   Returns:
     list(str), the messages to print.
@@ -406,16 +391,13 @@ def real_main(argv):
   if not os.path.isdir(dest):
     os.makedirs(dest)
 
-  # TODO: use options returned by argument parsing?
-  opts = Options(dryrun=options.dryrun, force=options.force,
-                 ignore_unexpected_children=options.ignore_unexpected_children,
-                 skip=ignore_patterns)
+  options.skip = ignore_patterns
   for source in args:
     source = source.rstrip(os.sep)
-    all_results.extend(link_dir(source, dest, opts))
+    all_results.extend(link_dir(source, dest, options))
   if options.report_unexpected_files:
     unexpected_msgs.extend(report_unexpected_files(
-        dest, all_results.expected_files, opts))
+        dest, all_results.expected_files, options))
 
   return all_results.diffs + all_results.errors + unexpected_msgs
 
