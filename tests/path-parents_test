@@ -63,10 +63,14 @@ main() {
   check_command_succeeds path-parents -s 1 //etc/passwd
   check_command_succeeds path-parents -s 2 qwerty//asdf//bar/foo//baz
 
-  # Running out of components.
   start_test "Running out of components."
   check_command_succeeds path-parents -s 3 etc//passwd
   check_command_succeeds path-parents -s 10 /qwerty/asdf/bar/foo/baz
+
+  start_test "Reading from stdin."
+  echo "/qwerty/asdf/bar/foo/baz" | check_command_succeeds path-parents
+  start_test "Reading from stdin and skipping."
+  echo "/qwerty/asdf/bar/foo/baz" | check_command_succeeds path-parents -s 3
 
   diff -u path-parents_test.stdout "${STDOUT}"
   diff -u path-parents_test.stderr "${STDERR}"

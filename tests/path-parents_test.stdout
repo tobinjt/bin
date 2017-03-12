@@ -9,8 +9,9 @@
 /qwerty/asdf/bar/foo
 /qwerty/asdf/bar/foo/baz
 >>> Only -h <<<
-Usage: /Users/johntobin/bin/path-parents [-s N] PATH [PATH . . .]
+Usage: /Users/johntobin/bin/path-parents [-s N] [PATH PATH . . .]
 Usage: /Users/johntobin/bin/path-parents -h
+If no filenames are provided reads from stdin.
 Args:
   -h: Show usage message.
   -s N: Skip output of paths with N or fewer components (/bin has 1 component),
@@ -34,3 +35,12 @@ qwerty/asdf/bar
 qwerty/asdf/bar/foo
 qwerty/asdf/bar/foo/baz
 >>> Running out of components. <<<
+>>> Reading from stdin. <<<
+/qwerty
+/qwerty/asdf
+/qwerty/asdf/bar
+/qwerty/asdf/bar/foo
+/qwerty/asdf/bar/foo/baz
+>>> Reading from stdin and skipping. <<<
+/qwerty/asdf/bar/foo
+/qwerty/asdf/bar/foo/baz

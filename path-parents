@@ -3,8 +3,9 @@
 set -e -f -u -o pipefail
 usage() {
   cat <<USAGE
-Usage: $0 [-s N] PATH [PATH . . .]
+Usage: $0 [-s N] [PATH PATH . . .]
 Usage: $0 -h
+If no filenames are provided reads from stdin.
 Args:
   -h: Show usage message.
   -s N: Skip output of paths with N or fewer components (/bin has 1 component),
@@ -41,12 +42,16 @@ shift $(( OPTIND - 1 ))
 readonly SKIP
 
 
-# TODO: support reading from stdin.
 if [[ "$#" -eq 0 ]]; then
-  die "$(usage)"
-fi
-
-echo "$@" \
+  if [[ -t 0 ]]; then
+    warn "Refusing to read from terminal."
+    warn ""
+    die "$(usage)"
+  fi
+  cat
+else
+  echo "$@"
+fi \
   | fmt -1 \
   | awk -F '/' '
     { # Handle the presence or absence of leading slashes.

@@ -1,6 +1,9 @@
 >>> No args <<<
-Usage: /Users/johntobin/bin/path-parents [-s N] PATH [PATH . . .]
+Refusing to read from terminal.
+
+Usage: /Users/johntobin/bin/path-parents [-s N] [PATH PATH . . .]
 Usage: /Users/johntobin/bin/path-parents -h
+If no filenames are provided reads from stdin.
 Args:
   -h: Show usage message.
   -s N: Skip output of paths with N or fewer components (/bin has 1 component),
@@ -15,3 +18,5 @@ Bad argument 'asdf'; argument to -s must be an integer.
 >>> No leading slashes <<<
 >>> Doubled slashes <<<
 >>> Running out of components. <<<
+>>> Reading from stdin. <<<
+>>> Reading from stdin and skipping. <<<
