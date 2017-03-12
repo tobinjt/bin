@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Usage: %(prog)s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]
+"""%(prog)s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]
 
 Display the number of seconds of downtime that N nines uptime allows.  Uptime is
 usually described as N nines, e.g. 3 nines is 99.9%% uptime, 6 nines is
@@ -14,6 +14,7 @@ are interpreted as a number of nines.
 
 __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
+import argparse
 import itertools
 import sys
 
@@ -138,14 +139,17 @@ def nines(num_nines):
              format_duration(downtime_seconds)))
 
 def main(argv):
-  # TODO: use argparse.
-  if len(argv) <= 1:
-    sys.exit(__doc__ % {
-        'prog': argv[0],
-        'PT': PERCENT_THRESHOLD,
-        })
+  description = '\n'.join(__doc__.split('\n')[1:]) % {
+      'PT': PERCENT_THRESHOLD,
+  }
+  usage = __doc__.split('\n')[0]
+  argv_parser = argparse.ArgumentParser(
+      description=description, usage=usage)
+  argv_parser.add_argument('args', nargs='+', metavar='NUMBER_OF_NINES',
+                           default=[], help='See usage for details')
+  options = argv_parser.parse_args(argv[1:])
 
-  for num_nines in argv[1:]:
+  for num_nines in options.args:
     print nines(parse_nines_arg(num_nines))
 
 if __name__ == '__main__':

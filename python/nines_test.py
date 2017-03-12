@@ -4,7 +4,6 @@ import StringIO
 import unittest
 
 import mock
-#  from pyfakefs import fake_filesystem_unittest
 
 import nines
 
@@ -67,7 +66,9 @@ class TestMain(unittest.TestCase):
   def test_no_args(self, mock_stdout, mock_exit):
     """Test main."""
     nines.main(['argv0'])
-    mock_exit.assert_called_once()
+    # In reality sys.exit will only be called once, but because we mock it out
+    # the flow control continues and it is called twice.
+    mock_exit.assert_has_calls([mock.call(2), mock.call(2)])
     self.assertEqual('', mock_stdout.getvalue())
 
 
