@@ -4,8 +4,11 @@ set -e -f -u -o pipefail
 usage() {
   cat <<USAGE
 Usage: $0 [-s N] PATH [PATH . . .]
+Usage: $0 -h
 Args:
-  -s N: Skip output of paths with N or fewer components (/bin has 1 component).
+  -h: Show usage message.
+  -s N: Skip output of paths with N or fewer components (/bin has 1 component),
+        /bin/test has 2 components.
 USAGE
 }
 warn() {
@@ -38,12 +41,9 @@ shift $(( OPTIND - 1 ))
 readonly SKIP
 
 
+# TODO: support reading from stdin.
 if [[ "$#" -eq 0 ]]; then
   die "$(usage)"
-fi
-if [[ "$1" == "--help" ]]; then
-  usage
-  exit 0
 fi
 
 echo "$@" \

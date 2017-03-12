@@ -1,0 +1,76 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+DIR="$(mktemp -d /tmp/path-parents-XXXXXXXXXX)"
+STDOUT="${DIR}/stdout"
+STDERR="${DIR}/stderr"
+readonly DIR STDOUT STDERR
+
+warn() {
+  echo "$@" >&2
+}
+die() {
+  warn "$@"
+  exit 1
+}
+
+# Run a command and check the exit code.
+check_command_fails() {
+  if "$@" >> "${STDOUT}" 2>> "${STDERR}"; then
+    die "Command succeeded: $@"
+  fi
+}
+check_command_succeeds() {
+  if ! "$@" >> "${STDOUT}" 2>> "${STDERR}"; then
+    die "Command failed: $@"
+  fi
+}
+
+# Log a message to stdout and stderr logs to easily tell where output starts and
+# ends.
+start_test() {
+  local file
+  for file in "${STDOUT}" "${STDERR}"; do
+    echo ">>> $@ <<<" >> "${file}"
+  done
+}
+
+main() {
+  # Argument handling.
+  start_test "No args"
+  check_command_fails path-parents
+  start_test "One filename"
+  check_command_succeeds path-parents /etc/passwd
+  start_test "Non-existent filename works"
+  check_command_succeeds path-parents /qwerty/asdf/bar/foo/baz
+  start_test "Only -h"
+  check_command_succeeds path-parents -h
+  start_test "Valid -s"
+  check_command_succeeds path-parents -s 1 /etc/passwd
+  start_test "Invalid -s"
+  check_command_fails path-parents -s asdf /etc/passwd
+
+  # Path variants.
+  start_test "Leading slashes"
+  check_command_succeeds path-parents /etc/passwd
+  check_command_succeeds path-parents -s 1 /etc/passwd
+  start_test "No leading slashes"
+  check_command_succeeds path-parents etc/passwd
+  check_command_succeeds path-parents -s 1 etc/passwd
+  start_test "Doubled slashes"
+  check_command_succeeds path-parents etc//passwd
+  check_command_succeeds path-parents -s 1 //etc/passwd
+  check_command_succeeds path-parents -s 2 qwerty//asdf//bar/foo//baz
+
+  # Running out of components.
+  start_test "Running out of components."
+  check_command_succeeds path-parents -s 3 etc//passwd
+  check_command_succeeds path-parents -s 10 /qwerty/asdf/bar/foo/baz
+
+  diff -u path-parents_test.stdout "${STDOUT}"
+  diff -u path-parents_test.stderr "${STDERR}"
+  rm -r -f "${DIR}"
+}
+
+main

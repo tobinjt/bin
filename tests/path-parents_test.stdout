@@ -1,0 +1,36 @@
+>>> No args <<<
+>>> One filename <<<
+/etc
+/etc/passwd
+>>> Non-existent filename works <<<
+/qwerty
+/qwerty/asdf
+/qwerty/asdf/bar
+/qwerty/asdf/bar/foo
+/qwerty/asdf/bar/foo/baz
+>>> Only -h <<<
+Usage: /Users/johntobin/bin/path-parents [-s N] PATH [PATH . . .]
+Usage: /Users/johntobin/bin/path-parents -h
+Args:
+  -h: Show usage message.
+  -s N: Skip output of paths with N or fewer components (/bin has 1 component),
+        /bin/test has 2 components.
+>>> Valid -s <<<
+/etc/passwd
+>>> Invalid -s <<<
+>>> Leading slashes <<<
+/etc
+/etc/passwd
+/etc/passwd
+>>> No leading slashes <<<
+etc
+etc/passwd
+etc/passwd
+>>> Doubled slashes <<<
+etc
+etc/passwd
+/etc/passwd
+qwerty/asdf/bar
+qwerty/asdf/bar/foo
+qwerty/asdf/bar/foo/baz
+>>> Running out of components. <<<
