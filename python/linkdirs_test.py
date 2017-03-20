@@ -43,6 +43,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   - File with same contents is replaced with link.
   - Excluded files/dirs are skipped.
   - Report unexpected files.
+  - Delete unexpected files.
   - Report diffs.
   - Bad arguments are caught.
   - Force deletes existing files and directories.
@@ -120,6 +121,63 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         'rmdir /z/y/x/asdf/report_me',
     ]
     self.assertEqual(expected, actual)
+    # Unexpected files should not be deleted.
+    self.assertTrue(os.path.exists('/z/y/x/the_brain'))
+
+  def test_delete_unexpected_files(self):
+    """Delete unexpected files."""
+    src_dir = '/a/b/c'
+    self.fs.CreateFile(os.path.join(src_dir, 'file'))
+    # 'asdf' subdir exists here, so it will be checked in destdir.
+    self.fs.CreateFile(os.path.join(src_dir, 'asdf', 'file'))
+    dest_dir = '/z/y/x'
+    self.fs.CreateFile(os.path.join(dest_dir, 'pinky'))
+    self.fs.CreateFile(os.path.join(dest_dir, 'the_brain'))
+    # Ensure there is a subdir that should not be reported.
+    os.makedirs(os.path.join(dest_dir, 'subdir'))
+
+    actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
+                                 '--ignore_unexpected_children',
+                                 src_dir, dest_dir])
+    expected = [
+        'Unexpected file: /z/y/x/pinky',
+        'Unexpected file: /z/y/x/the_brain',
+    ]
+    self.assertEqual(expected, actual)
+    # Unexpected files should be deleted.
+    self.assertFalse(os.path.exists('/z/y/x/the_brain'))
+    self.assertFalse(os.path.exists('/z/y/x/pinky'))
+
+  def test_delete_unexp_keeps_dirs(self):
+    """Delete unexpected files but not directories."""
+    src_dir = '/a/b/c'
+    self.fs.CreateFile(os.path.join(src_dir, 'file'))
+    # 'asdf' subdir exists here, so it will be checked in destdir.
+    self.fs.CreateFile(os.path.join(src_dir, 'asdf', 'file'))
+    dest_dir = '/z/y/x'
+    self.fs.CreateFile(os.path.join(dest_dir, 'pinky'))
+    self.fs.CreateFile(os.path.join(dest_dir, 'the_brain'))
+    # Ensure there is a subdir that should not be reported.
+    os.makedirs(os.path.join(dest_dir, 'subdir'))
+    # And also a subdir that will be reported.
+    os.makedirs(os.path.join(dest_dir, 'asdf', 'report_me'))
+
+    actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
+                                 '--ignore_unexpected_children',
+                                 src_dir, dest_dir])
+    expected = [
+        'Refusing to delete directories: /z/y/x/asdf/report_me',
+        'Unexpected directory: /z/y/x/asdf/report_me',
+        'Unexpected file: /z/y/x/pinky',
+        'Unexpected file: /z/y/x/the_brain',
+        'rmdir /z/y/x/asdf/report_me',
+    ]
+    self.assertEqual(expected, actual)
+    # Unexpected files should be deleted.
+    self.assertFalse(os.path.exists('/z/y/x/the_brain'))
+    self.assertFalse(os.path.exists('/z/y/x/pinky'))
+    # But not unexpected directories.
+    self.assertTrue(os.path.exists('/z/y/x/asdf/report_me'))
 
   def test_exclusions_are_skipped(self):
     """Excluded files/dirs are skipped."""
@@ -187,6 +245,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.assertEqual(
         ['Usage: linkdirs [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR'],
         linkdirs.real_main(['linkdirs', '--force', '/asdf']))
+    self.assertEqual(
+        ['Cannot enable --delete_unexpected_files without '
+         '--ignore_unexpected_children'],
+        linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
+                            '/asdf', '/qwerty']))
 
   def test_force_deletes_dest(self):
     """Force deletes existing files and directories."""

@@ -267,7 +267,7 @@ def link_files(source, dest, directory, files, options):
 
 
 def report_unexpected_files(dest_dir, expected_files_list, options):
-  """Check for files in destdir that aren't in source_dir.
+  """Check for and maybe delete files in destdir that aren't in source_dir.
 
   Args:
     dest_dir: str, the destination directory.
@@ -309,6 +309,14 @@ def report_unexpected_files(dest_dir, expected_files_list, options):
         if entry not in expected_files:
           unexpected_msgs.append("Unexpected %s: %s" % (my_type, entry))
           unexpected_paths[my_type].append(entry)
+
+  if options.delete_unexpected_files:
+    for entry in unexpected_paths["file"]:
+      safe_unlink(entry, options.dryrun)
+    unexpected_paths["file"] = []
+    if unexpected_paths["directory"]:
+      unexpected_msgs.append("Refusing to delete directories: %s"
+                             % " ".join(unexpected_paths["directory"]))
 
   unexpected_msgs.sort()
   unexpected_paths["file"].sort()
@@ -375,11 +383,19 @@ def real_main(argv):
       dest="report_unexpected_files", default=False,
       help=textwrap.fill("""Report unexpected files in DESTINATION_DIRECTORY
                          (default: %default)"""))
+  argv_parser.add_option(
+      "--delete_unexpected_files", action="store_true",
+      dest="delete_unexpected_files", default=False,
+      help=textwrap.fill("""Delete unexpected files in DESTINATION_DIRECTORY
+                         (default: %default)"""))
 
   (options, args) = argv_parser.parse_args(argv[1:])
   if len(args) < 2:
     return ["Usage: %s [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR"
             % argv[0]]
+  if options.delete_unexpected_files and not options.ignore_unexpected_children:
+    return ["Cannot enable --delete_unexpected_files without "
+            "--ignore_unexpected_children"]
 
   ignore_patterns = options.ignore_pattern[:]
   for filename in options.ignore_file:
@@ -395,7 +411,7 @@ def real_main(argv):
   for source in args:
     source = source.rstrip(os.sep)
     all_results.extend(link_dir(source, dest, options))
-  if options.report_unexpected_files:
+  if options.report_unexpected_files or options.delete_unexpected_files:
     unexpected_msgs.extend(report_unexpected_files(
         dest, all_results.expected_files, options))
 
