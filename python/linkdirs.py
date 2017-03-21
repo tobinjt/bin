@@ -27,6 +27,16 @@ class Error(Exception):
   pass
 
 
+class UnexpectedPaths(collections.namedtuple('UnexpectedPaths',
+                                         'files directories')):
+  """Container for unexpected paths.
+
+  Attributes:
+    files: list(str), unexpected files.
+    directories: list(str), unexpected directories.
+  """
+
+
 class LinkResults(collections.namedtuple('LinkResults',
                                          'expected_files diffs errors')):
   """Container for the results of linking files and directories.
@@ -282,11 +292,7 @@ def report_unexpected_files(dest_dir, expected_files_list, options):
   for entry in expected_files_list:
     expected_files[entry] = 1
 
-  unexpected_msgs = []
-  unexpected_paths = {
-      "directory": [],
-      "file": []
-  }
+  unexpected_paths = UnexpectedPaths([], [])
   for directory, subdirs, files in os.walk(dest_dir, topdown=True):
     subdirs[:] = remove_skip_patterns(subdirs, options.skip)
     subdirs.sort()
@@ -303,31 +309,69 @@ def report_unexpected_files(dest_dir, expected_files_list, options):
     full_files = [os.path.join(directory, entry) for entry in files]
     skip_more = ["*%s%s" % (os.sep, pattern) for pattern in options.skip]
     full_files = remove_skip_patterns(full_files, skip_more)
-    for (my_list, my_type) in ((full_subdirs, "directory"),
-                               (full_files, "file")):
-      for entry in my_list:
-        if entry not in expected_files:
-          unexpected_msgs.append("Unexpected %s: %s" % (my_type, entry))
-          unexpected_paths[my_type].append(entry)
+    unexpected_paths.directories.extend(
+        [path for path in full_subdirs if path not in expected_files])
+    unexpected_paths.files.extend(
+        [path for path in full_files if path not in expected_files])
 
+  msgs = []
   if options.delete_unexpected_files:
-    for entry in unexpected_paths["file"]:
-      safe_unlink(entry, options.dryrun)
-    unexpected_paths["file"] = []
-    if unexpected_paths["directory"]:
-      unexpected_msgs.append("Refusing to delete directories: %s"
-                             % " ".join(unexpected_paths["directory"]))
+    msgs.extend(delete_unexpected_files(unexpected_paths, options))
+  msgs.extend(format_unexpected_files(unexpected_paths))
+  return msgs
 
-  unexpected_msgs.sort()
-  unexpected_paths["file"].sort()
-  unexpected_paths["directory"].sort()
-  if unexpected_paths["file"]:
-    unexpected_msgs.append("rm %s" % " ".join(unexpected_paths["file"]))
-  if unexpected_paths["directory"]:
+
+def delete_unexpected_files(unexpected_paths, options):
+  """Delete unexpected files, but not directories.
+
+  Args:
+    unexpected_paths: UnexpectedPaths, paths to process.
+    options: argparse.Namespace, options requested by the user.
+
+  Returns:
+    list(str), the messages to print.
+  """
+
+  for entry in unexpected_paths.files:
+    safe_unlink(entry, options.dryrun)
+  # Don't report files that have been deleted.
+  unexpected_paths.files[:] = []
+  if not unexpected_paths.directories:
+    return []
+  if not options.force:
+    return ["Refusing to delete directories: %s"
+            % " ".join(unexpected_paths.directories)]
+  for entry in unexpected_paths.directories:
+    safe_unlink(entry, options.dryrun)
+  # Don't report directories that have been deleted.
+  unexpected_paths.directories[:] = []
+  return []
+
+
+def format_unexpected_files(unexpected_paths):
+  """Format unexpected files and directories for output.
+
+  Args:
+    unexpected_paths: UnexpectedPaths, paths to process.
+
+  Returns:
+    list(str), the messages to print.
+  """
+
+  unexpected_paths.directories.sort()
+  unexpected_paths.files.sort()
+  unexpected_msgs = []
+  unexpected_msgs.extend(["Unexpected directory: %s" % path
+                          for path in unexpected_paths.directories])
+  unexpected_msgs.extend(["Unexpected file: %s" % path
+                          for path in unexpected_paths.files])
+  if unexpected_paths.files:
+    unexpected_msgs.append("rm %s" % " ".join(unexpected_paths.files))
+  if unexpected_paths.directories:
     # Descending sort by length, so that child directories are removed before
     # parent directories.
-    unexpected_paths["directory"].sort(key=len, reverse=True)
-    unexpected_msgs.append("rmdir %s" % " ".join(unexpected_paths["directory"]))
+    unexpected_paths.directories.sort(key=len, reverse=True)
+    unexpected_msgs.append("rmdir %s" % " ".join(unexpected_paths.directories))
   return unexpected_msgs
 
 
