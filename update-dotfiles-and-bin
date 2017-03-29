@@ -69,7 +69,7 @@ update_git_checkout_and_push() {
 
 main() {
   if [[ "$#" -ne 0 ]]; then
-    warn "Unexpected arguments: $@"
+    warn "Unexpected arguments: $*"
     die "Usage: $0"
   fi
   echo "Running dotfiles to check for pre-existing diffs."

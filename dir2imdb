@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e -f -u -o pipefail
 
 echo '<html>'
 echo '  <head>'
-echo "    <title>${PWD} $@</title>"
+echo "    <title>${PWD} $*</title>"
 echo '  </head>'
 echo '  <body>'
 

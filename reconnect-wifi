@@ -17,7 +17,7 @@ PATH="${PATH}:/usr/sbin:/sbin"
 log() {
   local now
   now="$(date)"
-  echo "${now} $@" >> "${LOG_FILE}"
+  echo "${now} $*" >> "${LOG_FILE}"
 }
 
 readonly ATTEMPTS="${1:-10}"

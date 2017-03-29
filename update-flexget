@@ -34,6 +34,7 @@ fi
 
 # Dummy values needed by ${SCRIPT}.
 export PS1="dummy"
+# shellcheck source=/dev/null
 source "${SCRIPT}"
 pip install -e .
 pip install -r dev-requirements.txt

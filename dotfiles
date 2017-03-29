@@ -18,14 +18,15 @@ cat_ssh_configs() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local dryrun= force= report_unexpected= opt=
+  local flags=() return_early opt
   while getopts ":dfhr" opt "$@"; do
     case "${opt}" in
       d)
-        dryrun="--dryrun"
+        flags+=("--dryrun")
+        return_early=1
         ;;
       f)
-        force="--force"
+        flags+=("--force")
         ;;
       h)
         cat <<END_OF_HELP
@@ -43,8 +44,8 @@ END_OF_HELP
         exit 0
         ;;
       r)
-        report_unexpected="--report_unexpected_files"
-        report_unexpected+=" --ignore_unexpected_children"
+        flags+=("--report_unexpected_files" "--ignore_unexpected_children")
+        return_early=1
         ;;
       *)
         echo "Unrecognised flag: ${opt}" >&2
@@ -52,20 +53,23 @@ END_OF_HELP
     esac
   done
 
-  local SKIP_FLAGS="--ignore_pattern=tags --ignore_pattern=*.pyc"
-  SKIP_FLAGS+=" --ignore_pattern=*.spl"
+  local SKIP_FLAGS=("--ignore_pattern=tags" "--ignore_pattern=*.pyc")
+  SKIP_FLAGS+=("--ignore_pattern=*.spl")
   readonly SKIP_FLAGS
-  local SKIP_FILES="" dir
+  local SKIP_FILES=() dir
   for dir in $(dotfiles_sources); do
     if [[ -f "${dir}/${IGNORE_FILENAME}" ]]; then
-      SKIP_FILES+=" --ignore_file=${dir}/${IGNORE_FILENAME}"
+      SKIP_FILES+=("--ignore_file=${dir}/${IGNORE_FILENAME}")
     fi
   done
   readonly SKIP_FILES
 
-  linkdirs ${SKIP_FLAGS} ${SKIP_FILES} ${dryrun} ${force} ${report_unexpected} \
+  # Note: I only want to disable the warning for $(dotfiles_sources), but I
+  # can't :/
+  # shellcheck disable=SC2046
+  linkdirs "${SKIP_FLAGS[@]}" "${SKIP_FILES[@]}" "${flags[@]}" \
     $(dotfiles_sources) "${HOME}"
-  if [ -n "${report_unexpected}" ]; then
+  if [ -n "${return_early}" ]; then
     return
   fi
   set +f
