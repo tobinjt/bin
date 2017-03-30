@@ -18,7 +18,7 @@ cat_ssh_configs() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local flags=() return_early opt
+  local flags=() return_early=0 opt
   while getopts ":dfhr" opt "$@"; do
     case "${opt}" in
       d)
@@ -73,7 +73,7 @@ END_OF_HELP
     "${flags[@]:+${flags[@]}}" \
     $(dotfiles_sources) \
     "${HOME}"
-  if [ -n "${return_early}" ]; then
+  if [ "${return_early}" -eq 1 ]; then
     return
   fi
   set +f
