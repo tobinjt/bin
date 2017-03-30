@@ -67,8 +67,12 @@ END_OF_HELP
   # Note: I only want to disable the warning for $(dotfiles_sources), but I
   # can't :/
   # shellcheck disable=SC2046
-  linkdirs "${SKIP_FLAGS[@]}" "${SKIP_FILES[@]}" "${flags[@]}" \
-    $(dotfiles_sources) "${HOME}"
+  linkdirs \
+    "${SKIP_FLAGS[@]:+${SKIP_FLAGS[@]}}" \
+    "${SKIP_FILES[@]:+${SKIP_FILES[@]}}" \
+    "${flags[@]:+${flags[@]}}" \
+    $(dotfiles_sources) \
+    "${HOME}"
   if [ -n "${return_early}" ]; then
     return
   fi
