@@ -19,7 +19,7 @@ main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
   local flags=() return_early=0 opt
-  while getopts ":dfhr" opt "$@"; do
+  while getopts ":dfhrX" opt "$@"; do
     case "${opt}" in
       d)
         flags+=("--dryrun")
@@ -30,7 +30,7 @@ main() {
         ;;
       h)
         cat <<END_OF_HELP
-Usage: $0 [-d] [-f] [-r]
+Usage: $0 [-d] [-f] [-r] [-X]
 Links files in ${HOME}/src/*dotfiles* to ${HOME}
 Files and directories listed in ${HOME}/src/*dotfiles*/${IGNORE_FILENAME} will
 be ignored.  Note: ${IGNORE_FILENAME} lists are global, not scoped to the
@@ -52,7 +52,7 @@ END_OF_HELP
         flags+=("--delete_unexpected_files" "--ignore_unexpected_children")
         ;;
       *)
-        echo "Unrecognised flag: ${opt}" >&2
+        echo "Unrecognised flag: ${OPTARG}" >&2
         exit 1
     esac
   done
