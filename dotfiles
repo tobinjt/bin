@@ -40,12 +40,16 @@ Options:
   -f: force overwrite of files that differ.
   -d: dry run, overrides -f.
   -r: report unexpected files in destination.
+  -X: delete unexpected files in destination.
 END_OF_HELP
         exit 0
         ;;
       r)
         flags+=("--report_unexpected_files" "--ignore_unexpected_children")
         return_early=1
+        ;;
+      X)
+        flags+=("--delete_unexpected_files" "--ignore_unexpected_children")
         ;;
       *)
         echo "Unrecognised flag: ${opt}" >&2
