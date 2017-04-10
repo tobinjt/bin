@@ -173,11 +173,12 @@ def link_dir(source, dest, options):
       source_dir = os.path.join(directory, subdir)
       dest_dir = source_dir.replace(source, dest, 1)
       results.expected_files.append(dest_dir)
-      source_stat = os.stat(source_dir)
-      source_mode = stat.S_IMODE(source_stat.st_mode)
+      source_mode = stat.S_IMODE(os.stat(source_dir).st_mode)
 
       if os.path.isdir(dest_dir):
-        # TODO: check if permissions are correct rather than blindly changing.
+        dest_mode = stat.S_IMODE(os.stat(dest_dir).st_mode)
+        if dest_mode == source_mode:
+          continue
         if not options.dryrun:
           os.chmod(dest_dir, source_mode)
         else:
