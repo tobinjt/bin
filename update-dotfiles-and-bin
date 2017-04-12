@@ -114,8 +114,7 @@ main() {
   done
 
   # Delete unexpected files.
-  # TODO: remove dryrun.
-  dotfiles -X -d
+  dotfiles -X
 }
 
 # Make sure $HOME/bin is in $PATH to support running
