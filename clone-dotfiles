@@ -16,6 +16,8 @@ if [ ! -d "${DESTDIR}" ]; then
   git clone https://github.com/tobinjt/dotfiles.git "${DESTDIR}"
 fi
 cd "${DESTDIR}"
+# Make .ssh inaccessible.
+chmod 700 .ssh
 git pull
 git submodule init
 git submodule update
