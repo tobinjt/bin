@@ -76,6 +76,8 @@ main() {
   # First make sure we're up to date so that current diffs aren't mixed in with
   # future diffs.
   dotfiles
+  echo "Running dotfiles to check for unexpected files."
+  dotfiles -r
 
   # Update bin dirs.
   local orig_code
@@ -111,8 +113,9 @@ main() {
     check_git_status "${dir}"
   done
 
-  # Report unexpected files.
-  dotfiles -r
+  # Delete unexpected files.
+  # TODO: remove dryrun.
+  dotfiles -X -d
 }
 
 # Make sure $HOME/bin is in $PATH to support running

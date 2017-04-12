@@ -2,6 +2,7 @@
 
 import os
 import re
+import stat
 import StringIO
 import unittest
 
@@ -69,6 +70,35 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
                         os.path.dirname(dest_file)])
     self.assert_files_are_linked(src_file, dest_file)
+
+  def test_dest_perms_unchanged(self):  # pylint: disable=no-self-use
+    """Destination directory perms don't change unnecessarily."""
+    src_dir = '/a/b/c/dir'
+    dest_dir = '/z/y/x/dir'
+    mode = int('0755', base=8)
+    os.makedirs(src_dir)
+    os.makedirs(dest_dir)
+    os.chmod(src_dir, mode)
+    os.chmod(dest_dir, mode)
+
+    with mock.patch('os.chmod') as fake_chmod:
+      linkdirs.real_main(['linkdirs', os.path.dirname(src_dir),
+                          os.path.dirname(dest_dir)])
+      fake_chmod.assert_not_called()
+
+  def test_dest_perms_are_changed(self):
+    """Destination directory perms change if necessarily."""
+    src_dir = '/a/b/c/dir'
+    dest_dir = '/z/y/x/dir'
+    mode = int('0755', base=8)
+    os.makedirs(src_dir)
+    os.makedirs(dest_dir)
+    os.chmod(src_dir, mode)
+    os.chmod(dest_dir, int('0700', base=8))
+
+    linkdirs.real_main(['linkdirs', os.path.dirname(src_dir),
+                        os.path.dirname(dest_dir)])
+    self.assertEqual(mode, stat.S_IMODE(os.stat(dest_dir).st_mode))
 
   def test_missing_file_is_created(self):
     """Missing file gets created."""
