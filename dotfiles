@@ -18,12 +18,13 @@ cat_ssh_configs() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local flags=() return_early=0 opt
+  local flags=() return_early=0 dryrun=0 opt
   while getopts ":dfhrX" opt "$@"; do
     case "${opt}" in
       d)
         flags+=("--dryrun")
         return_early=1
+        dryrun=1
         ;;
       f)
         flags+=("--force")
@@ -65,6 +66,10 @@ END_OF_HELP
     if [[ -f "${dir}/${IGNORE_FILENAME}" ]]; then
       SKIP_FILES+=("--ignore_file=${dir}/${IGNORE_FILENAME}")
     fi
+    if [[ "${dryrun}" -eq 0 && -d "${dir}/.ssh" ]]; then
+      # Lock down .ssh.
+      chmod 700 "${dir}/.ssh"
+    fi
   done
   readonly SKIP_FILES
 
@@ -77,7 +82,7 @@ END_OF_HELP
     "${flags[@]:+${flags[@]}}" \
     $(dotfiles_sources) \
     "${HOME}"
-  if [ "${return_early}" -eq 1 ]; then
+  if [[ "${return_early}" -eq 1 ]]; then
     return
   fi
   set +f
