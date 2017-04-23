@@ -20,3 +20,13 @@ sudo rsync -a --verbose \
   --delete \
   --exclude='.*' --exclude='hourly.*' \
   "${srcdir}" "${destdir}"
+
+# Unmount the disks, starting with the filesystem and then doing CoreStorage.
+unmountdisk() {
+  local type="$1"
+  diskutil list \
+    | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }' \
+    | xargs -n 1 -- diskutil unmountdisk
+}
+unmountdisk "Apple_HFS"
+unmountdisk "Apple_CoreStorage"
