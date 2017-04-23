@@ -86,10 +86,10 @@ BROWSER_URLS[theme]="https://wordpress.org/themes/${NAME}/"
 readonly BROWSER_URLS
 
 mkdir -p "${DOWNLOAD_DIR}"
-# If we're grabbing the latest version of wordpress rather than a specific
-# version, delete the destination file because we want to download the newer
-# version rather than using a previously downloaded one.
-if [[ "${DOWNLOAD_FILE}" == "${WORDPRESS_LATEST}" ]]; then
+# If we're grabbing the latest version rather than a specific version, delete
+# the destination file because we want to download the newer version rather than
+# using a previously downloaded one.
+if [[ "${DOWNLOAD_FILE}" == "${WORDPRESS_LATEST}" || -z "${VERSION}" ]]; then
   rm -f "${DOWNLOAD_PATH}"
 fi
 # Deal with corrupt downloads or HTML output.
