@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  cd "${HOME}/dev.arianetobin.ie/wp-content/themes/ariane-theme"
+  local git_status
+  git_status="$(git status --short)"
+  if [[ -n "${git_status}" ]]; then
+    die "Uncommitted changes in ${PWD}:\n" "${git_status}"
+  fi
+  git push
+  cd "${HOME}/dev.arianetobin.ie"
+  git diff-index --quiet HEAD || git upstream
+  ssh ariane@hosting \
+    'set -e -f -u;
+     cd "${HOME}/arianetobin.ie/wp-content/themes/ariane-theme/";
+     git pull'
+  ssh ariane@hosting \
+    'set -e -f -u;
+     cd "${HOME}/arianetobin.ie/"
+     git diff-index --quiet HEAD || git upstream'
+}
+
+main
