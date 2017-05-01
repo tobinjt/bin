@@ -9,14 +9,16 @@ main() {
   if [[ -n "${git_status}" ]]; then
     die "Uncommitted changes in ${PWD}:\n" "${git_status}"
   fi
+  git pull
   git push
   cd "${HOME}/dev.arianetobin.ie"
   git diff-index --quiet HEAD || git upstream
-  ssh ariane@hosting \
+
+  ssh -o ControlPath=none ariane@hosting \
     'set -e -f -u;
      cd "${HOME}/arianetobin.ie/wp-content/themes/ariane-theme/";
      git pull'
-  ssh ariane@hosting \
+  ssh -o ControlPath=none ariane@hosting \
     'set -e -f -u;
      cd "${HOME}/arianetobin.ie/"
      git diff-index --quiet HEAD || git upstream'
