@@ -25,6 +25,7 @@ wget \
   --recursive \
   --page-requisites \
   "${WEBSITE}" || true
+
 # -- marks the start of a request; replace the hold space with that line.
 # Delete successful request (200) logs.
 # When any other status is seen, append the line to the hold space, swap the
@@ -34,7 +35,7 @@ PROBLEMS="$(sed -n \
               -e '/HTTP request sent, awaiting response... 200/ d' \
               -e '/HTTP request sent, awaiting response.../ { H; g; p; }' \
               "${LOG}")"
-if [[ -n "${PROBLEMS}" ]]; then
+if [[ -n "${PROBLEMS}" || -t 0 ]]; then
   echo "${PROBLEMS}"
   echo "See ${LOG} and the contents of ${DIR} for further investigation"
 fi
