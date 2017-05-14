@@ -8,7 +8,7 @@ use warnings;
 use IO::File;
 
 if (@ARGV) {
-	die <<"USAGE";
+    die <<"USAGE";
 Usage: $0
 Show packages that are depended on by other packages; such packages might have
 been automatically installed as dependencies, and can be marked as autoinstalled
@@ -27,12 +27,12 @@ progress(qq{done\n});
 
 PACKAGE:
 foreach my $package (keys %installed) {
-	next PACKAGE if exists $auto_installed{$package};
-	next PACKAGE if exists $essential_packages{$package};
-	my $deps = join q{ }, sort keys %{$reverse_dependencies{$package}};
-	if ($deps) {
-		print qq{$package: $deps\n};
-	}
+    next PACKAGE if exists $auto_installed{$package};
+    next PACKAGE if exists $essential_packages{$package};
+    my $deps = join q{ }, sort keys %{$reverse_dependencies{$package}};
+    if ($deps) {
+        print qq{$package: $deps\n};
+    }
 }
 
 sub run_aptitude {
