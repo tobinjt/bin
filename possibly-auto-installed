@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 
 # Display a list of packages which could possibly be marked as auto-installed.
+# To search for packages that could be removed, use this filter:
+# ~i !~M !~E !?priority(required)
+# Find config files that need to be purged with this filter: ?config-files
 
 use strict;
 use warnings;
@@ -16,9 +19,10 @@ with 'aptitude markauto PACKAGE'
 USAGE
 }
 
-my %essential_packages  = run_aptitude(q{~E},       q{essential});
-my %auto_installed      = run_aptitude(q{~i ~M},    q{autoinstalled});
-my %installed           = run_aptitude(q{~i},       q{installed});
+my %essential_packages = run_aptitude(q{~E}, q{essential});
+my %required_packages = run_aptitude(q{?priority(required)}, q{required});
+my %auto_installed = run_aptitude(q{~i ~M}, q{autoinstalled});
+my %installed = run_aptitude(q{~i}, q{installed});
 
 progress(qq{$0: reading package lists . . . });
 # exists $reverse_dependencies{FOO}->{BAR} means that BAR depends on FOO.
@@ -28,6 +32,7 @@ progress(qq{done\n});
 PACKAGE:
 foreach my $package (keys %installed) {
     next PACKAGE if exists $auto_installed{$package};
+    next PACKAGE if exists $required_packages{$package};
     next PACKAGE if exists $essential_packages{$package};
     my $deps = join q{ }, sort keys %{$reverse_dependencies{$package}};
     if ($deps) {
