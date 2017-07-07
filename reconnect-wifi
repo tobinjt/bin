@@ -4,11 +4,13 @@
 set -f -u -o pipefail
 
 readonly DRYRUN="no"
+readonly TEST_EXTERNAL="yes"
 # Figure out which network interface is wifi from the output of
 # networksetup -listnetworkserviceorder
 readonly WIFI_DEV="en1"
 readonly SSID="burrow"
 
+readonly INTERNAL_IP="192.168.0.1"
 readonly EXTERNAL_IP="8.8.8.8"
 readonly EXTERNAL_HOSTNAME="www.google.com"
 readonly LOG_FILE="${HOME}/Documents/reconnect-wifi.log"
@@ -22,14 +24,24 @@ log() {
 
 readonly ATTEMPTS="${1:-10}" SLEEP_TIME="${2:-20}"
 
+log "Starting checks"
 # Make separate attempts with delays between then to cope with some transient
 # failures.
 for i in $(seq 1 "${ATTEMPTS}"); do
   if [[ "${i}" -gt 1 ]]; then
     sleep "${SLEEP_TIME}"
   fi
+  if ping -c 5 -o -q "${INTERNAL_IP}" >& /dev/null; then
+    log "attempt ${i}: internal ping succeeded"
+    if [[ "${TEST_EXTERNAL}" == "no" ]]; then
+      exit 0
+    fi
+  fi
+  if [[ "${TEST_EXTERNAL}" == "no" ]]; then
+    continue
+  fi
   if ping -c 5 -o -q "${EXTERNAL_IP}" >& /dev/null; then
-    log "attempt ${i}: ping succeeded"
+    log "attempt ${i}: external ping succeeded"
     exit 0
   fi
   if host "${EXTERNAL_HOSTNAME}" >& /dev/null; then
@@ -40,6 +52,7 @@ done
 
 log "All attempts failed :("
 set -x
+ping -c 5 "${INTERNAL_IP}"
 ping -c 5 "${EXTERNAL_IP}"
 host "${EXTERNAL_HOSTNAME}"
 if [ "${DRYRUN}" == "no" ]; then
