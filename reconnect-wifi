@@ -3,6 +3,13 @@
 # NOTE: Not using -e because we want to continue regardless of failure.
 set -f -u -o pipefail
 
+# Run this command to configure the network keep trying if connecting to the
+# network fails.
+# $ dir="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/A"
+# $ sudo "${dir}/Resources/airport" \
+#     prefs joinmode=Preferred joinmodefallback=KeepLooking
+# Run "airport prefs" to check current preferences.
+
 readonly DRYRUN="no"
 # Figure out which network interface is wifi from the output of
 # networksetup -listnetworkserviceorder
