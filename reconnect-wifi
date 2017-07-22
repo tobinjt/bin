@@ -10,6 +10,7 @@ set -f -u -o pipefail
 #     prefs joinmode=Preferred joinmodefallback=KeepLooking
 # Run "airport prefs" to check current preferences.
 
+readonly ATTEMPTS="${1:-10}" SLEEP_TIME="${2:-20}"
 readonly DRYRUN="no"
 # Figure out which network interface is wifi from the output of
 # networksetup -listnetworkserviceorder
@@ -31,13 +32,12 @@ check_wifi() {
   # Make separate attempts with delays between then to cope with some transient
   # failures.
   for i in $(seq 1 "${ATTEMPTS}"); do
-    if [[ "${i}" -gt 1 ]]; then
-      sleep "${SLEEP_TIME}"
-    fi
     if ping -c 5 -o -q "${INTERNAL_IP}" >& /dev/null; then
       log "attempt ${i}: internal ping succeeded"
       exit 0
     fi
+    log "attempt ${i}: internal ping failed"
+    sleep "${SLEEP_TIME}"
   done
 }
 
@@ -66,5 +66,4 @@ main() {
   fi
 }
 
-readonly ATTEMPTS="${1:-10}" SLEEP_TIME="${2:-20}"
 main "$@"
