@@ -37,7 +37,7 @@ check_git_status() {
 
 check_ssh_agent() {
   if ! ssh-add -l > /dev/null; then
-    (set +e; ssh-add -l; true)
+    ssh-add -l || true
     die "Problem with ssh agent"
   fi
   local output
