@@ -35,6 +35,25 @@ check_git_status() {
   fi
 }
 
+origin_is_ssh() {
+  local repo_url
+  repo_url="$(git config --get remote.origin.url)"
+  if [[ "${repo_url:0:8}" == "https://" ]]; then
+    return 1
+  fi
+  return 0
+}
+
+need_ssh_agent() {
+  local dir
+  for dir in $(bin_sources) $(dotfiles_sources); do
+    if (cd "${dir}" && origin_is_ssh); then
+      return 0
+    fi
+  done
+  return 1
+}
+
 check_ssh_agent() {
   if ! ssh-add -l > /dev/null; then
     ssh-add -l || true
@@ -70,9 +89,7 @@ update_git_checkout_and_push() {
   git submodule update
 
   # We can't push to https:// URLs.
-  local repo_url
-  repo_url="$(git config --get remote.origin.url)"
-  if [[ "${repo_url:0:8}" != "https://" ]]; then
+  if origin_is_ssh; then
     git push
   else
     echo "Cannot push to https:// URLs."
@@ -84,8 +101,11 @@ main() {
     warn "Unexpected arguments: $*"
     die "Usage: $0"
   fi
-  # Ensure we have a connection to the ssh agent and keys loaded.
-  check_ssh_agent
+  # Ensure we have a connection to the ssh agent and keys loaded, if we have ssh
+  # origins.
+  if need_ssh_agent; then
+    check_ssh_agent
+  fi
   echo "Running dotfiles to check for pre-existing diffs."
   # First make sure we're up to date so that current diffs aren't mixed in with
   # future diffs.
