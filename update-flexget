@@ -28,7 +28,7 @@ git push origin
 
 if [ ! -f "${SCRIPT}" ]; then
   # Set up virtualenv.
-  pip install virtualenv
+  pip2 install virtualenv
   virtualenv --clear "${DIR}"
 fi
 
@@ -36,5 +36,5 @@ fi
 export PS1="dummy"
 # shellcheck source=/dev/null
 source "${SCRIPT}"
-pip install -e .
-pip install -r dev-requirements.txt
+pip2 install -e .
+pip2 install -r dev-requirements.txt
