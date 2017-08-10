@@ -123,7 +123,9 @@ def diff(old_filename, new_filename):
   diff_generator = difflib.unified_diff(new_contents, old_contents,
                                         new_filename, old_filename,
                                         new_timestamp, old_timestamp)
-  diffs = [d for d in diff_generator]
+  # Strip the newline here because one will be added later when printing the
+  # messages.
+  diffs = [d.rstrip('\n') for d in diff_generator]
   return diffs
 
 

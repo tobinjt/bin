@@ -271,13 +271,13 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     actual = linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
                                  os.path.dirname(dest_file)])
     # Strip off timestamps.
-    actual = [re.sub(r'\t.*\n', '\t\n', x) for x in actual]
+    actual = [re.sub(r'\t.*$', '\t', x) for x in actual]
     expected = [
-        '--- /z/y/x/file\t\n',
-        '+++ /a/b/c/file\t\n',
-        '@@ -1 +1 @@\n',
-        '-asdf\n',
-        '+qwerty\n',
+        '--- /z/y/x/file\t',
+        '+++ /a/b/c/file\t',
+        '@@ -1 +1 @@',
+        '-asdf',
+        '+qwerty',
     ]
     self.assertEqual(expected, actual)
 
@@ -363,13 +363,13 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                     new_callable=StringIO.StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--dryrun', src_dir, dest_dir])
       # Strip off timestamps.
-      messages = [re.sub(r'\t.*\n', '\t\n', x) for x in messages]
+      messages = [re.sub(r'\t.*$', '\t', x) for x in messages]
       expected = [
-          '--- /z/y/x/file1\t\n',
-          '+++ /a/b/c/file1\t\n',
-          '@@ -1 +1 @@\n',
-          '-12345\n',
-          '+qwerty\n',
+          '--- /z/y/x/file1\t',
+          '+++ /a/b/c/file1\t',
+          '@@ -1 +1 @@',
+          '-12345',
+          '+qwerty',
           '/z/y/x/dir3 is not a directory',
           '/z/y/x/file4: is not a file',
           '/z/y/x/file5: link count is 2',
