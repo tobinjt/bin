@@ -5,13 +5,15 @@ set -e -f -u -o pipefail
 update-dotfiles-and-bin
 echo; echo; echo; echo "root@localhost"
 echo "password for root:"
-sudo --set-home update-dotfiles-and-bin
+# This only works when root's shell is bash.
+# sudo dscl . -change /Users/root UserShell /bin/sh /bin/bash
+sudo --login update-dotfiles-and-bin
 
 echo; echo; echo; echo "johntobin@mini"
 ssh -t mini update-dotfiles-and-bin
 echo; echo; echo; echo "root@mini"
 echo "password for root@mini:"
-ssh -t mini sudo -i update-dotfiles-and-bin
+ssh -t mini sudo --login update-dotfiles-and-bin
 echo; echo; echo; echo "arianetobin@mini"
 ssh -t arianetobin@mini update-dotfiles-and-bin
 
@@ -19,6 +21,6 @@ echo; echo; echo; echo "johntobin@hosting"
 ssh -t hosting update-dotfiles-and-bin
 echo; echo; echo; echo "root@hosting"
 echo "password for root@hosting:"
-ssh -t hosting sudo -i update-dotfiles-and-bin
+ssh -t hosting sudo --login update-dotfiles-and-bin
 echo; echo; echo; echo "ariane@hosting"
 ssh -t ariane@hosting update-dotfiles-and-bin
