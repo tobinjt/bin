@@ -2,25 +2,32 @@
 
 set -e -f -u -o pipefail
 
-update-dotfiles-and-bin
+retry() {
+  local sleep_time=10
+  until "$@"; do
+    sleep "${sleep_time}"
+  done
+}
+
+retry update-dotfiles-and-bin
 echo; echo; echo; echo "root@localhost"
 echo "password for root:"
 # This only works when root's shell is bash.
 # sudo dscl . -change /Users/root UserShell /bin/sh /bin/bash
-sudo --login update-dotfiles-and-bin
+retry sudo --login update-dotfiles-and-bin
 
 echo; echo; echo; echo "johntobin@mini"
-ssh -t mini update-dotfiles-and-bin
+retry ssh -t mini update-dotfiles-and-bin
 echo; echo; echo; echo "root@mini"
 echo "password for root@mini:"
-ssh -t mini sudo --login update-dotfiles-and-bin
+retry ssh -t mini sudo --login update-dotfiles-and-bin
 echo; echo; echo; echo "arianetobin@mini"
-ssh -t arianetobin@mini update-dotfiles-and-bin
+retry ssh -t arianetobin@mini update-dotfiles-and-bin
 
 echo; echo; echo; echo "johntobin@hosting"
-ssh -t hosting update-dotfiles-and-bin
+retry ssh -t hosting update-dotfiles-and-bin
 echo; echo; echo; echo "root@hosting"
 echo "password for root@hosting:"
-ssh -t hosting sudo --login update-dotfiles-and-bin
+retry ssh -t hosting sudo --login update-dotfiles-and-bin
 echo; echo; echo; echo "ariane@hosting"
-ssh -t ariane@hosting update-dotfiles-and-bin
+retry ssh -t ariane@hosting update-dotfiles-and-bin
