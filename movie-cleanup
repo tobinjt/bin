@@ -19,7 +19,8 @@ my @banned_words = qw(1080p 264 3xforum 480p 720p aac ac3 acab avi axxo bdrip
                       maxspeed p2p r5 rarbg repack rip ro screener starlets
                       stealthmaster torentz uncut unrated vomit web www x264
                       xvid xxx yify {1337x} 1980 redblade Webrip Hd Ts Cpg
-                      Badassmedia Lkrg Bitloks X0r Gly Sparks);
+                      Badassmedia Lkrg Bitloks X0r Gly Sparks mp3 fgt Korsub
+                      Stuttershit);
 # For every banned WORD, we'll discard WORD and (WORD).
 my %banned_words = map { (lc($_) => 1, lc(qq{($_)}) => 1) } @banned_words;
 my %new_filenames;
@@ -43,9 +44,9 @@ foreach my $filename (glob q{*}) {
                     map { s/^(?:part|cd)([123])$/p$1/; $_; }
                         # Drop banned words.
                         grep { not exists $banned_words{$_} }
-                            # Drop years; occasional false positives :/
+                            # Drop years; occasional false positives :/
                             grep { not m/^20[01][0-9]$/ }
-                                # Drop empty words.
+                                # Drop empty words.
                                 grep { length }
                                     split /[- ._]+/,
                                         lc $name;
