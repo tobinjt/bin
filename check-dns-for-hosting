@@ -17,6 +17,15 @@ find_address() {
   fi
 }
 
+maybe_remove_output_file() {
+  local retval="$1" host_output_file="$2"
+  if [ "${retval}" -eq 0 ]; then
+    rm "${host_output_file}"
+  else
+    echo "host output in ${host_output_file}"
+  fi
+}
+
 check_dns_for_host() {
   local hostname="$1" ipv4_address="$2" ipv6_address="$3"
   readonly hostname ipv4_address ipv6_address
@@ -37,33 +46,73 @@ check_dns_for_host() {
     retval=1
   fi
 
-  rm "${host_output_file}"
+  maybe_remove_output_file "${retval}" "${host_output_file}"
+  return "${retval}"
+}
+
+check_mx_for_host() {
+  local hostname="$1"
+  readonly hostname
+  shift
+
+  # johntobin.ie mail is handled by 1 aspmx.l.google.com.
+  # johntobin.ie mail is handled by 10 aspmx2.googlemail.com.
+  # johntobin.ie mail is handled by 10 aspmx3.googlemail.com.
+  # johntobin.ie mail is handled by 5 alt1.aspmx.l.google.com.
+  # johntobin.ie mail is handled by 5 alt2.aspmx.l.google.com.
+  local host_output_file
+  host_output_file="$(mktemp /tmp/check-dns.XXXXXXXXXXXX)"
+  readonly host_output_file
+  host -t MX "${hostname}" > "${host_output_file}"
+
+  local record pattern retval=0
+  for record in "$@"; do
+    pattern="^${hostname} mail is handled by ${record}\$"
+    if ! find_address "MX" "${pattern}" "${host_output_file}"; then
+      retval=1
+    fi
+  done
+
+  maybe_remove_output_file "${retval}" "${host_output_file}"
   return "${retval}"
 }
 
 main() {
   local hostname retval=0
   local ipv4_address="88.99.86.190" ipv6_address="2a01:4f8:c17:7156::2"
+  local mx_addresses=("1 aspmx.l.google.com." "10 aspmx2.googlemail.com." \
+                      "10 aspmx3.googlemail.com." "5 alt1.aspmx.l.google.com." \
+                      "5 alt2.aspmx.l.google.com.")
+  readonly ipv4_address ipv6_address mx_addresses
+
   for hostname in "$@"; do
     if ! check_dns_for_host "${hostname}" \
         "${ipv4_address}" "${ipv6_address}"; then
       retval=1
     fi
     if echo "${hostname}" | grep -q '\..*\.'; then
+      # Don't check www.foo.domain.com or MX records.
       continue
     fi
     if ! check_dns_for_host "www.${hostname}" \
         "${ipv4_address}" "${ipv6_address}"; then
       retval=1
     fi
+    if ! check_mx_for_host "${hostname}" "${mx_addresses[@]}"; then
+      retval=1
+    fi
   done
   return "${retval}"
 }
 
-main \
-  "arianetobin.com" \
-  "arianetobin.ie" \
-  "dev.arianetobin.ie" \
-  "johntobin.ie" \
-  "metalatwork.com" \
-  "nakedmetalsmith.com"
+if [ $# -eq 0 ]; then
+  main \
+    "arianetobin.com" \
+    "arianetobin.ie" \
+    "dev.arianetobin.ie" \
+    "johntobin.ie" \
+    "metalatwork.com" \
+    "nakedmetalsmith.com"
+else
+  main "$@"
+fi
