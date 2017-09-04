@@ -36,5 +36,12 @@ fi
 export PS1="dummy"
 # shellcheck source=/dev/null
 source "${SCRIPT}"
-pip2 install -e .
+if ! pip2 install -e .; then
+  # The most likely reason for failure is that I upgraded Python and so paths
+  # are incorrect; remove $SCRIPT and start over.
+  # virtualenv will die horribly if any of these exist, so nuke them.
+  rm -rf bin include .Python
+  # Start over to install supporting tools rather than duplicating it.
+  exec "$0" "$@"
+fi
 pip2 install -r dev-requirements.txt
