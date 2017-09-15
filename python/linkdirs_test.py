@@ -214,8 +214,12 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.fs.CreateFile(os.path.join(dest_dir, 'the_brain'))
     # Ensure there is a subdir that should not be reported.
     os.makedirs(os.path.join(dest_dir, 'subdir'))
-    # And also a subdir that will be reported.
-    os.makedirs(os.path.join(dest_dir, 'asdf', 'report_me'))
+    # And also a subdir that will be removed.
+    os.makedirs(os.path.join(dest_dir, 'asdf', 'delete_me'))
+    # And create a nested subdir that will be removed.  This ensures that nested
+    # subdirs are handled correctly, i.e. we don't delete the parent and then
+    # fail to delete the child.
+    os.makedirs(os.path.join(dest_dir, 'asdf', 'delete_me', 'delete_me_too'))
 
     actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
                                  '--ignore_unexpected_children', '--force',
@@ -225,7 +229,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.assertFalse(os.path.exists('/z/y/x/the_brain'))
     self.assertFalse(os.path.exists('/z/y/x/pinky'))
     # And unexpected directories.
-    self.assertFalse(os.path.exists('/z/y/x/asdf/report_me'))
+    self.assertFalse(os.path.exists('/z/y/x/asdf/delete_me'))
 
   def test_exclusions_are_skipped(self):
     """Excluded files/dirs are skipped."""

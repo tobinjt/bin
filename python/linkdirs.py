@@ -345,6 +345,9 @@ def delete_unexpected_files(unexpected_paths, options):
   if not options.force:
     return ["Refusing to delete directories: %s"
             % " ".join(unexpected_paths.directories)]
+  # Descending sort by length, so that child directories are removed before
+  # parent directories.
+  unexpected_paths.directories.sort(key=len, reverse=True)
   for entry in unexpected_paths.directories:
     safe_unlink(entry, options.dryrun)
   # Don't report directories that have been deleted.
