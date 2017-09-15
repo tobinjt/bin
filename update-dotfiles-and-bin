@@ -157,8 +157,8 @@ main() {
     check_git_status "${dir}"
   done
 
-  # Delete unexpected files.
-  dotfiles -X
+  # Delete unexpected files and directories.
+  dotfiles -X -f
 }
 
 # Make sure $HOME/bin is in $PATH to support running
