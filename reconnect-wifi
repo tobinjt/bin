@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -f -u -x -o pipefail
+set -e -f -u -o pipefail
 
 # Run this command to configure the network to keep trying if connecting to the
 # network fails.
