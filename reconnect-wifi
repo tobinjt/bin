@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# NOTE: Not using -e because we want to continue regardless of failure.
-set -f -u -o pipefail
+set -f -u -x -o pipefail
 
-# Run this command to configure the network keep trying if connecting to the
+# Run this command to configure the network to keep trying if connecting to the
 # network fails.
 # $ dir="/System/Library/PrivateFrameworks/Apple80211.framework/Versions/A"
 # $ sudo "${dir}/Resources/airport" \
@@ -60,7 +59,12 @@ main() {
   log "All ${ATTEMPTS} attempts failed :("
   if [ "${DRYRUN}" == "no" ]; then
     set -x
-    reset_wifi
+    for i in 1 2 3; do
+      if reset_wifi; then
+        exit 0
+      fi
+    done
+    log "All reset_wifi attempts failed"
   else
     echo "Dryrun is true, not making changes."
   fi
