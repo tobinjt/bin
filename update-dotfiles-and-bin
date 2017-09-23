@@ -22,6 +22,14 @@ bin_sources() {
   find_sources "${HOME}" '*bin*'
 }
 
+check_git_works() {
+  if ! git help status > /dev/null; then
+    echo "Failed to run git."  \
+      "On MacOS install it with 'xcode-select --install'" >&2
+    exit 1
+  fi
+}
+
 check_git_status() {
   local dir="${1}"
   cd "${dir}"
@@ -116,6 +124,7 @@ main() {
   if need_ssh_agent; then
     check_ssh_agent
   fi
+  check_git_works
   echo "Running dotfiles to check for pre-existing diffs."
   # First make sure we're up to date so that current diffs aren't mixed in with
   # future diffs.
