@@ -9,19 +9,26 @@ main() {
   if [[ -n "${git_status}" ]]; then
     die "Uncommitted changes in ${PWD}:\n" "${git_status}"
   fi
+  # Sync with upstream.
   git pull
   git push
+  # Update parent repo so that backups and updates work.
   cd "${HOME}/dev.arianetobin.ie"
   git diff-index --quiet HEAD || git upstream
 
+  # Update theme.
   ssh -o ControlPath=none ariane@hosting \
     'set -e -f -u;
      cd "${HOME}/arianetobin.ie/wp-content/themes/ariane-theme/";
      git pull'
+  # Update parent repo so that backups and updates work.
   ssh -o ControlPath=none ariane@hosting \
     'set -e -f -u;
-     cd "${HOME}/arianetobin.ie/"
+     cd "${HOME}/arianetobin.ie/";
      git diff-index --quiet HEAD || git upstream'
+  # Clear mod_pagespeed cache to ensure consistency, e.g. correct style.css
+  # being used.
+  sudo touch /var/cache/mod_pagespeed/cache.flush
 }
 
 main
