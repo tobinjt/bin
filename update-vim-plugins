@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  # Check there aren't any diffs.
+  update-dotfiles-and-bin
+  # Update every submodule.
+  cd "${HOME}/src/dotfiles"
+  git submodule foreach \
+      'git fetch origin --tags && git checkout master && git pull'
+  # Commit the changes if any.
+  git add -A .vim/bundle
+  if [[ -n "$(git status --short)" ]]; then
+    git commit -m 'Update vim plugins.'
+  fi
+  # Force overwriting and deletion of removed files.
+  dotfiles -f -X
+  # Push to upstream, update vim helptags, etc.
+  update-dotfiles-and-bin
+}
+
+main "$@"
