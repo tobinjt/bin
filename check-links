@@ -36,6 +36,11 @@ PROBLEMS="$(sed -n \
               -e '/HTTP request sent, awaiting response.../ { H; g; p; }' \
               "${LOG}")"
 if [[ -n "${PROBLEMS}" || -t 0 ]]; then
-  echo "${PROBLEMS}"
+  if [[ -n "${PROBLEMS}" ]]; then
+    echo "Problems found:"
+    echo "${PROBLEMS}"
+  else
+    echo "No problems found :)"
+  fi
   echo "See ${LOG} and the contents of ${DIR} for further investigation"
 fi
