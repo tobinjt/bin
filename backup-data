@@ -22,6 +22,14 @@ sudo rsync -a --verbose \
   "${srcdir}" "${destdir}"
 
 # Unmount the disks, starting with the filesystem and then doing CoreStorage.
+repeat() {
+  local i times="$1"
+  shift
+  for i in $(seq 1 "${times}"); do
+    "$@"
+    sleep 5
+  done
+}
 retry() {
   local sleep_time=10
   until "$@"; do
@@ -38,5 +46,5 @@ unmountdisk() {
     | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }' \
     | xargs -n 1 -- diskutil unmountdisk
 }
-retry unmountdisk "Apple_HFS"
-retry unmountdisk "Apple_CoreStorage"
+repeat 5 retry unmountdisk "Apple_HFS"
+repeat 5 retry unmountdisk "Apple_CoreStorage"
