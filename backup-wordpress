@@ -26,8 +26,11 @@ main() {
   done
   mkdir -m 0700 -p "${HOME}/wordpress-backups"
   cd "${HOME}/wordpress-backups"
+  # --skip-extended-insert makes the dump more readable because it uses
+  # individual insert statements rather than one giant insert statement.
   mysqldump --add-drop-table --host=localhost \
       --user="${db_user}" --password="${db_password}" --databases "${db_name}" \
+      --skip-extended-insert \
     | bzip2 -c > "${db_name}_${date}"_sql.bz2
   tmpreaper --mtime 90d .
 }
