@@ -7,8 +7,10 @@ check_redirects() {
   shift
   local failures=0 url
   for url in "$@"; do
+    # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a case-insensitive
+    # check.
     if curl --silent --show-error --head "${url}" \
-        | grep -q "^Location: ${expected_url}"; then
+        | grep -i -q "^location: ${expected_url}"; then
       continue
     fi
     failures=$((failures + 1))
