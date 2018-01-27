@@ -26,6 +26,7 @@ repeat() {
   local i times="$1"
   shift
   for i in $(seq 1 "${times}"); do
+    echo "repeat: ${i}/${times}"
     "$@"
     sleep 5
   done
@@ -37,14 +38,16 @@ retry() {
   done
 }
 unmountdisk() {
-  local type="$1"
+  local type="$1" disk
   # sync and sleep so hopefully data is fully flushed and unmounting succeeds.
   sync
   sleep 10
   echo "unmounting ${type}"
-  diskutil list \
-    | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }' \
-    | xargs -n 1 -- diskutil unmountdisk
+  # diskutil list | awk | diskutil unmount fails; maybe separating them will
+  # work?
+  disk="$(diskutil list \
+            | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }')"
+  diskutil unmountdisk "${disk}"
 }
 repeat 5 retry unmountdisk "Apple_HFS"
 repeat 5 retry unmountdisk "Apple_CoreStorage"
