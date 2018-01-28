@@ -24,8 +24,12 @@ main() {
     mysqlcheck "${command}" --auto-repair --silent \
       --user="${db_user}" --password="${db_password}" --databases "${db_name}"
   done
-  mkdir -m 0700 "${HOME}/wordpress-backups"
-  cd "${HOME}/wordpress-backups"
+  local dest="${HOME}/wordpress-backups"
+  if [ ! -d "${dest}" ]; then
+    mkdir -p "${dest}"
+    chmod 0700 "${dest}"
+  fi
+  cd "${dest}"
   # --skip-extended-insert makes the dump more readable because it uses
   # individual insert statements rather than one giant insert statement.
   mysqldump --add-drop-table --host=localhost \
