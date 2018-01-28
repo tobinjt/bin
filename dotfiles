@@ -18,13 +18,12 @@ cat_ssh_configs() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local flags=() return_early=0 dryrun=0 opt
+  local flags=() return_early=0 opt
   while getopts ":dfhrX" opt "$@"; do
     case "${opt}" in
       d)
         flags+=("--dryrun")
         return_early=1
-        dryrun=1
         ;;
       f)
         flags+=("--force")
@@ -66,10 +65,6 @@ END_OF_HELP
     if [[ -f "${dir}/${IGNORE_FILENAME}" ]]; then
       SKIP_FILES+=("--ignore_file=${dir}/${IGNORE_FILENAME}")
     fi
-    if [[ "${dryrun}" -eq 0 && -d "${dir}/.ssh" ]]; then
-      # Lock down .ssh.
-      chmod 700 "${dir}/.ssh"
-    fi
   done
   readonly SKIP_FILES
 
@@ -88,7 +83,15 @@ END_OF_HELP
   set +f
   chmod 600 "${HOME}"/.ssh/*
   set -f
-  chmod 700 "${HOME}"/.ssh
+  # Lock down some sensitive directories.
+  local dir subdir
+  for dir in "${HOME}" $(dotfiles_sources); do
+    for subdir in .gnupg .ssh; do
+      if [[ -d "${dir}/${subdir}" ]]; then
+        chmod 700 "${dir}/${subdir}"
+      fi
+    done
+  done
   cat_ssh_configs > /dev/null
   cat_ssh_configs > "${HOME}/.ssh/config"
   # Stop TmuxSetWindowName loading: it's not useful and it doesn't work properly
