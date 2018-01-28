@@ -119,12 +119,12 @@ main() {
     warn "Unexpected arguments: $*"
     die "Usage: $0"
   fi
+  check_git_works
   # Ensure we have a connection to the ssh agent and keys loaded, if we have ssh
   # origins.
   if need_ssh_agent; then
     check_ssh_agent
   fi
-  check_git_works
   echo "Running dotfiles to check for pre-existing diffs."
   # First make sure we're up to date so that current diffs aren't mixed in with
   # future diffs.
