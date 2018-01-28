@@ -47,7 +47,7 @@ fi
 cd "${WORDPRESS_BASE}"
 git_status="$(git status --short)"
 if [[ -n "${git_status}" ]]; then
-  die "Uncommitted changes:\n" "${git_status}"
+  die "Uncommitted changes:\\n" "${git_status}"
 fi
 
 declare -A SUBDIRS SEPARATORS

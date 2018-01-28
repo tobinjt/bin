@@ -24,7 +24,7 @@ main() {
     mysqlcheck "${command}" --auto-repair --silent \
       --user="${db_user}" --password="${db_password}" --databases "${db_name}"
   done
-  mkdir -m 0700 -p "${HOME}/wordpress-backups"
+  mkdir -m 0700 "${HOME}/wordpress-backups"
   cd "${HOME}/wordpress-backups"
   # --skip-extended-insert makes the dump more readable because it uses
   # individual insert statements rather than one giant insert statement.

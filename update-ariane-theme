@@ -7,7 +7,7 @@ main() {
   local git_status
   git_status="$(git status --short)"
   if [[ -n "${git_status}" ]]; then
-    die "Uncommitted changes in ${PWD}:\n" "${git_status}"
+    die "Uncommitted changes in ${PWD}:\\n" "${git_status}"
   fi
   # Sync with upstream.
   git pull

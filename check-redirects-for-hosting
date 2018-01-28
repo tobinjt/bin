@@ -14,7 +14,7 @@ check_redirects() {
       continue
     fi
     failures=$((failures + 1))
-    printf "Bad/missing redirect for %s, expected %s\n" \
+    printf "Bad/missing redirect for %s, expected %s\\n" \
       "${url}" "${expected_url}"
     curl --head "${url}"
   done
