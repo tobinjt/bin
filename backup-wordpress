@@ -35,7 +35,7 @@ main() {
   mysqldump --add-drop-table --host=localhost \
       --user="${db_user}" --password="${db_password}" --databases "${db_name}" \
       --skip-extended-insert \
-    | bzip2 -c > "${db_name}_${date}"_sql.bz2
+    | bzip2 -c > "${db_name}_${date}".sql.bz2
   tmpreaper --mtime 90d .
 }
 
