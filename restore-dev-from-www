@@ -38,27 +38,8 @@ restore_from_backup() {
   rm "${dump_tmp}"
 }
 
-rewrite_database_contents() {
-  if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s DOMAIN DB_CONFIG\\n" >&2
-    return 1
-  fi
-  local domain="$1" db_config="$2"
-  readonly domain db_config
-  local db_password db_name db_user table_prefix
-  db_password="$(wp_option DB_PASSWORD "${db_config}")"
-  db_name="$(wp_option DB_NAME "${db_config}")"
-  # XXX REMOVE
-  db_name="johntobin_test"
-  db_user="$(wp_option DB_USER "${db_config}")"
-  # XXX EXTRACT PROPERLY.
-  table_prefix="arianetobin_"
-  readonly db_password db_name db_user table_prefix
-
-  local sql_commands sql_template
-  sql_commands="$(mktemp "${TMPDIR:-/tmp}/restore-sql-commands-XXXXXXXXXXXX.sql")"
-  sql_template="$(mktemp "${TMPDIR:-/tmp}/restore-sql-template-XXXXXXXXXXXX.tt2")"
-  cat > "${sql_template}" <<'END_OF_SQL_TEMPLATE'
+output_sql_template() {
+  cat <<'END_OF_SQL_TEMPLATE'
 [%# Output an SQL statement to rewrite data.
     Args:
       domain: replace www.domain with dev.domain.
@@ -97,6 +78,29 @@ columns_to_rewrite = [
   -%]
 [% END -%]
 END_OF_SQL_TEMPLATE
+}
+
+rewrite_database_contents() {
+  if [[ "$#" -ne 2 ]]; then
+    printf "Usage: %s DOMAIN DB_CONFIG\\n" >&2
+    return 1
+  fi
+  local domain="$1" db_config="$2"
+  readonly domain db_config
+  local db_password db_name db_user table_prefix
+  db_password="$(wp_option DB_PASSWORD "${db_config}")"
+  db_name="$(wp_option DB_NAME "${db_config}")"
+  # XXX REMOVE
+  db_name="johntobin_test"
+  db_user="$(wp_option DB_USER "${db_config}")"
+  # XXX EXTRACT PROPERLY.
+  table_prefix="arianetobin_"
+  readonly db_password db_name db_user table_prefix
+
+  local sql_commands sql_template
+  sql_commands="$(mktemp "${TMPDIR:-/tmp}/restore-sql-commands-XXXXXXXXXXXX.sql")"
+  sql_template="$(mktemp "${TMPDIR:-/tmp}/restore-sql-template-XXXXXXXXXXXX.tt2")"
+  output_sql_template > "${sql_template}"
   tpage --define domain="${domain}" --define table_prefix="${table_prefix}" \
     "${sql_template}" > "${sql_commands}"
   printf "Rewriting data with %s\\n" "${sql_commands}"
