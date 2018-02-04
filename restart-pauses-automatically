@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Set up launchd to automatically restart pauses when it exits.
+DEST="${HOME}/Library/LaunchAgents/pauses.restart.plist"
+cat > "${DEST}" <<END_OF_PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>RunAtLoad</key> <true/>  
+        <key>KeepAlive</key> <true/>
+        <key>Label</key> <string>Pauses.restart</string>
+        <key>ProgramArguments</key>
+        <array>
+                <string>/Applications/Pauses.app/Contents/MacOS/Pauses</string>
+        </array>
+</dict>
+</plist>
+END_OF_PLIST
+launchctl load "${DEST}"
