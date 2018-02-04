@@ -32,9 +32,11 @@ main() {
   cd "${dest}"
   # --skip-extended-insert makes the dump more readable because it uses
   # individual insert statements rather than one giant insert statement.
+  # Do not use --databases flag because it adds "use $database" and "create
+  # database $database" lines, which cause problems for restore-dev-from-www.
   mysqldump --add-drop-table --host=localhost \
-      --user="${db_user}" --password="${db_password}" --databases "${db_name}" \
-      --skip-extended-insert \
+      --user="${db_user}" --password="${db_password}" --skip-extended-insert \
+      "${db_name}" \
     | bzip2 -c > "${db_name}_${date}".sql.bz2
   tmpreaper --mtime 90d .
 }
