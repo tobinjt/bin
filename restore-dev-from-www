@@ -3,30 +3,30 @@
 set -e -f -u -o pipefail
 
 wp_option() {
-  local option="$1" config="$2"
-  readonly option config
+  local option="$1" wp_config="$2"
+  readonly option wp_config
 
-  awk -F \' "/${option}/"' { print $4 }' "${config}"
+  awk -F \' "/${option}/"' { print $4 }' "${wp_config}"
 }
 
 get_table_prefix() {
-  local config="$1"
-  readonly config
+  local wp_config="$1"
+  readonly wp_config
 
-  awk -F \' '/^\$table_prefix/ { print $2 }' "${config}"
+  awk -F \' '/^\$table_prefix/ { print $2 }' "${wp_config}"
 }
 
 restore_from_backup() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s DB_CONFIG DUMP\\n" >&2
+    printf "Usage: %s WP_CONFIG DUMP\\n" >&2
     return 1
   fi
-  local db_config="$1" dump="$2"
-  readonly db_config dump
+  local wp_config="$1" dump="$2"
+  readonly wp_config dump
   local db_password db_name db_user
-  db_password="$(wp_option DB_PASSWORD "${db_config}")"
-  db_name="$(wp_option DB_NAME "${db_config}")"
-  db_user="$(wp_option DB_USER "${db_config}")"
+  db_password="$(wp_option DB_PASSWORD "${wp_config}")"
+  db_name="$(wp_option DB_NAME "${wp_config}")"
+  db_user="$(wp_option DB_USER "${wp_config}")"
   readonly db_password db_name db_user
 
   # Uncompress the dump if necessary, or copy it to simplify the cleanup path.
@@ -87,16 +87,16 @@ END_OF_SQL_TEMPLATE
 
 rewrite_database_contents() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s DOMAIN DB_CONFIG\\n" >&2
+    printf "Usage: %s DOMAIN WP_CONFIG\\n" >&2
     return 1
   fi
-  local domain="$1" db_config="$2"
-  readonly domain db_config
+  local domain="$1" wp_config="$2"
+  readonly domain wp_config
   local db_password db_name db_user table_prefix
-  db_password="$(wp_option DB_PASSWORD "${db_config}")"
-  db_name="$(wp_option DB_NAME "${db_config}")"
-  db_user="$(wp_option DB_USER "${db_config}")"
-  table_prefix="$(get_table_prefix "${db_config}")"
+  db_password="$(wp_option DB_PASSWORD "${wp_config}")"
+  db_name="$(wp_option DB_NAME "${wp_config}")"
+  db_user="$(wp_option DB_USER "${wp_config}")"
+  table_prefix="$(get_table_prefix "${wp_config}")"
   readonly db_password db_name db_user table_prefix
 
   local sql_commands sql_template
@@ -116,11 +116,11 @@ main2() {
     printf "Usage: %s DOMAIN WORDPRESS_BASE_DIR DATABASE_DUMP\n" "$0" >&2
     return 1
   fi
-  local domain="$1" db_config="$2/wp-config.php" dump="$3"
-  readonly domain db_config dump
+  local domain="$1" wp_config="$2/wp-config.php" dump="$3"
+  readonly domain wp_config dump
 
-  restore_from_backup "${db_config}" "${dump}"
-  rewrite_database_contents "${domain}" "${db_config}"
+  restore_from_backup "${wp_config}" "${dump}"
+  rewrite_database_contents "${domain}" "${wp_config}"
 }
 
 main() {
