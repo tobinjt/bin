@@ -9,6 +9,13 @@ wp_option() {
   awk -F \' "/${option}/"' { print $4 }' "${config}"
 }
 
+get_table_prefix() {
+  local config="$1"
+  readonly config
+
+  awk -F \' '/^\$table_prefix/ { print $2 }' "${config}"
+}
+
 restore_from_backup() {
   if [[ "$#" -ne 2 ]]; then
     printf "Usage: %s DB_CONFIG DUMP\\n" >&2
@@ -19,8 +26,6 @@ restore_from_backup() {
   local db_password db_name db_user
   db_password="$(wp_option DB_PASSWORD "${db_config}")"
   db_name="$(wp_option DB_NAME "${db_config}")"
-  # XXX REMOVE
-  db_name="johntobin_test"
   db_user="$(wp_option DB_USER "${db_config}")"
   readonly db_password db_name db_user
 
@@ -90,11 +95,8 @@ rewrite_database_contents() {
   local db_password db_name db_user table_prefix
   db_password="$(wp_option DB_PASSWORD "${db_config}")"
   db_name="$(wp_option DB_NAME "${db_config}")"
-  # XXX REMOVE
-  db_name="johntobin_test"
   db_user="$(wp_option DB_USER "${db_config}")"
-  # XXX EXTRACT PROPERLY.
-  table_prefix="arianetobin_"
+  table_prefix="$(get_table_prefix "${db_config}")"
   readonly db_password db_name db_user table_prefix
 
   local sql_commands sql_template
