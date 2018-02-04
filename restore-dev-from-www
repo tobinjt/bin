@@ -26,7 +26,7 @@ restore_from_backup() {
 
   # Uncompress the dump if necessary, or copy it to simplify the cleanup path.
   local dump_tmp
-  dump_tmp="$(mktemp "${TMPDIR:-/tmp}/restore-dump-XXXXXXXXXXXX")"
+  dump_tmp="$(mktemp "${TMPDIR:-/tmp}/restore-dump-XXXXXXXXXXXX.sql")"
   if [[ "${dump}" =~ .*.bz2 ]]; then
     bzcat "${dump}" > "${dump_tmp}"
   else
@@ -35,7 +35,7 @@ restore_from_backup() {
   printf "Restoring backup from %s\\n" "${dump_tmp}"
   mysql --user="${db_user}" --password="${db_password}" \
     "${db_name}" < "${dump_tmp}"
-  printf "# rm %s\\n" "${dump_tmp}"
+  rm "${dump_tmp}"
 }
 
 rewrite_database_contents() {
@@ -76,12 +76,15 @@ UPDATE `[% table_prefix %][% table %]`
 [%
 columns_to_rewrite = [
   { table = "cart66_sessions", column = "user_agent" },
+  { table = "cart66_sessions", column = "user_data" },
+  { table = "commentmeta", column = "meta_value" },
+  { table = "comments", column = "comment_author_url" },
   { table = "options", column = "option_value" },
+  { table = "postmeta", column = "meta_value" },
   { table = "posts", column = "post_content" },
+  { table = "posts", column = "pinged" },
+  { table = "posts", column = "guid" },
   { table = "users", column = "user_url" },
-  # { table = "", column = "" },
-  # { table = "", column = "" },
-  # { table = "", column = "" },
 ]
 -%]
 [%# Process all the (table, column) pairs.
@@ -99,7 +102,7 @@ END_OF_SQL_TEMPLATE
   printf "Rewriting data with %s\\n" "${sql_commands}"
   mysql --user="${db_user}" --password="${db_password}" \
     "${db_name}" < "${sql_commands}"
-  printf "# rm %s %s\\n" "${sql_template}" "${sql_commands}"
+  rm "${sql_template}" "${sql_commands}"
 }
 
 main2() {
@@ -111,7 +114,6 @@ main2() {
   readonly domain db_config dump
 
   restore_from_backup "${db_config}" "${dump}"
-  set -x
   rewrite_database_contents "${domain}" "${db_config}"
 }
 
