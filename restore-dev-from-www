@@ -119,16 +119,28 @@ main2() {
   local domain="$1" wp_config="$2/wp-config.php" dump="$3"
   readonly domain wp_config dump
 
+  printf "Domain: %s\\n" "${domain}"
+  printf "Wordpress config: %s\\n" "${wp_config}"
+  printf "Backup: %s\\n" "${dump}"
   restore_from_backup "${wp_config}" "${dump}"
   rewrite_database_contents "${domain}" "${wp_config}"
 }
 
+find_latest_dump() {
+  # Only consider backups less than 12 hours old; the filenames contain date and
+  # timestamps so sorting and taking the last one will output the latest backup.
+  find /home/ariane/wordpress-backups/ -type f -mmin -$((12 * 60)) \
+    | sort \
+    | tail -1
+}
+
 main() {
-  if [[ "$#" -ne 1 || ! -f "$1" ]]; then
-    printf "Usage: %s DATABASE_DUMP\\n" "$0" >&2
+  if [[ "$#" -ne 0 ]]; then
+    printf "Usage: %s\\n" "$0" >&2
+    printf "Finds the latest www backup and restores it to dev.\\n" >&2
     return 1
   fi
-  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$1"
+  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$(find_latest_dump)"
 }
 
 main "$@"
