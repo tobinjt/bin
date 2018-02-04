@@ -1,0 +1,126 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+wp_option() {
+  local option="$1" config="$2"
+  readonly option config
+
+  awk -F \' "/${option}/"' { print $4 }' "${config}"
+}
+
+restore_from_backup() {
+  if [[ "$#" -ne 2 ]]; then
+    printf "Usage: %s DB_CONFIG DUMP\\n" >&2
+    return 1
+  fi
+  local db_config="$1" dump="$2"
+  readonly db_config dump
+  local db_password db_name db_user
+  db_password="$(wp_option DB_PASSWORD "${db_config}")"
+  db_name="$(wp_option DB_NAME "${db_config}")"
+  # XXX REMOVE
+  db_name="johntobin_test"
+  db_user="$(wp_option DB_USER "${db_config}")"
+  readonly db_password db_name db_user
+
+  # Uncompress the dump if necessary, or copy it to simplify the cleanup path.
+  local dump_tmp
+  dump_tmp="$(mktemp "${TMPDIR:-/tmp}/restore-dump-XXXXXXXXXXXX")"
+  if [[ "${dump}" =~ .*.bz2 ]]; then
+    bzcat "${dump}" > "${dump_tmp}"
+  else
+    cat "${dump}" > "${dump_tmp}"
+  fi
+  printf "Restoring backup from %s\\n" "${dump_tmp}"
+  mysql --user="${db_user}" --password="${db_password}" \
+    "${db_name}" < "${dump_tmp}"
+  printf "# rm %s\\n" "${dump_tmp}"
+}
+
+rewrite_database_contents() {
+  if [[ "$#" -ne 2 ]]; then
+    printf "Usage: %s DOMAIN DB_CONFIG\\n" >&2
+    return 1
+  fi
+  local domain="$1" db_config="$2"
+  readonly domain db_config
+  local db_password db_name db_user table_prefix
+  db_password="$(wp_option DB_PASSWORD "${db_config}")"
+  db_name="$(wp_option DB_NAME "${db_config}")"
+  # XXX REMOVE
+  db_name="johntobin_test"
+  db_user="$(wp_option DB_USER "${db_config}")"
+  # XXX EXTRACT PROPERLY.
+  table_prefix="arianetobin_"
+  readonly db_password db_name db_user table_prefix
+
+  local sql_commands sql_template
+  sql_commands="$(mktemp "${TMPDIR:-/tmp}/restore-sql-commands-XXXXXXXXXXXX.sql")"
+  sql_template="$(mktemp "${TMPDIR:-/tmp}/restore-sql-template-XXXXXXXXXXXX.tt2")"
+  cat > "${sql_template}" <<'END_OF_SQL_TEMPLATE'
+[%# Output an SQL statement to rewrite data.
+    Args:
+      domain: replace www.domain with dev.domain.
+      table_prefix: table prefix configured in Wordpress
+      table: the table to update; will have table_prefix prepended to it.
+      column: the ocumn to update.
+-%]
+[% BLOCK rewrite_column -%]
+UPDATE `[% table_prefix %][% table %]`
+  SET `[% column %]` = REPLACE(`[% column %]`, 'www.[% domain %]', 'dev.[% domain %]')
+  WHERE `[% column %]` LIKE '%www.[% domain %]%';
+[% END -%]
+[%# The columns to rewrite.
+-%]
+[%
+columns_to_rewrite = [
+  { table = "cart66_sessions", column = "user_agent" },
+  { table = "options", column = "option_value" },
+  { table = "posts", column = "post_content" },
+  { table = "users", column = "user_url" },
+  # { table = "", column = "" },
+  # { table = "", column = "" },
+  # { table = "", column = "" },
+]
+-%]
+[%# Process all the (table, column) pairs.
+    Note that domain and table_prefix are supplied as flags.
+-%]
+[% FOREACH pair IN columns_to_rewrite -%]
+  [%- PROCESS rewrite_column
+        table = pair.table
+        column = pair.column
+  -%]
+[% END -%]
+END_OF_SQL_TEMPLATE
+  tpage --define domain="${domain}" --define table_prefix="${table_prefix}" \
+    "${sql_template}" > "${sql_commands}"
+  printf "Rewriting data with %s\\n" "${sql_commands}"
+  mysql --user="${db_user}" --password="${db_password}" \
+    "${db_name}" < "${sql_commands}"
+  printf "# rm %s %s\\n" "${sql_template}" "${sql_commands}"
+}
+
+main2() {
+  if [[ "$#" -ne 3 || ! -f "$2/wp-config.php" || ! -f "$3" ]]; then
+    printf "Usage: %s DOMAIN WORDPRESS_BASE_DIR DATABASE_DUMP\n" "$0" >&2
+    return 1
+  fi
+  local domain="$1" db_config="$2/wp-config.php" dump="$3"
+  readonly domain db_config dump
+
+  restore_from_backup "${db_config}" "${dump}"
+  set -x
+  rewrite_database_contents "${domain}" "${db_config}"
+}
+
+main() {
+  if [[ "$#" -ne 1 || ! -f "$1" ]]; then
+    printf "Usage: %s DATABASE_DUMP\\n" "$0" >&2
+    return 1
+  fi
+  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$1"
+}
+
+main "$@"
