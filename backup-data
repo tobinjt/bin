@@ -6,12 +6,12 @@ readonly destdir="/Volumes/Backup/"
 readonly srcdir="/Volumes/Data/"
 
 if [[ ! -d "${destdir}" ]]; then
-  echo "Missing destination: ${destdir}" >&2
+  printf "Missing destination: %s\\n" "${destdir}" >&2
   exit 1
 fi
 
 if [[ ! -d "${srcdir}" ]]; then
-  echo "Missing source: ${srcdir}" >&2
+  printf "Missing source: %s\\n" "${srcdir}" >&2
   exit 1
 fi
 
@@ -21,16 +21,6 @@ sudo rsync -a --verbose \
   --exclude='.*' --exclude='hourly.*' \
   "${srcdir}" "${destdir}"
 
-# Unmount the disks, starting with the filesystem and then doing CoreStorage.
-repeat() {
-  local i times="$1"
-  shift
-  for i in $(seq 1 "${times}"); do
-    echo "repeat: ${i}/${times}"
-    "$@"
-    sleep 5
-  done
-}
 retry() {
   local sleep_time=10
   until "$@"; do
@@ -41,13 +31,13 @@ unmountdisk() {
   local type="$1" disk
   # sync and sleep so hopefully data is fully flushed and unmounting succeeds.
   sync
-  sleep 10
-  echo "unmounting ${type}"
-  # diskutil list | awk | diskutil unmount fails; maybe separating them will
-  # work?
+  sleep 5
   disk="$(diskutil list \
-            | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }')"
+            | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }' \
+            | sed -e 's/s[[:digit:]]$//')"
+  printf "unmounting %s which is %s\\n" "${type}" "${disk}"
   diskutil unmountdisk "${disk}"
 }
-repeat 5 retry unmountdisk "Apple_HFS"
-repeat 5 retry unmountdisk "Apple_CoreStorage"
+# Unmount the disks, starting with the filesystem and then doing CoreStorage.
+retry unmountdisk "Apple_HFS"
+retry unmountdisk "Apple_CoreStorage"
