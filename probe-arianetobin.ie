@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+readonly SENTINEL='arianetobin.ie works properly.'
+readonly WEBSITE='https://www.arianetobin.ie/'
+# Try multiple times to cover for bad internet at home.
+# shellcheck disable=SC2034
+for i in $(seq 1 5); do
+  if curl --silent "${WEBSITE}" | grep -q -F "${SENTINEL}"; then
+    exit 0
+  fi
+  sleep 60
+done
+printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}" 
+exit 1
