@@ -17,12 +17,12 @@ main() {
   git diff-index --quiet HEAD || git upstream
 
   # Update theme.
-  ssh -o ControlPath=none ariane@hosting \
+  ssh -o ControlPath=none arianetobin@hosting \
     'set -e -f -u;
      cd "${HOME}/arianetobin.ie/wp-content/themes/ariane-theme/";
      git pull'
   # Update parent repo so that backups and updates work.
-  ssh -o ControlPath=none ariane@hosting \
+  ssh -o ControlPath=none arianetobin@hosting \
     'set -e -f -u;
      cd "${HOME}/arianetobin.ie/";
      git diff-index --quiet HEAD || git upstream'
