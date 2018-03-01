@@ -81,7 +81,7 @@ END_OF_HELP
     return
   fi
   set +f
-  chmod 600 "${HOME}"/.ssh/*
+  chmod -R a=-rwx,u=rwX "${HOME}"/.ssh
   set -f
   # Lock down some sensitive directories.
   local dir subdir
