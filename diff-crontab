@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Diff live personal crontab against latest version in git.
+set -e -f -u -o pipefail
+
+GOLDEN="${HOME}/src/private-configs/crontab.${USER}.${HOSTNAME}"
+diff -u "${GOLDEN}" <(crontab -l)
