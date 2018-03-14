@@ -9,12 +9,12 @@ check-git-repo() {
   output="$(git status --short)"
   if [[ -n "${output}" ]]; then
     # Use human readable git status because it's more familiar.
-    printf "Uncommitted changes in %s\\n%s" "${repo}" "$(git status)"
+    printf "Uncommitted changes in %s\\n%s\\n\\n" "${repo}" "$(git status)"
     result=1
   fi
   output="$(git log origin/master..HEAD)"
   if [[ -n "${output}" ]]; then
-    printf "Unpushed commits in %s\\n%s" "${repo}" "${output}"
+    printf "Unpushed commits in %s\\n%s\\n\\n" "${repo}" "${output}"
     result=1
   fi
   return "${result}"
