@@ -12,6 +12,10 @@ check-git-repo() {
     printf "Uncommitted changes in %s\\n%s\\n\\n" "${repo}" "$(git status)"
     result=1
   fi
+  if ! git config --show-origin branch.master.remote >& /dev/null; then
+    # No upstream, so don't check that.
+    return "${result}"
+  fi
   output="$(git log origin/master..HEAD)"
   if [[ -n "${output}" ]]; then
     printf "Unpushed commits in %s\\n%s\\n\\n" "${repo}" "${output}"
