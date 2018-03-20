@@ -2,8 +2,12 @@
 
 set -e -f -u -o pipefail
 
-main() {
-  cd "${HOME}/dev.arianetobin.ie/wp-content/themes/ariane-theme"
+commit_all() {
+  local dir="$1"
+  local subdir="wp-content/themes/ariane-theme"
+
+  # Check for local changes.
+  cd "${dir}/${subdir}"
   local git_status
   git_status="$(git status --short)"
   if [[ -n "${git_status}" ]]; then
@@ -13,22 +17,28 @@ main() {
   git pull
   git push
   # Update parent repo so that backups and updates work.
-  cd "${HOME}/dev.arianetobin.ie"
+  cd "${dir}"
   git diff-index --quiet HEAD || git upstream
-
-  # Update theme.
-  ssh -o ControlPath=none arianetobin@hosting \
-    'set -e -f -u;
-     cd "${HOME}/arianetobin.ie/wp-content/themes/ariane-theme/";
-     git pull'
-  # Update parent repo so that backups and updates work.
-  ssh -o ControlPath=none arianetobin@hosting \
-    'set -e -f -u;
-     cd "${HOME}/arianetobin.ie/";
-     git diff-index --quiet HEAD || git upstream'
-  # Clear mod_pagespeed cache to ensure consistency, e.g. correct style.css
-  # being used.
-  sudo touch /var/cache/mod_pagespeed/cache.flush
+  if [[ -n "$(git status --short)" ]]; then
+    git add "wp-content/themes/ariane-theme"
+    git upstream
+  fi
 }
 
-main
+main() {
+  if [[ "$#" -eq 0 ]]; then
+    # Updat dev.
+    commit_all "${HOME}/dev.arianetobin.ie"
+    # Update www.
+    ssh -o ControlPath=none arianetobin@hosting \
+      "${HOME}/bin/update-ariane-theme" www
+    # Clear mod_pagespeed cache to ensure consistency, e.g. correct style.css
+    # being used.
+    sudo touch /var/cache/mod_pagespeed/cache.flush
+  else
+    # This is being run over ssh as arianetobin.
+    commit_all "${HOME}/arianetobin.ie/"
+  fi
+}
+
+main "$@"
