@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# https://cirw.in/blog/bracketed-paste
+printf "\\e[?2004l"
