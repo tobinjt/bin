@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+retry() {
+  local sleep_time=10
+  until "$@"; do
+    sleep "${sleep_time}"
+  done
+}
+unmountdisk() {
+  local type="$1" disk
+  # sync and sleep so hopefully data is fully flushed and unmounting succeeds.
+  sync
+  sleep 5
+  disk="$(diskutil list \
+            | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }' \
+            | sed -e 's/s[[:digit:]]$//')"
+  printf "unmounting %s which is %s\\n" "${type}" "${disk}"
+  diskutil unmountdisk "${disk}"
+}
+
+backup_directory() {
+  local srcdir="$1" destdir="$2"
+  readonly destdir srcdir
+
+  if [[ ! -d "${destdir}" ]]; then
+    printf "Missing destination: %s\\n" "${destdir}" >&2
+    exit 1
+  fi
+
+  if [[ ! -d "${srcdir}" ]]; then
+    printf "Missing source: %s\\n" "${srcdir}" >&2
+    exit 1
+  fi
+
+  if grep '^/Users' <<<"${destdir}"; then
+    printf "Cannot back up to /Users/...: %s\\n" "${destdir}" >&2
+    exit 1
+  fi
+
+  rsync -a --verbose --delete \
+    "${srcdir}" "${destdir}"
+}
+
+main() {
+  backup_directory "/Users/johntobin/Media/" "/Volumes/Backup/Media/"
+
+  # Unmount the disks, starting with the filesystem and then doing CoreStorage.
+  retry unmountdisk "Apple_HFS"
+  retry unmountdisk "Apple_CoreStorage"
+}
+
+main "$@"
