@@ -123,6 +123,7 @@ main() {
   # Ensure we have a connection to the ssh agent and keys loaded, if we have ssh
   # origins.
   if need_ssh_agent; then
+    mkdir -p "${HOME}/tmp/ssh"
     check_ssh_agent
   fi
   echo "Running dotfiles to check for pre-existing diffs."
