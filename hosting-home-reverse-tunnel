@@ -8,6 +8,6 @@ AUTOSSH_LOGFILE="${HOME}/tmp/autossh-logs"
 export AUTOSSH_DEBUG AUTOSSH_LOGFILE
 while true; do
   # -M 0: disable monitoring, rely on ssh checking connectivity.
-  autossh -M 0 hosting-home-reverse-tunnel
+  /usr/local/bin/autossh -M 0 hosting-home-reverse-tunnel || true
   sleep 30
 done
