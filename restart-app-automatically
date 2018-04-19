@@ -23,18 +23,22 @@ END_OF_PLIST
 }
 
 main() {
-  if [[ "$#" -ne 3 ]]; then
-    printf "Usage: %s DEST_FILE APP_PATH SERVICE_LABEL\\n" "$0" >&2
-    printf "E.g. %s %s %s %s\\n" "$0" "pauses.restart.plist" \
-      "/Applications/Pauses.app/Contents/MacOS/Pauses" "Pauses.restart" >&2
+  if [[ "$#" -ne 4 ]]; then
+    printf "Usage: %s DEST_FILE APP_PATH SERVICE_LABEL ACTION\\n" "$0" >&2
+    printf "E.g. %s %s %s %s %s\\n" "$0" "pauses.restart.plist" \
+      "/Applications/Pauses.app/Contents/MacOS/Pauses" "Pauses.restart" \
+      "start" >&2
+    printf "ACTION should be either 'start' or 'stop'\\n" >&2
     exit 1
   fi
-  local DEST_FILE="$1" APP="$2" LABEL="$3"
+
+  local DEST_FILE="$1" APP="$2" LABEL="$3" ACTION="$4"
   local DEST="${HOME}/Library/LaunchAgents/${DEST_FILE}"
   if ! launchctl list | grep -q "${LABEL}"; then
     output_plist "${DEST}" "${APP}" "${LABEL}"
     launchctl load "${DEST}"
   fi
+  launchctl "${ACTION}" "${LABEL}"
 }
 
 main "$@"
