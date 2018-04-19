@@ -10,7 +10,7 @@ output_plist() {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-        <key>RunAtLoad</key> <true/>  
+        <key>RunAtLoad</key> <true/>
         <key>KeepAlive</key> <true/>
         <key>Label</key> <string>${label}</string>
         <key>ProgramArguments</key>
@@ -23,13 +23,18 @@ END_OF_PLIST
 }
 
 main() {
-  local APP="/Applications/Pauses.app/Contents/MacOS/Pauses"
-  local DEST="${HOME}/Library/LaunchAgents/pauses.restart.plist"
-  local LABEL="Pauses.restart"
+  if [[ "$#" -ne 3 ]]; then
+    printf "Usage: %s DEST_FILE APP_PATH SERVICE_LABEL\\n" "$0" >&2
+    printf "E.g. %s %s %s %s\\n" "$0" "pauses.restart.plist" \
+      "/Applications/Pauses.app/Contents/MacOS/Pauses" "Pauses.restart" >&2
+    exit 1
+  fi
+  local DEST_FILE="$1" APP="$2" LABEL="$3"
+  local DEST="${HOME}/Library/LaunchAgents/${DEST_FILE}"
   if ! launchctl list | grep -q "${LABEL}"; then
     output_plist "${DEST}" "${APP}" "${LABEL}"
     launchctl load "${DEST}"
   fi
 }
 
-main
+main "$@"

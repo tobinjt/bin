@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local APP="/Applications/Pauses.app/Contents/MacOS/Pauses"
+  local DEST="pauses.restart.plist"
+  local LABEL="Pauses.restart"
+
+  restart-app-automatically "${DEST}" "${APP}" "${LABEL}"
+}
+
+main "$@"
