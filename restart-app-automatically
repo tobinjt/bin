@@ -5,6 +5,9 @@ set -e -f -u -o pipefail
 output_plist() {
   local dest="$1" app="$2" label="$3"
   # Set up launchd to automatically restart the app when it exits.
+  # https://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html
+  # man launchd.plist
+  # ThrottleInterval
   cat > "${dest}" <<END_OF_PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
