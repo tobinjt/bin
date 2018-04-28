@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+cd "${HOME}/Downloads/warhammer/"
+brew upgrade youtube-dl
+for url in "$@"; do
+  printf "%s\\n" "${url}"
+  until /usr/local/bin/youtube-dl "${url}"; do
+    sleep 10
+  done
+  printf "\\n\\n"
+done
