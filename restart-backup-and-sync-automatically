@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local APP="/Applications/Backup and Sync.app/Contents/MacOS/Backup and Sync"
+  local DEST="backup-and-sync.restart.plist"
+  local LABEL="BackupAndSync.restart"
+
+  if [[ "$#" -ne 1 ]]; then
+    main start
+  else
+    restart-app-automatically "${DEST}" "${APP}" "${LABEL}" "$@"
+  fi
+}
+
+main "$@"
