@@ -3,7 +3,10 @@
 set -e -f -u -o pipefail
 
 cd "${HOME}/Downloads/warhammer/"
-brew upgrade youtube-dl
+brew update
+if brew outdated | grep youtube-dl; then
+  brew upgrade youtube-dl
+fi
 for url in "$@"; do
   printf "%s\\n" "${url}"
   until /usr/local/bin/youtube-dl "${url}"; do
