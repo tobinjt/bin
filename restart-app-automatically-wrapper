@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Wrap apps that are automatically restarted by launchd.  This sleeps for 60
+# seconds after the app exits, so that updates can be installed.  Why not do
+# that using ThrottleInterval?  ThrottleInterval says "an app must run for at
+# least this long", so if you kill a long-running app to upgrade it, launchd
+# will just restart it automatically, and the upgrade process will fail.
+
+main() {
+  local exit_status
+  # Run the app.
+  "$1"
+  exit_status="$?"
+  sleep 60
+  exit "${exit_status}"
+}
+
+main "$@"
