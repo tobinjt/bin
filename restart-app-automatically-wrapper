@@ -11,7 +11,7 @@ set -e -f -u -o pipefail
 main() {
   local exit_status
   # Run the app.
-  "$1"
+  "$@"
   exit_status="$?"
   sleep 60
   exit "${exit_status}"
