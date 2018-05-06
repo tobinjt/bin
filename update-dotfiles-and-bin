@@ -20,6 +20,7 @@ dotfiles_sources() {
 
 bin_sources() {
   find_sources "${HOME}" '*bin*'
+  find_sources "${HOME}/src" '*bin*'
 }
 
 check_git_works() {
