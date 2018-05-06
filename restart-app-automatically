@@ -3,12 +3,12 @@
 set -e -f -u -o pipefail
 
 output_plist() {
-  local dest="$1" app="$2" label="$3"
+  local app="$1" label="$2"
   # Set up launchd to automatically restart the app when it exits.
   # https://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html
   # man launchd.plist
   # ThrottleInterval
-  cat > "${dest}" <<END_OF_PLIST
+  cat <<END_OF_PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -37,8 +37,22 @@ main() {
 
   local DEST_FILE="$1" APP="$2" LABEL="$3" ACTION="$4"
   local DEST="${HOME}/Library/LaunchAgents/${DEST_FILE}"
-  if ! launchctl list | grep -q "${LABEL}"; then
-    output_plist "${DEST}" "${APP}" "${LABEL}"
+
+  local UPDATE=1
+  if launchctl list | grep -q "${LABEL}"; then
+    if ! diff -q "${DEST}" <(output_plist "${APP}" "${LABEL}"); then
+      # This will kill the app, which is really annoying, but there doesn't seem
+      # to be any other way to get launchd to reread the config :(
+      launchctl unload "${DEST}"
+      # Give the app some time to exit.
+      sleep 10
+    else
+      # No changes needed.
+      UPDATE=0
+    fi
+  fi
+  if [[ "${UPDATE}" -eq 1 ]]; then
+    output_plist "${APP}" "${LABEL}" > "${DEST}"
     launchctl load "${DEST}"
   fi
   launchctl "${ACTION}" "${LABEL}"
