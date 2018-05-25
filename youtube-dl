@@ -3,6 +3,7 @@
 set -e -f -u -o pipefail
 
 cd "${HOME}/Downloads/warhammer/"
+printf "Updating homebrew to check for new version of youtube-dl\\n"
 brew update
 if brew outdated | grep youtube-dl; then
   brew upgrade youtube-dl
