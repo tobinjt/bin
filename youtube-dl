@@ -6,6 +6,7 @@ cd "${HOME}/Downloads/warhammer/"
 printf "Updating homebrew to check for new version of youtube-dl\\n"
 brew update
 if brew outdated | grep youtube-dl; then
+  printf "Updating youtube-dl\\n"
   brew upgrade youtube-dl
 fi
 for url in "$@"; do
