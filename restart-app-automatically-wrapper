@@ -8,7 +8,40 @@ set -e -f -u -o pipefail
 # least this long", so if you kill a long-running app to upgrade it, launchd
 # will just restart it automatically, and the upgrade process will fail.
 
+# Kill any leftover processes from previous attempts.  Sleeps for 15 seconds in
+# total if there are leftovers, 0 seconds if not..
+kill_leftovers() {
+  # Assumes that every app looks like "/Applications/Backup and
+  # Sync.app/Contents/MacOS/Backup and Sync".  Strip off /Contents... so that
+  # processes like "/Applications/Backup and
+  # Sync.app/Contents/PlugIns/FinderSyncAPIExtension.appex/Contents/MacOS/FinderSyncAPIExtension"
+  # are found and killed.
+  local app_prefix="${1%/Contents*}"
+  if [[ -z "$(leftover_pids "${app_prefix}")" ]]; then
+    return 0
+  fi
+
+  leftover_pids "${app_prefix}" | xargs kill "-TERM"
+  sleep 10
+  leftover_pids "${app_prefix}" | xargs kill "-KILL"
+  sleep 5
+}
+
+leftover_pids() {
+  local app_prefix="$1"
+  # ps produces output like:
+  # 31329 ??       /Applications/Backup and Sync.app/Contents/MacOS/Backup...
+  # Use grep before awk because escaping the / in ${app_prefix} will be hard.
+  # Only kill things that don't have a controlling terminal (??).
+  # pgrep doesn't support matching on prefixes, disable shellcheck warning.
+  # shellcheck disable=SC2009
+  ps -u "${USER}" -x -o pid,tty,comm \
+    | grep -F "${app_prefix}" \
+    | awk '$2 == "??" { print $1 }'
+}
+
 main() {
+  kill_leftovers "$1"
   local exit_status
   # Run the app.
   "$@"
