@@ -39,12 +39,12 @@ backup_directory() {
     exit 1
   fi
 
-  rsync -a --verbose --delete \
-    "${srcdir}" "${destdir}"
+  rsync -a --verbose --delete "${srcdir}" "${destdir}"
 }
 
 main() {
   backup_directory "/Users/johntobin/Media/" "/Volumes/Backup/Media/"
+  backup_directory "/Users/johntobin/Pictures/" "/Volumes/Backup/Pictures/"
 
   # Unmount the disks, starting with the filesystem and then doing CoreStorage.
   retry unmountdisk "Apple_HFS"
