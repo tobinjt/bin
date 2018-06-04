@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+for thing in cloudphotosd photoanalysisd photolibraryd; do
+  launchctl disable "gui/$UID/com.apple.${thing}"
+  launchctl kill -TERM "gui/$UID/com.apple.${thing}"
+done
