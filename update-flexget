@@ -10,6 +10,7 @@ readonly SCRIPT="bin/activate"
 
 if [ ! -d "${DIR}" ]; then
   # Initial setup
+  echo "Updating homebrew and installing python."
   brew update
   brew upgrade
   brew install python
@@ -20,6 +21,7 @@ if [ ! -d "${DIR}" ]; then
 fi
 
 cd "${DIR}"
+echo "Updating local repository from upstream and pushing to github"
 git checkout develop
 git pull upstream develop
 git merge develop
@@ -28,6 +30,7 @@ git push origin
 
 if [ ! -f "${SCRIPT}" ]; then
   # Set up virtualenv.
+  echo "Setting up virtualenv"
   pip3 install virtualenv
   virtualenv --clear "${DIR}"
 fi
@@ -37,6 +40,7 @@ export PS1="dummy"
 # shellcheck source=/dev/null
 source "${SCRIPT}"
 if ! pip3 install -e .; then
+  echo "pip failed, cleaning up and restarting to run pip again"
   # The most likely reason for failure is that I upgraded Python and so paths
   # are incorrect; remove $SCRIPT and start over.
   # virtualenv will die horribly if any of these exist, so nuke them.
