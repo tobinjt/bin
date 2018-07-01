@@ -28,7 +28,7 @@ git push origin
 
 if [ ! -f "${SCRIPT}" ]; then
   # Set up virtualenv.
-  pip2 install virtualenv
+  pip3 install virtualenv
   virtualenv --clear "${DIR}"
 fi
 
@@ -36,7 +36,7 @@ fi
 export PS1="dummy"
 # shellcheck source=/dev/null
 source "${SCRIPT}"
-if ! pip2 install -e .; then
+if ! pip3 install -e .; then
   # The most likely reason for failure is that I upgraded Python and so paths
   # are incorrect; remove $SCRIPT and start over.
   # virtualenv will die horribly if any of these exist, so nuke them.
@@ -44,4 +44,4 @@ if ! pip2 install -e .; then
   # Start over to install supporting tools rather than duplicating it.
   exec "$0" "$@"
 fi
-pip2 install -r dev-requirements.txt
+pip3 install -r dev-requirements.txt
