@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+echo '```shell'
+sed -e 's/^    //'
+echo '```'
