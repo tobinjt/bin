@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Math::BigFloat;
-use Regexp::Common;
 
 my %suffixes = (
   k => 1024,
@@ -36,9 +35,13 @@ sub un_format_scientific {
 
 while (<>) {
     chomp;
-    my @parts = split /\b($RE{num}{real}$suffix_re)\b/io;
+    # Copied from Regexp::Common's $RE{num}{real}.
+    my $re = qr/(?:(?i)(?:[-+]?)(?:(?=[.]?[0123456789])(?:[0123456789]*)
+                (?:(?:[.])(?:[0123456789]{0,}))?)(?:(?:[E])
+                (?:(?:[-+]?)(?:[0123456789]+))|))/x;
+    my @parts = split /\b($re$suffix_re)\b/io;
     foreach my $part (@parts) {
-        if ($part =~ m/^($RE{num}{real})($suffix_re)$/io) {
+        if ($part =~ m/^($re)($suffix_re)$/io) {
             my ($number, $suffix) = ($1, $2);
             if ($suffix =~ m/^e/i) {
                 print un_format_scientific($number, $suffix);
