@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Math::BigFloat;
-use Regexp::Common;
 
 sub format_bytes {
   my ($number) = @_;
@@ -35,15 +34,20 @@ sub format_number {
 
 while (<>) {
     chomp;
-    my @parts = split /\b($RE{num}{real})\b/o;
+    # Copied from Regexp::Common's $RE{num}{real}.
+    my $re = qr/(?:(?i)(?:[-+]?)(?:(?=[.]?[0123456789])(?:[0123456789]*)
+                (?:(?:[.])(?:[0123456789]{0,}))?)(?:(?:[E])
+                (?:(?:[-+]?)(?:[0123456789]+))|))/x;
+    my @parts = split /\b($re)\b/o;
     foreach my $part (@parts) {
-        if ($part =~ m/^$RE{num}{real}$/o and $part ne q{.}) {
+        if ($part =~ m/^$re$/o and $part ne q{.}) {
             # Only humanise if it will help.
             my $format_number = format_number($part);
             if ($format_number eq $part) {
                 print $part;
             } else {
-                printf q{%s (%s; %s)}, $part, $format_number, format_bytes($part);
+                printf q{%s (%s; %s)},
+                       $part, $format_number, format_bytes($part);
             }
         } else {
             print $part;
