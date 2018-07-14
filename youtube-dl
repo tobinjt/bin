@@ -9,10 +9,12 @@ if brew outdated | grep youtube-dl; then
   printf "Updating youtube-dl\\n"
   brew upgrade youtube-dl
 fi
+count=1
 for url in "$@"; do
-  printf "%s\\n" "${url}"
+  printf "%d/%d %s\\n" "${count}" "$#" "${url}"
   until /usr/local/bin/youtube-dl "${url}"; do
     sleep 10
   done
+  count=$((count + 1))
   printf "\\n\\n"
 done
