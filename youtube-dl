@@ -2,16 +2,18 @@
 
 set -e -f -u -o pipefail
 
-cd "${HOME}/Downloads/warhammer/twitch"
+cd "${HOME}/Media/Warhammer-Twitch"
 # Only update brew if it's been at least 4 hours since the last update.
 old_dir="$(find /usr/local/Homebrew/ -maxdepth 1 -name .git -cmin +240)"
 if [[ -n "${old_dir}" ]]; then
-  printf "Updating homebrew to check for new version of youtube-dl\\n"
+  printf "Updating homebrew and checking for new binaries\\n"
   brew update
-  if brew outdated | grep youtube-dl; then
-    printf "Updating youtube-dl\\n"
-    brew upgrade youtube-dl
-  fi
+  for binary in youtube-dl ffmpeg $(brew deps ffmpeg); do
+    if brew outdated | grep "^${binary}$"; then
+      printf "Updating %s\\n" "${binary}"
+      brew upgrade "${binary}"
+    fi
+  done
 fi
 until /usr/local/bin/youtube-dl "$@"; do
   sleep 10
