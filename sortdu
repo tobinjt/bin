@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  if [ "$#" = 0 ]; then
+    set +f
+    main ./* .??*
+  else
+    du -sxk "$@" | sort -n
+  fi
+}
+
+main "$@"
