@@ -56,7 +56,13 @@ def parse_arguments(argv):
                            'specifier is used as one, then remaining arguments'
                            ' are used as filenames')
   options = argv_parser.parse_args(argv)
-  options.separator = options.separator.decode('string-escape')
+  try:
+    # Python 2
+    options.separator = options.separator.decode('string-escape')
+  except AttributeError:
+    # Python 3
+    options.separator = bytes(
+        options.separator, "utf-8").decode("unicode_escape")
 
   options.columns = []
   options.filenames = []
@@ -134,7 +140,7 @@ def main(argv):
   output = process_files(options.filenames, options.columns, options.delimiter,
                          options.separator)
   for line in output:
-    print line
+    print(line)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,9 @@
 """Tests for colx."""
 
-import StringIO
+try:
+  from StringIO import StringIO
+except ImportError:
+  from io import StringIO
 import unittest
 
 import mock
@@ -54,7 +57,7 @@ class TestArgumentParsing(unittest.TestCase):
     ]
     for (args, expected) in tests:
       actual = colx.parse_arguments(args)
-      for key in expected.iterkeys():
+      for key in expected:
         self.assertEqual(getattr(actual, key), expected[key])
 
   def test_error_checking(self):  # pylint: disable=no-self-use
@@ -103,7 +106,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
   def setUp(self):
     self.setUpPyfakefs()
 
-  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  @mock.patch('sys.stdout', new_callable=StringIO)
   def test_main(self, mock_stdout):
     """Test main."""
     filename = 'input'
