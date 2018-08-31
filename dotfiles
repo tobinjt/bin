@@ -6,13 +6,22 @@ dotfiles_sources() {
   find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
 }
 
+cat_some_files() {
+  local dir="$1" pattern="$2"
+   find "${dir}" \
+     -name "${pattern}" \
+     -a \( -not -name '*-os-*' -o -name '*-os-'"$(uname -s)"'-*' \) \
+     -print0 \
+   | sort --zero-terminated \
+   | xargs -0 cat
+}
+
 cat_ssh_configs() {
-  find "${HOME}"/.ssh \
-      -name 'config-??-*' \
-      -a \( -not -name '*-os-*' -o -name '*-os-'"$(uname -s)"'-*' \) \
-      -print0 \
-    | sort --zero-terminated \
-    | xargs -0 cat
+  cat_some_files "${HOME}"/.ssh 'config-??-*'
+}
+
+cat_ssh_known_hosts() {
+  cat_some_files "${HOME}"/.ssh 'known_hosts-??-*'
 }
 
 main() {
