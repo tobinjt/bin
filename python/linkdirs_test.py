@@ -3,7 +3,10 @@
 import os
 import re
 import stat
-import StringIO
+try:
+  from StringIO import StringIO
+except ImportError:
+  from io import StringIO
 import unittest
 
 import mock
@@ -23,7 +26,7 @@ class TestMain(unittest.TestCase):
     linkdirs.main([])
     mock_sys_exit.assert_called_once_with(0)
 
-  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  @mock.patch('sys.stdout', new_callable=StringIO)
   @mock.patch('linkdirs.real_main', return_value=['a message'])
   @mock.patch('sys.exit')
   def test_failure(self, mock_sys_exit, unused_mock_real_main, mock_stdout):
@@ -60,6 +63,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_nothing_changes(self):
     """Nothing needs to be done."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
     self.fs.CreateFile(src_file, contents='qwerty')
@@ -102,6 +107,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_missing_file_is_created(self):
     """Missing file gets created."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
     self.fs.CreateFile(src_file, contents='qwerty')
@@ -112,13 +119,14 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_replace_same_contents(self):
     """File with same contents is replaced with link."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
     self.fs.CreateFile(src_file, contents='qwerty')
     self.fs.CreateFile(dest_file, contents='qwerty')
 
-    with mock.patch('sys.stdout',
-                    new_callable=StringIO.StringIO) as mock_stdout:
+    with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
                           os.path.dirname(dest_file)])
       self.assert_files_are_linked(src_file, dest_file)
@@ -128,6 +136,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_report_unexpected_files(self):
     """Report unexpected files."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
     self.fs.CreateFile(os.path.join(src_dir, 'file'))
     # 'asdf' subdir exists here, so it will be checked in destdir.
@@ -156,6 +166,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_delete_unexpected_files(self):
     """Delete unexpected files."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
     self.fs.CreateFile(os.path.join(src_dir, 'file'))
     # 'asdf' subdir exists here, so it will be checked in destdir.
@@ -176,6 +188,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_delete_unexp_keeps_dirs(self):
     """Delete unexpected files but not directories."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
     self.fs.CreateFile(os.path.join(src_dir, 'file'))
     # 'asdf' subdir exists here, so it will be checked in destdir.
@@ -205,6 +219,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_force_removes_unexp_dirs(self):
     """Delete unexpected files and directories with --force."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
     self.fs.CreateFile(os.path.join(src_dir, 'file'))
     # 'asdf' subdir exists here, so it will be checked in destdir.
@@ -233,6 +249,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_exclusions_are_skipped(self):
     """Excluded files/dirs are skipped."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     non_skip_files = ['link_me', 'me_too']
     non_skip_dirs = ['harry', 'murphy']
     skip_files = ['pinky', 'the_brain']
@@ -255,7 +273,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                         src_dir, dest_dir])
 
     files = []
-    for dirpath, _, filenames in os.walk(dest_dir):
+    for dirpath, unused_x, filenames in os.walk(dest_dir):
       for filename in filenames:
         files.append(os.path.join(dirpath, filename))
     files.sort()
@@ -266,6 +284,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_report_diffs(self):
     """Report diffs."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
     self.fs.CreateFile(src_file, contents='qwerty\n')
@@ -305,6 +325,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_force_deletes_dest(self):
     """Force deletes existing files and directories."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     filenames = ['file1', 'file2', 'file3', 'file4']
     subdir = 'dir1'
     src_dir = '/a/b/c'
@@ -319,8 +341,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Subdir in src, file in dest.
     self.fs.CreateFile(os.path.join(dest_dir, subdir), contents='pinky')
 
-    with mock.patch('sys.stdout',
-                    new_callable=StringIO.StringIO) as mock_stdout:
+    with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--force', src_dir, dest_dir])
       self.assertEqual([], messages)
       self.assert_files_are_linked(os.path.join(src_dir, filenames[0]),
@@ -331,6 +352,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_dryrun(self):
     """Dry-run."""
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     filenames = ['file1', 'file2', 'file3', 'file4', 'file5', 'file6']
     subdirs = ['dir1', 'dir2', 'dir3']
     src_dir = '/a/b/c'
@@ -363,8 +386,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Test handling a destination that isn't a subdir.
     self.fs.CreateFile(os.path.join(dest_dir, subdirs[2]))
 
-    with mock.patch('sys.stdout',
-                    new_callable=StringIO.StringIO) as mock_stdout:
+    with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--dryrun', src_dir, dest_dir])
       # Strip off timestamps.
       messages = [re.sub(r'\t.*$', '\t', x) for x in messages]
@@ -408,7 +430,7 @@ class TestMisc(fake_filesystem_unittest.TestCase):
   def setUp(self):
     self.setUpPyfakefs()
 
-  @mock.patch('sys.stdout', new_callable=StringIO.StringIO)
+  @mock.patch('sys.stdout', new_callable=StringIO)
   def test_safe_unlink_prints(self, mock_stdout):
     """Integration tests cannot make safe_unlink print for directories."""
     test_dir = '/a/b/c'

@@ -10,7 +10,9 @@ necessary.
 import collections
 import difflib
 import fnmatch
+# pylint: disable=deprecated-module
 import optparse
+# pylint: enable=deprecated-module
 import os
 import pipes
 import shutil
@@ -28,7 +30,7 @@ class Error(Exception):
 
 
 class UnexpectedPaths(collections.namedtuple('UnexpectedPaths',
-                                         'files directories')):
+                                             'files directories')):
   """Container for unexpected paths.
 
   Attributes:
@@ -73,12 +75,12 @@ def safe_unlink(unlink_me, dryrun=True):
 
   if os.path.islink(unlink_me) or not os.path.isdir(unlink_me):
     if dryrun:
-      print "rm %s" % pipes.quote(unlink_me)
+      print("rm %s" % pipes.quote(unlink_me))
     else:
       os.unlink(unlink_me)
   else:
     if dryrun:
-      print "rm -r %s" % pipes.quote(unlink_me)
+      print("rm -r %s" % pipes.quote(unlink_me))
     else:
       shutil.rmtree(unlink_me)
 
@@ -96,8 +98,8 @@ def safe_link(source_filename, dest_filename, dryrun=True):
   """
 
   if dryrun:
-    print "ln %s %s" % (pipes.quote(source_filename),
-                        pipes.quote(dest_filename))
+    print("ln %s %s" % (pipes.quote(source_filename),
+                        pipes.quote(dest_filename)))
   else:
     os.link(source_filename, dest_filename)
 
@@ -184,7 +186,8 @@ def link_dir(source, dest, options):
         if not options.dryrun:
           os.chmod(dest_dir, source_mode)
         else:
-          print "chmod %s %s" % (oct(source_mode), pipes.quote(dest_dir))
+          print("chmod %s %s" % (oct(source_mode).replace('o', ''),
+                                 pipes.quote(dest_dir)))
         continue
 
       if os.path.exists(dest_dir):
@@ -196,7 +199,7 @@ def link_dir(source, dest, options):
           continue
 
       if options.dryrun:
-        print "mkdir %s" % pipes.quote(dest_dir)
+        print("mkdir %s" % pipes.quote(dest_dir))
       else:
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
@@ -272,8 +275,8 @@ def link_files(source, dest, directory, files, options):
       results.diffs.extend(file_diffs)
       continue
 
-    print ("%s and %s are different files but have the same contents; "
-           "deleting and linking" % (source_filename, dest_filename))
+    print("%s and %s are different files but have the same contents; "
+          "deleting and linking" % (source_filename, dest_filename))
     safe_unlink(dest_filename, options.dryrun)
     safe_link(source_filename, dest_filename, options.dryrun)
 
@@ -472,7 +475,7 @@ def real_main(argv):
 def main(argv):
   messages = real_main(argv)
   for line in messages:
-    print line
+    print(line)
   if messages:
     sys.exit(1)
   sys.exit(0)
