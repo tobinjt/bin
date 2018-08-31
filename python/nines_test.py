@@ -1,9 +1,9 @@
 """Tests for nines."""
 
 try:
-    from StringIO import StringIO
+  from StringIO import StringIO
 except ImportError:
-    from io import StringIO
+  from io import StringIO
 import unittest
 
 import mock
@@ -68,7 +68,7 @@ class TestMain(unittest.TestCase):
 
   @mock.patch('sys.exit')
   @mock.patch('sys.stdout', new_callable=StringIO)
-  def test_no_args(self, mock_stdout, mock_exit):
+  def test_no_args(self, mock_stdout, _):
     """Test main."""
     nines.main(['argv0'])
     self.assertEqual('', mock_stdout.getvalue())
