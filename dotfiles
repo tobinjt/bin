@@ -34,6 +34,15 @@ count_kept_lines() {
     | wc -l
 }
 
+# Output the lines in cur_file that are missing from new_file.
+output_missing_lines() {
+  local cur_file="$1" new_file="$2"
+  sort \
+      <(sort "${cur_file}" | uniq) \
+      <(sort "${new_file}" | uniq) \
+    | uniq -u
+}
+
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
@@ -126,7 +135,7 @@ END_OF_HELP
   num_kept_lines="$(count_kept_lines "${known_hosts}" "${tmp_known_hosts}")"
   if [[ "${num_kept_lines}" -lt "${num_current_lines}" ]]; then
     printf "Missing lines from known_hosts.\\n" >&2
-    diff -u "${known_hosts}" "${tmp_known_hosts}" >&2
+    output_missing_lines "${known_hosts}" "${tmp_known_hosts}" >&2
     exit 1
   fi
   cat_ssh_known_hosts > "${known_hosts}"
