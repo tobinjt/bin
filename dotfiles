@@ -126,7 +126,7 @@ END_OF_HELP
     touch "${known_hosts}"
     chmod 600 "${known_hosts}"
   fi
-  tmp_known_hosts="$(mktemp -t known_hosts)"
+  tmp_known_hosts="$(mktemp -t known_hosts.XXXXXXXXXX)"
   # I want ${tmp_known_hosts} to be expanded now, because when we exit
   # successfully it will be out of scope and cannot be expanded.
   # shellcheck disable=SC2064
