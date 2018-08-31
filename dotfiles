@@ -24,6 +24,16 @@ cat_ssh_known_hosts() {
   cat_some_files "${HOME}"/.ssh 'known_hosts-??-*'
 }
 
+# Count the unique lines in cur_file that are present in new_file.
+count_kept_lines() {
+  local cur_file="$1" new_file="$2"
+  sort \
+      <(sort "${cur_file}" | uniq) \
+      <(sort "${new_file}" | uniq) \
+    | uniq -d\
+    | wc -l
+}
+
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
@@ -87,16 +97,41 @@ END_OF_HELP
   if [[ "${return_early}" -eq 1 ]]; then
     return
   fi
-  chmod -R a=-rwx,u=rwX "${HOME}"/.ssh
+
   # Lock down some sensitive directories.
+  chmod -R a=-rwx,u=rwX "${HOME}"/.ssh
   local dir
   for dir in "${HOME}" $(dotfiles_sources); do
     if [[ -d "${dir}/.ssh" ]]; then
       chmod 700 "${dir}/.ssh"
     fi
   done
+
+  # Assemble ssh config.
   cat_ssh_configs > /dev/null
   cat_ssh_configs > "${HOME}/.ssh/config"
+
+  # Assemble ssh known_hosts.
+  local tmp_known_hosts known_hosts="${HOME}/.ssh/known_hosts"
+  tmp_known_hosts="$(mktemp -t known_hosts)"
+  # I want ${tmp_known_hosts} to be expanded now, because when we exit
+  # successfully it will be out of scope and cannot be expanded.
+  # shellcheck disable=SC2064
+  trap "rm -f \"${tmp_known_hosts}\"" EXIT
+  cat_ssh_known_hosts > "${tmp_known_hosts}"
+  local num_current_lines num_kept_lines
+  # Number of unique existing lines.  Duplicates are unlikely but possible.
+  num_current_lines="$(sort "${known_hosts}" | uniq | wc -l)"
+  # Number of unique kept lines.
+  num_kept_lines="$(count_kept_lines "${known_hosts}" "${tmp_known_hosts}")"
+  if [[ "${num_kept_lines}" -lt "${num_current_lines}" ]]; then
+    printf "Missing lines from known_hosts.\\n" >&2
+    diff -u "${known_hosts}" "${tmp_known_hosts}" >&2
+    exit 1
+  fi
+  cat_ssh_known_hosts > "${known_hosts}"
+
+  # Update vim stuff.
   # Stop TmuxSetWindowName loading: it's not useful and it doesn't work properly
   # when tmux is focused on a different pane.  'set t_u7=' stops '2R' appearing
   # in my shell input stream with older versions of vim.
