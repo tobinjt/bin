@@ -150,7 +150,7 @@ def main(argv):
   options = argv_parser.parse_args(argv[1:])
 
   for num_nines in options.args:
-    print nines(parse_nines_arg(num_nines))
+    print(nines(parse_nines_arg(num_nines)))
 
 if __name__ == '__main__':
   main(sys.argv)
