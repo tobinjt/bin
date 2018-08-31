@@ -89,17 +89,13 @@ END_OF_HELP
   if [[ "${return_early}" -eq 1 ]]; then
     return
   fi
-  set +f
   chmod -R a=-rwx,u=rwX "${HOME}"/.ssh
-  set -f
   # Lock down some sensitive directories.
-  local dir subdir
+  local dir
   for dir in "${HOME}" $(dotfiles_sources); do
-    for subdir in .gnupg .ssh; do
-      if [[ -d "${dir}/${subdir}" ]]; then
-        chmod 700 "${dir}/${subdir}"
-      fi
-    done
+    if [[ -d "${dir}/.ssh" ]]; then
+      chmod 700 "${dir}/.ssh"
+    fi
   done
   cat_ssh_configs > /dev/null
   cat_ssh_configs > "${HOME}/.ssh/config"
