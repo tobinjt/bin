@@ -39,7 +39,7 @@ output_missing_lines() {
   local cur_file="$1" new_file="$2"
   sort \
       <(sort "${cur_file}" | uniq) \
-      <(sort "${new_file}" | uniq) \
+      <(sort "${new_file}" "${new_file}" ) \
     | uniq -u
 }
 
@@ -134,7 +134,7 @@ END_OF_HELP
   # Number of unique kept lines.
   num_kept_lines="$(count_kept_lines "${known_hosts}" "${tmp_known_hosts}")"
   if [[ "${num_kept_lines}" -lt "${num_current_lines}" ]]; then
-    printf "Missing lines from known_hosts.\\n" >&2
+    printf "Missing lines from %s.\\n" "${known_hosts}" >&2
     output_missing_lines "${known_hosts}" "${tmp_known_hosts}" >&2
     exit 1
   fi
