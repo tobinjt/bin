@@ -24,25 +24,6 @@ cat_ssh_known_hosts() {
   cat_some_files "${HOME}"/.ssh 'known_hosts-??-*'
 }
 
-# Count the unique lines in cur_file that are present in new_file.
-count_kept_lines() {
-  local cur_file="$1" new_file="$2"
-  sort \
-      <(sort "${cur_file}" | uniq) \
-      <(sort "${new_file}" | uniq) \
-    | uniq -d\
-    | wc -l
-}
-
-# Output the lines in cur_file that are missing from new_file.
-output_missing_lines() {
-  local cur_file="$1" new_file="$2"
-  sort \
-      <(sort "${cur_file}" | uniq) \
-      <(sort "${new_file}" "${new_file}" ) \
-    | uniq -u
-}
-
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
@@ -132,17 +113,12 @@ END_OF_HELP
   # shellcheck disable=SC2064
   trap "rm -f \"${tmp_known_hosts}\"" EXIT
   cat_ssh_known_hosts > "${tmp_known_hosts}"
-  local num_current_lines num_kept_lines
-  # Number of unique existing lines.  Duplicates are unlikely but possible.
-  num_current_lines="$(sort "${known_hosts}" | uniq | wc -l)"
-  # Number of unique kept lines.
-  num_kept_lines="$(count_kept_lines "${known_hosts}" "${tmp_known_hosts}")"
-  if [[ "${num_kept_lines}" -lt "${num_current_lines}" ]]; then
-    printf "Missing lines from %s\\n" "${known_hosts}" >&2
-    output_missing_lines "${known_hosts}" "${tmp_known_hosts}" >&2
-    exit 1
-  fi
-  cat_ssh_known_hosts > "${known_hosts}"
+  # shellcheck disable=SC2094
+  # The disabled warning is about reading from and writing to the same file in a
+  # single command; in this case it's fine because sort needs to read the entire
+  # input before sorting, so there's no race condition.
+  sort "${known_hosts}" "${known_hosts}" "${tmp_known_hosts}" \
+    | uniq -u >> "${known_hosts}"
 
   # Update vim stuff.
   # Stop TmuxSetWindowName loading: it's not useful and it doesn't work properly
