@@ -122,6 +122,10 @@ END_OF_HELP
 
   # Assemble ssh known_hosts.
   local tmp_known_hosts known_hosts="${HOME}/.ssh/known_hosts"
+  if [[ ! -e "${known_hosts}" ]]; then
+    touch "${known_hosts}"
+    chmod 600 "${known_hosts}"
+  fi
   tmp_known_hosts="$(mktemp -t known_hosts)"
   # I want ${tmp_known_hosts} to be expanded now, because when we exit
   # successfully it will be out of scope and cannot be expanded.
@@ -134,7 +138,7 @@ END_OF_HELP
   # Number of unique kept lines.
   num_kept_lines="$(count_kept_lines "${known_hosts}" "${tmp_known_hosts}")"
   if [[ "${num_kept_lines}" -lt "${num_current_lines}" ]]; then
-    printf "Missing lines from %s.\\n" "${known_hosts}" >&2
+    printf "Missing lines from %s\\n" "${known_hosts}" >&2
     output_missing_lines "${known_hosts}" "${tmp_known_hosts}" >&2
     exit 1
   fi
