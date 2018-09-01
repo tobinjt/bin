@@ -17,7 +17,7 @@ readonly WIFI_DEV="en1"
 readonly SSID="burrow"
 
 readonly INTERNAL_IP="192.168.0.1"
-readonly LOG_FILE="${HOME}/Documents/reconnect-wifi.log"
+readonly LOG_FILE="${HOME}/tmp/reconnect-wifi.log"
 PATH="${PATH}:/usr/sbin:/sbin"
 
 log() {
