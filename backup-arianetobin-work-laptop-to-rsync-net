@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+readonly hostname="arianetobin-work-laptop"
+backup-single-directory-to-rsync-net "${hostname}" Desktop "${HOME}/Desktop"
+backup-single-directory-to-rsync-net "${hostname}" Documents "${HOME}/Documents"
+backup-single-directory-to-rsync-net "${hostname}" Downloads "${HOME}/Downloads"
+# backup-single-directory-to-rsync-net "${hostname}" Pictures "${HOME}/Pictures"

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+readonly hostname="hosting"
+backup-single-directory-to-rsync-net "${hostname}" etc /etc
+backup-single-directory-to-rsync-net \
+  "${hostname}" wordpress-backups /home/johntobin/wordpress-backups
+backup-single-directory-to-rsync-net \
+  "${hostname}" arianetobin.ie /var/www/sites/arianetobin.ie/blog
+backup-single-directory-to-rsync-net \
+  "${hostname}" dev.arianetobin.ie /var/www/sites/dev.arianetobin.ie

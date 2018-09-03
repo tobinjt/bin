@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+readonly hostname="johntobin-laptop"
+backup-single-directory-to-rsync-net \
+  "${hostname}" CalibreLibrary "${HOME}/Calibre Library"
+backup-single-directory-to-rsync-net "${hostname}" Documents "${HOME}/Documents"
+backup-single-directory-to-rsync-net "${hostname}" Pictures "${HOME}/Pictures"
