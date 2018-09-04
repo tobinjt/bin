@@ -55,10 +55,14 @@ main() {
 
   # Make sure we use the right key rather than any inherited keys.
   unset SSH_AUTH_SOCK
-  local dest_dir
+  local dest_dir flags=()
+  if [[ -t 0 ]]; then
+    # Progress indicator when run interactively.
+    flags+=("--info=progress2,stats")
+  fi
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
   RSYNC_RSH="ssh -i ${ssh_key_path}" \
-    rsync -a "${source_dir}/" "rsync-net:${dest_dir}/"
+    rsync -a "${flags[@]}" "${source_dir}/" "rsync-net:${dest_dir}/"
 }
 
 main "$@"
