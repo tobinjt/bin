@@ -62,7 +62,7 @@ main() {
   fi
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
   RSYNC_RSH="ssh -i ${ssh_key_path}" \
-    rsync -a "${flags[@]}" "${source_dir}/" "rsync-net:${dest_dir}/"
+    rsync -a "${flags[@]}" --bwlimit=50K "${source_dir}/" "rsync-net:${dest_dir}/"
 }
 
 main "$@"
