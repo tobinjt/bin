@@ -12,12 +12,13 @@ update-single-host() {
   local host="$1"
 
   printf "\\n\\n\\njohntobin@%s\\n" "${host}"
-  retry ssh -t "johntobin@${host}" update-dotfiles-and-bin
+  retry ssh -o ControlMaster=no -t "johntobin@${host}" update-dotfiles-and-bin
   printf "\\n\\n\\nroot@%s\\n" "${host}"
   # sudo dscl . -change /Users/root UserShell /bin/sh /bin/bash
-  retry ssh -t "johntobin@${host}" sudo --login update-dotfiles-and-bin
+  retry ssh -o ControlMaster=no -t "johntobin@${host}" \
+    sudo --login update-dotfiles-and-bin
   printf "\\n\\n\\narianetobin@%s\\n" "${host}"
-  retry ssh -t "arianetobin@${host}" update-dotfiles-and-bin
+  retry ssh -o ControlMaster=no -t "arianetobin@${host}" update-dotfiles-and-bin
 }
 
 main() {

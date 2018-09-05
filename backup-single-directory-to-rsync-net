@@ -57,6 +57,7 @@ main() {
   unset SSH_AUTH_SOCK
   local dest_dir flags=()
   if [[ -t 0 ]]; then
+    printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
     flags+=("--info=progress2,stats")
   fi
