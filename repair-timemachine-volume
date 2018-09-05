@@ -29,13 +29,17 @@ fix_single_volume() {
   local device
   device="$(awk '/Apple_HFS/ { print $1 }' "${output}")"
   trap 'hdiutil detach "${device}"' ERR
-  local i
+  local i max=5
   # Multiple attempts seem to help, so try a few times.
-  for i in $(seq 1 5); do
-    printf "\\n\\n\\nAttempt %d\\n\\n" "${i}"
+  for i in $(seq 1 "${max}"); do
+    printf "\\n\\n\\nAttempt %d/%d\\n\\n" "${i}" "${max}"
     # -R ace rebuilds everything.
     if fsck_hfs -f -y -R ace "${device}"; then
       break
+    fi
+    if [[ "${i}" -eq "${max}" ]]; then
+      printf "\\n\\n\\n%d repair attempts failed :(\\n\\n" "${max}" >&2
+      false
     fi
   done
   hdiutil detach "${device}"
