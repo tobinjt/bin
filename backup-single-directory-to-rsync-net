@@ -62,7 +62,7 @@ main() {
     flags+=("--info=progress2,stats")
   fi
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
-  rsync --archive --bwlimit=100K \
+  rsync --archive --bwlimit=100K --delete \
     --rsh="ssh -i ${ssh_key_path}" \
     "${flags[@]}" \
     "${source_dir}/" "rsync-net:${dest_dir}/"
