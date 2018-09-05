@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Think about using tmutil on my laptop to disable and enable backups.
+
+fix_single_volume() {
+  local directory="$1"
+  chflags -R nouchg "${directory}"
+  # Do I need to disable SMB?  Will that even unlock things?  Is there a tool to
+  # list locks?  Will rebooting fix anything?  Can I enable or disable shares
+  # individually?  Would putting the backups into different subdirs help with
+  # sharing more precisely?
+  # $ launchctl unload -w /System/Library/LaunchDaemons/com.apple.smbd.plist
+  # $ launchctl load -w /System/Library/LaunchDaemons/com.apple.smbd.plist
+  printf "If hdiutil attach fails, it's probably because the volume is in use\\n"
+  printf "Wait a while and try again seems to be the best option\\n"
+  local output
+  output="$(mktemp -t hdiutil.XXXXXXXXXX)"
+  # Do I need -verbose -noverify -noautofsck ?
+  hdiutil attach -readwrite -nomount "${directory}" | tee "${output}"
+
+  # Need the line containing Apple_HFS.*
+  # Output:
+  # /dev/disk5              GUID_partition_scheme
+  # /dev/disk5s1            EFI
+  # /dev/disk5s2            Apple_HFS
+
+  local device
+  device="$(awk '/Apple_HFS/ { print $1 }' "${output}")"
+  trap 'hdiutil detach "${device}"' ERR
+  local i
+  # Multiple attempts seem to help, so try a few times.
+  for i in $(seq 1 5); do
+    printf "\\n\\n\\nAttempt %d\\n\\n" "${i}"
+    # -R ace rebuilds everything.
+    if fsck_hfs -f -y -R ace "${device}"; then
+      break
+    fi
+  done
+  hdiutil detach "${device}"
+  sed \
+    -e '/RecoveryBackupDeclinedDate/,/date/ d' \
+    -e 's,<integer>2</integer>,<integer>0</integer>,' \
+    -i .unedited \
+    "${directory}/com.apple.TimeMachine.MachineID.plist"
+}
+
+main() {
+  local dir
+  for dir in "$@"; do
+    fix_single_volume "${dir}"
+  done
+}
+
+main "$@"
