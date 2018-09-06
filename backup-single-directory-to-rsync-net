@@ -55,19 +55,31 @@ main() {
 
   # Make sure we use the right key rather than any inherited keys.
   unset SSH_AUTH_SOCK
-  local dest_dir flags=() exit_status=0
+  local flags=()
   if [[ -t 0 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
     flags+=("--info=progress2,stats" "--progress" "--verbose")
   fi
+  local dest_dir
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
-  # TODO: suppress output
+
+  # Handle files vanishing, e.g. when wordpress backups are cleaned up while
+  # rsync is running.
   # https://git.samba.org/?p=rsync.git;a=blob_plain;f=support/rsync-no-vanished;hb=HEAD
-  rsync --archive --bwlimit=100K --delete \
-    --rsh="ssh -i ${ssh_key_path}" \
-    "${flags[@]}" \
-    "${source_dir}/" "rsync-net:${dest_dir}/" \
+  # Suppress output by passing it through grep, taking care to handle grep
+  # failing if no lines are output.  Save the exit status if rsync fails so that
+  # it can be checked for the magic value 24.
+  local exit_status=0
+  ( rsync --archive --bwlimit=100K --delete \
+        --rsh="ssh -i ${ssh_key_path}" \
+        "${flags[@]}" \
+        "${source_dir}/" "rsync-net:${dest_dir}/" \
+        2>&1 \
+      | ( grep -v \
+              -e '^file has vanished:' \
+              -e '^rsync warning: some files vanished before they could be ' \
+            || true)) \
     || exit_status="$?"
   # 24 is a magic exit code that means some files disappeared during the
   # transfer; replace 24 with 0 so we exit successfully.
