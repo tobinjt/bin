@@ -55,17 +55,26 @@ main() {
 
   # Make sure we use the right key rather than any inherited keys.
   unset SSH_AUTH_SOCK
-  local dest_dir flags=()
+  local dest_dir flags=() exit_status=0
   if [[ -t 0 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
-    flags+=("--info=progress2,stats")
+    flags+=("--info=progress2,stats" "--progress" "--verbose")
   fi
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
+  # TODO: suppress output
+  # https://git.samba.org/?p=rsync.git;a=blob_plain;f=support/rsync-no-vanished;hb=HEAD
   rsync --archive --bwlimit=100K --delete \
     --rsh="ssh -i ${ssh_key_path}" \
     "${flags[@]}" \
-    "${source_dir}/" "rsync-net:${dest_dir}/"
+    "${source_dir}/" "rsync-net:${dest_dir}/" \
+    || exit_status="$?"
+  # 24 is a magic exit code that means some files disappeared during the
+  # transfer; replace 24 with 0 so we exit successfully.
+  if [[ "${exit_status}" == 24 ]]; then
+    exit_status=0
+  fi
+  return "${exit_status}"
 }
 
 main "$@"
