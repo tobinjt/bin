@@ -72,6 +72,7 @@ main() {
   # it can be checked for the magic value 24.
   local exit_status=0
   ( rsync --archive --bwlimit=100K --delete \
+        --partial-dir=.rsync-partial --partial \
         --filter="dir-merge rsync-net_filters" \
         --filter="dir-merge,- .gitignore" \
         --rsh="ssh -i ${ssh_key_path}" \
