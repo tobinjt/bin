@@ -59,7 +59,7 @@ main() {
   if [[ -t 0 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
-    flags+=("--progress" "--verbose")
+    flags+=("--info=progress2,stats" "--progress" "--verbose")
   fi
   local dest_dir
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
