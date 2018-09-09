@@ -16,7 +16,7 @@ main() {
     read -r -p "Enter SASL password (check ${sasl_file}): " password
     touch "${sasl_file}"
     chmod 600 "${sasl_file}"
-  cat > "${sasl_file}" <<END_OF_SASL
+    cat > "${sasl_file}" <<END_OF_SASL
 [smtp.gmail.com]:587 ${email}:${password}
 END_OF_SASL
     postmap hash:"${sasl_file}"
