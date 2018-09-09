@@ -77,7 +77,7 @@ main() {
         --filter="dir-merge rsync-net_filters" \
         --filter="dir-merge,- .gitignore" \
         --rsh="ssh -i ${ssh_key_path}" \
-        "${flags[@]}" \
+        "${flags[@]:+${flags[@]}}" \
         "${source_dir}/" "rsync-net:${dest_dir}/" \
       2> >( grep -v \
               -e '^file has vanished:' \
