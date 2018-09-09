@@ -2,10 +2,11 @@
 
 set -e -f -u -o pipefail
 
+PATH="${HOME}/bin:${PATH}"
 readonly hostname="johntobin-imac"
 backup-single-directory-to-rsync-net "${hostname}" backups "${HOME}/backups"
 backup-single-directory-to-rsync-net "${hostname}" Documents "${HOME}/Documents"
 backup-single-directory-to-rsync-net \
   "${hostname}" Pictures_Lightroom "${HOME}/Pictures/Lightroom"
-backup-single-directory-to-rsync-net \
-  "${hostname}" Pictures_MyPhotos "${HOME}/Pictures/My Photos"
+# backup-single-directory-to-rsync-net \
+  # "${hostname}" Pictures_MyPhotos "${HOME}/Pictures/My Photos"
