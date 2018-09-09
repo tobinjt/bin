@@ -2,7 +2,7 @@
 
 set -e -f -u -o pipefail
 
-PATH="${HOME}/bin:${PATH}:/usr/local/bin"
+PATH="${HOME}/bin:/usr/local/bin:${PATH}"
 readonly hostname="arianetobin-work-laptop"
 backup-single-directory-to-rsync-net "${hostname}" Desktop "${HOME}/Desktop"
 backup-single-directory-to-rsync-net "${hostname}" Documents "${HOME}/Documents"
