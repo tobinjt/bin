@@ -12,7 +12,7 @@ main() {
   local sasl_file="/etc/postfix/sasl_passwd"
   if [[ ! -f "${sasl_file}" ]]; then
     local email password
-    read -r -p "Enter gmail address password: " email
+    read -r -p "Enter gmail address: " email
     read -r -p "Enter SASL password (check ${sasl_file}): " password
     touch "${sasl_file}"
     chmod 600 "${sasl_file}"
