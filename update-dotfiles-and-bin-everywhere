@@ -23,7 +23,7 @@ update-single-host() {
 
 main() {
   if [[ "$#" -eq 0 ]]; then
-    exec "$0" laptop imac hosting
+    exec "$0" laptop-ip imac-ip hosting
   fi
   retry update-dotfiles-and-bin
   local host
