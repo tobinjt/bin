@@ -2,7 +2,7 @@
 
 set -e -f -u -o pipefail
 
-PATH="${HOME}/bin:${PATH}"
+PATH="${HOME}/bin:${PATH}:/usr/local/bin"
 readonly hostname="johntobin-laptop"
 backup-single-directory-to-rsync-net \
   "${hostname}" CalibreLibrary "${HOME}/Calibre Library"
