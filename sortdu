@@ -7,7 +7,7 @@ main() {
     set +f
     main ./* .??*
   else
-    du -sxk "$@" | sort -n
+    du -sxh "$@" | sort --human-numeric-sort
   fi
 }
 
