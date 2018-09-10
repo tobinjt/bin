@@ -82,12 +82,19 @@ main() {
       2> >( grep -v \
               -e '^file has vanished:' \
               -e '^rsync warning: some files vanished before they could be ' \
+              -e '^Xrsync: connection unexpectedly closed' \
+              -e '^Xrsync error: unexplained error' \
+              -e '^XConnection closed by' \
+              -e '^Xssh: Could not resolve hostname' \
             || true)) \
     || exit_status="$?"
   # 24 is a magic exit code that means some files disappeared during the
   # transfer; replace 24 with 0 so we exit successfully.
   if [[ "${exit_status}" == 24 ]]; then
     exit_status=0
+  fi
+  if [[ "${exit_status}" != 0 ]]; then
+    printf "Exit status %d\\n" "${exit_status}"
   fi
   return "${exit_status}"
 }
