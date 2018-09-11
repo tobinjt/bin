@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Set up PATH properly.  I need binaries from ~/bin, and rsync from homebrew on
+# MacOS.
+PATH="${HOME}/bin:/usr/local/bin:${PATH}"
+
+__NUM_FAILED_BACKUPS=0
+backup() {
+  if ! backup-single-directory-to-rsync-net "$@"; then
+    ((__NUM_FAILED_BACKUPS++))
+  fi
+}
+
+update-sentinel() {
+  if [[ "$#" -ne 1 ]]; then
+    printf "Usage: %s HOSTNAME\\n" "${FUNCNAME[0]}" >&2
+    return 1
+  fi
+  # Can't use $hostname because it's readonly in the caller.
+  local host="$1"
+  if [[ "${__NUM_FAILED_BACKUPS}" -ne 0 ]]; then
+    # Only show error when interactive because I don't want output in cron jobs.
+    if [[ -t 0 ]]; then
+      printf "%d failed backups\\n" "${__NUM_FAILED_BACKUPS}" >&2
+    fi
+    return "${__NUM_FAILED_BACKUPS}"
+  fi
+  # TODO: WRITE THIS.
+}
