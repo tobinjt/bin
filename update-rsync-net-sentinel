@@ -5,16 +5,41 @@ set -e -f -u -o pipefail
 # shellcheck disable=SC1090
 source "${HOME}/bin/backup-to-rsync-net-lib"
 
+usage() {
+    printf "Usage: %s [--test-keys-only] HOSTNAME\\n" "$0" >&2
+}
+
 main() {
-  if [[ "$#" -ne 1 ]]; then
-    printf "Usage: %s HOSTNAME\\n" "${FUNCNAME[0]}" >&2
+  if [[ "$#" -ne 1 && "$#" -ne 2 ]]; then
+    usage
     return 1
   fi
 
-  # Can't use $hostname because it's readonly in the caller.
-  local hostname="$1"
-  local subdir="sentinel" ssh_key_path
-  ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
+  # TODO: this is repetitive, figure out a better way.  Also when checking SSH
+  # key existence.
+  local test_keys_only=0
+  if [[ "$#" -eq 2 ]]; then
+    if [[ "$1" != "--test-keys-only" ]]; then
+      usage
+      return 1
+    fi
+    test_keys_only=1
+    shift
+  fi
+
+  local hostname="$1" hostname_for_key="update" subdir="sentinel"
+  if ! check_ssh_key_exists "${hostname_for_key}" "${subdir}"; then
+    if [[ "${test_keys_only}" -eq 1 ]]; then
+      return 0
+    fi
+    return 1
+  fi
+  if [[ "${test_keys_only}" -eq 1 ]]; then
+    return 0
+  fi
+
+  local ssh_key_path
+  ssh_key_path="$(ssh_key_path "${hostname_for_key}" "${subdir}")"
   # TODO: WRITE THIS.
 }
 
