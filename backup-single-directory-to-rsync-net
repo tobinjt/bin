@@ -26,11 +26,7 @@ main() {
   fi
 
   local hostname="$1" subdir="$2" source_dir="$3"
-  local ssh_key_path
-  ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
-  if [[ ! -f "${ssh_key_path}" ]]; then
-    printf "Missing SSH key :(\\n" >&2
-    print_setup_instructions "${hostname}" "${subdir}" >&2
+  if ! check_ssh_key_exists "${hostname}" "${subdir}"; then
     if [[ "${test_keys_only}" -eq 1 ]]; then
       return 0
     fi
@@ -39,6 +35,9 @@ main() {
   if [[ "${test_keys_only}" -eq 1 ]]; then
     return 0
   fi
+
+  local ssh_key_path
+  ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
 
   # Make sure we use the right key rather than any inherited keys.
   unset SSH_AUTH_SOCK

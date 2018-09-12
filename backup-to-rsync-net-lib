@@ -53,3 +53,13 @@ print_setup_instructions() {
     "${dest_dir}" "no-pty,no-agent-forwarding,no-port-forwarding"
 }
 
+check_ssh_key_exists() {
+  local hostname="$1" subdir="$2" ssh_key_path
+  ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
+  if [[ ! -f "${ssh_key_path}" ]]; then
+    printf "Missing SSH key :(\\n" >&2
+    print_setup_instructions "${hostname}" "${subdir}" >&2
+    return 1
+  fi
+  return 0
+}
