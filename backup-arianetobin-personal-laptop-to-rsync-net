@@ -10,4 +10,6 @@ backup "$@" "${hostname}" Desktop "${HOME}/Desktop"
 backup "$@" "${hostname}" Documents "${HOME}/Documents"
 backup "$@" "${hostname}" Downloads "${HOME}/Downloads"
 backup "$@" "${hostname}" Pictures "${HOME}/Pictures"
-update-sentinel "$@" "${hostname}"
+if all_backups_succeeded; then
+  update-rsync-net-sentinel "$@" "${hostname}"
+fi

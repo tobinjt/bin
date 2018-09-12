@@ -13,6 +13,14 @@ backup() {
   fi
 }
 
+all_backups_succeeded() {
+  if [[ "${__NUM_FAILED_BACKUPS}" -ne 0 && -t 0 ]]; then
+    # Only show error when interactive because I don't want output in cron jobs.
+    printf "%d failed backups\\n" "${__NUM_FAILED_BACKUPS}" >&2
+  fi
+  return "${__NUM_FAILED_BACKUPS}"
+}
+
 dest_dir() {
   local hostname="$1" subdir="$2"
   printf "%s/%s\\n" "${hostname}" "${subdir}"
@@ -45,19 +53,3 @@ print_setup_instructions() {
     "${dest_dir}" "no-pty,no-agent-forwarding,no-port-forwarding"
 }
 
-update-sentinel() {
-  if [[ "$#" -ne 1 ]]; then
-    printf "Usage: %s HOSTNAME\\n" "${FUNCNAME[0]}" >&2
-    return 1
-  fi
-  # Can't use $hostname because it's readonly in the caller.
-  local host="$1"
-  if [[ "${__NUM_FAILED_BACKUPS}" -ne 0 ]]; then
-    # Only show error when interactive because I don't want output in cron jobs.
-    if [[ -t 0 ]]; then
-      printf "%d failed backups\\n" "${__NUM_FAILED_BACKUPS}" >&2
-    fi
-    return "${__NUM_FAILED_BACKUPS}"
-  fi
-  # TODO: WRITE THIS.
-}

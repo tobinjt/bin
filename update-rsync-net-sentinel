@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# shellcheck disable=SC1090
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
+main() {
+  if [[ "$#" -ne 1 ]]; then
+    printf "Usage: %s HOSTNAME\\n" "${FUNCNAME[0]}" >&2
+    return 1
+  fi
+
+  # Can't use $hostname because it's readonly in the caller.
+  local hostname="$1"
+  local subdir="sentinel" ssh_key_path
+  ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
+  # TODO: WRITE THIS.
+}
+
+main "$@"
