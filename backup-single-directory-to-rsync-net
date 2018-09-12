@@ -70,8 +70,10 @@ main() {
               -e '^Timeout, server .* not responding' \
               -e '^file has vanished:' \
               -e '^packet_write_wait: Connection to .* Broken pipe' \
+              -e '^rsync error: error in rsync protocol data stream (code 12)' \
               -e '^rsync error: unexplained error' \
               -e '^rsync warning: some files vanished before they could be ' \
+              -e '^rsync: .sender. write error: Broken pipe (32)' \
               -e '^rsync: connection unexpectedly closed' \
               -e '^ssh: Could not resolve hostname' \
               -e '^ssh: connect to host .*: Operation timed out' \
