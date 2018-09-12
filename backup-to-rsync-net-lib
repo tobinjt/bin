@@ -13,6 +13,38 @@ backup() {
   fi
 }
 
+dest_dir() {
+  local hostname="$1" subdir="$2"
+  printf "%s/%s\\n" "${hostname}" "${subdir}"
+}
+
+ssh_key_basename() {
+  local hostname="$1" subdir="$2"
+  printf "%s_%s\\n" "${hostname}" "${subdir}"
+}
+
+ssh_key_path() {
+  local hostname="$1" subdir="$2"
+  printf "%s/.ssh/rsync-net/%s\\n" "${HOME}" \
+    "$(ssh_key_basename "${hostname}" "${subdir}")"
+}
+
+print_setup_instructions() {
+  local hostname="$1" subdir="$2"
+  local ssh_key ssh_key_path dest_dir
+  ssh_key="$(ssh_key_basename "${hostname}" "${subdir}")"
+  ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
+  dest_dir="$(dest_dir "${hostname}" "${subdir}")"
+
+  printf "Create a key with:\\n"
+  printf "$ ssh-keygen -t rsa -b 4096 -o -f %s -C rsync-net_%s\\n" \
+    "${ssh_key_path}" "${ssh_key}"
+  printf "Add the key to authorized_keys:\\n"
+  printf "command=\"rsync --server -vlogDtpre.iLsfxC --delete"
+  printf " --partial-dir=.rsync-partial . %s\",%s PUB_KEY\\n" \
+    "${dest_dir}" "no-pty,no-agent-forwarding,no-port-forwarding"
+}
+
 update-sentinel() {
   if [[ "$#" -ne 1 ]]; then
     printf "Usage: %s HOSTNAME\\n" "${FUNCNAME[0]}" >&2
