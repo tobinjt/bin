@@ -10,28 +10,21 @@ usage() {
 }
 
 main() {
-  if [[ "$#" -ne 1 && "$#" -ne 2 ]]; then
+  # TODO: this is repetitive, figure out a better way.  Also when checking SSH
+  # key existence.
+  local test_keys_only=0
+  if [[ "$#" -eq 2 && "$1" == "--test-keys-only" ]]; then
+    test_keys_only=1
+    shift
+  fi
+  if [[ "$#" -ne 1 ]]; then
     usage
     return 1
   fi
 
-  # TODO: this is repetitive, figure out a better way.  Also when checking SSH
-  # key existence.
-  local test_keys_only=0
-  if [[ "$#" -eq 2 ]]; then
-    if [[ "$1" != "--test-keys-only" ]]; then
-      usage
-      return 1
-    fi
-    test_keys_only=1
-    shift
-  fi
-
   local hostname="$1" hostname_for_key="update" subdir="sentinel"
-  if ! check_ssh_key_exists "${hostname_for_key}" "${subdir}"; then
-    if [[ "${test_keys_only}" -eq 1 ]]; then
-      return 0
-    fi
+  if ! check_ssh_key_exists "${hostname_for_key}" "${subdir}" \
+         "${test_keys_only}"; then
     return 1
   fi
   if [[ "${test_keys_only}" -eq 1 ]]; then

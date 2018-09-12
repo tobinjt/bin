@@ -54,11 +54,14 @@ print_setup_instructions() {
 }
 
 check_ssh_key_exists() {
-  local hostname="$1" subdir="$2" ssh_key_path
+  local hostname="$1" subdir="$2" test_keys_only="$3" ssh_key_path
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
   if [[ ! -f "${ssh_key_path}" ]]; then
     printf "Missing SSH key :(\\n" >&2
     print_setup_instructions "${hostname}" "${subdir}" >&2
+    if [[ "${test_keys_only}" -eq 1 ]]; then
+      return 0
+    fi
     return 1
   fi
   return 0

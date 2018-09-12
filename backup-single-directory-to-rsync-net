@@ -11,25 +11,18 @@ usage() {
 }
 
 main() {
-  if [[ "$#" -ne 3 && "$#" -ne 4 ]]; then
-    usage
-    return 1
-  fi
   local test_keys_only=0
-  if [[ "$#" -eq 4 ]]; then
-    if [[ "$1" != "--test-keys-only" ]]; then
-      usage
-      return 1
-    fi
+  if [[ "$#" -eq 4 && "$1" == "--test-keys-only" ]]; then
     test_keys_only=1
     shift
   fi
+  if [[ "$#" -ne 3 ]]; then
+    usage
+    return 1
+  fi
 
   local hostname="$1" subdir="$2" source_dir="$3"
-  if ! check_ssh_key_exists "${hostname}" "${subdir}"; then
-    if [[ "${test_keys_only}" -eq 1 ]]; then
-      return 0
-    fi
+  if ! check_ssh_key_exists "${hostname}" "${subdir}" "${test_keys_only}"; then
     return 1
   fi
   if [[ "${test_keys_only}" -eq 1 ]]; then
