@@ -2,9 +2,14 @@
 
 set -e -f -u -o pipefail
 
-PATH="${HOME}/bin:/usr/local/bin:${PATH}"
+# shellcheck disable=SC1090
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
 readonly hostname="arianetobin-personal-laptop"
-backup-single-directory-to-rsync-net "${hostname}" Desktop "${HOME}/Desktop"
-backup-single-directory-to-rsync-net "${hostname}" Documents "${HOME}/Documents"
-backup-single-directory-to-rsync-net "${hostname}" Downloads "${HOME}/Downloads"
-backup-single-directory-to-rsync-net "${hostname}" Pictures "${HOME}/Pictures"
+backup "$@" "${hostname}" Desktop "${HOME}/Desktop"
+backup "$@" "${hostname}" Documents "${HOME}/Documents"
+backup "$@" "${hostname}" Downloads "${HOME}/Downloads"
+backup "$@" "${hostname}" Pictures "${HOME}/Pictures"
+if all_backups_succeeded; then
+  update-rsync-net-sentinel "$@" "${hostname}"
+fi

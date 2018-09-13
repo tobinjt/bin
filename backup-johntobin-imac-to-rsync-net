@@ -2,13 +2,16 @@
 
 set -e -f -u -o pipefail
 
-PATH="${HOME}/bin:/usr/local/bin:${PATH}"
+# shellcheck disable=SC1090
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
 readonly hostname="johntobin-imac"
-backup-single-directory-to-rsync-net "${hostname}" backups "${HOME}/backups"
-backup-single-directory-to-rsync-net "${hostname}" Documents "${HOME}/Documents"
-backup-single-directory-to-rsync-net \
-  "${hostname}" Media_ArianeStuff_FromOldLaptops \
+backup "$@" "${hostname}" backups "${HOME}/backups"
+backup "$@" "${hostname}" Documents "${HOME}/Documents"
+backup "$@" "${hostname}" Media_ArianeStuff_FromOldLaptops \
   "${HOME}/Media/ArianeStuff/From-old-laptops"
-backup-single-directory-to-rsync-net \
-  "${hostname}" Pictures_Lightroom "${HOME}/Pictures/Lightroom"
-backup-single-directory-to-rsync-net "${hostname}" src "${HOME}/src"
+backup "$@" "${hostname}" Pictures_Lightroom "${HOME}/Pictures/Lightroom"
+backup "$@" "${hostname}" src "${HOME}/src"
+if all_backups_succeeded; then
+  update-rsync-net-sentinel "$@" "${hostname}"
+fi

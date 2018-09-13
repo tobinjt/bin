@@ -2,12 +2,14 @@
 
 set -e -f -u -o pipefail
 
-PATH="${HOME}/bin:${PATH}"
+# shellcheck disable=SC1090
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
 readonly hostname="hosting"
-backup-single-directory-to-rsync-net "${hostname}" etc /etc
-backup-single-directory-to-rsync-net \
-  "${hostname}" wordpress-backups /home/johntobin/wordpress-backups
-backup-single-directory-to-rsync-net \
-  "${hostname}" arianetobin.ie /var/www/sites/arianetobin.ie/blog
-backup-single-directory-to-rsync-net \
-  "${hostname}" dev.arianetobin.ie /var/www/sites/dev.arianetobin.ie
+backup "$@" "${hostname}" etc /etc
+backup "$@" "${hostname}" wordpress-backups /home/johntobin/wordpress-backups
+backup "$@" "${hostname}" arianetobin.ie /var/www/sites/arianetobin.ie/blog
+backup "$@" "${hostname}" dev.arianetobin.ie /var/www/sites/dev.arianetobin.ie
+if all_backups_succeeded; then
+  update-rsync-net-sentinel "$@" "${hostname}"
+fi
