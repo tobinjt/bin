@@ -11,3 +11,4 @@ backup-single-directory-to-rsync-net \
   "${HOME}/Media/ArianeStuff/From-old-laptops"
 backup-single-directory-to-rsync-net \
   "${hostname}" Pictures_Lightroom "${HOME}/Pictures/Lightroom"
+backup-single-directory-to-rsync-net "${hostname}" src "${HOME}/src"
