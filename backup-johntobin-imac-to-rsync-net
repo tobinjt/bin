@@ -11,6 +11,7 @@ backup "$@" "${hostname}" Documents "${HOME}/Documents"
 backup "$@" "${hostname}" Media_ArianeStuff_FromOldLaptops \
   "${HOME}/Media/ArianeStuff/From-old-laptops"
 backup "$@" "${hostname}" Pictures_Lightroom "${HOME}/Pictures/Lightroom"
+backup "$@" "${hostname}" src "${HOME}/src"
 if all_backups_succeeded; then
   update-rsync-net-sentinel "$@" "${hostname}"
 fi
