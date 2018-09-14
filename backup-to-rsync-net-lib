@@ -82,12 +82,15 @@ run_rsync() {
     flags+=("--info=progress2,stats" "--progress" "--verbose")
   fi
 
-  # Handle files vanishing, e.g. when wordpress backups are cleaned up while
-  # rsync is running.
   # https://git.samba.org/?p=rsync.git;a=blob_plain;f=support/rsync-no-vanished;hb=HEAD
-  # Suppress output by passing it through grep, taking care to handle grep
-  # failing if no lines are output.  Save the exit status if rsync fails so that
-  # it can be checked for the magic value 24.
+  # Suppress certain error messages by passing stderr through grep, taking care
+  # to handle grep failing if no lines are output.  Why not discard stderr
+  # entirely?  Because I want to know when weird errors happen, e.g. destination
+  # missing.
+
+  # Save the exit status if rsync fails so that it can be checked for the magic
+  # value 24, which is a magic exit code that means some files disappeared
+  # during the transfer.  TODO: do I really need to do this?
   local exit_status=0
   ( rsync --archive --bwlimit=100K --delete \
         --partial-dir=.rsync-partial --partial \
@@ -112,8 +115,7 @@ run_rsync() {
               -e 'ssh_exchange_identification: read: Connection reset by peer' \
             || true)) \
     || exit_status="$?"
-  # 24 is a magic exit code that means some files disappeared during the
-  # transfer; replace 24 with 0 so we exit successfully.
+  # Replace 24 with 0 so we exit successfully.
   if [[ "${exit_status}" == 24 ]]; then
     exit_status=0
   fi
