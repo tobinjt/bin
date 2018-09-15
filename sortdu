@@ -4,10 +4,13 @@ set -e -f -u -o pipefail
 
 main() {
   if [ "$#" = 0 ]; then
+    # Allow expansion, make * include .*, and discard patterns that don't match
+    # anything.
     set +f
-    main * .??*
+    shopt -s dotglob nullglob
+    du -sxh -- * | sort --human-numeric-sort
   else
-    du -sxh "$@" | sort --human-numeric-sort
+    du -sxh -- "$@" | sort --human-numeric-sort
   fi
 }
 
