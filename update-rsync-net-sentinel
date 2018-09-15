@@ -23,7 +23,7 @@ main() {
   fi
 
   local hostname="$1" hostname_for_key="update" subdir="sentinel"
-  if ! check_ssh_key_exists "${hostname_for_key}" "${subdir}" \
+  if ! check_ssh_key_exists --nodelete "${hostname_for_key}" "${subdir}" \
          "${test_keys_only}"; then
     return 1
   fi
@@ -31,9 +31,14 @@ main() {
     return 0
   fi
 
-  local ssh_key_path
-  ssh_key_path="$(ssh_key_path "${hostname_for_key}" "${subdir}")"
-  # TODO: WRITE THIS.
+  local sentinel_dir
+  sentinel_dir="$(mktemp -d -t sentinel_dir.XXXXXXXXXX)"
+  # I want ${sentinel_dir} to be expanded now, because when we exit
+  # successfully it will be out of scope and cannot be expanded.
+  # shellcheck disable=SC2064
+  trap "rm -rf \"${sentinel_dir}\"" EXIT
+  date -u '+%s' > "${sentinel_dir}/${hostname}"
+  run_rsync --nodelete "${hostname_for_key}" "${subdir}" "${sentinel_dir}"
 }
 
 main "$@"
