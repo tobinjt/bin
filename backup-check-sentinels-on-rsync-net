@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# shellcheck disable=SC1090
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
+usage() {
+  printf "Usage: %s [--test-keys-only]\\n" "$0"
+}
+
+main() {
+  local test_keys_only=0
+  if [[ "$#" -eq 1 && "$1" == "--test-keys-only" ]]; then
+    test_keys_only=1
+    shift
+  fi
+  if [[ "$#" -ne 0 ]]; then
+    usage
+    return 1
+  fi
+
+  # This requires that "retrieve" is a symlink to "update".
+  local hostname_for_key="retrieve" subdir="sentinel"
+  if ! check_ssh_key_exists --pull "${hostname_for_key}" "${subdir}" \
+         "${test_keys_only}"; then
+    return 1
+  fi
+  if [[ "${test_keys_only}" -eq 1 ]]; then
+    return 0
+  fi
+
+  local sentinel_dir
+  sentinel_dir="$(mktemp -d -t sentinel_dir.XXXXXXXXXX)"
+  # I want ${sentinel_dir} to be expanded now, because when we exit
+  # successfully it will be out of scope and cannot be expanded.
+  # shellcheck disable=SC2064
+  # trap "rm -rf \"${sentinel_dir}\"" EXIT
+
+  run_rsync --pull "${hostname_for_key}" "${subdir}" "${sentinel_dir}"
+}
+
+main "$@"
