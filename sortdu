@@ -5,7 +5,7 @@ set -e -f -u -o pipefail
 main() {
   if [ "$#" = 0 ]; then
     set +f
-    main ./* .??*
+    main * .??*
   else
     du -sxh "$@" | sort --human-numeric-sort
   fi
