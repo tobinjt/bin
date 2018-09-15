@@ -38,7 +38,11 @@ ssh_key_path() {
 }
 
 print_setup_instructions() {
-  local hostname="$1" subdir="$2"
+  local delete="$1" hostname="$2" subdir="$3"
+  if [[ "${delete}" != "--delete" && "${delete}" != "--nodelete" ]]; then
+    printf "Bad flag: %s; expecting --delete or --nodelete\\n" "${delete}"
+    return 1
+  fi
   local ssh_key ssh_key_path dest_dir
   ssh_key="$(ssh_key_basename "${hostname}" "${subdir}")"
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
@@ -48,17 +52,20 @@ print_setup_instructions() {
   printf "$ ssh-keygen -t rsa -b 4096 -o -f %s -C rsync-net_%s\\n" \
     "${ssh_key_path}" "${ssh_key}"
   printf "Add the key to authorized_keys:\\n"
-  printf "command=\"rsync --server -vlogDtpre.iLsfxC --delete"
+  printf "command=\"rsync --server -vlogDtpre.iLsfxC"
+  if [[ "${delete}" == "--delete" ]]; then
+    printf " --delete"
+  fi
   printf " --partial-dir=.rsync-partial . %s\",%s PUB_KEY\\n" \
     "${dest_dir}" "no-pty,no-agent-forwarding,no-port-forwarding"
 }
 
 check_ssh_key_exists() {
-  local hostname="$1" subdir="$2" test_keys_only="$3" ssh_key_path
+  local delete="$1" hostname="$2" subdir="$3" test_keys_only="$4" ssh_key_path
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
   if [[ ! -f "${ssh_key_path}" ]]; then
     printf "Missing SSH key :(\\n" >&2
-    print_setup_instructions "${hostname}" "${subdir}" >&2
+    print_setup_instructions "${delete}" "${hostname}" "${subdir}" >&2
     if [[ "${test_keys_only}" -eq 1 ]]; then
       return 0
     fi
@@ -68,7 +75,11 @@ check_ssh_key_exists() {
 }
 
 run_rsync() {
-  local hostname="$1" subdir="$2" source_dir="$3"
+  local delete="$1" hostname="$2" subdir="$3" source_dir="$4"
+  if [[ "${delete}" != "--delete" && "${delete}" != "--nodelete" ]]; then
+    printf "Bad flag: %s; expecting --delete or --nodelete\\n" "${delete}"
+    return 1
+  fi
   local dest_dir ssh_key_path
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
@@ -76,6 +87,9 @@ run_rsync() {
   # Make sure we use the right key rather than any inherited keys.
   unset SSH_AUTH_SOCK
   local flags=()
+  if [[ "${delete}" == "--delete" ]]; then
+    flags+=("--delete")
+  fi
   if [[ -t 0 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
@@ -92,7 +106,7 @@ run_rsync() {
   # value 24, which is a magic exit code that means some files disappeared
   # during the transfer.  TODO: do I really need to do this?
   local exit_status=0
-  ( rsync --archive --bwlimit=100K --delete \
+  ( rsync --archive --bwlimit=100K \
         --partial-dir=.rsync-partial --partial \
         --filter="dir-merge rsync-net_filters" \
         --filter="dir-merge,- .gitignore" \
