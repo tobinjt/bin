@@ -13,8 +13,8 @@ fix_single_volume() {
   # sharing more precisely?
   # $ launchctl unload -w /System/Library/LaunchDaemons/com.apple.smbd.plist
   # $ launchctl load -w /System/Library/LaunchDaemons/com.apple.smbd.plist
-  printf "If hdiutil attach fails, it's probably because the volume is in use\\n"
-  printf "Wait a while and try again seems to be the best option\\n"
+  printf "If hdiutil attach fails, it's probably because the volume is in use"
+  printf "\\nWait a while and try again seems to be the best option\\n"
   local output
   output="$(mktemp -t hdiutil.XXXXXXXXXX)"
   # Do I need -verbose -noverify -noautofsck ?
