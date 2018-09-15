@@ -35,7 +35,7 @@ main() {
   # I want ${sentinel_dir} to be expanded now, because when we exit
   # successfully it will be out of scope and cannot be expanded.
   # shellcheck disable=SC2064
-  # trap "rm -rf \"${sentinel_dir}\"" EXIT
+  trap "rm -rf \"${sentinel_dir}\"" EXIT
 
   run_rsync --pull "${hostname_for_key}" "${subdir}" "${sentinel_dir}"
 }
