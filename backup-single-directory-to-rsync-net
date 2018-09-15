@@ -6,7 +6,7 @@ set -e -f -u -o pipefail
 source "${HOME}/bin/backup-to-rsync-net-lib"
 
 usage() {
-  printf "%s [--test-keys-only] HOSTNAME SUBDIR SOURCE_DIR\\n" "$0"
+  printf "Usage: %s [--test-keys-only] HOSTNAME SUBDIR SOURCE_DIR\\n" "$0"
   printf "E.g. %s johntobin-laptop Documents /Users/johntobin/Documents\\n" "$0"
 }
 
