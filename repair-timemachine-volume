@@ -2,6 +2,7 @@
 
 set -e -f -u -o pipefail
 
+PATH="/sbin:${PATH}"
 # Think about using tmutil on my laptop to disable and enable backups.
 
 fix_single_volume() {
@@ -35,6 +36,7 @@ fix_single_volume() {
     printf "\\n\\n\\nAttempt %d/%d\\n\\n" "${i}" "${max}"
     # -R ace rebuilds everything.
     if fsck_hfs -f -y -R ace "${device}"; then
+      printf "\\n\\nSucceeded on attempt %d/%d\\n\\n" "${i}" "${max}"
       break
     fi
     if [[ "${i}" -eq "${max}" ]]; then
