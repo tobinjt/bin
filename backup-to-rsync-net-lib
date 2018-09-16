@@ -142,6 +142,7 @@ run_rsync() {
               -e '^rsync warning: some files vanished before they could be ' \
               -e '^rsync: .sender. write error: Broken pipe (32)' \
               -e '^rsync: connection unexpectedly closed' \
+              -e '^rsync: safe_write failed to write .* bytes to socket' \
               -e '^ssh: Could not resolve hostname' \
               -e '^ssh: connect to host .*: Operation timed out' \
               -e 'ssh_exchange_identification: read: Connection reset by peer' \
