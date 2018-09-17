@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+usage() {
+  printf "Usage: %s DIRECTORY [DIRECTORIES]\\n" "$0" >&2
+  exit 1
+}
+
+git-pull() {
+  local directory="$1"
+  cd "${directory}"
+  git pull --quiet 2> \
+    >(grep -v \
+          -e '^$' \
+          -e '^Please make sure you have the correct access rights' \
+          -e '^and the repository exists' \
+          -e '^fatal: Could not read from remote repository.' \
+          -e '^ssh: connect to host .* port 22: Network is unreachable' \
+          -e '^ssh: connect to host .* port 22: Operation timed out' \
+        || true)
+}
+
+main() {
+  if [[ "$#" -eq 0 ]]; then
+    usage
+  fi
+
+  local directory
+  for directory in "$@"; do
+    (git-pull "${directory}")
+  done
+}
+
+main "$@"
