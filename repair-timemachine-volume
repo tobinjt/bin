@@ -19,7 +19,7 @@ fix_single_volume() {
   local output
   output="$(mktemp -t hdiutil.XXXXXXXXXX)"
   # Do I need -verbose -noverify -noautofsck ?
-  hdiutil attach -readwrite -nomount "${directory}" | tee "${output}"
+  hdiutil attach -readwrite -nomount "${directory}" > "${output}"
 
   # Need the line containing Apple_HFS.*
   # Output:
@@ -35,8 +35,10 @@ fix_single_volume() {
   for i in $(seq 1 "${max}"); do
     printf "\\n\\n\\nAttempt %d/%d\\n\\n" "${i}" "${max}"
     # -R ace rebuilds everything.
-    if fsck_hfs -f -y -R ace "${device}"; then
-      printf "\\n\\nSucceeded on attempt %d/%d\\n\\n" "${i}" "${max}"
+    if fsck_hfs -f -y -R ace "${device}" > /dev/null; then
+      if [[ -t 0 ]]; then
+        printf "\\n\\nSucceeded on attempt %d/%d\\n\\n" "${i}" "${max}"
+      fi
       break
     fi
     if [[ "${i}" -eq "${max}" ]]; then
@@ -44,7 +46,7 @@ fix_single_volume() {
       false
     fi
   done
-  hdiutil detach "${device}"
+  hdiutil detach "${device}" > /dev/null
   sed \
     -e '/RecoveryBackupDeclinedDate/,/date/ d' \
     -e 's,<integer>2</integer>,<integer>0</integer>,' \
