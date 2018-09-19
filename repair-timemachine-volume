@@ -35,7 +35,9 @@ fix_single_volume() {
   local i max=5
   # Multiple attempts seem to help, so try a few times.
   for i in $(seq 1 "${max}"); do
-    printf "\\n\\n\\nAttempt %d/%d\\n\\n" "${i}" "${max}"
+    if [[ -t 0 ]]; then
+      printf "\\n\\n\\nAttempt %d/%d\\n\\n" "${i}" "${max}"
+    fi
     # -R ace rebuilds everything.
     if fsck_hfs -f -y -R ace "${device}" > /dev/null; then
       if [[ -t 0 ]]; then
