@@ -26,15 +26,16 @@ import argparse
 import fileinput
 import re
 import sys
+import typing
 
 __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 
-def parse_arguments(argv):
+def parse_arguments(argv: typing.List[str]) -> argparse.Namespace:
   """Parse the arguments provided by the user.
 
   Args:
-    argv: list(str), the arguments to parse.
+    argv: the arguments to parse.
   Returns:
     argparse.Namespace, with attributes set based on the arguments.
   """
@@ -99,17 +100,17 @@ def parse_arguments(argv):
   return options
 
 
-def process_files(filenames, columns, delimiter, separator):
+def process_files(filenames: typing.List[str], columns: typing.List[int],
+                  delimiter: str, separator: str) -> typing.List[str]:
   """Process files and return specified columns.
 
   Args:
-    filenames: list(str), list of files to process.  If empty, sys.stdin will be
-               processed.
-    columns: list(int), columns to output.
-    delimiter: str, delimiter for splitting input lines into columns.
-    separator: str, separator for combining columns into output lines.
+    filenames: list of files to process.  If empty, sys.stdin will be processed.
+    columns: columns to output.
+    delimiter: delimiter for splitting input lines into columns.
+    separator: separator for combining columns into output lines.
   Returns:
-    list(str): strings to output.
+    strings to output.
   """
   output = []
   for line in fileinput.input(filenames):
@@ -135,7 +136,7 @@ def process_files(filenames, columns, delimiter, separator):
   return output
 
 
-def main(argv):
+def main(argv: typing.List[str]) -> None:
   options = parse_arguments(argv[1:])
   output = process_files(options.filenames, options.columns, options.delimiter,
                          options.separator)

@@ -17,6 +17,7 @@ __author__ = 'johntobin@johntobin.ie (John Tobin)'
 import argparse
 import itertools
 import sys
+import typing
 
 
 # Args >= PERCENT_THRESHOLD are interpreted as percentages, < PERCENT_THRESHOLD
@@ -24,18 +25,18 @@ import sys
 PERCENT_THRESHOLD = 20
 
 
-def strip_trailing_zeros(number):
+def strip_trailing_zeros(number: float) -> str:
   """Strip unnecessary trailing zeros from a number.
 
   %d formats integers only.  %f formats floats, but has way too many digits.
-  There's no format suitable for displaying a number that might be a floar or an
+  There's no format suitable for displaying a number that might be a float or an
   integer, hence this function.
 
   Args:
-    number: a number, either an integer or a string
+    number: a number
 
   Returns:
-    A string representing number, with any unnecessary trailing zeros removed.
+    Number, with any unnecessary trailing zeros removed.
   """
   string = str(number)
   if string.find('.') != -1:
@@ -43,13 +44,13 @@ def strip_trailing_zeros(number):
   return string
 
 
-def format_duration(seconds):
+def format_duration(seconds: float) -> str:
   """Format a number of seconds as "x hours, y minutes, z seconds".
 
   Args:
-    seconds: int, number of seconds.
+    seconds: number of seconds.
   Returns:
-    str, string to print.
+    string to print.
   """
   time_units = {}
   seconds_so_far = 1
@@ -74,32 +75,30 @@ def format_duration(seconds):
   return ', '.join(durations)
 
 
-def parse_nines_arg(num_nines):
+def parse_nines_arg(num_nines: str) -> float:
   """Parse an CLI argument, converting it into a percentage.
 
   Args:
-    num_nines: str(num), argument to parse.
+    num_nines: argument to parse.
   Returns:
-    float, parsed nines value.
+    parsed nines value.
   Raises:
     ValueError, when an invalid argument is provided.
   """
-  orig_num_nines = num_nines
   try:
-    num_nines = float(num_nines)
+    parsed_num_nines = float(num_nines)
   except ValueError:
     raise ValueError('Argument is not a number: %s' % num_nines)
-  if num_nines < 0:
-    raise ValueError('You cannot have a negative uptime: %s' % orig_num_nines)
-  if num_nines > 100:
-    raise ValueError('You cannot have more than 100%% uptime: %s'
-                     % orig_num_nines)
-  if num_nines >= PERCENT_THRESHOLD:
-    return num_nines
-  return nines_into_percent(num_nines)
+  if parsed_num_nines < 0:
+    raise ValueError('You cannot have a negative uptime: %s' % num_nines)
+  if parsed_num_nines > 100:
+    raise ValueError('You cannot have more than 100%% uptime: %s' % num_nines)
+  if parsed_num_nines >= PERCENT_THRESHOLD:
+    return parsed_num_nines
+  return nines_into_percent(parsed_num_nines)
 
 
-def nines_into_percent(num_nines):
+def nines_into_percent(num_nines: float) -> float:
   """Turn 3.5 into 99.95.
 
   1 -> 90
@@ -109,9 +108,9 @@ def nines_into_percent(num_nines):
   4 -> 99.99
 
   Args:
-    num_nines: float, argument to parse.
+    num_nines: argument to parse.
   Returns:
-    float, parsed nines value.
+    parsed nines value.
   """
   num, remainder = divmod(num_nines, 1)
   digits = ['0.'] + list(itertools.repeat('9', int(num)))
@@ -121,13 +120,13 @@ def nines_into_percent(num_nines):
   return result
 
 
-def nines(num_nines):
+def nines(num_nines: float) -> str:
   """Calculate nines for a number
 
   Args:
-    num_nines: float, nines to calculate.
+    num_nines: nines to calculate.
   Returns:
-    str, result to print.
+    result to print.
   """
   downtime_fraction = (100 - num_nines) / 100
   seconds_per_year = 60 * 60 * 24 * 365
@@ -138,7 +137,7 @@ def nines(num_nines):
              strip_trailing_zeros(downtime_seconds),
              format_duration(downtime_seconds)))
 
-def main(argv):
+def main(argv: typing.List[str]) -> None:
   description = '\n'.join(__doc__.split('\n')[1:]) % {
       'PT': PERCENT_THRESHOLD,
   }
