@@ -30,7 +30,7 @@ class TestParsing(unittest.TestCase):
         ('-5', 'You cannot have a negative uptime'),
         ('453', 'You cannot have more than 100% uptime'),
         ]:
-      self.assertRaisesRegexp(ValueError, message, nines.parse_nines_arg, nine)
+      self.assertRaisesRegex(ValueError, message, nines.parse_nines_arg, nine)
 
 
 class TestFormatting(unittest.TestCase):
