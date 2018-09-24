@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """%(prog)s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]
 

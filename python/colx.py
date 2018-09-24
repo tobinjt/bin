@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """%(prog)s [OPTIONS] COLUMN [COLUMNS] [FILES]
 
