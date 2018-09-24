@@ -45,18 +45,19 @@ class Error(Exception):
   pass
 
 
-class UnexpectedPaths(typing.NamedTuple):
+class UnexpectedPaths(typing.NamedTuple(
+    'UnexpectedPaths', [('files', Paths), ('directories', Paths)])):
   """Container for unexpected paths.
 
   Attributes:
     files: unexpected files.
     directories: unexpected directories.
   """
-  files: Paths
-  directories: Paths
 
 
-class LinkResults(typing.NamedTuple):
+class LinkResults(typing.NamedTuple(
+    'LinkResults', [('expected_files', Paths), ('diffs', Diffs),
+                    ('errors', Messages)])):
   """Container for the results of linking files and directories.
 
   Attributes:
@@ -64,9 +65,6 @@ class LinkResults(typing.NamedTuple):
     diffs: diffs between source and destination files.
     errors: error messages.
   """
-  expected_files: Paths
-  diffs: Diffs
-  errors: Messages
 
   def extend(self, other) -> None:
     """Extend self with the data from other.
