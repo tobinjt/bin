@@ -136,6 +136,8 @@ main() {
 
   # Update bin dirs.
   local orig_code
+  # TODO: doesn't work if run as ./bin/update-dotfiles-and-bin:
+  # cat: ./bin/update-dotfiles-and-bin: No such file or directory
   orig_code="$(cat "${BASH_SOURCE[0]}")"
   local dir
   for dir in $(bin_sources); do
