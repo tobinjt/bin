@@ -474,7 +474,6 @@ def parse_arguments(argv: CommandLineArgs) -> typing.Tuple[argparse.Namespace,
                            default=[], help='See usage for details')
 
   options = argv_parser.parse_args(argv[1:])
-  messages: typing.List[str]
   messages = []
   if len(options.args) < 2:
     messages.append(usage % {'prog': argv[0]})
