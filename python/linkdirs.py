@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 """%prog [OPTIONS] SOURCE_DIRECTORY [SOURCE_DIRECTORY...] DESTINATION_DIRECTORY.
 
