@@ -174,7 +174,6 @@ main() {
 
 # Make sure $HOME/bin is in $PATH to support running
 #   "ssh foo@bar update-dotfiles-and-bin"
-# Also add Homebrew python.
-PATH="/usr/local/opt/python/libexec/bin:${PATH}:${HOME}/bin"
+PATH="${PATH}:${HOME}/bin"
 export PATH
 main "$@"
