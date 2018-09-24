@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 
-"""%prog [OPTIONS] SOURCE_DIRECTORY [SOURCE_DIRECTORY...] DESTINATION_DIRECTORY.
+"""%(prog)s [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY
 
 Link all files in SOURCE_DIRECTORY [SOURCE_DIRECTORY...] to
 DESTINATION_DIRECTORY, creating the destination directory hierarchy where
 necessary.
 """
 
+import argparse
 import difflib
 import fnmatch
-# pylint: disable=deprecated-module
-# TODO: migrate to argparse.
-import optparse
-# pylint: enable=deprecated-module
 import os
 import pipes
 import shutil
@@ -169,7 +166,7 @@ def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:
 
 
 def link_dir(source: Path, dest: Path,
-             options: optparse.Values) -> LinkResults:
+             options: argparse.Namespace) -> LinkResults:
   """Recursively link files in source directory to dest directory.
 
   Args:
@@ -227,7 +224,7 @@ def link_dir(source: Path, dest: Path,
 
 
 def link_files(source: Path, dest: Path, directory: Path, files: Paths,
-               options: optparse.Values) -> LinkResults:
+               options: argparse.Namespace) -> LinkResults:
   """Link files from source to dest.
 
   Args:
@@ -303,7 +300,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
 
 
 def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
-                            options: optparse.Values) -> Messages:
+                            options: argparse.Namespace) -> Messages:
   """Check for and maybe delete files in destdir that aren't in source_dir.
 
   Args:
@@ -349,15 +346,15 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
 
 
 def delete_unexpected_files(unexpected_paths: UnexpectedPaths,
-                            options: optparse.Values) -> None:
+                            options: argparse.Namespace) -> Messages:
   """Delete unexpected files, but not directories.
 
   Args:
-    unexpected_paths: UnexpectedPaths, paths to process.
-    options: argparse.Namespace, options requested by the user.
+    unexpected_paths: paths to process.
+    options: options requested by the user.
 
   Returns:
-    list(str), the messages to print.
+    the messages to print.
   """
 
   for entry in unexpected_paths.files:
@@ -417,27 +414,37 @@ def read_skip_patterns_from_file(filename: Path) -> SkipPatterns:
   return patterns
 
 
-def real_main(argv: CommandLineArgs) -> Messages:
-  """The real main function, it just doesn't print anything or exit."""
+def parse_arguments(argv: CommandLineArgs) -> typing.Tuple[argparse.Namespace,
+                                                           Messages]:
+  """Parse the arguments provided by the user.
+
+  Args:
+    argv: the arguments to parse.
+  Returns:
+    argparse.Namespace, with attributes set based on the arguments.
+  """
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
-  usage = __doc__.rstrip().replace(".", "", 1)
-  argv_parser = optparse.OptionParser(usage=usage, version="%prog 1.0")
-  argv_parser.add_option(
+  usage = __doc__.split('\n')[0]
+  description = '\n'.join(__doc__.split('\n')[1:])
+  argv_parser = argparse.ArgumentParser(
+      description=description, usage=usage,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+  argv_parser.add_argument(
       "--dryrun", action="store_true", dest="dryrun", default=False,
       help=textwrap.fill("""Perform a trial run with no changes made
                          (default: %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--force", action="store_true", dest="force", default=False,
       help=textwrap.fill("""Remove existing files if necessary (default:
                          %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--ignore_file", action="append", dest="ignore_file", metavar="FILENAME",
       default=[],
       help=textwrap.fill("""File containing shell patterns to ignore.  To
                          specify multiple filenames, use this option multiple
                          times."""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--ignore_pattern", action="append", dest="ignore_pattern",
       metavar="FILENAME",
       default=[
@@ -445,7 +452,7 @@ def real_main(argv: CommandLineArgs) -> Messages:
       help=textwrap.fill("""Extra shell patterns to ignore (appended to this
                          list: %default).  To specify multiple filenames, use
                          this option multiple times."""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--ignore_unexpected_children", action="store_true",
       dest="ignore_unexpected_children", default=False,
       help=textwrap.fill("""When checking for unexpected files or directories,
@@ -453,37 +460,48 @@ def real_main(argv: CommandLineArgs) -> Messages:
                          DESTINATION_DIRECTORY; unexpected grandchild
                          directories of DESTINATION_DIRECTORY will not be
                          ignored (default: %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--report_unexpected_files", action="store_true",
       dest="report_unexpected_files", default=False,
       help=textwrap.fill("""Report unexpected files in DESTINATION_DIRECTORY
                          (default: %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--delete_unexpected_files", action="store_true",
       dest="delete_unexpected_files", default=False,
       help=textwrap.fill("""Delete unexpected files in DESTINATION_DIRECTORY
                          (default: %default)"""))
+  argv_parser.add_argument('args', nargs='+', metavar='NUMBER_OF_NINES',
+                           default=[], help='See usage for details')
 
-  (options, args) = argv_parser.parse_args(argv[1:])
-  if len(args) < 2:
-    return ["Usage: %s [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR"
-            % argv[0]]
+  options = argv_parser.parse_args(argv[1:])
+  messages: typing.List[str]
+  messages = []
+  if len(options.args) < 2:
+    messages.append(usage % {'prog': argv[0]})
   if options.delete_unexpected_files and not options.ignore_unexpected_children:
-    return ["Cannot enable --delete_unexpected_files without "
-            "--ignore_unexpected_children"]
+    messages.append('Cannot enable --delete_unexpected_files without '
+                    '--ignore_unexpected_children')
+  return (options, messages)
 
+
+def real_main(argv: CommandLineArgs) -> Messages:
+  """The real main function, it just doesn't print anything or exit."""
+
+  (options, messages) = parse_arguments(argv)
+  if messages:
+    return messages
   ignore_patterns = options.ignore_pattern[:]
   for filename in options.ignore_file:
     ignore_patterns.extend(read_skip_patterns_from_file(filename))
 
   all_results = LinkResults([], [], [])
   unexpected_msgs = []
-  dest = args.pop().rstrip(os.sep)
+  dest = options.args.pop().rstrip(os.sep)
   if not os.path.isdir(dest):
     os.makedirs(dest)
 
   options.skip = ignore_patterns
-  for source in args:
+  for source in options.args:
     source = source.rstrip(os.sep)
     all_results.extend(link_dir(source, dest, options))
   if options.report_unexpected_files or options.delete_unexpected_files:
