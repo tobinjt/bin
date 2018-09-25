@@ -46,11 +46,12 @@ class ParsedSentinels(typing.NamedTuple(
   MAX_ALLOWED_DELAY = 'max_allowed_delay'
 
 
-def parse_sentinels(directory: str) -> ParsedSentinels:
+def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
   """Parse a directory of sentinels.
 
   Args:
-    directory: str, directory containing sentinel files.
+    directory: directory containing sentinel files.
+    default_delay: default delay allowed if not explicitly configured.
   Returns:
     ParsedSentinels.
   Raises:
@@ -72,6 +73,11 @@ def parse_sentinels(directory: str) -> ParsedSentinels:
         data.max_allowed_delay[parts[0]] = int(line)
       else:
         raise Error('Bad format in %s: %s, parts: %s' % (filename, line, parts))
+
+  for hostname in data.timestamps:
+    if hostname not in data.max_allowed_delay:
+      data.max_allowed_delay[hostname] = default_delay
+
   return data
 
 

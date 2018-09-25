@@ -2,6 +2,7 @@
 
 #  from io import StringIO
 import os
+import typing
 import unittest
 
 #  import mock
@@ -16,33 +17,53 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
   def setUp(self):
     self.setUpPyfakefs()
 
+  def create_files_for_test(self, data: typing.Dict[str, str]) -> None:
+    """Create files for tests."""
+    for (filename, contents) in data.items():
+      # pylint: disable=no-member
+      # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
+      self.fs.CreateFile(filename, contents=contents)
+
   def test_simple(self):
     """Test basic processing."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     testdir = '/test/test_simple'
     hostname = 'a-hostname'
     base = os.path.join(testdir, hostname)
-    self.fs.CreateFile(base, contents='1234\n')
-    sleeping = check_backup_sentinels.ParsedSentinels.SLEEPING_UNTIL
-    self.fs.CreateFile('%s.%s' % (base, sleeping), contents='5432\n')
-    max_allowed = check_backup_sentinels.ParsedSentinels.MAX_ALLOWED_DELAY
-    self.fs.CreateFile('%s.%s' % (base, max_allowed), contents='98\n')
-    parsed = check_backup_sentinels.parse_sentinels(testdir)
+    ps = check_backup_sentinels.ParsedSentinels
+    files = {
+        base: '1234\n',
+        '%s.%s' % (base, ps.SLEEPING_UNTIL): '5432\n',
+        '%s.%s' % (base, ps.MAX_ALLOWED_DELAY): '98\n',
+    }
+    self.create_files_for_test(files)
+    parsed = check_backup_sentinels.parse_sentinels(testdir, 7)
     self.assertEqual({hostname: 1234}, parsed.timestamps)
     self.assertEqual({hostname: 5432}, parsed.sleeping_until)
     self.assertEqual({hostname: 98}, parsed.max_allowed_delay)
 
-  def test_bad_filename(self):
-    """Test handling of bad filenames."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
+  def test_default_delay(self):
+    """Test default delay is used."""
     testdir = '/test/test_simple'
     hostname = 'a-hostname'
-    base = os.path.join(testdir, hostname)
-    self.fs.CreateFile('%s.%s' % (base, 'qwerty'), contents='5432\n')
+    files = {
+        os.path.join(testdir, hostname): '31313\n',
+    }
+    self.create_files_for_test(files)
+    parsed = check_backup_sentinels.parse_sentinels(testdir, 7)
+    self.assertEqual({hostname: 31313}, parsed.timestamps)
+    self.assertEqual({hostname: 7}, parsed.max_allowed_delay)
+    self.assertNotIn(hostname, parsed.sleeping_until)
+
+  def test_bad_filename(self):
+    """Test handling of bad filenames."""
+    testdir = '/test/test_simple'
+    hostname = 'a-hostname'
+    files = {
+        '%s.%s' % (os.path.join(testdir, hostname), 'qwerty'): '5432\n',
+    }
+    self.create_files_for_test(files)
     self.assertRaises(check_backup_sentinels.Error,
-                      check_backup_sentinels.parse_sentinels, testdir)
+                      check_backup_sentinels.parse_sentinels, testdir, 7)
 
 
 class TestMain(unittest.TestCase):
