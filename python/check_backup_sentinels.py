@@ -86,7 +86,8 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
   return data
 
 
-def check_sentinels(sentinels: SentinelMap, max_global_delay: int) -> Warnings:
+def check_sentinels(sentinels: ParsedSentinels,
+                    max_global_delay: int) -> Warnings:
   """Check sentinels for backups that are too old and return warnings.
 
   Args:
