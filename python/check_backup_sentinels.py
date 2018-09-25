@@ -75,8 +75,7 @@ def parse_sentinels(directory: str) -> ParsedSentinels:
   return data
 
 
-def main(unused_argv):
-  pass
-  #  if len(argv) != 2:
-    #  raise Error('Usage: %s DIRECTORY' % argv[0])
+def main(argv):
+  if len(argv) != 2:
+    raise Error('Usage: %s DIRECTORY' % argv[0])
   #  sentinels = parse_sentinels(argv[1])

@@ -44,5 +44,20 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     self.assertRaises(check_backup_sentinels.Error,
                       check_backup_sentinels.parse_sentinels, testdir)
 
+
+class TestMain(unittest.TestCase):
+  """Tests for main."""
+
+  def test_bad_args(self):
+    """Check that bad args are rejected."""
+    with self.assertRaisesRegex(check_backup_sentinels.Error, '^Usage:.*'):
+      check_backup_sentinels.main(['argv0'])
+    with self.assertRaisesRegex(check_backup_sentinels.Error, '^Usage:.*'):
+      check_backup_sentinels.main(['argv0', 'expected', 'not expected'])
+
+  def test_good_args(self):
+    """Check that good args are accepted."""
+    check_backup_sentinels.main(['argv0', 'expected'])
+
 if __name__ == '__main__':
   unittest.main()
