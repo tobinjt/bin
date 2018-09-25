@@ -30,14 +30,15 @@ main() {
     return 0
   fi
 
-  local sentinel_dir
-  sentinel_dir="$(mktemp -d -t sentinel_dir.XXXXXXXXXX)"
-  # I want ${sentinel_dir} to be expanded now, because when we exit
-  # successfully it will be out of scope and cannot be expanded.
+  local destdir
+  destdir="$(mktemp -d -t sentinel.XXXXXXXXXX)"
+  # I want ${destdir} to be expanded now, because when we exit successfully it
+  # will be out of scope and cannot be expanded.
   # shellcheck disable=SC2064
-  trap "rm -rf \"${sentinel_dir}\"" EXIT
+  trap "rm -rf \"${destdir}\"" EXIT
 
-  run_rsync --pull "${hostname_for_key}" "${subdir}" "${sentinel_dir}"
+  run_rsync --pull "${hostname_for_key}" "${subdir}" "${destdir}"
+  "${HOME}/bin/check_backup_sentinels" "${destdir}/sentinel"
 }
 
 main "$@"
