@@ -1,6 +1,6 @@
 """Tests for check_backup_sentinels."""
 
-#  from io import StringIO
+from io import StringIO
 import os
 import typing
 import unittest
@@ -203,18 +203,8 @@ class TestCheckSentinels(unittest.TestCase):
     self.assertEqual([], warnings)
 
 
-class TestMain(fake_filesystem_unittest.TestCase):
+class TestMain(unittest.TestCase):
   """Tests for main."""
-
-  def setUp(self):
-    self.setUpPyfakefs()
-
-  def create_files_for_test(self, data: typing.Dict[str, str]) -> None:
-    """Create files for tests."""
-    for (filename, contents) in data.items():
-      # pylint: disable=no-member
-      # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
-      self.fs.CreateFile(filename, contents=contents)
 
   def test_bad_args(self):
     """Check that bad args are rejected."""
@@ -242,6 +232,49 @@ class TestMain(fake_filesystem_unittest.TestCase):
     expected = ['warning warning']
     mock_check.return_value = expected
     check_backup_sentinels.main(['argv0', 'expected'])
+    mock_exit.assert_called_with(1)
+
+
+class TestIntegration(fake_filesystem_unittest.TestCase):
+  """Integration test."""
+
+  def setUp(self):
+    self.setUpPyfakefs()
+
+  def create_files_for_test(self, data: typing.Dict[str, str]) -> None:
+    """Create files for tests."""
+    for (filename, contents) in data.items():
+      # pylint: disable=no-member
+      # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
+      self.fs.CreateFile(filename, contents=contents)
+
+  @mock.patch('sys.exit')
+  @mock.patch('time.time')
+  def test_integration(self, mock_time, mock_exit):
+    """Integration test that produces warnings."""
+    testdir = '/test/check_sentinels'
+    host1 = os.path.join(testdir, 'asdf')
+    host2 = os.path.join(testdir, 'qwerty')
+    ps = check_backup_sentinels.ParsedSentinels
+    day = 24 * 60 * 60
+    files = {
+        host1: str(7 * day),
+        host2: str(8 * day),
+        '%s.%s' % (host1, ps.MAX_ALLOWED_DELAY): str(day),
+        '%s.%s' % (host2, ps.MAX_ALLOWED_DELAY): str(2 * day),
+    }
+    self.create_files_for_test(files)
+    mock_time.return_value = 8.5 * day
+    with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+      check_backup_sentinels.main(['argv0', testdir])
+      output = mock_stdout.getvalue()
+      expected = (
+          'Backup for "asdf" too old:'
+          ' current time 734400/1970-01-09 12:00;'
+          ' last backup 604800/1970-01-08 00:00;'
+          ' max allowed delay: 86400/1970-01-02 00:00;'
+          ' sleeping until: 0/1970-01-01 00:00\n')
+      self.assertEqual(expected, output)
     mock_exit.assert_called_with(1)
 
 if __name__ == '__main__':
