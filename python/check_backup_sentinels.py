@@ -17,6 +17,7 @@ import fileinput
 import glob
 import os
 import re
+import sys
 import time
 import typing
 
@@ -146,4 +147,12 @@ def check_sentinels(sentinels: SentinelMap, max_global_delay: int) -> Warnings:
 def main(argv):
   if len(argv) != 2:
     raise Error('Usage: %s DIRECTORY' % argv[0])
-  #  sentinels = parse_sentinels(argv[1])
+  day = 24 * 60 * 60
+  sentinels = parse_sentinels(argv[1], day)
+  warnings = check_sentinels(sentinels, day)
+  for line in warnings:
+    print(line)
+  if warnings:
+    sys.exit(1)
+  else:
+    sys.exit(0)
