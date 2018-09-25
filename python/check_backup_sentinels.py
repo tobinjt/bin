@@ -146,7 +146,7 @@ def check_sentinels(sentinels: ParsedSentinels,
 
 
 def main(argv):
-  if len(argv) != 2:
+  if len(argv) != 2 or not os.path.isdir(argv[1]):
     raise Error('Usage: %s DIRECTORY' % argv[0])
   day = 24 * 60 * 60
   sentinels = parse_sentinels(argv[1], day)
@@ -157,3 +157,7 @@ def main(argv):
     sys.exit(1)
   else:
     sys.exit(0)
+
+
+if __name__ == '__main__':
+  main(sys.argv)

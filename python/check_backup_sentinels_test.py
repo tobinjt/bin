@@ -203,8 +203,16 @@ class TestCheckSentinels(unittest.TestCase):
     self.assertEqual([], warnings)
 
 
-class TestMain(unittest.TestCase):
+class TestMain(fake_filesystem_unittest.TestCase):
   """Tests for main."""
+
+  def setUp(self):
+    self.setUpPyfakefs()
+    self._testdir = '/test/dir'
+    # pylint: disable=no-member
+    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
+    self.fs.CreateFile(os.path.join(self._testdir, 'qwerty'),
+                       contents='test test')
 
   def test_bad_args(self):
     """Check that bad args are rejected."""
@@ -212,6 +220,8 @@ class TestMain(unittest.TestCase):
       check_backup_sentinels.main(['argv0'])
     with self.assertRaisesRegex(check_backup_sentinels.Error, '^Usage:.*'):
       check_backup_sentinels.main(['argv0', 'expected', 'not expected'])
+    with self.assertRaisesRegex(check_backup_sentinels.Error, '^Usage:.*'):
+      check_backup_sentinels.main(['argv0', 'not a directory'])
 
   @mock.patch('sys.exit')
   @mock.patch('check_backup_sentinels.check_sentinels')
@@ -220,7 +230,7 @@ class TestMain(unittest.TestCase):
   def test_no_warnings(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
     mock_check.return_value = []
-    check_backup_sentinels.main(['argv0', 'expected'])
+    check_backup_sentinels.main(['argv0', self._testdir])
     mock_exit.assert_called_with(0)
 
   @mock.patch('sys.exit')
@@ -231,7 +241,7 @@ class TestMain(unittest.TestCase):
     """Check that good args are accepted."""
     expected = ['warning warning']
     mock_check.return_value = expected
-    check_backup_sentinels.main(['argv0', 'expected'])
+    check_backup_sentinels.main(['argv0', self._testdir])
     mock_exit.assert_called_with(1)
 
 
