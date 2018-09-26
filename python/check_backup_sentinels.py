@@ -8,8 +8,8 @@ Files in DIRECTORY:
   - HOSTNAME: the sentinel file for HOSTNAME.  Contains seconds since the epoch.
   - HOSTNAME.sleeping_until: when is HOSTNAME expected to wake up, e.g. while
     we're travelling and a laptop is at home.  Contains seconds since the epoch.
-  - HOSTNAME.max_allowed_delay: max delay, in days, for backups from HOSTNAME.
-    Contains a number of days, e.g. 3 or 7
+  - HOSTNAME.max_allowed_delay: max delay, in seconds, for backups from
+    HOSTNAME.  Contains a number of seconds.
 TODO: write more.
 """
 
