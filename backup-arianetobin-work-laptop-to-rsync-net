@@ -11,5 +11,5 @@ backup "$@" "${hostname}" Documents "${HOME}/Documents"
 backup "$@" "${hostname}" Downloads "${HOME}/Downloads"
 # backup "$@" "${hostname}" Pictures "${HOME}/Pictures"
 if all_backups_succeeded; then
-  update-rsync-net-sentinel "$@" "${hostname}"
+  backup-update-rsync-net-sentinel "$@" "${hostname}"
 fi
