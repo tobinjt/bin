@@ -68,9 +68,7 @@ check_ssh_agent() {
     ssh-add -l || true
     die "Problem with ssh agent"
   fi
-  local output
-  output="$(ssh-add -l | awk '$3 ~ /\// {print $3}')"
-  if [[ -z "${output}" ]]; then
+  if [[ -z "$(ssh-add -l | grep "${HOME}" || true)" ]]; then
     die "No ssh keys found"
   fi
 }
@@ -124,6 +122,7 @@ main() {
   # Ensure we have a connection to the ssh agent and keys loaded, if we have ssh
   # origins.
   if need_ssh_agent; then
+    # TODO: why is this here?
     mkdir -p "${HOME}/tmp/ssh"
     check_ssh_agent
   fi
