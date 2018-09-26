@@ -68,9 +68,10 @@ check_ssh_agent() {
     ssh-add -l || true
     die "Problem with ssh agent"
   fi
-  local output
-  output="$(ssh-add -l | awk '$3 ~ /\// {print $3}')"
-  if [[ -z "${output}" ]]; then
+  # Can't check for ${HOME} because that's not consistent across machines; the
+  # forwarded key from my laptop will have ${HOME} from my laptop rather than
+  # ${HOME} on the destination.
+  if [[ -z "$(ssh-add -l | grep /.ssh/ || true)" ]]; then
     die "No ssh keys found"
   fi
 }
@@ -124,6 +125,7 @@ main() {
   # Ensure we have a connection to the ssh agent and keys loaded, if we have ssh
   # origins.
   if need_ssh_agent; then
+    # TODO: why is this here?
     mkdir -p "${HOME}/tmp/ssh"
     check_ssh_agent
   fi

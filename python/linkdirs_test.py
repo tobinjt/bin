@@ -3,10 +3,7 @@
 import os
 import re
 import stat
-try:
-  from StringIO import StringIO
-except ImportError:
-  from io import StringIO
+from io import StringIO
 import unittest
 
 import mock
@@ -315,7 +312,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   def test_argument_handling(self):
     """Bad arguments are caught."""
     self.assertEqual(
-        ['Usage: linkdirs [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR'],
+        ['linkdirs [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY'],
         linkdirs.real_main(['linkdirs', '--force', '/asdf']))
     self.assertEqual(
         ['Cannot enable --delete_unexpected_files without '

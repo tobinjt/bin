@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 
-"""%prog [OPTIONS] SOURCE_DIRECTORY [SOURCE_DIRECTORY...] DESTINATION_DIRECTORY.
+"""%(prog)s [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY
 
 Link all files in SOURCE_DIRECTORY [SOURCE_DIRECTORY...] to
 DESTINATION_DIRECTORY, creating the destination directory hierarchy where
 necessary.
 """
 
-import collections
+import argparse
 import difflib
 import fnmatch
-# pylint: disable=deprecated-module
-import optparse
-# pylint: enable=deprecated-module
 import os
 import pipes
 import shutil
@@ -20,8 +17,24 @@ import stat
 import sys
 import textwrap
 import time
+import typing
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
+
+
+# Type definitions.
+# A single path.
+Path = str
+# A list of directories, filenames, or paths.
+Paths = typing.List[str]
+# Diffs between files.
+Diffs = typing.List[str]
+# Messages to print.
+Messages = typing.List[str]
+# Shell patterns to skip.
+SkipPatterns = typing.List[str]
+# Command line args.
+CommandLineArgs = typing.List[str]
 
 
 class Error(Exception):
@@ -29,28 +42,28 @@ class Error(Exception):
   pass
 
 
-class UnexpectedPaths(collections.namedtuple('UnexpectedPaths',
-                                             'files directories')):
+class UnexpectedPaths(typing.NamedTuple(
+    'UnexpectedPaths', [('files', Paths), ('directories', Paths)])):
   """Container for unexpected paths.
 
   Attributes:
-    files: list(str), unexpected files.
-    directories: list(str), unexpected directories.
+    files: unexpected files.
+    directories: unexpected directories.
   """
 
 
-class LinkResults(collections.namedtuple('LinkResults',
-                                         'expected_files diffs errors')):
+class LinkResults(typing.NamedTuple(
+    'LinkResults', [('expected_files', Paths), ('diffs', Diffs),
+                    ('errors', Messages)])):
   """Container for the results of linking files and directories.
 
   Attributes:
-    expected_files: list(str), files and directories that should exist in the
-                    destination.
-    diffs: list(str), diffs between source and destination files.
-    errors: list(str), error messages.
+    expected_files: files and directories that should exist in the destination.
+    diffs: diffs between source and destination files.
+    errors: error messages.
   """
 
-  def extend(self, other):
+  def extend(self, other) -> None:
     """Extend self with the data from other.
 
     Args:
@@ -61,7 +74,7 @@ class LinkResults(collections.namedtuple('LinkResults',
     self.errors.extend(other.errors)
 
 
-def safe_unlink(unlink_me, dryrun=True):
+def safe_unlink(unlink_me: Path, dryrun: bool = True) -> None:
   """Remove a file or directory, or print shell commands that would do so.
 
   Args:
@@ -85,14 +98,15 @@ def safe_unlink(unlink_me, dryrun=True):
       shutil.rmtree(unlink_me)
 
 
-def safe_link(source_filename, dest_filename, dryrun=True):
+def safe_link(source_filename: Path, dest_filename: Path,
+              dryrun: bool = True) -> None:
   """Link one file to another, or print shell commands that would do so.
 
   Args:
-    source_filename: str, existing filename.
-    dest_filename:   str, new filename.
-    dryrun:          bool, if True, shell commands are printed; if False, files
-                     are linked.  Defaults to True.
+    source_filename: existing filename.
+    dest_filename:   new filename.
+    dryrun:          if True, shell commands are printed; if False, files are
+                     linked.  Defaults to True.
   Raises:
     OSError: there was a problem linking files.
   """
@@ -104,7 +118,7 @@ def safe_link(source_filename, dest_filename, dryrun=True):
     os.link(source_filename, dest_filename)
 
 
-def diff(old_filename, new_filename):
+def diff(old_filename: Path, new_filename: Path) -> Diffs:
   """Return a diff between old and new files.
 
   Args:
@@ -127,11 +141,10 @@ def diff(old_filename, new_filename):
                                         new_timestamp, old_timestamp)
   # Strip the newline here because one will be added later when printing the
   # messages.
-  diffs = [d.rstrip('\n') for d in diff_generator]
-  return diffs
+  return [d.rstrip('\n') for d in diff_generator]
 
 
-def remove_skip_patterns(files, skip):
+def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:
   """Remove any files matching shell patterns.
 
   Args:
@@ -152,13 +165,14 @@ def remove_skip_patterns(files, skip):
   return unmatched
 
 
-def link_dir(source, dest, options):
+def link_dir(source: Path, dest: Path,
+             options: argparse.Namespace) -> LinkResults:
   """Recursively link files in source directory to dest directory.
 
   Args:
-    source:  str, the source directory
-    dest:    str, the destination directory
-    options: argparse.Namespace, options requested by the user.
+    source:  the source directory
+    dest:    the destination directory
+    options: options requested by the user.
 
   Returns:
     LinkResults.
@@ -209,15 +223,16 @@ def link_dir(source, dest, options):
   return results
 
 
-def link_files(source, dest, directory, files, options):
+def link_files(source: Path, dest: Path, directory: Path, files: Paths,
+               options: argparse.Namespace) -> LinkResults:
   """Link files from source to dest.
 
   Args:
-    source:    str, the toplevel source directory.
-    dest:      str, the toplevel dest directory.
-    directory: str, the directory the files are in, relative to source and dest.
-    files:     list(str), the files in source/directory.
-    options:   argparse.Namespace, options requested by the user.
+    source:    the toplevel source directory.
+    dest:      the toplevel dest directory.
+    directory: the directory the files are in, relative to source and dest.
+    files:     the files in source/directory.
+    options:   options requested by the user.
 
   Returns:
     LinkResults.  expected_files will not include files that are skipped.
@@ -264,7 +279,8 @@ def link_files(source, dest, directory, files, options):
       continue
 
     # If the destination is already linked don't change it without --force.
-    num_links = os.stat(dest_filename)[stat.ST_NLINK]
+    # mypy doesn't understand this line.
+    num_links = os.stat(dest_filename)[stat.ST_NLINK] # type: ignore
     if num_links != 1:
       results.errors.append("%s: link count is %d" % (dest_filename, num_links))
       continue
@@ -283,16 +299,17 @@ def link_files(source, dest, directory, files, options):
   return results
 
 
-def report_unexpected_files(dest_dir, expected_files_list, options):
+def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
+                            options: argparse.Namespace) -> Messages:
   """Check for and maybe delete files in destdir that aren't in source_dir.
 
   Args:
-    dest_dir: str, the destination directory.
-    expected_files_list: list(str), files expected to exist in the destination.
-    options: argparse.Namespace, options requested by the user.
+    dest_dir: the destination directory.
+    expected_files_list: files expected to exist in the destination.
+    options: options requested by the user.
 
   Returns:
-    list(str), the messages to print.
+    Messages to print.
   """
 
   expected_files = {dest_dir: 1}
@@ -328,15 +345,16 @@ def report_unexpected_files(dest_dir, expected_files_list, options):
   return msgs
 
 
-def delete_unexpected_files(unexpected_paths, options):
+def delete_unexpected_files(unexpected_paths: UnexpectedPaths,
+                            options: argparse.Namespace) -> Messages:
   """Delete unexpected files, but not directories.
 
   Args:
-    unexpected_paths: UnexpectedPaths, paths to process.
-    options: argparse.Namespace, options requested by the user.
+    unexpected_paths: paths to process.
+    options: options requested by the user.
 
   Returns:
-    list(str), the messages to print.
+    the messages to print.
   """
 
   for entry in unexpected_paths.files:
@@ -358,14 +376,14 @@ def delete_unexpected_files(unexpected_paths, options):
   return []
 
 
-def format_unexpected_files(unexpected_paths):
+def format_unexpected_files(unexpected_paths: UnexpectedPaths) -> Messages:
   """Format unexpected files and directories for output.
 
   Args:
-    unexpected_paths: UnexpectedPaths, paths to process.
+    unexpected_paths: paths to process.
 
   Returns:
-    list(str), the messages to print.
+    Messages to print.
   """
 
   unexpected_paths.directories.sort()
@@ -385,7 +403,7 @@ def format_unexpected_files(unexpected_paths):
   return unexpected_msgs
 
 
-def read_skip_patterns_from_file(filename):
+def read_skip_patterns_from_file(filename: Path) -> SkipPatterns:
   """Read skip patterns from filename, ignoring comments and empty lines."""
   patterns = []
   with open(filename) as pfh:
@@ -396,27 +414,37 @@ def read_skip_patterns_from_file(filename):
   return patterns
 
 
-def real_main(argv):
-  """The real main function, it just doesn't print anything or exit."""
+def parse_arguments(argv: CommandLineArgs) -> typing.Tuple[argparse.Namespace,
+                                                           Messages]:
+  """Parse the arguments provided by the user.
+
+  Args:
+    argv: the arguments to parse.
+  Returns:
+    argparse.Namespace, with attributes set based on the arguments.
+  """
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
-  usage = __doc__.rstrip().replace(".", "", 1)
-  argv_parser = optparse.OptionParser(usage=usage, version="%prog 1.0")
-  argv_parser.add_option(
+  usage = __doc__.split('\n')[0]
+  description = '\n'.join(__doc__.split('\n')[1:])
+  argv_parser = argparse.ArgumentParser(
+      description=description, usage=usage,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+  argv_parser.add_argument(
       "--dryrun", action="store_true", dest="dryrun", default=False,
       help=textwrap.fill("""Perform a trial run with no changes made
                          (default: %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--force", action="store_true", dest="force", default=False,
       help=textwrap.fill("""Remove existing files if necessary (default:
                          %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--ignore_file", action="append", dest="ignore_file", metavar="FILENAME",
       default=[],
       help=textwrap.fill("""File containing shell patterns to ignore.  To
                          specify multiple filenames, use this option multiple
                          times."""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--ignore_pattern", action="append", dest="ignore_pattern",
       metavar="FILENAME",
       default=[
@@ -424,7 +452,7 @@ def real_main(argv):
       help=textwrap.fill("""Extra shell patterns to ignore (appended to this
                          list: %default).  To specify multiple filenames, use
                          this option multiple times."""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--ignore_unexpected_children", action="store_true",
       dest="ignore_unexpected_children", default=False,
       help=textwrap.fill("""When checking for unexpected files or directories,
@@ -432,37 +460,47 @@ def real_main(argv):
                          DESTINATION_DIRECTORY; unexpected grandchild
                          directories of DESTINATION_DIRECTORY will not be
                          ignored (default: %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--report_unexpected_files", action="store_true",
       dest="report_unexpected_files", default=False,
       help=textwrap.fill("""Report unexpected files in DESTINATION_DIRECTORY
                          (default: %default)"""))
-  argv_parser.add_option(
+  argv_parser.add_argument(
       "--delete_unexpected_files", action="store_true",
       dest="delete_unexpected_files", default=False,
       help=textwrap.fill("""Delete unexpected files in DESTINATION_DIRECTORY
                          (default: %default)"""))
+  argv_parser.add_argument('args', nargs='+', metavar='NUMBER_OF_NINES',
+                           default=[], help='See usage for details')
 
-  (options, args) = argv_parser.parse_args(argv[1:])
-  if len(args) < 2:
-    return ["Usage: %s [OPTIONS] SOURCE_DIR [SOURCE_DIR...] DEST_DIR"
-            % argv[0]]
+  options = argv_parser.parse_args(argv[1:])
+  messages = []
+  if len(options.args) < 2:
+    messages.append(usage % {'prog': argv[0]})
   if options.delete_unexpected_files and not options.ignore_unexpected_children:
-    return ["Cannot enable --delete_unexpected_files without "
-            "--ignore_unexpected_children"]
+    messages.append('Cannot enable --delete_unexpected_files without '
+                    '--ignore_unexpected_children')
+  return (options, messages)
 
+
+def real_main(argv: CommandLineArgs) -> Messages:
+  """The real main function, it just doesn't print anything or exit."""
+
+  (options, messages) = parse_arguments(argv)
+  if messages:
+    return messages
   ignore_patterns = options.ignore_pattern[:]
   for filename in options.ignore_file:
     ignore_patterns.extend(read_skip_patterns_from_file(filename))
 
   all_results = LinkResults([], [], [])
   unexpected_msgs = []
-  dest = args.pop().rstrip(os.sep)
+  dest = options.args.pop().rstrip(os.sep)
   if not os.path.isdir(dest):
     os.makedirs(dest)
 
   options.skip = ignore_patterns
-  for source in args:
+  for source in options.args:
     source = source.rstrip(os.sep)
     all_results.extend(link_dir(source, dest, options))
   if options.report_unexpected_files or options.delete_unexpected_files:
@@ -472,7 +510,7 @@ def real_main(argv):
   return all_results.diffs + all_results.errors + unexpected_msgs
 
 
-def main(argv):
+def main(argv: CommandLineArgs):
   messages = real_main(argv)
   for line in messages:
     print(line)
