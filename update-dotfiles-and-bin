@@ -68,7 +68,10 @@ check_ssh_agent() {
     ssh-add -l || true
     die "Problem with ssh agent"
   fi
-  if [[ -z "$(ssh-add -l | grep "${HOME}" || true)" ]]; then
+  # Can't check for ${HOME} because that's not consistent across machines; the
+  # forwarded key from my laptop will have ${HOME} from my laptop rather than
+  # ${HOME} on the destination.
+  if [[ -z "$(ssh-add -l | grep /.ssh/ || true)" ]]; then
     die "No ssh keys found"
   fi
 }
