@@ -29,11 +29,10 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     testdir = '/test/test_simple'
     hostname = 'a-hostname'
     base = os.path.join(testdir, hostname)
-    ps = check_backup_sentinels.ParsedSentinels
     files = {
         base: '1234\n',
-        '%s.%s' % (base, ps.SLEEPING_UNTIL): '5432\n',
-        '%s.%s' % (base, ps.MAX_ALLOWED_DELAY): '98\n',
+        '%s.%s' % (base, check_backup_sentinels.SLEEPING_UNTIL): '5432\n',
+        '%s.%s' % (base, check_backup_sentinels.MAX_ALLOWED_DELAY): '98\n',
     }
     self.create_files_for_test(files)
     parsed = check_backup_sentinels.parse_sentinels(testdir, 7)
@@ -265,13 +264,13 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     testdir = '/test/check_sentinels'
     host1 = os.path.join(testdir, 'asdf')
     host2 = os.path.join(testdir, 'qwerty')
-    ps = check_backup_sentinels.ParsedSentinels
     day = 24 * 60 * 60
     files = {
         host1: str(7 * day),
         host2: str(8 * day),
-        '%s.%s' % (host1, ps.MAX_ALLOWED_DELAY): str(day),
-        '%s.%s' % (host2, ps.MAX_ALLOWED_DELAY): str(2 * day),
+        '%s.%s' % (host1, check_backup_sentinels.MAX_ALLOWED_DELAY): str(day),
+        '%s.%s' % (host2,
+                   check_backup_sentinels.MAX_ALLOWED_DELAY): str(2 * day),
     }
     self.create_files_for_test(files)
     mock_time.return_value = 8.5 * day

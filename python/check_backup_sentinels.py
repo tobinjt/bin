@@ -24,8 +24,14 @@ import typing
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
+# Type annotation aliases.
 SentinelMap = typing.Dict[str, int]
 Warnings = typing.List[str]
+
+# Filename contents.
+SLEEPING_UNTIL = 'sleeping_until'
+MAX_ALLOWED_DELAY = 'max_allowed_delay'
+
 
 class Error(Exception):
   """Base class for exceptions."""
@@ -45,8 +51,6 @@ class ParsedSentinels(typing.NamedTuple(
     sleeping_until: timestamps for when sleeping machines are due back.
     max_allowed_delay: max delay, in seconds, for backups from a machine.
   """
-  SLEEPING_UNTIL = 'sleeping_until'
-  MAX_ALLOWED_DELAY = 'max_allowed_delay'
 
 
 def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
@@ -70,9 +74,9 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
       parts = re.split(r'\.', filename)
       if len(parts) == 1:
         data.timestamps[parts[0]] = int(line)
-      elif len(parts) == 2 and parts[1] == ParsedSentinels.SLEEPING_UNTIL:
+      elif len(parts) == 2 and parts[1] == SLEEPING_UNTIL:
         data.sleeping_until[parts[0]] = int(line)
-      elif len(parts) == 2 and parts[1] == ParsedSentinels.MAX_ALLOWED_DELAY:
+      elif len(parts) == 2 and parts[1] == MAX_ALLOWED_DELAY:
         data.max_allowed_delay[parts[0]] = int(line)
       else:
         raise Error('Bad format in %s: %s, parts: %s' % (filename, line, parts))
