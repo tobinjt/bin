@@ -102,8 +102,13 @@ def check_sentinels(sentinels: ParsedSentinels,
     Warnings to output.
   """
   warnings = []
-  # TODO: is this the same as UTC?  Are the producer and consumer compatible?
   now = int(time.time())
+  message = ('Backup for "%(host)s" too old:'
+             ' current time %(now)d/%(now_human)s;'
+             ' last backup %(last_backup)d/%(last_backup_human)s;'
+             ' max allowed delay: %(max_delay)d/%(max_delay_human)s;'
+             ' sleeping until: %(sleeping_until)d/%(sleeping_until_human)s')
+  time_fmt = '%Y-%m-%d %H:%M'
 
   if not sentinels.timestamps:
     warnings.append('Zero sentinels passed, something is wrong.')
@@ -118,21 +123,7 @@ def check_sentinels(sentinels: ParsedSentinels,
   for (host, last_backup) in sentinels.timestamps.items():
     max_delay = sentinels.max_allowed_delay[host]
     sleeping_until = sentinels.sleeping_until[host]
-    if now - last_backup < max_delay:
-      # Recent backup, all is well.
-      continue
-    if sleeping_until + max_delay > now:
-      # Backup not due yet.
-      continue
-
-    # Something is wrong :(
-    message = ('Backup for "%(host)s" too old:'
-               ' current time %(now)d/%(now_human)s;'
-               ' last backup %(last_backup)d/%(last_backup_human)s;'
-               ' max allowed delay: %(max_delay)d/%(max_delay_human)s;'
-               ' sleeping until: %(sleeping_until)d/%(sleeping_until_human)s')
-    time_fmt = '%Y-%m-%d %H:%M'
-    data = {
+    warning = message % {
         'host': host,
         'now': now,
         'now_human': time.strftime(time_fmt, time.gmtime(now)),
@@ -144,7 +135,16 @@ def check_sentinels(sentinels: ParsedSentinels,
         'sleeping_until_human': time.strftime(time_fmt,
                                               time.gmtime(sleeping_until)),
     }
-    warnings.append(message % data)
+
+    if now - last_backup < max_delay:
+      # Recent backup, all is well.
+      continue
+    if sleeping_until + max_delay > now:
+      # Backup not due yet.
+      continue
+
+    # Something is wrong :(
+    warnings.append(warning)
 
   return warnings
 
