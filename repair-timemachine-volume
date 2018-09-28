@@ -46,7 +46,8 @@ fix_single_volume() {
       break
     fi
     if [[ "${i}" -eq "${max}" ]]; then
-      printf "\\n\\n\\n%d repair attempts failed :(\\n\\n" "${max}" >&2
+      printf "\\n\\n\\n%d repair attempts on %s failed :(\\n\\n" \
+        "${directory}" "${max}" >&2
       false
     fi
   done
@@ -59,10 +60,13 @@ fix_single_volume() {
 }
 
 main() {
-  local dir
+  local dir exit_status=0
   for dir in "$@"; do
-    fix_single_volume "${dir}"
+    if ! fix_single_volume "${dir}"; then
+      exit_status=1
+    fi
   done
+  return "${exit_status}"
 }
 
 main "$@"
