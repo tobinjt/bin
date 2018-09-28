@@ -154,3 +154,36 @@ run_rsync() {
   fi
   return "${exit_status}"
 }
+
+# Update a sentinel file.
+# - Usage: update_sentinel_file "$@"
+# - Uses a function named "usage" if bad arguments are passed.
+# - Requires a function named "generate_contents" that will be passed the
+#   directory to put files in and the non-option arguments from "$@".
+update_sentinel_file() {
+  # TODO: this is repetitive, figure out a better way.  Also when checking SSH
+  # key existence.
+  local test_keys_only=0
+  if [[ "$#" -gt 1 && "$1" == "--test-keys-only" ]]; then
+    test_keys_only=1
+    shift
+  fi
+
+  local hostname_for_key="update" subdir="sentinel"
+  if ! check_ssh_key_exists --nodelete "${hostname_for_key}" "${subdir}" \
+         "${test_keys_only}"; then
+    return 1
+  fi
+  if [[ "${test_keys_only}" -eq 1 ]]; then
+    return 0
+  fi
+
+  local sentinel_dir
+  sentinel_dir="$(mktemp -d -t sentinel_dir.XXXXXXXXXX)"
+  # I want ${sentinel_dir} to be expanded now, because when we exit
+  # successfully it will be out of scope and cannot be expanded.
+  # shellcheck disable=SC2064
+  trap "rm -rf \"${sentinel_dir}\"" EXIT
+  generate_contents "${sentinel_dir}" "$@"
+  run_rsync --nodelete "${hostname_for_key}" "${subdir}" "${sentinel_dir}"
+}
