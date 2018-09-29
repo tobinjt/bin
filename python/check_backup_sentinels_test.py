@@ -125,7 +125,7 @@ class TestCheckSentinels(unittest.TestCase):
     mock_time.return_value = 12 * hour
     (warnings, messages) = check_backup_sentinels.check_sentinels(
         sentinels, hour)
-    expected = [
+    expected_warnings = [
         'All backups are delayed by at least 3600 seconds',
         'Backup for "asdf" too old:'
         ' current time 43200/1970-01-01 12:00;'
@@ -138,10 +138,12 @@ class TestCheckSentinels(unittest.TestCase):
         ' max allowed delay: 3600/1970-01-01 01:00;'
         ' sleeping until: 0/1970-01-01 00:00',
     ]
+    expected_messages = [warning.replace('too old', 'debug info')
+                         for warning in expected_warnings]
     # Do not truncate diffs.
     self.maxDiff = None  # pylint: disable=invalid-name
-    self.assertEqual(expected, warnings)
-    self.assertEqual(messages, warnings)
+    self.assertEqual(expected_messages, messages)
+    self.assertEqual(expected_warnings, warnings)
 
   @mock.patch('time.time')
   def test_one_backup_is_old(self, mock_time):
@@ -248,9 +250,9 @@ class TestMain(fake_filesystem_unittest.TestCase):
     """Check that good args are accepted."""
     expected = ['warning warning']
     mock_check.return_value = (expected, [])
-    with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+    with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
       check_backup_sentinels.main(['argv0', self._testdir])
-      warnings = mock_stdout.getvalue()
+      warnings = mock_stderr.getvalue()
       self.assertEqual('%s\n' % expected[0], warnings)
     mock_exit.assert_called_with(1)
 
@@ -265,7 +267,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
       with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
         check_backup_sentinels.main(['argv0', self._testdir])
         output = mock_stdout.getvalue()
-        self.assertEqual('message message\nwarning warning\n', output)
+        self.assertEqual('message message\n', output)
     mock_exit.assert_called_with(1)
 
 
@@ -300,15 +302,18 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.create_files_for_test(files)
     mock_time.return_value = 8.5 * day
     with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-      check_backup_sentinels.main(['argv0', testdir])
-      warnings = mock_stdout.getvalue()
-      expected = (
-          'Backup for "asdf" too old:'
-          ' current time 734400/1970-01-09 12:00;'
-          ' last backup 604800/1970-01-08 00:00;'
-          ' max allowed delay: 86400/1970-01-02 00:00;'
-          ' sleeping until: 0/1970-01-01 00:00\n')
-      self.assertEqual(expected, warnings)
+      with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+        check_backup_sentinels.main(['argv0', testdir])
+        messages = mock_stdout.getvalue()
+        warnings = mock_stderr.getvalue()
+        expected = (
+            'Backup for "asdf" too old:'
+            ' current time 734400/1970-01-09 12:00;'
+            ' last backup 604800/1970-01-08 00:00;'
+            ' max allowed delay: 86400/1970-01-02 00:00;'
+            ' sleeping until: 0/1970-01-01 00:00\n')
+        self.assertEqual(expected, warnings)
+        self.assertEqual('', messages)
     mock_exit.assert_called_with(1)
 
 if __name__ == '__main__':

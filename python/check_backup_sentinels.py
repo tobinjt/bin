@@ -166,7 +166,7 @@ def main(argv):
     for line in messages:
       print(line)
   for line in warnings:
-    print(line)
+    print(line, file=sys.stderr)
   if warnings:
     sys.exit(1)
   else:
