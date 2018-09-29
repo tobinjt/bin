@@ -47,7 +47,7 @@ fix_single_volume() {
     fi
     if [[ "${i}" -eq "${max}" ]]; then
       printf "\\n\\n\\n%d repair attempts on %s failed :(\\n\\n" \
-        "${directory}" "${max}" >&2
+        "${max}" "${directory}" >&2
       false
     fi
   done
