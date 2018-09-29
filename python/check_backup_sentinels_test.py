@@ -71,8 +71,10 @@ class TestCheckSentinels(unittest.TestCase):
   def test_no_sentinels(self):
     """Test that zero sentinels causes a warning."""
     sentinels = check_backup_sentinels.ParsedSentinels({}, {}, {})
-    warnings = check_backup_sentinels.check_sentinels(sentinels, 11)
-    self.assertEqual(['Zero sentinels passed, something is wrong.'], warnings)
+    (warnings, messages) = check_backup_sentinels.check_sentinels(sentinels, 11)
+    expected = ['Zero sentinels passed, something is wrong.']
+    self.assertEqual(expected, warnings)
+    self.assertEqual(expected, messages)
 
   @mock.patch('time.time')
   def test_all_backups_are_recent(self, mock_time):
@@ -96,7 +98,7 @@ class TestCheckSentinels(unittest.TestCase):
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
         sleeping_until=sleeping_until)
     mock_time.return_value = 8.5 * hour
-    warnings = check_backup_sentinels.check_sentinels(sentinels, hour)
+    (warnings, _) = check_backup_sentinels.check_sentinels(sentinels, hour)
     self.assertEqual([], warnings)
 
   @mock.patch('time.time')
@@ -121,7 +123,8 @@ class TestCheckSentinels(unittest.TestCase):
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
         sleeping_until=sleeping_until)
     mock_time.return_value = 12 * hour
-    warnings = check_backup_sentinels.check_sentinels(sentinels, hour)
+    (warnings, messages) = check_backup_sentinels.check_sentinels(
+        sentinels, hour)
     expected = [
         'All backups are delayed by at least 3600 seconds',
         'Backup for "asdf" too old:'
@@ -138,6 +141,7 @@ class TestCheckSentinels(unittest.TestCase):
     # Do not truncate diffs.
     self.maxDiff = None  # pylint: disable=invalid-name
     self.assertEqual(expected, warnings)
+    self.assertEqual(messages, warnings)
 
   @mock.patch('time.time')
   def test_one_backup_is_old(self, mock_time):
@@ -161,8 +165,9 @@ class TestCheckSentinels(unittest.TestCase):
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
         sleeping_until=sleeping_until)
     mock_time.return_value = 8.5 * hour
-    warnings = check_backup_sentinels.check_sentinels(sentinels, hour)
-    expected = [
+    (warnings, messages) = check_backup_sentinels.check_sentinels(
+        sentinels, hour)
+    expected_warnings = [
         'Backup for "asdf" too old:'
         ' current time 30600/1970-01-01 08:30;'
         ' last backup 14400/1970-01-01 04:00;'
@@ -171,7 +176,8 @@ class TestCheckSentinels(unittest.TestCase):
     ]
     # Do not truncate diffs.
     self.maxDiff = None  # pylint: disable=invalid-name
-    self.assertEqual(expected, warnings)
+    self.assertEqual(expected_warnings, warnings)
+    self.assertEqual(2, len(messages))
 
   @mock.patch('time.time')
   def test_one_host_is_sleeping(self, mock_time):
@@ -196,10 +202,12 @@ class TestCheckSentinels(unittest.TestCase):
         sleeping_until=sleeping_until)
     # 8 hours sleeping + 2 hours max delay > 9 hours current time.
     mock_time.return_value = 9 * hour
-    warnings = check_backup_sentinels.check_sentinels(sentinels, hour)
+    (warnings, messages) = check_backup_sentinels.check_sentinels(
+        sentinels, hour)
     # Do not truncate diffs.
     self.maxDiff = None  # pylint: disable=invalid-name
     self.assertEqual([], warnings)
+    self.assertEqual(2, len(messages))
 
 
 class TestMain(fake_filesystem_unittest.TestCase):
@@ -228,7 +236,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
   # pylint: disable=no-self-use
   def test_no_warnings(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
-    mock_check.return_value = []
+    mock_check.return_value = ([], [])
     check_backup_sentinels.main(['argv0', self._testdir])
     mock_exit.assert_called_with(0)
 
@@ -239,8 +247,25 @@ class TestMain(fake_filesystem_unittest.TestCase):
   def test_warnings_are_printed(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
     expected = ['warning warning']
-    mock_check.return_value = expected
-    check_backup_sentinels.main(['argv0', self._testdir])
+    mock_check.return_value = (expected, [])
+    with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+      check_backup_sentinels.main(['argv0', self._testdir])
+      warnings = mock_stdout.getvalue()
+      self.assertEqual('%s\n' % expected[0], warnings)
+    mock_exit.assert_called_with(1)
+
+  @mock.patch('sys.exit')
+  @mock.patch('check_backup_sentinels.check_sentinels')
+  @mock.patch('check_backup_sentinels.parse_sentinels')
+  # pylint: disable=no-self-use
+  def test_messages_are_printed(self, unused_mock_parse, mock_check, mock_exit):
+    """Check that good args are accepted."""
+    mock_check.return_value = (['warning warning'], ['message message'])
+    with mock.patch('sys.stdin.isatty', return_value=True):
+      with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        check_backup_sentinels.main(['argv0', self._testdir])
+        output = mock_stdout.getvalue()
+        self.assertEqual('message message\nwarning warning\n', output)
     mock_exit.assert_called_with(1)
 
 
@@ -276,14 +301,14 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     mock_time.return_value = 8.5 * day
     with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       check_backup_sentinels.main(['argv0', testdir])
-      output = mock_stdout.getvalue()
+      warnings = mock_stdout.getvalue()
       expected = (
           'Backup for "asdf" too old:'
           ' current time 734400/1970-01-09 12:00;'
           ' last backup 604800/1970-01-08 00:00;'
           ' max allowed delay: 86400/1970-01-02 00:00;'
           ' sleeping until: 0/1970-01-01 00:00\n')
-      self.assertEqual(expected, output)
+      self.assertEqual(expected, warnings)
     mock_exit.assert_called_with(1)
 
 if __name__ == '__main__':

@@ -26,6 +26,7 @@ __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # Type annotation aliases.
 SentinelMap = typing.Dict[str, int]
+Messages = typing.List[str]
 Warnings = typing.List[str]
 
 # Filename contents.
@@ -91,7 +92,7 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
 
 
 def check_sentinels(sentinels: ParsedSentinels,
-                    max_global_delay: int) -> Warnings:
+                    max_global_delay: int) -> typing.Tuple[Warnings, Messages]:
   """Check sentinels for backups that are too old and return warnings.
 
   Args:
@@ -99,9 +100,11 @@ def check_sentinels(sentinels: ParsedSentinels,
     max_global_delay: if every backup is older than this many seconds then
                       something is wrong, produce an error message.
   Returns:
-    Warnings to output.
+    A tuple containing 1) warnings to output and 2) all generated messages for
+    debugging purposes.
   """
   warnings = []
+  messages = []  # type: typing.List[str]
   now = int(time.time())
   message = ('Backup for "%(host)s" too old:'
              ' current time %(now)d/%(now_human)s;'
@@ -112,13 +115,15 @@ def check_sentinels(sentinels: ParsedSentinels,
 
   if not sentinels.timestamps:
     warnings.append('Zero sentinels passed, something is wrong.')
-    return warnings
+    messages.append(warnings[-1])
+    return (warnings, messages)
 
   globally_delayed = [host for host in sentinels.timestamps
                       if now - sentinels.timestamps[host] > max_global_delay]
   if len(globally_delayed) == len(sentinels.timestamps):
-    warnings.append('All backups are delayed by at least %d seconds' %
-                    max_global_delay)
+    warnings.append('All backups are delayed by at least %d seconds'
+                    % max_global_delay)
+    messages.append(warnings[-1])
 
   for (host, last_backup) in sentinels.timestamps.items():
     max_delay = sentinels.max_allowed_delay[host]
@@ -135,6 +140,7 @@ def check_sentinels(sentinels: ParsedSentinels,
         'sleeping_until_human': time.strftime(time_fmt,
                                               time.gmtime(sleeping_until)),
     }
+    messages.append(warning)
 
     if now - last_backup < max_delay:
       # Recent backup, all is well.
@@ -146,7 +152,8 @@ def check_sentinels(sentinels: ParsedSentinels,
     # Something is wrong :(
     warnings.append(warning)
 
-  return warnings
+  messages = [message.replace('too old', 'debug info') for message in messages]
+  return (warnings, messages)
 
 
 def main(argv):
@@ -154,7 +161,10 @@ def main(argv):
     raise Error('Usage: %s DIRECTORY' % argv[0])
   day = 24 * 60 * 60
   sentinels = parse_sentinels(argv[1], day)
-  warnings = check_sentinels(sentinels, day)
+  (warnings, messages) = check_sentinels(sentinels, day)
+  if sys.stdin.isatty():
+    for line in messages:
+      print(line)
   for line in warnings:
     print(line)
   if warnings:
