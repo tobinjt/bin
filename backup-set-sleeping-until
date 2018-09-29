@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# shellcheck disable=SC1090
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
+usage() {
+    printf "Usage: %s [--test-keys-only] HOSTNAME YYYY-MM-DD\\n" "$0" >&2
+}
+
+generate_contents() {
+  local sentinel_dir="$1"
+  shift
+  if [[ "$#" -ne 2 ]]; then
+    usage
+    return 1
+  fi
+  local hostname="$1" sleeping_until="$2"
+  # -j: don't set date, just output it.
+  # -u: use UTC.
+  # -f: Use this format for the input date.
+  date -j -u -f %Y-%m-%d "${sleeping_until}" '+%s' \
+    > "${sentinel_dir}/${hostname}.sleeping_until"
+}
+
+main() {
+  update_sentinel_file "$@"
+}
+
+main "$@"
