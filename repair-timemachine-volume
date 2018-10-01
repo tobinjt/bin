@@ -6,7 +6,7 @@ PATH="/sbin:${PATH}"
 # Think about using tmutil on my laptop to disable and enable backups.
 
 fix_single_volume() {
-  local directory="$1"
+  local directory="$1" verbose="$2"
   chflags -R nouchg "${directory}"
   # Do I need to disable SMB?  Will that even unlock things?  Is there a tool to
   # list locks?  Will rebooting fix anything?  Can I enable or disable shares
@@ -14,7 +14,7 @@ fix_single_volume() {
   # sharing more precisely?
   # $ launchctl unload -w /System/Library/LaunchDaemons/com.apple.smbd.plist
   # $ launchctl load -w /System/Library/LaunchDaemons/com.apple.smbd.plist
-  if [[ -t 0 ]]; then
+  if [[ "${verbose}" -eq 1 ]]; then
     printf "If hdiutil attach fails, it's probably because the volume is in use"
     printf "\\nWait a while and try again seems to be the best option\\n"
   fi
@@ -31,22 +31,23 @@ fix_single_volume() {
 
   local device
   device="$(awk '/Apple_HFS/ { print $1 }' "${output}")"
-  trap 'hdiutil detach "${device}"' ERR
+  trap 'hdiutil detach "${device}" > /dev/null' ERR
   local i max=5
   # Multiple attempts seem to help, so try a few times.
   for i in $(seq 1 "${max}"); do
-    if [[ -t 0 ]]; then
-      printf "\\n\\n\\nAttempt %d/%d\\n\\n" "${i}" "${max}"
+    if [[ "${verbose}" -eq 1 ]]; then
+      printf "\\n\\nAttempt %d/%d\\n" "${i}" "${max}"
     fi
     # -R ace rebuilds everything.
     if fsck_hfs -f -y -R ace "${device}" > /dev/null; then
-      if [[ -t 0 ]]; then
-        printf "\\n\\nSucceeded on attempt %d/%d\\n\\n" "${i}" "${max}"
+      if [[ "${verbose}" -eq 1 ]]; then
+        printf "\\n\\nSucceeded on attempt %d/%d\\n" "${i}" "${max}"
       fi
       break
     fi
     if [[ "${i}" -eq "${max}" ]]; then
-      printf "\\n\\n\\n%d repair attempts failed :(\\n\\n" "${max}" >&2
+      printf "\\n\\n%d repair attempts on %s failed :(\\n" \
+        "${max}" "${directory}" >&2
       false
     fi
   done
@@ -59,10 +60,19 @@ fix_single_volume() {
 }
 
 main() {
-  local dir
+  local dir exit_status=0 verbose=0
+  if [[ -t 0 ]]; then
+    verbose=1
+  fi
   for dir in "$@"; do
-    fix_single_volume "${dir}"
+    # Bizzare Posix sh behaviour :(  See
+    # https://unix.stackexchange.com/questions/65532/why-does-set-e-not-work-inside-subshells-with-parenthesis-followed-by-an-or
+    fix_single_volume "${dir}" "${verbose}" &
+    if ! wait "$!"; then
+      exit_status=1
+    fi
   done
+  return "${exit_status}"
 }
 
 main "$@"

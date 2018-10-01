@@ -2,7 +2,6 @@
 
 set -e -f -u -o pipefail
 
-cd "${HOME}/Media/Warhammer-Twitch"
 # Only update brew if it's been at least 4 hours since the last update.
 old_dir="$(find /usr/local/Homebrew/ -maxdepth 1 -name .git -cmin +240)"
 if [[ -n "${old_dir}" ]]; then

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# shellcheck disable=SC1090
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
+usage() {
+    printf "Usage: %s [--test-keys-only] HOSTNAME\\n" "$0" >&2
+}
+
+generate_contents() {
+  local sentinel_dir="$1"
+  shift
+  if [[ "$#" -ne 1 ]]; then
+    usage
+    return 1
+  fi
+  local hostname="$1"
+  date -u '+%s' > "${sentinel_dir}/${hostname}"
+}
+
+main() {
+  update_sentinel_file "$@"
+}
+
+main "$@"
