@@ -27,6 +27,7 @@ END_OF_PLIST
 
 main() {
   if [[ "$#" -ne 4 ]]; then
+    # TODO: Add support for different actions.
     printf "Usage: %s DEST_FILE APP_PATH SERVICE_LABEL ACTION\\n" "$0" >&2
     printf "E.g. %s %s %s %s %s\\n" "$0" "pauses.restart.plist" \
       "/Applications/Pauses.app/Contents/MacOS/Pauses" "Pauses.restart" \
