@@ -15,8 +15,7 @@ LOG="${DIR}/wget.log"
 readonly WEBSITE DIR LOG
 
 cd "${DIR}"
-reject_regex="/jquery.selectBox-arrow.gif|/xmlrpc.php"
-reject_regex+="|/blog/2010/03/Smarter_HTTP_redirects/"
+reject_regex="/xmlrpc.php|/blog/Smarter_HTTP_redirects/"
 wget \
   --output-file wget.log \
   --execute robots=off \
