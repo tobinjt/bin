@@ -31,7 +31,7 @@ main() {
     printf "E.g. %s %s %s %s %s\\n" "$0" "pauses.restart.plist" \
       "/Applications/Pauses.app/Contents/MacOS/Pauses" "Pauses.restart" \
       "start" >&2
-    printf "ACTION should be either 'start' or 'stop'\\n" >&2
+    printf "ACTION must be one of: list load remove start stop unload\\n" >&2
     exit 1
   fi
 
@@ -55,7 +55,22 @@ main() {
     output_plist "${APP}" "${LABEL}" > "${DEST}"
     launchctl load "${DEST}"
   fi
-  launchctl "${ACTION}" "${LABEL}"
+  case "${ACTION}" in
+    stop)
+      printf "WARNING: stop is unreliable, consider using unload unstead\\n" >&2
+      launchctl "${ACTION}" "${LABEL}"
+      ;;
+    list|remove|start)
+      launchctl "${ACTION}" "${LABEL}"
+      ;;
+    load|unload)
+      launchctl "${ACTION}" "${DEST}"
+      ;;
+    *)
+      printf "Unknown action: %s\\n" "${ACTION}" >&2
+      return 1
+      ;;
+  esac
 }
 
 main "$@"
