@@ -2,6 +2,16 @@
 
 set -e -f -u -o pipefail
 
-echo '```shell'
-sed -e 's/^    //'
-echo '```'
+filetype="shell"
+# If stdin is not a terminal and exactly one argument is given, that argument is
+# the filetype of the block.  Otherwise pass all the arguments to sed.
+if [[ ! -t 0 && "$#" -eq 1 ]]; then
+  filetype="$1"
+  shift
+fi
+
+# shellcheck disable=SC2016
+printf '```%s\n' "${filetype}"
+sed -e 's/^    //' "$@"
+# shellcheck disable=SC2016
+printf '```\n'
