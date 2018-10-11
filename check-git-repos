@@ -2,32 +2,13 @@
 
 set -e -f -u -o pipefail
 
-# Check that git repos don't have any uncommitted or unpushed changes.
-check-git-repo() {
-  local output result=0 repo="$1"
-  cd "${repo}"
-  output="$(git status --short)"
-  if [[ -n "${output}" ]]; then
-    # Use human readable git status because it's more familiar.
-    printf "Uncommitted changes in %s\\n%s\\n\\n" "${repo}" "$(git status)"
-    result=1
-  fi
-  if ! git config --show-origin branch.master.remote >& /dev/null; then
-    # No upstream, so don't check that.
-    return "${result}"
-  fi
-  output="$(git log origin/master..HEAD)"
-  if [[ -n "${output}" ]]; then
-    printf "Unpushed commits in %s\\n%s\\n\\n" "${repo}" "${output}"
-    result=1
-  fi
-  return "${result}"
-}
+PATH="${HOME}/bin:${PATH}"
 
+# Check that git repos don't have any uncommitted or unpushed changes.
 main() {
   local repo result=0
   for repo in "$@"; do
-    if ! (check-git-repo "${repo}"); then
+    if ! (cd "${repo}" && git check-local-copy-is-clean); then
       result=1
     fi
   done

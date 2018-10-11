@@ -25,22 +25,9 @@ bin_sources() {
 
 check_git_works() {
   if ! git help status > /dev/null; then
-    echo "Failed to run git."  \
-      "On MacOS install it with 'xcode-select --install'" >&2
+    printf "Failed to run git.\\n" >&2
+    printf "On MacOS install it with 'xcode-select --install'\\n" >&2
     exit 1
-  fi
-}
-
-check_git_status() {
-  local dir="${1}"
-  cd "${dir}"
-  if [[ ! -d ".git" ]]; then
-    return
-  fi
-  local git_status
-  git_status="$(git status --short)"
-  if [[ -n "${git_status}" ]]; then
-    die "Uncommitted changes in ${dir}:\\n" "${git_status}"
   fi
 }
 
@@ -82,7 +69,6 @@ update_git_checkout_and_push() {
   fi
   local dir="$1"
   echo "Processing ${dir}"
-  cd "${dir}"
   if [[ ! -d ".git" ]]; then
     echo "Not a git repository: ${dir}"
     return
@@ -91,7 +77,7 @@ update_git_checkout_and_push() {
   # Refuse to do anything if there are uncommitted changes.
   # If there are deleted submodules hanging around clean them up with:
   # $ git clean -f -f -d
-  check_git_status "${dir}"
+  git check-local-copy-is-clean
 
   # Always pull and update submodules.  Note that if we fail before submodules
   # are completely updated there will be uncomitted changes that must be dealt
@@ -143,10 +129,10 @@ main() {
   orig_code="$(cat "${BASH_SOURCE[0]}")"
   local dir
   for dir in $(bin_sources); do
-    update_git_checkout_and_push "${dir}"
+    (cd "${dir}" && update_git_checkout_and_push "${dir}")
     # Check for unfinished changes; this happens when submodules are removed
     # because git won't delete the submodule directory.
-    check_git_status "${dir}"
+    (cd "${dir}" && git check-local-copy-is-clean)
   done
   local new_code
   new_code="$(cat "${BASH_SOURCE[0]}")"
@@ -160,7 +146,7 @@ main() {
 
   # Update all dotfiles.
   for dir in $(dotfiles_sources); do
-    update_git_checkout_and_push "${dir}"
+    (cd "${dir}" && update_git_checkout_and_push "${dir}")
     # Forcibly update.  There is a risk that we clobber a file in our home
     # directory with a file we've just checked out, but the alternative is for
     # the user to forcibly update manually.
@@ -169,7 +155,7 @@ main() {
     # because git won't delete the submodule directory.  Do this after running
     # dotfiles, otherwise there is a high chance that the next run of this
     # program will find diffs and will exit.
-    check_git_status "${dir}"
+    (cd "${dir}" && git check-local-copy-is-clean)
   done
 
   # Delete unexpected files and directories.

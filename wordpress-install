@@ -45,10 +45,7 @@ if [[ "${TYPE}" != "plugin" && "${TYPE}" != "theme" \
   usage
 fi
 cd "${WORDPRESS_BASE}"
-git_status="$(git status --short)"
-if [[ -n "${git_status}" ]]; then
-  die "Uncommitted changes:\\n" "${git_status}"
-fi
+git check-local-copy-is-clean
 
 declare -A SUBDIRS SEPARATORS
 SUBDIRS[wordpress]=".."
@@ -126,7 +123,6 @@ if [[ "${TYPE}" == "wordpress" ]]; then
 fi
 git add -A .
 (unset LESS; git diff --cached --shortstat)
-git_status="$(git status --short)"
-if [[ -n "${git_status}" ]]; then
+if ! git check-local-copy-is-clean 2>/dev/null; then
   git commit --quiet --message "Installed ${NAME} ${VERSION}"
 fi

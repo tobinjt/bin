@@ -25,7 +25,7 @@ main() {
   fi
   output="$(git log "@{u}..")"
   if [[ -n "${output}" ]]; then
-    printf "Unpushed commits\\n%s" "${output}" >&2
+    printf "Unpushed commits\\n%s\\n" "${output}" >&2
     result=1
   fi
   return "${result}"

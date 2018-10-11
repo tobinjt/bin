@@ -2,20 +2,17 @@
 
 set -e -f -u -o pipefail
 
+PATH="${HOME}/bin:${PATH}"
+
 cd /etc
-git_status="$(git status --short)"
-if [[ -n "${git_status}" ]]; then
-  printf "Uncommitted changes in /etc: %s\\n" "${git_status}" >&2
-  exit 1
-fi
+git check-local-copy-is-clean
 
 certbot renew \
   --pre-hook "service apache2 stop" \
   --post-hook "service apache2 start" \
   --standalone
 
-git_status="$(git status --short)"
-if [[ -n "${git_status}" ]]; then
+if ! git check-local-copy-is-clean 2>/dev/null; then
   etckeeper commit 'Renew some certs.'
 fi
 

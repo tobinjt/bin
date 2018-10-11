@@ -2,24 +2,22 @@
 
 set -e -f -u -o pipefail
 
+PATH="${HOME}/bin:${PATH}"
+
 commit_all() {
   local dir="$1"
   local subdir="wp-content/themes/ariane-theme"
 
   # Check for local changes.
   cd "${dir}/${subdir}"
-  local git_status
-  git_status="$(git status --short)"
-  if [[ -n "${git_status}" ]]; then
-    die "Uncommitted changes in ${PWD}:\\n" "${git_status}"
-  fi
+  git check-local-copy-is-clean
   # Sync with upstream.
   git pull
   git push
   # Update parent repo so that backups and updates work.
   cd "${dir}"
   git diff-index --quiet HEAD || git upstream
-  if [[ -n "$(git status --short)" ]]; then
+  if ! git check-local-copy-is-clean 2>/dev/null; then
     git add "wp-content/themes/ariane-theme"
     git upstream
   fi
@@ -27,11 +25,11 @@ commit_all() {
 
 main() {
   if [[ "$#" -eq 0 ]]; then
-    # Updat dev.
+    # Update dev.
     commit_all "${HOME}/dev.arianetobin.ie"
     # Update www.
     ssh -o ControlPath=none arianetobin@hosting \
-      "${HOME}/bin/update-ariane-theme" www
+      "${HOME}/bin/update-ariane-theme" argument_just_to_trigger_other_branch
     # Clear mod_pagespeed cache to ensure consistency, e.g. correct style.css
     # being used.
     sudo touch /var/cache/mod_pagespeed/cache.flush

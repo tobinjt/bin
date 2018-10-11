@@ -11,7 +11,7 @@ main() {
       'git fetch origin --tags && git checkout master && git pull'
   # Commit the changes if any.
   git add -A .vim/bundle
-  if [[ -n "$(git status --short)" ]]; then
+  if ! git check-local-copy-is-clean 2>/dev/null; then
     git commit -m 'Update vim plugins.'
   fi
   # Force overwriting and deletion of removed files.
