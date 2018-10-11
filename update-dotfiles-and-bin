@@ -11,7 +11,9 @@ die() {
 }
 
 find_sources() {
-  find "$1" -maxdepth 1 -mindepth 1 -iname "$2" -type d | sort
+  find "$1" -maxdepth 2 -mindepth 2 -type d -path "$2/.git" \
+    | sed -e 's,/.git$,,' \
+    | sort
 }
 
 dotfiles_sources() {
@@ -69,10 +71,6 @@ update_git_checkout_and_push() {
   fi
   local dir="$1"
   echo "Processing ${dir}"
-  if [[ ! -d ".git" ]]; then
-    echo "Not a git repository: ${dir}"
-    return
-  fi
 
   # Refuse to do anything if there are uncommitted changes.
   # If there are deleted submodules hanging around clean them up with:
