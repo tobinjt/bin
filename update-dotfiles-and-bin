@@ -109,8 +109,6 @@ main() {
   # Ensure we have a connection to the ssh agent and keys loaded, if we have ssh
   # origins.
   if need_ssh_agent; then
-    # TODO: why is this here?
-    mkdir -p "${HOME}/tmp/ssh"
     check_ssh_agent
   fi
   echo "Running dotfiles to check for pre-existing diffs."
@@ -122,8 +120,6 @@ main() {
 
   # Update bin dirs.
   local orig_code
-  # TODO: doesn't work if run as ./bin/update-dotfiles-and-bin:
-  # cat: ./bin/update-dotfiles-and-bin: No such file or directory
   orig_code="$(cat "${BASH_SOURCE[0]}")"
   local dir
   for dir in $(bin_sources); do
