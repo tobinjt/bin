@@ -3,8 +3,13 @@
 set -e -f -u -o pipefail
 
 main() {
+  local ignore_unpushed_commits=0
+  if [[ "$#" -eq 1 && "$1" == "--ignore-unpushed-commits" ]]; then
+    ignore_unpushed_commits=1
+    shift
+  fi
   if [[ "$#" -ne 0 ]]; then
-    printf "Usage: %s\\nNo arguments accepted.\\n" "$0" >&2
+    printf "Usage: %s [--ignore-unpushed-commits]\\n" "$0" >&2
     return 1
   fi
 
@@ -16,6 +21,10 @@ main() {
     printf "Uncommitted changes\\n" >&2
     git status >&2
     result=1
+  fi
+
+  if [[ "${ignore_unpushed_commits}" -eq 1 ]]; then
+    return "${result}"
   fi
 
   # Check for unpushed commits.

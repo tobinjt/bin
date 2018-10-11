@@ -77,7 +77,7 @@ update_git_checkout_and_push() {
   # Refuse to do anything if there are uncommitted changes.
   # If there are deleted submodules hanging around clean them up with:
   # $ git clean -f -f -d
-  git check-local-copy-is-clean
+  git check-local-copy-is-clean --ignore-unpushed-commits
 
   # Always pull and update submodules.  Note that if we fail before submodules
   # are completely updated there will be uncomitted changes that must be dealt
