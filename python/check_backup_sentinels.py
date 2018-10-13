@@ -152,7 +152,8 @@ def check_sentinels(sentinels: ParsedSentinels,
     # Something is wrong :(
     warnings.append(warning)
 
-  messages = [message.replace('too old', 'debug info') for message in messages]
+  messages = sorted([message.replace('too old', 'debug info')
+                     for message in messages])
   return (warnings, messages)
 
 
