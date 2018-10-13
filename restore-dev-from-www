@@ -129,7 +129,7 @@ main2() {
 find_latest_dump() {
   # Only consider backups less than 12 hours old; the filenames contain date and
   # timestamps so sorting and taking the last one will output the latest backup.
-  find /home/ariane/wordpress-backups/ -type f -mmin -$((12 * 60)) \
+  find "${HOME}/wordpress-backups/" -name "ariane*" -mmin -$((12 * 60)) \
     | sort \
     | tail -1
 }
