@@ -29,6 +29,11 @@ main() {
 
   # Check for unpushed commits.
   if ! git symbolic-ref HEAD >& /dev/null; then
+    # Dunno exactly what's happening here, but checking for unpushed commits
+    # doesn't work so skip it.
+    return "${result}"
+  fi
+  if ! git config remote.origin.url >& /dev/null; then
     # No upstream, so don't check that.
     return "${result}"
   fi

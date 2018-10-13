@@ -10,7 +10,7 @@ commit_all() {
 
   # Check for local changes.
   cd "${dir}/${subdir}"
-  git check-local-copy-is-clean
+  git check-local-copy-is-clean --ignore-unpushed-commits
   # Sync with upstream.
   git pull
   git push
