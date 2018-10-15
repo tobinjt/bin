@@ -140,6 +140,7 @@ main() {
     printf "Finds the latest www backup and restores it to dev.\\n" >&2
     return 1
   fi
+  backup-wordpress "/home/arianetobin/arianetobin.ie"
   main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$(find_latest_dump)"
 }
 
