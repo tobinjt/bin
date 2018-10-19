@@ -13,12 +13,14 @@ main() {
     return 1
   fi
 
+  local rootdir
+  rootdir="$(git rev-parse --show-toplevel)"
   # Check for uncommitted changes.
   local output result=0
   output="$(git status --short)"
   if [[ -n "${output}" ]]; then
     # Use human readable git status because it's more familiar.
-    printf "Uncommitted changes\\n" >&2
+    printf "Uncommitted changes in %s\\n" "${rootdir}" >&2
     git status >&2
     result=1
   fi
@@ -39,7 +41,7 @@ main() {
   fi
   output="$(git log "@{u}..")"
   if [[ -n "${output}" ]]; then
-    printf "Unpushed commits\\n%s\\n" "${output}" >&2
+    printf "Unpushed commits in %s\\n%s\\n" "${rootdir}" "${output}" >&2
     result=1
   fi
   return "${result}"
