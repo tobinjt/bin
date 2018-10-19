@@ -38,7 +38,7 @@ main() {
       --user="${db_user}" --password="${db_password}" --skip-extended-insert \
       "${db_name}" \
     | bzip2 -c > "${db_name}_${date}".sql.bz2
-  tmpreaper --mtime 90d .
+  flock "${HOME}/tmp/locks/backup-wordpress__tmpreaper" tmpreaper --mtime 90d .
 }
 
 main "$1"
