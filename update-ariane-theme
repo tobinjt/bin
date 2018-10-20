@@ -16,11 +16,11 @@ commit_all() {
   git push
   # Update parent repo so that backups and updates work.
   cd "${dir}"
-  git diff-index --quiet HEAD || git upstream
   if ! git check-local-copy-is-clean 2>/dev/null; then
     git add "wp-content/themes/ariane-theme"
-    git upstream
+    git commit -m 'Updated ariane-theme.'
   fi
+  git check-local-copy-is-clean
 }
 
 main() {
@@ -28,7 +28,7 @@ main() {
     # Update dev.
     commit_all "${HOME}/dev.arianetobin.ie"
     # Update www.
-    ssh -o ControlPath=none arianetobin@hosting \
+    ssh -o ControlMaster=no arianetobin@hosting \
       "${HOME}/bin/update-ariane-theme" argument_just_to_trigger_other_branch
     # Clear mod_pagespeed cache to ensure consistency, e.g. correct style.css
     # being used.
