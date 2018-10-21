@@ -10,24 +10,27 @@ die() {
   exit 1
 }
 usage() {
-  warn "Usage: $0 WORDPRESS-DIRECTORY wordpress VERSION"
-  die "Usage: $0 WORDPRESS-DIRECTORY theme[s]|plugin[s] NAME [VERSION]"
+  warn "Usage: $0 WORDPRESS-DIRECTORY wordpress [VERSION]"
+  warn "Usage: $0 WORDPRESS-DIRECTORY theme[s]|plugin[s] NAME [VERSION]"
+  die "If VERSION is not supplied the latest version will be installed."
 }
 
-# Don't require a version for wordpress.
+# Don't require the user to pass "wordpress" "wordpress".
 if [[ "$#" -eq 2 && "$2" == "wordpress" ]]; then
-  # Make $4 empty but defined because of -u.
+  # Make $4 (version) empty but defined because later if $# == 3 and $2 ==
+  # wordpress we assume $3 is VERSION.
   set -- "$1" "wordpress" "wordpress" ""
 fi
 if [[ "$#" -ne 4 && "$#" -ne 3 ]]; then
    usage
 fi
 
+# VERSION is optional.
 if [[ "$#" -eq 3 ]]; then
   if [[ "$2" == "wordpress" ]]; then
     set -- "$1" "wordpress" "wordpress" "$3"
   else
-    # Make $4 empty but defined because of -u.
+    # Make $4 (version) empty but defined because of -u.
     set -- "$1" "$2" "$3" ""
   fi
 fi
@@ -47,6 +50,8 @@ fi
 cd "${WORDPRESS_BASE}"
 git check-local-copy-is-clean
 
+# The URL to download will be assembled using SEPARATORS and to downloaded file
+# extracted using SUBDIRS.
 declare -A SUBDIRS SEPARATORS
 SUBDIRS[wordpress]=".."
 SUBDIRS[plugin]="plugins"
@@ -61,8 +66,10 @@ else
 fi
 readonly SUBDIRS SEPARATORS
 readonly WORDPRESS_LATEST="latest.zip"
+# When TYPE == wordpress, this will cd wp-content/.., staying in WORDPRESS_BASE.
 cd "wp-content/${SUBDIRS[${TYPE}]}"
 
+# Assemble the URL and download path for each TYPE.
 DOWNLOAD_DIR="${HOME}/wordpress"
 if [[ "${TYPE}" == "wordpress" && -z "${VERSION}" ]]; then
   DOWNLOAD_FILE="${WORDPRESS_LATEST}"
@@ -113,16 +120,21 @@ if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
   fi
 fi
 
+# There's nothing named wordpress, so this is a no-op when TYPE == wordpress.
 rm -rf "${NAME}"
 unzip -q -o "${DOWNLOAD_PATH}"
 if [[ "${TYPE}" == "wordpress" ]]; then
   # Wordpress extracts into a directory named wordpress, and unzip doesn't have
-  # an option to strip a leading directory, so move it with tar, then delete it.
+  # an option to strip a leading directory, so copy it to the rigth directory
+  # with tar, then delete it.
   tar cf - -C wordpress . | tar xf -
   rm -rf wordpress
 fi
-git add -A .
+# --all marks deleted files for deletion in git.
+git add --all .
+# Give some idea of the scale of the changes.
 (unset LESS; git diff --cached --shortstat)
+# If there's anything to commit then commit it.
 if ! git check-local-copy-is-clean 2>/dev/null; then
   git commit --quiet --message "Installed ${NAME} ${VERSION}"
 fi
