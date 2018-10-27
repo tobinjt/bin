@@ -50,7 +50,7 @@ output_sql_template() {
       domain: replace www.domain with dev.domain.
       table_prefix: table prefix configured in Wordpress
       table: the table to update; will have table_prefix prepended to it.
-      column: the ocumn to update.
+      column: the column to update.
 -%]
 [% BLOCK rewrite_column -%]
 UPDATE `[% table_prefix %][% table %]`
@@ -74,7 +74,7 @@ columns_to_rewrite = [
 ]
 -%]
 [%# Process all the (table, column) pairs.
-    Note that domain and table_prefix are supplied as flags.
+    Note that domain and table_prefix (used earlier) are supplied as flags.
 -%]
 [% FOREACH pair IN columns_to_rewrite -%]
   [%- PROCESS rewrite_column
@@ -127,9 +127,10 @@ main2() {
 }
 
 find_latest_dump() {
+  local prefix="$1"
   # Only consider backups less than 12 hours old; the filenames contain date and
   # timestamps so sorting and taking the last one will output the latest backup.
-  find "${HOME}/wordpress-backups/" -name "ariane*" -mmin -$((12 * 60)) \
+  find "${HOME}/wordpress-backups/" -name "${prefix}*" -mmin -$((12 * 60)) \
     | sort \
     | tail -1
 }
@@ -142,7 +143,7 @@ main() {
   fi
   printf "Triggering backup.\\n"
   backup-wordpress "/home/arianetobin/arianetobin.ie"
-  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$(find_latest_dump)"
+  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$(find_latest_dump ariane)"
 }
 
 main "$@"
