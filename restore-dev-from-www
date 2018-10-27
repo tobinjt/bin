@@ -18,7 +18,7 @@ get_table_prefix() {
 
 restore_from_backup() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s WP_CONFIG DUMP\\n" >&2
+    printf "Usage: restore_from_backup WP_CONFIG DUMP\\n" >&2
     return 1
   fi
   local wp_config="$1" dump="$2"
@@ -87,7 +87,7 @@ END_OF_SQL_TEMPLATE
 
 rewrite_database_contents() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s DOMAIN WP_CONFIG\\n" >&2
+    printf "Usage: rewrite_database_contents DOMAIN WP_CONFIG\\n" >&2
     return 1
   fi
   local domain="$1" wp_config="$2"
@@ -113,7 +113,7 @@ rewrite_database_contents() {
 
 main2() {
   if [[ "$#" -ne 3 || ! -f "$2/wp-config.php" || ! -f "$3" ]]; then
-    printf "Usage: %s DOMAIN WORDPRESS_BASE_DIR DATABASE_DUMP\n" "$0" >&2
+    printf "Usage: %s DOMAIN WORDPRESS_BASE_DIR DATABASE_DUMP\\n" "$0" >&2
     return 1
   fi
   local domain="$1" wp_config="$2/wp-config.php" dump="$3"
