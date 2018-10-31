@@ -8,13 +8,14 @@ cd /etc
 git check-local-copy-is-clean
 
 certbot renew \
-  --pre-hook "service apache2 stop" \
-  --post-hook "service apache2 start" \
-  --standalone
+  --quiet
+  # --pre-hook "service apache2 stop" \
+  # --post-hook "service apache2 start" \
+  # --standalone
 
 if ! git check-local-copy-is-clean 2>/dev/null; then
   etckeeper commit 'Renew some certs.'
 fi
 
 sleep 5
-curl --head https://www.arianetobin.ie/
+curl --head --silent https://www.arianetobin.ie/ > /dev/null
