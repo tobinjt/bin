@@ -18,7 +18,7 @@ get_table_prefix() {
 
 restore_from_backup() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s WP_CONFIG DUMP\\n" >&2
+    printf "Usage: restore_from_backup WP_CONFIG DUMP\\n" >&2
     return 1
   fi
   local wp_config="$1" dump="$2"
@@ -50,7 +50,7 @@ output_sql_template() {
       domain: replace www.domain with dev.domain.
       table_prefix: table prefix configured in Wordpress
       table: the table to update; will have table_prefix prepended to it.
-      column: the ocumn to update.
+      column: the column to update.
 -%]
 [% BLOCK rewrite_column -%]
 UPDATE `[% table_prefix %][% table %]`
@@ -74,7 +74,7 @@ columns_to_rewrite = [
 ]
 -%]
 [%# Process all the (table, column) pairs.
-    Note that domain and table_prefix are supplied as flags.
+    Note that domain and table_prefix (used earlier) are supplied as flags.
 -%]
 [% FOREACH pair IN columns_to_rewrite -%]
   [%- PROCESS rewrite_column
@@ -87,7 +87,7 @@ END_OF_SQL_TEMPLATE
 
 rewrite_database_contents() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s DOMAIN WP_CONFIG\\n" >&2
+    printf "Usage: rewrite_database_contents DOMAIN WP_CONFIG\\n" >&2
     return 1
   fi
   local domain="$1" wp_config="$2"
@@ -113,7 +113,7 @@ rewrite_database_contents() {
 
 main2() {
   if [[ "$#" -ne 3 || ! -f "$2/wp-config.php" || ! -f "$3" ]]; then
-    printf "Usage: %s DOMAIN WORDPRESS_BASE_DIR DATABASE_DUMP\n" "$0" >&2
+    printf "Usage: %s DOMAIN WORDPRESS_BASE_DIR DATABASE_DUMP\\n" "$0" >&2
     return 1
   fi
   local domain="$1" wp_config="$2/wp-config.php" dump="$3"
@@ -127,9 +127,10 @@ main2() {
 }
 
 find_latest_dump() {
+  local prefix="$1"
   # Only consider backups less than 12 hours old; the filenames contain date and
   # timestamps so sorting and taking the last one will output the latest backup.
-  find "${HOME}/wordpress-backups/" -name "ariane*" -mmin -$((12 * 60)) \
+  find "${HOME}/wordpress-backups/" -name "${prefix}*" -mmin -$((12 * 60)) \
     | sort \
     | tail -1
 }
@@ -142,7 +143,7 @@ main() {
   fi
   printf "Triggering backup.\\n"
   backup-wordpress "/home/arianetobin/arianetobin.ie"
-  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$(find_latest_dump)"
+  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$(find_latest_dump ariane)"
 }
 
 main "$@"
