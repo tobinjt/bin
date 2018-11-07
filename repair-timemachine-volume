@@ -34,6 +34,7 @@ fix_single_volume() {
 
   local device
   device="$(awk '/Apple_HFS/ { print $1 }' "${output}")"
+  rm -f "${output}"
   trap 'hdiutil detach "${device}" > /dev/null' ERR
   local i max=5
   # Multiple attempts seem to help, so try a few times.
