@@ -132,8 +132,9 @@ run_rsync() {
         --rsh="ssh -i ${ssh_key_path}" \
         "${flags[@]:+${flags[@]}}" \
       2> >( grep -v \
-              -e 'Connection reset by' \
               -e '^Connection closed by' \
+              -e '^Connection reset by' \
+              -e '^Connection to .* timed out$' \
               -e '^Timeout, server .* not responding' \
               -e '^file has vanished:' \
               -e '^packet_write_wait: Connection to .* Broken pipe' \
