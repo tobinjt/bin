@@ -10,7 +10,7 @@ for i in $(seq 1 5); do
   if curl --silent "${WEBSITE}" | grep -q -F "${SENTINEL}"; then
     exit 0
   fi
-  sleep 60
+  sleep 600
 done
 printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}" 
 exit 1
