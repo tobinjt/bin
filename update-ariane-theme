@@ -8,7 +8,11 @@ commit_all() {
   local dir="$1"
   local subdir="wp-content/themes/ariane-theme"
 
-  # Check for local changes.
+  # Check for local changes in the theme directory.  We don't check for local
+  # changes in the wordpress directory because there will always be changes in
+  # the dev website, and if there are changes in the production website (e.g.
+  # images have been uploaded) that will be caught at the end, and the code is
+  # explicit about which directory to automatically commit changes in.
   cd "${dir}/${subdir}"
   git check-local-copy-is-clean --ignore-unpushed-commits
   # Sync with upstream.
@@ -17,7 +21,7 @@ commit_all() {
   # Update parent repo so that backups and updates work.
   cd "${dir}"
   if ! git check-local-copy-is-clean 2>/dev/null; then
-    git add "wp-content/themes/ariane-theme"
+    git add "${subdir}"
     git commit -m 'Updated ariane-theme.'
   fi
   git check-local-copy-is-clean
