@@ -7,7 +7,11 @@ main() {
     printf "%s: no arguments accepted\\n" "$0" >&2
     return 1
   fi
-  cd "${HOME}/src/hugo-coder"
+  local STANDALONE_THEME_DIR="${HOME}/src/hugo-coder"
+  local WEBSITE_DIR="${HOME}/src/johntobin.ie" THEME_SUBDIR="themes/hugo-coder"
+  readonly STANDALONE_THEME_DIR WEBSITE_DIR THEME_SUBDIR
+
+  cd "${STANDALONE_THEME_DIR}"
   git check-local-copy-is-clean
   if ! git remote show | grep -q upstream; then
     git remote add upstream https://github.com/luizdepra/hugo-coder
@@ -23,10 +27,27 @@ main() {
   git pull
   git merge master
   git push
-  # Update the copy that Hugo uses.
-  cd "${HOME}/src/johntobin.ie/themes/hugo-coder"
+
+  # Check that the website repo is clean.  This protects against this sequence:
+  # - git add foo
+  # - update-hugo-coder
+  #   - ....
+  #   - git add themes/hugo-coder
+  #   - git commit # Commits both themes/hugo-coder and foo.
+  cd "${WEBSITE_DIR}"
+  git check-local-copy-is-clean
+  # Update the copy of hugo-coder that Hugo uses.
+  cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
   git check-local-copy-is-clean
   git pull
+  # Commit the theme changes in the website repo if necessary.
+  cd "${WEBSITE_DIR}"
+  if ! git check-local-copy-is-clean 2>/dev/null; then
+    git add "${THEME_SUBDIR}"
+    git commit -m "Updated ${THEME_SUBDIR}."
+    git push
+  fi
+  git check-local-copy-is-clean
 }
 
 main "$@"
