@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  if [[ "$#" -ne 0 ]]; then
+    printf "%s: no arguments accepted\\n" "$0" >&2
+    return 1
+  fi
+  cd "${HOME}/src/hugo-coder"
+  git check-local-copy-is-clean
+  if ! git remote show | grep -q upstream; then
+    git remote add upstream https://github.com/luizdepra/hugo-coder
+  fi
+
+  # Pull upstream changes into my local copy and push to my fork on Github.
+  git checkout master
+  git pull upstream master
+  git push
+  # Pull any changes I have made, merge changes upstream changes from master
+  # branch, and push to my fork on Github.
+  git checkout my-changes
+  git pull
+  git merge master
+  git push
+  # Update the copy that Hugo uses.
+  cd "${HOME}/src/johntobin.ie/themes/hugo-coder"
+  git check-local-copy-is-clean
+  git pull
+}
+
+main "$@"
