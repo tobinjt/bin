@@ -2,12 +2,16 @@
 
 set -e -f -u -o pipefail
 
-readonly SENTINEL='arianetobin.ie works properly.'
+readonly SENTINEL='<title>Ariane Tobin Jewellery</title>'
 readonly WEBSITE='https://www.arianetobin.ie/'
 # Try multiple times to cover for bad internet at home.
 # shellcheck disable=SC2034
 for i in $(seq 1 5); do
-  if curl --silent "${WEBSITE}" | grep -q -F "${SENTINEL}"; then
+  # Redirect to /dev/null rather than using -q: using -q means grep will exit
+  # immediately if a match is found, and then curl can't finish writing to the
+  # pipe so it produces an error message, whereas without -q grep will process
+  # all the input.
+  if curl --silent "${WEBSITE}" | grep -F -i "${SENTINEL}" > /dev/null; then
     exit 0
   fi
   sleep 600
