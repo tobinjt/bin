@@ -12,20 +12,31 @@ main() {
   readonly STANDALONE_THEME_DIR WEBSITE_DIR THEME_SUBDIR
 
   cd "${STANDALONE_THEME_DIR}"
-  git check-local-copy-is-clean
+  git check-local-copy-is-clean --ignore-unpushed-commits
   if ! git remote show | grep -q upstream; then
     git remote add upstream https://github.com/luizdepra/hugo-coder
   fi
 
   # Pull upstream changes into my local copy and push to my fork on Github.
+  printf "*** Updating master in %s\\n" "${STANDALONE_THEME_DIR}"
   git checkout master
   git pull upstream master
   git push
-  # Pull any changes I have made, merge changes upstream changes from master
+  # Pull any changes through review, merge changes upstream changes from master
   # branch, and push to my fork on Github.
+  printf "*** Updating changes-for-upstream in %s\\n" "${STANDALONE_THEME_DIR}"
+  git checkout changes-for-upstream
+  git pull
+  git merge master
+  git push
+  # Pull any changes I have made, merge changes upstream changes from master
+  # branch and from my changes-for-upstream branch, and push to my fork on
+  # Github.
+  printf "*** Updating my-changes in %s\\n" "${STANDALONE_THEME_DIR}"
   git checkout my-changes
   git pull
   git merge master
+  git merge changes-for-upstream
   git push
 
   # Check that the website repo is clean.  This protects against this sequence:
@@ -35,18 +46,22 @@ main() {
   #   - git add themes/hugo-coder
   #   - git commit # Commits both themes/hugo-coder and foo.
   cd "${WEBSITE_DIR}"
+  printf "*** Checking %s is clean\\n" "${WEBSITE_DIR}"
   git check-local-copy-is-clean --ignore-unpushed-commits
   # Update the copy of hugo-coder that Hugo uses.
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
+  printf "*** Updating in %s\\n" "${WEBSITE_DIR}/${THEME_SUBDIR}"
   git check-local-copy-is-clean --ignore-unpushed-commits
   git pull
   git push
   # Commit the theme changes in the website repo if necessary.
   cd "${WEBSITE_DIR}"
   if ! git check-local-copy-is-clean --ignore-unpushed-commits 2>/dev/null; then
+    printf "*** Commiting changes in %s\\n" "${WEBSITE_DIR}"
     git add "${THEME_SUBDIR}"
     git commit -m "Updated ${THEME_SUBDIR}."
   fi
+  printf "*** Updating in %s\\n" "${WEBSITE_DIR}"
   git pull
   git push
   git check-local-copy-is-clean
