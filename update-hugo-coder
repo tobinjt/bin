@@ -35,18 +35,20 @@ main() {
   #   - git add themes/hugo-coder
   #   - git commit # Commits both themes/hugo-coder and foo.
   cd "${WEBSITE_DIR}"
-  git check-local-copy-is-clean
+  git check-local-copy-is-clean --ignore-unpushed-commits
   # Update the copy of hugo-coder that Hugo uses.
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
-  git check-local-copy-is-clean
+  git check-local-copy-is-clean --ignore-unpushed-commits
   git pull
+  git push
   # Commit the theme changes in the website repo if necessary.
   cd "${WEBSITE_DIR}"
-  if ! git check-local-copy-is-clean 2>/dev/null; then
+  if ! git check-local-copy-is-clean --ignore-unpushed-commits 2>/dev/null; then
     git add "${THEME_SUBDIR}"
     git commit -m "Updated ${THEME_SUBDIR}."
-    git push
   fi
+  git pull
+  git push
   git check-local-copy-is-clean
 }
 
