@@ -42,8 +42,16 @@ fix_single_volume() {
     if [[ "${verbose}" -eq 1 ]]; then
       printf "\\n\\nAttempt %d/%d\\n" "${i}" "${max}"
     fi
+    local fsck_args=("-f" "-y" "-R" "ace") dest="/dev/null"
+    if [[ "${verbose}" -eq 1 ]]; then
+      dest="/dev/stdout"
+      if [[ "${i}" -gt 2 ]]; then
+        # Add debugging after a few attempts.
+        fsck_args+=("-d")
+      fi
+    fi
     # -R ace rebuilds everything.
-    if fsck_hfs -f -y -R ace "${device}" > /dev/null; then
+    if fsck_hfs "${fsck_args[@]}" "${device}" > "${dest}"; then
       if [[ "${verbose}" -eq 1 ]]; then
         printf "\\n\\nSucceeded on attempt %d/%d\\n" "${i}" "${max}"
       fi
