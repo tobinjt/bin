@@ -35,7 +35,7 @@ main() {
   # Do not use --databases flag because it adds "use $database" and "create
   # database $database" lines, which cause problems for restore-dev-from-www.
   mysqldump --add-drop-table --host=localhost \
-      --user="${db_user}" --password="${db_password}" --skip-extended-insert \
+      --user="${db_user}" --password="${db_password}" \
       "${db_name}" \
     | bzip2 -c > "${db_name}_${date}".sql.bz2
   flock "${HOME}/tmp/locks/backup-wordpress__tmpreaper" tmpreaper --mtime 90d .
