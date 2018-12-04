@@ -42,4 +42,6 @@ if [[ -n "${PROBLEMS}" || -t 0 ]]; then
     echo "No problems found :)"
   fi
   echo "See ${LOG} and the contents of ${DIR} for further investigation"
+else
+  rm -rf "${DIR}"
 fi
