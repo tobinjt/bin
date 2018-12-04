@@ -34,6 +34,9 @@ PROBLEMS="$(sed -n \
               -e '/HTTP request sent, awaiting response... 200/ d' \
               -e '/HTTP request sent, awaiting response.../ { H; g; p; }' \
               "${LOG}")"
+# Check for common error messages too.
+PROBLEMS+="$(grep -r -F -e 'Fatal error' "${DIR}" || true)"
+
 if [[ -n "${PROBLEMS}" || -t 0 ]]; then
   if [[ -n "${PROBLEMS}" ]]; then
     echo "Problems found:"
