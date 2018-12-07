@@ -34,6 +34,7 @@ main() {
       "${HOME}/bin/update-ariane-theme" argument_just_to_trigger_other_branch
     # Clear mod_pagespeed cache to ensure consistency, e.g. correct style.css
     # being used.
+    printf "Clearing mod_pagespeed cache\\n"
     sudo touch /var/cache/mod_pagespeed/cache.flush
   else
     # This is being run over ssh as arianetobin.
