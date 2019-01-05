@@ -2,8 +2,9 @@
 
 set -e -f -u -o pipefail
 
-readonly SENTINEL='<title>Ariane Tobin Jewellery</title>'
-readonly WEBSITE='https://www.arianetobin.ie/'
+SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
+WEBSITE='https://www.arianetobin.ie/'
+readonly SENTINEL WEBSITE
 # Try multiple times to cover for bad internet at home.
 # shellcheck disable=SC2034
 for i in $(seq 1 5); do
@@ -16,5 +17,5 @@ for i in $(seq 1 5); do
   fi
   sleep 600
 done
-printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}" 
+printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}"
 exit 1
