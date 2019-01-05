@@ -2,31 +2,72 @@
 
 set -e -f -u -o pipefail
 
-if [[ "$#" -eq 0 ]]; then
-  printf "USAGE: %s URL [URLS]\\n" "$0" >&2
-  exit 1
-fi
+recursively_list_deps() {
+  local package="$1" dep
+  for dep in $(brew deps "${package}"); do
+    printf "%s\\n" "${dep}"
+    recursively_list_deps "${dep}"
+  done
+}
 
-# Only update homebrew if it's been at least 4 hours since the last update.
-old_dir="$(find /usr/local/Homebrew/ -maxdepth 1 -name .git -cmin +240)"
-if [[ -n "${old_dir}" ]]; then
-  printf "Updating homebrew\\n"
-  brew update
-fi
-printf "Checking for new binaries: "
-for binary in youtube-dl ffmpeg $(brew deps ffmpeg); do
-  printf " %s" "${binary}"
-  if ! brew list | grep -q "^${binary}$"; then
-    printf "\\nInstalling %s\\n" "${binary}"
-    brew install "${binary}"
-  fi
-  if brew outdated | grep -q "^${binary}$"; then
-    printf "\\nUpdating %s\\n" "${binary}"
-    brew upgrade "${binary}"
-  fi
-done
-printf "\\nFinished checking for new binaries\\n"
+install_or_update_new_or_missing_packages() {
+  local temp_dir="$1"
+  shift
 
-until /usr/local/bin/youtube-dl "$@"; do
-  sleep 10
-done
+  printf "Checking for new packages:"
+  local brew_list="${temp_dir}/brew_list"
+  brew list > "${brew_list}"
+  local brew_outdated="${temp_dir}/brew_outdated"
+  brew outdated > "${brew_outdated}"
+  local package
+  for package in "$@"; do
+    printf " %s" "${package}"
+    if ! grep -q "^${package}$" "${brew_list}"; then
+      printf "\\nInstalling %s\\n" "${package}"
+      brew install "${package}"
+    elif grep -q "^${package}$" "${brew_outdated}"; then
+      printf "\\nUpdating %s\\n" "${package}"
+      brew upgrade "${package}"
+    fi
+  done
+  printf "\\nFinished checking for new packages\\n"
+}
+
+update_packages() {
+  # Only update homebrew if it's been at least 4 hours since the last update.
+  local old_dir
+  old_dir="$(find /usr/local/Homebrew/ -maxdepth 1 -name .git -cmin +240)"
+  if [[ -n "${old_dir}" ]]; then
+    printf "Updating homebrew\\n"
+    brew update
+  fi
+
+  local temp_dir
+  temp_dir="$(mktemp -d -t youtube-dl.XXXXXXXXXX)"
+  # I want ${temp_dir} to be expanded now, because when we exit successfully it
+  # will be out of scope and cannot be expanded.
+  # shellcheck disable=SC2064
+  trap "rm -f \"${temp_dir}\"" EXIT
+  local deps_list="${temp_dir}/deps_list"
+  recursively_list_deps youtube-dl > "${deps_list}"
+  recursively_list_deps ffmpeg >> "${deps_list}"
+  local package_list="${temp_dir}/package_list"
+  sort "${deps_list}" | uniq > "${package_list}"
+  # Word-splitting is deliberate.
+  # shellcheck disable=SC2046
+  install_or_update_new_or_missing_packages "${temp_dir}" $(< "${package_list}")
+}
+
+main() {
+  if [[ "$#" -eq 0 ]]; then
+    printf "USAGE: %s URL [URLS]\\n" "$0" >&2
+    exit 1
+  fi
+
+  update_packages
+  until /usr/local/bin/youtube-dl "$@"; do
+    sleep 10
+  done
+}
+
+main "$@"
