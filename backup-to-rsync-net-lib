@@ -136,6 +136,7 @@ run_rsync() {
               -e '^Connection reset by' \
               -e '^Connection to .* timed out$' \
               -e '^Timeout, server .* not responding' \
+              -e '^Warning: Permanently added the .* host key .* known hosts' \
               -e '^file has vanished:' \
               -e '^packet_write_wait: Connection to .* Broken pipe' \
               -e '^rsync error: error in rsync protocol data stream (code 12)' \
@@ -146,6 +147,7 @@ run_rsync() {
               -e '^rsync: connection unexpectedly closed' \
               -e '^rsync: safe_write failed to write .* bytes to socket' \
               -e '^ssh: Could not resolve hostname' \
+              -e '^ssh: connect to host .* No route to host' \
               -e '^ssh: connect to host .*: Operation timed out' \
               -e 'ssh_exchange_identification: read: Connection reset by peer' \
             || true)) \
