@@ -53,7 +53,8 @@ fix_single_volume() {
     # -R ace rebuilds everything.
     if fsck_hfs "${fsck_args[@]}" "${device}" > "${dest}"; then
       if [[ "${verbose}" -eq 1 ]]; then
-        printf "\\n\\nSucceeded on attempt %d/%d\\n" "${i}" "${max}"
+        printf "\\n\\nRepair of %s succeeded on attempt %d/%d\\n" \
+          "${directory}" "${i}" "${max}"
       fi
       break
     fi
