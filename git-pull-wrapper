@@ -13,11 +13,21 @@ git-pull() {
   git pull --quiet 2> \
     >(grep -v \
           -e '^$' \
+          -e '^Connection closed by' \
+          -e '^Connection reset by' \
+          -e '^Connection to .* timed out$' \
           -e '^Please make sure you have the correct access rights' \
+          -e '^Timeout, server .* not responding' \
+          -e '^Warning: Permanently added the .* host key .* known hosts' \
           -e '^and the repository exists' \
           -e '^fatal: Could not read from remote repository.' \
+          -e '^packet_write_wait: Connection to .* Broken pipe' \
+          -e '^ssh: Could not resolve hostname' \
           -e '^ssh: connect to host .* port 22: Network is unreachable' \
+          -e '^ssh: connect to host .* port 22: No route to host' \
           -e '^ssh: connect to host .* port 22: Operation timed out' \
+          -e '^ssh: connect to host .*: Operation timed out' \
+          -e 'ssh_exchange_identification: read: Connection reset by peer' \
         || true)
 }
 
