@@ -7,11 +7,12 @@ PATH="${HOME}/bin:${PATH}"
 cd /etc
 git check-local-copy-is-clean
 
+# These arguments are necessary when a cert needs to be renewed.
 certbot renew \
-  --quiet
-  # --pre-hook "service apache2 stop" \
-  # --post-hook "service apache2 start" \
-  # --standalone
+  --quiet \
+  --pre-hook "service apache2 stop" \
+  --post-hook "service apache2 start" \
+  --standalone
 
 if ! git check-local-copy-is-clean 2>/dev/null; then
   etckeeper commit 'Renew some certs.'
