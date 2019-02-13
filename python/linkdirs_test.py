@@ -252,7 +252,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     non_skip_dirs = ['harry', 'murphy']
     skip_files = ['pinky', 'the_brain']
     skip_dirs = ['loki', 'molly']
-    skip_contents = '\n'.join(skip_files + ['# a comment', ''] + skip_dirs)
+    skip_pattern_prefix = 'ignore-me'
+    skip_contents = '\n'.join(
+        skip_files + ['# a comment', ''] + skip_dirs
+        + [os.path.join(non_skip_dirs[0], '%s*' % skip_pattern_prefix)])
     skip_filename = 'skip-me'
     self.fs.CreateFile(skip_filename, contents=skip_contents)
 
@@ -260,6 +263,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     for dirname in skip_dirs + non_skip_dirs:
       for filename in skip_files + non_skip_files:
         self.fs.CreateFile(os.path.join(src_dir, dirname, filename))
+    for i in range(1, 5):
+      filename = '%s-%d' % (skip_pattern_prefix, i)
+      self.fs.CreateFile(os.path.join(src_dir, non_skip_dirs[0], filename))
 
     dest_dir = '/z/y/x'
     linkdirs.real_main(['linkdirs', '--ignore_file=%s' % skip_filename,
