@@ -67,7 +67,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     - file1 => create file1 with no contents.
     - file1:foo bar baz => create file1 containing "foo bar baz".
     - directory/ => filenames ending in a / create directories.
-    It is safe to repeat files.
+    It is safe to repeat files, but existing files will not be changed in any
+    way so you can't replace the contents of a file.
 
     Args:
       string: str, string listing files as described above.
