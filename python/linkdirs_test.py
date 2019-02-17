@@ -58,28 +58,71 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   def setUp(self):
     self.setUpPyfakefs()
 
+  def create_files(self, string):
+    """Create files in a newline-separated string of files.
+
+    Format:
+    - # Comments and empty lines are skipped.
+    - file1=file2 => make file2 a hard link to file1.
+    - file1 => create file1 with no contents.
+    - file1:foo bar baz => create file1 containing "foo bar baz".
+    - directory/ => filenames ending in a / create directories.
+    It is safe to repeat files.
+
+    Args:
+      string: str, string listing files as described above.
+    """
+    for line in string.split('\n'):
+      # pylint: disable=no-member
+      # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
+      line = line.strip()
+      if not line or line.startswith('#'):
+        continue
+
+      if '=' in line:
+        (src, dest) = line.split('=')
+        # This allows creating a file with specific contents and then linking it
+        # later.
+        if not os.path.exists(src):
+          self.fs.CreateFile(src)
+        directory = os.path.dirname(dest)
+        if not os.path.exists(directory):
+          os.makedirs(directory)
+        os.link(src, dest)
+        continue
+
+      if ':' in line:
+        (filename, contents) = line.split(':')
+      else:
+        (filename, contents) = (line, None)
+      if os.path.exists(filename):
+        continue
+      if filename.endswith(os.sep):
+        os.makedirs(filename)
+      else:
+        self.fs.CreateFile(filename, contents=contents)
+
   def test_nothing_changes(self):
     """Nothing needs to be done."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
-    self.fs.CreateFile(src_file, contents='qwerty')
-    os.makedirs(os.path.dirname(dest_file))
-    os.link(src_file, dest_file)
+    self.create_files('%s=%s' % (src_file, dest_file))
     self.assert_files_are_linked(src_file, dest_file)
 
     linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
                         os.path.dirname(dest_file)])
     self.assert_files_are_linked(src_file, dest_file)
 
-  def test_dest_perms_unchanged(self):  # pylint: disable=no-self-use
+  def test_dest_perms_unchanged(self):
     """Destination directory perms don't change unnecessarily."""
     src_dir = '/a/b/c/dir'
     dest_dir = '/z/y/x/dir'
+    files = """
+    {src_dir}/
+    {dest_dir}/
+    """.format(src_dir=src_dir, dest_dir=dest_dir)
+    self.create_files(files)
     mode = int('0755', base=8)
-    os.makedirs(src_dir)
-    os.makedirs(dest_dir)
     os.chmod(src_dir, mode)
     os.chmod(dest_dir, mode)
 
@@ -89,7 +132,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       fake_chmod.assert_not_called()
 
   def test_dest_perms_are_changed(self):
-    """Destination directory perms change if necessarily."""
+    """Destination directory perms change if necessary."""
     src_dir = '/a/b/c/dir'
     dest_dir = '/z/y/x/dir'
     mode = int('0755', base=8)
@@ -104,24 +147,20 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_missing_file_is_created(self):
     """Missing file gets created."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
-    dest_file = '/z/y/x/file'
-    self.fs.CreateFile(src_file, contents='qwerty')
+    self.create_files('%s:qwerty' % src_file)
 
+    dest_file = '/z/y/x/file'
     linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
                         os.path.dirname(dest_file)])
     self.assert_files_are_linked(src_file, dest_file)
 
   def test_replace_same_contents(self):
     """File with same contents is replaced with link."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
-    self.fs.CreateFile(src_file, contents='qwerty')
-    self.fs.CreateFile(dest_file, contents='qwerty')
+    self.create_files('%s:qwerty' % src_file)
+    self.create_files('%s:qwerty' % dest_file)
 
     with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
@@ -133,19 +172,20 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_report_unexpected_files(self):
     """Report unexpected files."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
-    self.fs.CreateFile(os.path.join(src_dir, 'file'))
-    # 'asdf' subdir exists here, so it will be checked in destdir.
-    self.fs.CreateFile(os.path.join(src_dir, 'asdf', 'file'))
     dest_dir = '/z/y/x'
-    self.fs.CreateFile(os.path.join(dest_dir, 'pinky'))
-    self.fs.CreateFile(os.path.join(dest_dir, 'the_brain'))
+    files = """
+    {src_dir}/file
+    # 'asdf' subdir exists here, so it will be checked in dest_dir.
+    {src_dir}/asdf/file
+    {dest_dir}/pinky
+    {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
-    os.makedirs(os.path.join(dest_dir, 'subdir'))
+    {dest_dir}/subdir/
     # And also a subdir that will be reported.
-    os.makedirs(os.path.join(dest_dir, 'asdf', 'report_me'))
+    {dest_dir}/asdf/report_me/
+    """.format(src_dir=src_dir, dest_dir=dest_dir)
+    self.create_files(files)
 
     actual = linkdirs.real_main(['linkdirs', '--report_unexpected_files',
                                  '--ignore_unexpected_children',
@@ -163,17 +203,18 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_delete_unexpected_files(self):
     """Delete unexpected files."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
-    self.fs.CreateFile(os.path.join(src_dir, 'file'))
-    # 'asdf' subdir exists here, so it will be checked in destdir.
-    self.fs.CreateFile(os.path.join(src_dir, 'asdf', 'file'))
     dest_dir = '/z/y/x'
-    self.fs.CreateFile(os.path.join(dest_dir, 'pinky'))
-    self.fs.CreateFile(os.path.join(dest_dir, 'the_brain'))
+    files = """
+    {src_dir}/file
+    # 'asdf' subdir exists here, so it will be checked in dest_dir.
+    {src_dir}/asdf/file
+    {dest_dir}/pinky
+    {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
-    os.makedirs(os.path.join(dest_dir, 'subdir'))
+    {dest_dir}/subdir/
+    """.format(src_dir=src_dir, dest_dir=dest_dir)
+    self.create_files(files)
 
     actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
                                  '--ignore_unexpected_children',
@@ -185,19 +226,20 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_delete_unexp_keeps_dirs(self):
     """Delete unexpected files but not directories."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
-    self.fs.CreateFile(os.path.join(src_dir, 'file'))
-    # 'asdf' subdir exists here, so it will be checked in destdir.
-    self.fs.CreateFile(os.path.join(src_dir, 'asdf', 'file'))
     dest_dir = '/z/y/x'
-    self.fs.CreateFile(os.path.join(dest_dir, 'pinky'))
-    self.fs.CreateFile(os.path.join(dest_dir, 'the_brain'))
+    files = """
+    {src_dir}/file
+    # 'asdf' subdir exists here, so it will be checked in dest_dir.
+    {src_dir}/asdf/file
+    {dest_dir}/pinky
+    {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
-    os.makedirs(os.path.join(dest_dir, 'subdir'))
+    {dest_dir}/subdir/
     # And also a subdir that will be reported.
-    os.makedirs(os.path.join(dest_dir, 'asdf', 'report_me'))
+    {dest_dir}/asdf/report_me/
+    """.format(src_dir=src_dir, dest_dir=dest_dir)
+    self.create_files(files)
 
     actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
                                  '--ignore_unexpected_children',
@@ -216,23 +258,24 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_force_removes_unexp_dirs(self):
     """Delete unexpected files and directories with --force."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_dir = '/a/b/c'
-    self.fs.CreateFile(os.path.join(src_dir, 'file'))
-    # 'asdf' subdir exists here, so it will be checked in destdir.
-    self.fs.CreateFile(os.path.join(src_dir, 'asdf', 'file'))
     dest_dir = '/z/y/x'
-    self.fs.CreateFile(os.path.join(dest_dir, 'pinky'))
-    self.fs.CreateFile(os.path.join(dest_dir, 'the_brain'))
+    files = """
+    {src_dir}/file
+    # 'asdf' subdir exists here, so it will be checked in dest_dir.
+    {src_dir}/asdf/file
+    {dest_dir}/pinky
+    {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
-    os.makedirs(os.path.join(dest_dir, 'subdir'))
+    {dest_dir}/subdir/
     # And also a subdir that will be removed.
-    os.makedirs(os.path.join(dest_dir, 'asdf', 'delete_me'))
+    {dest_dir}/asdf/delete_me/
     # And create a nested subdir that will be removed.  This ensures that nested
     # subdirs are handled correctly, i.e. we don't delete the parent and then
     # fail to delete the child.
-    os.makedirs(os.path.join(dest_dir, 'asdf', 'delete_me', 'delete_me_too'))
+    {dest_dir}/asdf/delete_me/delete_me_too/
+    """.format(src_dir=src_dir, dest_dir=dest_dir)
+    self.create_files(files)
 
     actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
                                  '--ignore_unexpected_children', '--force',
@@ -248,6 +291,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Excluded files/dirs are skipped."""
     # pylint: disable=no-member
     # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
+    # TODO: use self.create_files() here.
     non_skip_files = ['link_me', 'me_too']
     non_skip_dirs = ['harry', 'murphy']
     skip_files = ['pinky', 'the_brain']
@@ -287,12 +331,13 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_report_diffs(self):
     """Report diffs."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
-    self.fs.CreateFile(src_file, contents='qwerty\n')
-    self.fs.CreateFile(dest_file, contents='asdf\n')
+    files = """
+    {src_file}:qwerty
+    {dest_file}:asdf
+    """.format(src_file=src_file, dest_file=dest_file)
+    self.create_files(files)
 
     # Test without --force to generate diffs.
     actual = linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
@@ -300,8 +345,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Strip off timestamps.
     actual = [re.sub(r'\t.*$', '\t', x) for x in actual]
     expected = [
-        '--- /z/y/x/file\t',
-        '+++ /a/b/c/file\t',
+        '--- %s\t' % dest_file,
+        '+++ %s\t' % src_file,
         '@@ -1 +1 @@',
         '-asdf',
         '+qwerty',
@@ -328,66 +373,61 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_force_deletes_dest(self):
     """Force deletes existing files and directories."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
-    filenames = ['file1', 'file2', 'file3', 'file4']
-    subdir = 'dir1'
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    self.fs.CreateFile(os.path.join(src_dir, filenames[0]), contents='qwerty')
-    self.fs.CreateFile(os.path.join(src_dir, filenames[1]), contents='asdf')
-    self.fs.CreateFile(os.path.join(src_dir, filenames[2]), contents='pinky')
-    self.fs.CreateFile(os.path.join(src_dir, subdir, filenames[3]))
-    self.fs.CreateFile(os.path.join(dest_dir, filenames[0]), contents='12345')
-    os.makedirs(os.path.join(dest_dir, filenames[1]))
-    self.fs.CreateFile(os.path.join(dest_dir, filenames[2]), contents='pinky')
+    files = """
+    {src_dir}/file1:qwerty
+    {src_dir}/file2:asdf
+    {src_dir}/file3:pinky
+    {src_dir}/dir1/file4
+    {dest_dir}/file1:12345
+    {dest_dir}/file2/
+    {dest_dir}/file3:pinky
     # Subdir in src, file in dest.
-    self.fs.CreateFile(os.path.join(dest_dir, subdir), contents='pinky')
+    {dest_dir}/dir1:pinky
+    """.format(src_dir=src_dir, dest_dir=dest_dir)
+    self.create_files(files)
 
     with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--force', src_dir, dest_dir])
       self.assertEqual([], messages)
-      self.assert_files_are_linked(os.path.join(src_dir, filenames[0]),
-                                   os.path.join(dest_dir, filenames[0]))
-      self.assert_files_are_linked(os.path.join(src_dir, filenames[1]),
-                                   os.path.join(dest_dir, filenames[1]))
       self.assertEqual('', mock_stdout.getvalue())
+      for filename in ['file1', 'file2', 'file3', 'dir1/file4']:
+        self.assert_files_are_linked(os.path.join(src_dir, filename),
+                                     os.path.join(dest_dir, filename))
 
   def test_dryrun(self):
     """Dry-run."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
-    filenames = ['file1', 'file2', 'file3', 'file4', 'file5', 'file6']
-    subdirs = ['dir1', 'dir2', 'dir3']
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    self.fs.CreateFile(os.path.join(src_dir, filenames[0]), contents='qwerty\n')
-    self.fs.CreateFile(os.path.join(src_dir, filenames[1]), contents='asdf')
-    self.fs.CreateFile(os.path.join(src_dir, filenames[2]), contents='pinky')
-    self.fs.CreateFile(os.path.join(src_dir, filenames[3]), contents='brain')
-    self.fs.CreateFile(os.path.join(src_dir, filenames[4]), contents='3 links')
-    # Test handling a subdir that exists.
-    self.fs.CreateFile(os.path.join(src_dir, subdirs[0], filenames[0]))
-    # Test handling a subdir that does not exist.
-    self.fs.CreateFile(os.path.join(src_dir, subdirs[1], filenames[0]))
-    # Test handling a destination that isn't a subdir.
-    self.fs.CreateFile(os.path.join(src_dir, subdirs[2], filenames[0]))
-    # Test handling of source symlinks.
-    os.symlink(os.path.join(src_dir, filenames[4]),
-               os.path.join(src_dir, filenames[5]))
+    files = """
+    {src_dir}/file1:qwerty
+    {src_dir}/file2:asdf
+    {src_dir}/file3:pinky
+    {src_dir}/file4:brain
+    {src_dir}/file5:3 links
+    # Test handling a subdir that exists in dest_dir.
+    {src_dir}/dir1/file1
+    # Test handling a subdir that does not exist in dest_dir.
+    {src_dir}/dir2/file1
+    # Test handling a destination that isn't a subdir in dest_dir.
+    {src_dir}/dir3/file1
 
-    self.fs.CreateFile(os.path.join(dest_dir, filenames[0]), contents='12345\n')
-    self.fs.CreateFile(os.path.join(dest_dir, filenames[2]), contents='pinky')
+    {dest_dir}/file1:12345
+    {dest_dir}/file3:pinky
     # Test handling a destination that isn't a file.
-    os.makedirs(os.path.join(dest_dir, filenames[3]))
+    {dest_dir}/file4/
     # Test handling of multiply linked destination files.
-    self.fs.CreateFile(os.path.join(dest_dir, filenames[4]), contents='3 links')
-    os.link(os.path.join(dest_dir, filenames[4]),
-            os.path.join(dest_dir, '%s-%s' % (filenames[4], filenames[4])))
+    {dest_dir}/file5:3 links
+    {dest_dir}/file5={dest_dir}/file5-file5
     # Test handling of subdirectories.
-    os.makedirs(os.path.join(dest_dir, subdirs[0]))
+    {dest_dir}/dir1/
     # Test handling a destination that isn't a subdir.
-    self.fs.CreateFile(os.path.join(dest_dir, subdirs[2]))
+    {dest_dir}/dir3
+    """.format(src_dir=src_dir, dest_dir=dest_dir)
+    self.create_files(files)
+    # Test handling of source symlinks - not supported by create_files().
+    os.symlink(os.path.join(src_dir, 'file5'), os.path.join(src_dir, 'file6'))
 
     with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--dryrun', src_dir, dest_dir])
@@ -405,12 +445,12 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           'Skipping symbolic link /a/b/c/file6',
       ]
       self.assertEqual(expected, messages)
-      self.assertFalse(os.path.samefile(os.path.join(src_dir, filenames[0]),
-                                        os.path.join(dest_dir, filenames[0])))
-      self.assertTrue(os.path.exists(os.path.join(dest_dir, filenames[0])))
-      self.assertFalse(os.path.exists(os.path.join(dest_dir, filenames[1])))
-      self.assertTrue(os.path.exists(os.path.join(dest_dir, filenames[2])))
-      self.assertFalse(os.path.isdir(os.path.join(dest_dir, subdirs[1])))
+      self.assertFalse(os.path.samefile(os.path.join(src_dir, 'file1'),
+                                        os.path.join(dest_dir, 'file1')))
+      self.assertTrue(os.path.exists(os.path.join(dest_dir, 'file1')))
+      self.assertFalse(os.path.exists(os.path.join(dest_dir, 'file2')))
+      self.assertTrue(os.path.exists(os.path.join(dest_dir, 'file3')))
+      self.assertFalse(os.path.isdir(os.path.join(dest_dir, 'dir2')))
       stdout = '\n'.join([
           'chmod 0777 /z/y/x/dir1',
           'mkdir /z/y/x/dir2',
