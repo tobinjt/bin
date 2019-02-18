@@ -290,27 +290,44 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
   def test_exclusions_are_skipped(self):
     """Excluded files/dirs are skipped."""
-    # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
-    # TODO: use self.create_files() here.
-    non_skip_files = ['link_me', 'me_too']
-    non_skip_dirs = ['harry', 'murphy']
-    skip_files = ['pinky', 'the_brain']
-    skip_dirs = ['loki', 'molly']
-    skip_pattern_prefix = 'ignore-me'
-    skip_contents = '\n'.join(
-        skip_files + ['# a comment', ''] + skip_dirs
-        + [os.path.join(non_skip_dirs[0], '%s*' % skip_pattern_prefix)])
-    skip_filename = 'skip-me'
-    self.fs.CreateFile(skip_filename, contents=skip_contents)
-
     src_dir = '/a/b/c'
-    for dirname in skip_dirs + non_skip_dirs:
-      for filename in skip_files + non_skip_files:
-        self.fs.CreateFile(os.path.join(src_dir, dirname, filename))
-    for i in range(1, 5):
-      filename = '%s-%d' % (skip_pattern_prefix, i)
-      self.fs.CreateFile(os.path.join(src_dir, non_skip_dirs[0], filename))
+    files = """
+    {src_dir}/harry/link_me
+    {src_dir}/harry/me_too
+    {src_dir}/murphy/link_me
+    {src_dir}/murphy/me_too
+    # Everything below here is excluded so should not be linked.
+    {src_dir}/harry/ignore-me1
+    {src_dir}/harry/ignore-me2
+    {src_dir}/harry/ignore-me3
+    {src_dir}/harry/pinky
+    {src_dir}/harry/the_brain
+    {src_dir}/loki/link_me
+    {src_dir}/loki/me_too
+    {src_dir}/loki/pinky
+    {src_dir}/loki/the_brain
+    {src_dir}/molly/link_me
+    {src_dir}/molly/me_too
+    {src_dir}/molly/pinky
+    {src_dir}/molly/the_brain
+    {src_dir}/murphy/pinky
+    {src_dir}/murphy/the_brain
+    """.format(src_dir=src_dir)
+    self.create_files(files)
+
+    skip_filename = 'skip-me'
+    skip_contents = """
+    # Files to skip.
+    pinky
+    the_brain
+    # Directories to skip.
+    loki
+    molly
+    # Patterns to skip.
+    ignore-me*
+    """
+    with open(skip_filename, 'w') as skip_fh:
+      skip_fh.write(skip_contents)
 
     dest_dir = '/z/y/x'
     linkdirs.real_main(['linkdirs', '--ignore_file=%s' % skip_filename,
