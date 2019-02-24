@@ -21,7 +21,7 @@ list_plugins_or_themes_for_upgrade() {
 
 main() {
   if [[ "$#" -ne 1 ]]; then
-    printf "Usage: %s WORDPRESS-DIRECTORY" "$0" >&2
+    printf "Usage: %s WORDPRESS-DIRECTORY\\n" "$0" >&2
     exit 1
   fi
 

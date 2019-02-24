@@ -53,8 +53,13 @@ git check-local-copy-is-clean
 # The URL to download will be assembled using SEPARATORS and to downloaded file
 # extracted using SUBDIRS.
 declare -A SUBDIRS SEPARATORS
+# Shellcheck warns about keys in associative arrays being used but not assigned,
+# disable that warning.
+# shellcheck disable=SC2154
 SUBDIRS[wordpress]=".."
+# shellcheck disable=SC2154
 SUBDIRS[plugin]="plugins"
+# shellcheck disable=SC2154
 SUBDIRS[theme]="themes"
 SEPARATORS[wordpress]="-"
 if [[ -n "${VERSION}" ]]; then
