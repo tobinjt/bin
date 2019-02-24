@@ -137,4 +137,6 @@ git add --all .
 # If there's anything to commit then commit it.
 if ! git check-local-copy-is-clean 2>/dev/null; then
   git commit --quiet --message "Installed ${NAME} ${VERSION}"
+  # Loud message for when I'm upgrading everything at once.
+  printf "\\n\\nInstalled %s %s\\n\\n" "${NAME}" "${VERSION}"
 fi

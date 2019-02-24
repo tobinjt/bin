@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Output the plugins or themes that should be upgraded.  Ignore files and
+# excluded directories.
+list_plugins_or_themes_for_upgrade() {
+  set +f
+  local dir
+  for dir in *; do
+    if [[ ! -d "${dir}" ]]; then
+      continue
+    fi
+    if [[ -f "${dir}/excluded-from-automatic-updates" ]]; then
+      continue
+    fi
+    printf "%s\\n" "${dir}"
+  done
+  set -f
+}
+
+main() {
+  if [[ "$#" -ne 1 ]]; then
+    printf "Usage: %s WORDPRESS-DIRECTORY" "$0" >&2
+    exit 1
+  fi
+
+  local WORDPRESS_DIR
+  WORDPRESS_DIR="$1"
+  wordpress-install "${WORDPRESS_DIR}" wordpress
+
+  cd "${WORDPRESS_DIR}/wp-content/plugins"
+  local plugin
+  for plugin in $(list_plugins_or_themes_for_upgrade); do
+    wordpress-install "${WORDPRESS_DIR}" plugin "${plugin}"
+  done
+
+  cd "${WORDPRESS_DIR}/wp-content/themes"
+  local theme
+  for theme in $(list_plugins_or_themes_for_upgrade); do
+    wordpress-install "${WORDPRESS_DIR}" theme "${theme}"
+  done
+}
+
+main "$@"
