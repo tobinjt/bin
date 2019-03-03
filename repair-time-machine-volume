@@ -4,6 +4,7 @@ set -e -f -u -o pipefail
 
 PATH="/sbin:${PATH}"
 # Think about using tmutil on my laptop to disable and enable backups.
+# tmutil verifychecksums?
 
 fix_single_volume() {
   local directory="$1" verbose="$2"
