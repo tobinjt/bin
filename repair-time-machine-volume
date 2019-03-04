@@ -25,7 +25,10 @@ fix_single_volume() {
   local output
   output="$(mktemp -t hdiutil.XXXXXXXXXX)"
   # Do I need -verbose -noverify -noautofsck ?
-  hdiutil attach -readwrite -nomount "${directory}" > "${output}"
+  if ! hdiutil attach -readwrite -nomount "${directory}" > "${output}"; then
+    printf "Failed to attach %s\\n" "${directory}" >&2
+    return 1
+  fi
 
   # Need the line containing Apple_HFS.*
   # Output:
@@ -62,7 +65,7 @@ fix_single_volume() {
     if [[ "${i}" -eq "${max}" ]]; then
       printf "\\n\\n%d repair attempts on %s failed :(\\n" \
         "${max}" "${directory}" >&2
-      false
+      return 1
     fi
   done
   hdiutil detach "${device}" > /dev/null
