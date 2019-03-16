@@ -246,7 +246,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                                  '--ignore_unexpected_children',
                                  src_dir, dest_dir])
     expected = [
-        'Refusing to delete directories: /z/y/x/asdf/report_me',
+        'Refusing to delete directories without --force/-f:'
+        ' /z/y/x/asdf/report_me',
         'Unexpected directory: /z/y/x/asdf/report_me',
         'rmdir /z/y/x/asdf/report_me',
     ]

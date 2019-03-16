@@ -364,7 +364,7 @@ def delete_unexpected_files(unexpected_paths: UnexpectedPaths,
   if not unexpected_paths.directories:
     return []
   if not options.force:
-    return ["Refusing to delete directories: %s"
+    return ["Refusing to delete directories without --force/-f: %s"
             % " ".join(unexpected_paths.directories)]
   # Descending sort by length, so that child directories are removed before
   # parent directories.
