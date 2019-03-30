@@ -91,7 +91,8 @@ main() {
       retval=1
     fi
     if echo "${hostname}" | grep -q '\..*\.'; then
-      # Don't check www.foo.domain.com or MX records.
+      # This is a subdomain, e.g. dev.arianetobin.ie.
+      # Don't check www.subdomain or MX records for it.
       continue
     fi
     if ! check_dns_for_host "www.${hostname}" \
@@ -107,10 +108,12 @@ main() {
 
 if [ $# -eq 0 ]; then
   main \
+    "ariane.ie" \
     "arianetobin.com" \
     "arianetobin.ie" \
     "dev.arianetobin.ie" \
     "johntobin.ie" \
+    "metalatplay.com" \
     "metalatwork.com" \
     "nakedmetalsmith.com"
 else
