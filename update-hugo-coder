@@ -70,7 +70,7 @@ main() {
   printf "*** Checking for diffs that need to be copied over in %s\\n" \
     "${WEBSITE_DIR}"
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
-  diff -u layouts/posts/single.html layouts/blog/single.html
+  diff -Naur layouts/posts layouts/blog
 }
 
 main "$@"
