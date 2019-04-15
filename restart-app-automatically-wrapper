@@ -9,7 +9,7 @@ set -e -f -u -o pipefail
 # will just restart it automatically, and the upgrade process will fail.
 
 # Kill any leftover processes from previous attempts.  Sleeps for 15 seconds in
-# total if there are leftovers, 0 seconds if not..
+# total if there are leftovers, 0 seconds if not.
 kill_leftovers() {
   # Assumes that every app looks like "/Applications/Backup and
   # Sync.app/Contents/MacOS/Backup and Sync".  Strip off /Contents... so that
@@ -42,10 +42,9 @@ leftover_pids() {
 
 main() {
   kill_leftovers "$1"
-  local exit_status
+  local exit_status=0
   # Run the app.
-  "$@"
-  exit_status="$?"
+  "$@" || exit_status="$?"
   sleep 60
   exit "${exit_status}"
 }

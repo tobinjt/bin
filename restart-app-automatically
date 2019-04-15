@@ -39,7 +39,6 @@ main() {
   local DEST_FILE="$1" APP="$2" LABEL="$3" ACTION="$4"
   local DEST="${HOME}/Library/LaunchAgents/${DEST_FILE}"
 
-  local UPDATE=1
   if launchctl list | grep -q "${LABEL}"; then
     if ! diff -u "${DEST}" <(output_plist "${APP}" "${LABEL}"); then
       # This will kill the app, which is really annoying, but there doesn't seem
@@ -47,14 +46,9 @@ main() {
       launchctl unload "${DEST}"
       # Give the app some time to exit.
       sleep 10
-    else
-      # No changes needed.
-      UPDATE=0
+      output_plist "${APP}" "${LABEL}" > "${DEST}"
+      launchctl load "${DEST}"
     fi
-  fi
-  if [[ "${UPDATE}" -eq 1 ]]; then
-    output_plist "${APP}" "${LABEL}" > "${DEST}"
-    launchctl load "${DEST}"
   fi
   case "${ACTION}" in
     stop)
