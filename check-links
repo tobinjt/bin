@@ -23,8 +23,10 @@ wget \
   --output-file wget.log \
   --execute robots=off \
   --reject-regex "${reject_regex}" \
+  --content-on-error \
   --wait 1 \
   --recursive \
+  --level 10 \
   --page-requisites \
   "${WEBSITE}" || true
 
