@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+destdir="$(mktemp -d -t linkchecker-cron.XXXXXXXXXX)"
+cd "${destdir}"
+
+# - Cut down on output so this can be run from cron, but write to a file that
+#   can be displayed on failure or when run interactively.
+# - Check external links but do not recurse on external sites.
+# - Exclude domains that definitely won't work.
+# - Dump stderr because there's always a warning about SSL certificates.
+# - To figure out problems run with '--debug=checking' and look for the URLs
+#   that keep getting checked at the end.
+exit_status=0
+linkchecker \
+  --no-status \
+  --quiet \
+  --file-output=text \
+  --check-extern \
+  --no-follow-url='!(www.johntobin.ie|www.arianetobin.ie)' \
+  --ignore-url=//www.example.org \
+  --ignore-url=//pool.ntp.org \
+  "$@" 2>/dev/null || exit_status="$?"
+
+if [[ "${exit_status}" != 0 || -t 0 ]]; then
+  printf "Output in %s\\n" "${destdir}"
+  cat linkchecker-out.txt
+else
+  rm -rf "${destdir}"
+fi
+exit "${exit_status}"
