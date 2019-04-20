@@ -30,6 +30,7 @@ linkchecker \
 
 if [[ "${exit_status}" != 0 || -t 0 ]]; then
   printf "Output in %s\\n" "${destdir}"
+  printf "Exit status: %s\\n" "${exit_status}"
   set +f
   cat -- *
   set -f
