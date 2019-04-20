@@ -16,8 +16,12 @@ WEBSITE="$1"
 DIR="$(mktemp -d /tmp/check-links-XXXXXXXXXX)"
 LOG="${DIR}/wget.log"
 readonly WEBSITE DIR LOG
-
 cd "${DIR}"
+
+if [[ ! -t 0 ]]; then
+  sleep $((RANDOM % 600))
+fi
+
 reject_regex="/xmlrpc.php|/blog/Smarter_HTTP_redirects/"
 wget \
   --output-file wget.log \

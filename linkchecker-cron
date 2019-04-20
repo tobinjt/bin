@@ -5,6 +5,10 @@ set -e -f -u -o pipefail
 destdir="$(mktemp -d -t linkchecker-cron.XXXXXXXXXX)"
 cd "${destdir}"
 
+if [[ ! -t 0 ]]; then
+  sleep $((RANDOM % 600))
+fi
+
 # - Cut down on output so this can be run from cron, but write to a file that
 #   can be displayed on failure or when run interactively.
 # - Check external links but do not recurse on external sites.
