@@ -21,8 +21,8 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     """Create files for tests."""
     for (filename, contents) in data.items():
       # pylint: disable=no-member
-      # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
-      self.fs.CreateFile(filename, contents=contents)
+      # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
+      self.fs.create_file(filename, contents=contents)
 
   def test_simple(self):
     """Test basic processing."""
@@ -219,9 +219,9 @@ class TestMain(fake_filesystem_unittest.TestCase):
     self.setUpPyfakefs()
     self._testdir = '/test/dir'
     # pylint: disable=no-member
-    # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
-    self.fs.CreateFile(os.path.join(self._testdir, 'qwerty'),
-                       contents='test test')
+    # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
+    self.fs.create_file(os.path.join(self._testdir, 'qwerty'),
+                        contents='test test')
 
   def test_bad_args(self):
     """Check that bad args are rejected."""
@@ -281,8 +281,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Create files for tests."""
     for (filename, contents) in data.items():
       # pylint: disable=no-member
-      # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
-      self.fs.CreateFile(filename, contents=contents)
+      # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
+      self.fs.create_file(filename, contents=contents)
 
   @mock.patch('sys.exit')
   @mock.patch('time.time')

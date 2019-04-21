@@ -75,7 +75,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """
     for line in string.split('\n'):
       # pylint: disable=no-member
-      # Disable "Instance of 'FakeFilesystem' has no 'CreateFile' member"
+      # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
       line = line.strip()
       if not line or line.startswith('#'):
         continue
@@ -85,7 +85,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # This allows creating a file with specific contents and then linking it
         # later.
         if not os.path.exists(src):
-          self.fs.CreateFile(src)
+          self.fs.create_file(src)
         directory = os.path.dirname(dest)
         if not os.path.exists(directory):
           os.makedirs(directory)
@@ -101,7 +101,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       if filename.endswith(os.sep):
         os.makedirs(filename)
       else:
-        self.fs.CreateFile(filename, contents=contents)
+        self.fs.create_file(filename, contents=contents)
 
   def test_nothing_changes(self):
     """Nothing needs to be done."""
