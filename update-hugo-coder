@@ -22,10 +22,14 @@ main() {
   git checkout master
   git pull upstream master
   git push
-  # Pull any changes through review, merge changes upstream changes from master
-  # branch, and push to my fork on Github.
+  # If necessary: create the branch and push it to github.
+  # Pull any changes made through review on github, merge upstream changes from
+  # master branch, and push to my fork on Github.
   printf "*** Updating changes-for-upstream in %s\\n" "${STANDALONE_THEME_DIR}"
-  git checkout changes-for-upstream
+  if ! git checkout changes-for-upstream; then
+    git checkout -b changes-for-upstream
+    git push
+  fi
   git pull
   git merge master
   git push
