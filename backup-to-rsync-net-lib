@@ -149,6 +149,7 @@ run_rsync() {
               -e '^ssh: Could not resolve hostname' \
               -e '^ssh: connect to host .* No route to host' \
               -e '^ssh: connect to host .*: Operation timed out' \
+              -e 'ssh_exchange_identification: Connection closed by remote ' \
               -e 'ssh_exchange_identification: read: Connection reset by peer' \
             || true)) \
     || exit_status="$?"
