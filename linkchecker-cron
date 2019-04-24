@@ -24,8 +24,9 @@ linkchecker \
   --file-output=text \
   --check-extern \
   --no-follow-url='!(www.johntobin.ie|www.arianetobin.ie)' \
-  --ignore-url=//www.example.org \
   --ignore-url=//pool.ntp.org \
+  --ignore-url=//www.amazon.co.uk \
+  --ignore-url=//www.example.org \
   "$@" >stdout 2>stderr || exit_status="$?"
 
 if [[ "${exit_status}" != 0 || -t 0 ]]; then
