@@ -28,6 +28,8 @@ main() {
   printf "*** Updating changes-for-upstream in %s\\n" "${STANDALONE_THEME_DIR}"
   if ! git checkout changes-for-upstream; then
     git checkout -b changes-for-upstream
+    git branch --set-upstream-to=origin/changes-for-upstream \
+      changes-for-upstream
     git push
   fi
   git pull
