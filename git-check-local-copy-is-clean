@@ -39,7 +39,12 @@ main() {
     # No upstream, so don't check that.
     return "${result}"
   fi
-  output="$(git log "@{u}..")"
+  if ! git log "@{upstream}.." >& /dev/null; then
+    local branch
+    branch="$(git branch | awk '$1 == "*" { print $2 }')"
+    git branch --set-upstream-to="origin/${branch}" "${branch}"
+  fi
+  output="$(git log "@{upstream}..")"
   if [[ -n "${output}" ]]; then
     printf "Unpushed commits in %s\\n%s\\n" "${rootdir}" "${output}" >&2
     result=1
