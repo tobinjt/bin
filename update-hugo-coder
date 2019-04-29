@@ -11,6 +11,7 @@ main() {
   local WEBSITE_DIR="${HOME}/src/johntobin.ie" THEME_SUBDIR="themes/hugo-coder"
   readonly STANDALONE_THEME_DIR WEBSITE_DIR THEME_SUBDIR
 
+  # Update the checkout I use for development.
   cd "${STANDALONE_THEME_DIR}"
   git check-local-copy-is-clean --ignore-unpushed-commits
   if ! git remote show | grep -q upstream; then
@@ -22,9 +23,10 @@ main() {
   git checkout master
   git pull upstream master
   git push
-  # If necessary: create the branch and push it to github.
+
   # Pull any changes made through review on github, merge upstream changes from
   # master branch, and push to my fork on Github.
+  # If necessary: create the branch and push it to Github.
   printf "*** Updating changes-for-upstream in %s\\n" "${STANDALONE_THEME_DIR}"
   if ! git checkout changes-for-upstream; then
     git checkout -b changes-for-upstream
@@ -35,9 +37,9 @@ main() {
   git pull
   git merge master
   git push
-  # Pull any changes I have made, merge changes upstream changes from master
-  # branch and from my changes-for-upstream branch, and push to my fork on
-  # Github.
+
+  # Pull any changes I have made, merge upstream changes from both master and my
+  # changes-for-upstream branchs, and push to Github.
   printf "*** Updating my-changes in %s\\n" "${STANDALONE_THEME_DIR}"
   git checkout my-changes
   git pull
@@ -45,6 +47,7 @@ main() {
   git merge changes-for-upstream
   git push
 
+  # Update the checkout I use when building the website.
   # Check that the website repo is clean.  This protects against this sequence:
   # - git add foo
   # - update-hugo-coder
@@ -54,13 +57,17 @@ main() {
   cd "${WEBSITE_DIR}"
   printf "*** Checking %s is clean\\n" "${WEBSITE_DIR}"
   git check-local-copy-is-clean --ignore-unpushed-commits
+
   # Update the copy of hugo-coder that Hugo uses.
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
   printf "*** Updating in %s\\n" "${WEBSITE_DIR}/${THEME_SUBDIR}"
   git check-local-copy-is-clean --ignore-unpushed-commits
+  git checkout my-changes
+  git check-local-copy-is-clean --ignore-unpushed-commits
   git pull
   git push
-  # Commit the theme changes in the website repo if necessary.
+
+  # Commit the theme changes in the website repo if there were any.
   cd "${WEBSITE_DIR}"
   if ! git check-local-copy-is-clean --ignore-unpushed-commits 2>/dev/null; then
     printf "*** Commiting changes in %s\\n" "${WEBSITE_DIR}"
@@ -74,7 +81,7 @@ main() {
 
   # Check for diffs in template files that need to be copied over.
   printf "*** Checking for diffs that need to be copied over in %s\\n" \
-    "${WEBSITE_DIR}"
+    "${WEBSITE_DIR}/${THEME_SUBDIR}"
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
   diff -Naur layouts/posts layouts/blog
 }
