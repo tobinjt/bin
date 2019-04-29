@@ -23,6 +23,7 @@ END_OF_SASL
   fi
   cat > /etc/postfix/virtual <<END_OF_VIRTUAL
 root johntobin@johntobin.ie
+ariane johntobin@johntobin.ie
 arianetobin johntobin@johntobin.ie
 johntobin johntobin@johntobin.ie
 END_OF_VIRTUAL
