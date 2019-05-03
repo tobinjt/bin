@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+if [[ -d /usr/local/Cellar/python ]]; then
+  brew remove --ignore-dependencies python
+fi
+# BEWARE: this will nuke any other locally installed packages, so those packages
+# need to be listed below for reinstallation.
+set +f
+rm -rf /usr/local/lib/python*/site-packages
+set -f
+brew install python
+# I'm not distinguishing between different machines, just install everything
+# everywhere for simplicity.
+# - mypy needs lxml.
+pip install flexget lxml mock mypy pyfakefs pylint pytest pytest-cov \
+  transmissionrpc
