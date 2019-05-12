@@ -6,14 +6,14 @@ set -e -f -u -o pipefail
 source "${HOME}/bin/backup-to-rsync-net-lib"
 
 usage() {
-  printf "Usage: %s [--test-keys-only] HOSTNAME SUBDIR SOURCE_DIR\\n" "$0"
+  printf "Usage: %s [--make-keys-only] HOSTNAME SUBDIR SOURCE_DIR\\n" "$0"
   printf "E.g. %s johntobin-laptop Documents /Users/johntobin/Documents\\n" "$0"
 }
 
 main() {
-  local test_keys_only=0
-  if [[ "$#" -eq 4 && "$1" == "--test-keys-only" ]]; then
-    test_keys_only=1
+  local make_keys_only=0
+  if [[ "$#" -eq 4 && "$1" == "--make-keys-only" ]]; then
+    make_keys_only=1
     shift
   fi
   if [[ "$#" -ne 3 ]]; then
@@ -22,11 +22,8 @@ main() {
   fi
 
   local hostname="$1" subdir="$2" source_dir="$3"
-  if ! check_ssh_key_exists --delete "${hostname}" "${subdir}" \
-         "${test_keys_only}"; then
-    return 1
-  fi
-  if [[ "${test_keys_only}" -eq 1 ]]; then
+  check_ssh_key_exists --delete "${hostname}" "${subdir}" "${make_keys_only}"
+  if [[ "${make_keys_only}" -eq 1 ]]; then
     return 0
   fi
 

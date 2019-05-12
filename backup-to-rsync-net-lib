@@ -31,13 +31,17 @@ ssh_key_basename() {
   printf "%s_%s\\n" "${hostname}" "${subdir}"
 }
 
+ssh_subdir_path() {
+  printf "%s/.ssh/rsync-net\\n" "${HOME}"
+}
+
 ssh_key_path() {
   local hostname="$1" subdir="$2"
-  printf "%s/.ssh/rsync-net/%s\\n" "${HOME}" \
+  printf "%s/%s\\n" "$(ssh_subdir_path)" \
     "$(ssh_key_basename "${hostname}" "${subdir}")"
 }
 
-print_setup_instructions() {
+make_ssh_key() {
   local options="$1" hostname="$2" subdir="$3"
   if [[ "${options}" != "--delete" && "${options}" != "--nodelete" \
           && "${options}" != "--pull" ]]; then
@@ -49,12 +53,11 @@ print_setup_instructions() {
   ssh_key="$(ssh_key_basename "${hostname}" "${subdir}")"
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
+  mkdir -p "$(ssh_subdir_path)"
 
-  printf "Create a key with:\\n"
-  printf "$ ssh-keygen -t rsa -b 4096 -o -f %s -C rsync-net_%s\\n" \
-    "${ssh_key_path}" "${ssh_key}"
+  ssh-keygen -t rsa -b 4096 -o -N '' -q \
+    -f "${ssh_key_path}" -C "rsync-net_${ssh_key}"
 
-  printf "Add the key to authorized_keys:\\n"
   printf "command=\"rsync --server"
   if [[ "${options}" == "--pull" ]]; then
     printf " --sender"
@@ -65,21 +68,22 @@ print_setup_instructions() {
   fi
   printf " --partial-dir=.rsync-partial"
   printf " . %s\"" "${dest_dir}"
-  printf ",no-pty,no-agent-forwarding,no-port-forwarding PUB_KEY\\n"
+  printf ",no-pty,no-agent-forwarding,no-port-forwarding "
+  cat "${ssh_key_path}.pub"
 }
 
 check_ssh_key_exists() {
-  local options="$1" hostname="$2" subdir="$3" test_keys_only="$4" ssh_key_path
+  local options="$1" hostname="$2" subdir="$3" make_keys_only="$4" ssh_key_path
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
-  if [[ ! -f "${ssh_key_path}" ]]; then
-    printf "Missing SSH key :(\\n" >&2
-    print_setup_instructions "${options}" "${hostname}" "${subdir}" >&2
-    if [[ "${test_keys_only}" -eq 1 ]]; then
-      return 0
-    fi
-    return 1
+  if [[ -f "${ssh_key_path}" ]]; then
+    return 0
   fi
-  return 0
+  printf "Missing SSH key :( %s\\n" "${subdir}" >&2
+  if [[ "${make_keys_only}" -eq 1 ]]; then
+    make_ssh_key "${options}" "${hostname}" "${subdir}"
+    return 0
+  fi
+  return 1
 }
 
 run_rsync() {
@@ -166,22 +170,8 @@ run_rsync() {
 # - Requires a function named "generate_contents" that will be passed the
 #   directory to put files in and the non-option arguments from "$@".
 update_sentinel_file() {
-  # TODO: this is repetitive, figure out a better way.  Also when checking SSH
-  # key existence.
-  local test_keys_only=0
-  if [[ "$#" -gt 1 && "$1" == "--test-keys-only" ]]; then
-    test_keys_only=1
-    shift
-  fi
-
   local hostname_for_key="update" subdir="sentinel"
-  if ! check_ssh_key_exists --nodelete "${hostname_for_key}" "${subdir}" \
-         "${test_keys_only}"; then
-    return 1
-  fi
-  if [[ "${test_keys_only}" -eq 1 ]]; then
-    return 0
-  fi
+  check_ssh_key_exists --nodelete "${hostname_for_key}" "${subdir}" 0
 
   local sentinel_dir
   sentinel_dir="$(mktemp -d -t sentinel_dir.XXXXXXXXXX)"

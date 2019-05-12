@@ -6,15 +6,10 @@ set -e -f -u -o pipefail
 source "${HOME}/bin/backup-to-rsync-net-lib"
 
 usage() {
-  printf "Usage: %s [--test-keys-only]\\n" "$0"
+  printf "Usage: %s\\n" "$0"
 }
 
 main() {
-  local test_keys_only=0
-  if [[ "$#" -eq 1 && "$1" == "--test-keys-only" ]]; then
-    test_keys_only=1
-    shift
-  fi
   if [[ "$#" -ne 0 ]]; then
     usage
     return 1
@@ -22,13 +17,7 @@ main() {
 
   # This requires that "retrieve" is a symlink to "update".
   local hostname_for_key="retrieve" subdir="sentinel"
-  if ! check_ssh_key_exists --pull "${hostname_for_key}" "${subdir}" \
-         "${test_keys_only}"; then
-    return 1
-  fi
-  if [[ "${test_keys_only}" -eq 1 ]]; then
-    return 0
-  fi
+  check_ssh_key_exists --pull "${hostname_for_key}" "${subdir}" 0
 
   local destdir
   destdir="$(mktemp -d -t sentinel.XXXXXXXXXX)"
