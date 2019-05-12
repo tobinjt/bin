@@ -2,6 +2,10 @@
 
 set -e -u -f -o pipefail
 
+# Initial setup won't have the right environment, so extend $PATH.
+PATH="/usr/local/bin:${PATH}"
+export PATH
+
 if [[ -z "$(type -a vim)" ]]; then
   echo "Missing vim :(" >&2
   echo "apt-get install vim-nox" >&2
