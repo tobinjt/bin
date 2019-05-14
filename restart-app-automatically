@@ -39,17 +39,23 @@ main() {
   local DEST_FILE="$1" APP="$2" LABEL="$3" ACTION="$4"
   local DEST="${HOME}/Library/LaunchAgents/${DEST_FILE}"
 
-  if launchctl list | grep -q "${LABEL}"; then
-    if ! diff -u "${DEST}" <(output_plist "${APP}" "${LABEL}"); then
+  if [[ ! -f "${DEST}" ]]; then
+      output_plist "${APP}" "${LABEL}" > "${DEST}"
+  fi
+  if ! diff -u "${DEST}" <(output_plist "${APP}" "${LABEL}"); then
+    if launchctl list | grep -q "${LABEL}"; then
       # This will kill the app, which is really annoying, but there doesn't seem
       # to be any other way to get launchd to reread the config :(
       launchctl unload "${DEST}"
       # Give the app some time to exit.
       sleep 10
-      output_plist "${APP}" "${LABEL}" > "${DEST}"
-      launchctl load "${DEST}"
     fi
+    output_plist "${APP}" "${LABEL}" > "${DEST}"
   fi
+  if ! launchctl list | grep -q "${LABEL}"; then
+    launchctl load "${DEST}"
+  fi
+
   case "${ACTION}" in
     stop)
       printf "WARNING: stop is unreliable, consider using unload unstead\\n" >&2
