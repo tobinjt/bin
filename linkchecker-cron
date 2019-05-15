@@ -22,12 +22,41 @@ linkchecker \
   --no-status \
   --quiet \
   --file-output=text \
+  --file-output=sql \
   --check-extern \
   --no-follow-url='!(www.johntobin.ie|www.arianetobin.ie)' \
   --ignore-url=//pool.ntp.org \
   --ignore-url=//www.amazon.co.uk \
   --ignore-url=//www.example.org \
   "$@" >stdout 2>stderr || exit_status="$?"
+
+database="${HOME}/tmp/linkchecker-cron.sqlite3"
+if [[ ! -f "${database}" ]]; then
+  sqlite3 "${database}" <<END_OF_CREATE
+CREATE TABLE linksdb (
+  urlname       VARCHAR(256) NOT NULL,
+  parentname    VARCHAR(256),
+  baseref       VARCHAR(256),
+  valid         INT,
+  result        VARCHAR(256),
+  warning       VARCHAR(512),
+  info          VARCHAR(512),
+  url           VARCHAR(256),
+  line          INT,
+  col           INT,
+  name          VARCHAR(256),
+  checktime     INT,
+  dltime        INT,
+  size          INT,
+  cached        INT,
+  level         INT NOT NULL,
+  modified      VARCHAR(256),
+  timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+END_OF_CREATE
+fi
+
+sqlite3 "${database}" < linkchecker-out.sql
 
 if [[ "${exit_status}" != 0 || -t 0 ]]; then
   printf "Output in %s\\n" "${destdir}"
