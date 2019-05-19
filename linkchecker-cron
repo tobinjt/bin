@@ -34,7 +34,7 @@ run_linkchecker() {
   # - Check external links but do not recurse on external sites.
   # - Exclude domains that definitely won't work; list was determined through
   #   debugging and perserverence.
-  # - stderr will always have a warning about SSL certificates.
+  # - stderr will frequently have a warning about SSL certificates.
   # - To figure out problems run with '--debug=checking' and look for the URLs
   #   that keep getting checked at the end.
   linkchecker \
@@ -51,10 +51,26 @@ run_linkchecker() {
     "$@" >stdout 2>stderr
 }
 
+report_persistently_bad_urls() {
+  local database="$1" date_threshold="$2" count_threshold="$3" output
+  sqlite3 "${database}" << END_OF_QUERY
+CREATE TEMP TABLE url_counts
+  AS SELECT urlname, COUNT(urlname) AS counts
+    FROM linksdb
+    WHERE timestamp > '${date_threshold}'
+    GROUP by urlname;
+
+SELECT urlname, counts
+  FROM url_counts
+  WHERE counts > ${count_threshold};
+END_OF_QUERY
+}
+
 main() {
   if [[ ! -t 0 ]]; then
     sleep $((RANDOM % 600))
   fi
+  # TODO: per-host databases?
   local destdir exit_status=0 database="${HOME}/tmp/linkchecker-cron.sqlite3"
   if [[ ! -f "${database}" ]]; then
     create_datebase "${database}"
@@ -63,18 +79,23 @@ main() {
   cd "${destdir}"
 
   run_linkchecker "$@" || exit_status="$?"
-  sqlite3 "${database}" < linkchecker-out.sql
+  if [[ "${exit_status}" != 0 ]]; then
+    sqlite3 "${database}" < linkchecker-out.sql
+    local output date_threshold
+    date_threshold="$(date --date '2 days ago' +%Y-%m-%d)"
+    # TODO: raise the count threshold?
+    output="$(report_persistently_bad_urls "${database}" "${date_threshold}" 2)"
+    if [[ -n "${output}" ]]; then
+      printf "Bad URLs since %s\\n%s\\n" "${date_threshold}" "${output}"
+    fi
+  fi
 
   if [[ -t 0 ]]; then
     printf "Output in %s\\n" "${destdir}"
-    printf "Exit status: %s\\n" "${exit_status}"
-    set +f
-    cat -- *
-    set -f
   else
     rm -rf "${destdir}"
   fi
-  exit "${exit_status}"
+  return "${exit_status}"
 }
 
 main "$@"
