@@ -25,6 +25,7 @@ linkchecker \
   --file-output=sql \
   --check-extern \
   --no-follow-url='!(www.johntobin.ie|www.arianetobin.ie)' \
+  --ignore-url=//en.wikipedia.org \
   --ignore-url=//pool.ntp.org \
   --ignore-url=//www.amazon.co.uk \
   --ignore-url=//www.example.org \
