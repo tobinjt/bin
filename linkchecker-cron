@@ -2,37 +2,8 @@
 
 set -e -f -u -o pipefail
 
-destdir="$(mktemp -d -t linkchecker-cron.XXXXXXXXXX)"
-cd "${destdir}"
-
-if [[ ! -t 0 ]]; then
-  sleep $((RANDOM % 600))
-fi
-
-# - Cut down on output so this can be run from cron, but write to a file that
-#   can be displayed on failure or when run interactively.
-# - Check external links but do not recurse on external sites.
-# - Exclude domains that definitely won't work; list was determined through
-#   debugging and perserverence.
-# - stderr will always have a warning about SSL certificates.
-# - To figure out problems run with '--debug=checking' and look for the URLs
-#   that keep getting checked at the end.
-exit_status=0
-linkchecker \
-  --no-status \
-  --quiet \
-  --file-output=text \
-  --file-output=sql \
-  --check-extern \
-  --no-follow-url='!(www.johntobin.ie|www.arianetobin.ie)' \
-  --ignore-url=//en.wikipedia.org \
-  --ignore-url=//pool.ntp.org \
-  --ignore-url=//www.amazon.co.uk \
-  --ignore-url=//www.example.org \
-  "$@" >stdout 2>stderr || exit_status="$?"
-
-database="${HOME}/tmp/linkchecker-cron.sqlite3"
-if [[ ! -f "${database}" ]]; then
+create_datebase() {
+  local database="$1"
   sqlite3 "${database}" <<END_OF_CREATE
 CREATE TABLE linksdb (
   urlname       VARCHAR(256) NOT NULL,
@@ -55,17 +26,56 @@ CREATE TABLE linksdb (
   timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 END_OF_CREATE
-fi
+}
 
-sqlite3 "${database}" < linkchecker-out.sql
+run_linkchecker() {
+  # - Cut down on output so this can be run from cron, but write to a file that
+  #   can be displayed on failure or when run interactively.
+  # - Check external links but do not recurse on external sites.
+  # - Exclude domains that definitely won't work; list was determined through
+  #   debugging and perserverence.
+  # - stderr will always have a warning about SSL certificates.
+  # - To figure out problems run with '--debug=checking' and look for the URLs
+  #   that keep getting checked at the end.
+  linkchecker \
+    --no-status \
+    --quiet \
+    --file-output=text \
+    --file-output=sql \
+    --check-extern \
+    --no-follow-url='!(www.johntobin.ie|www.arianetobin.ie)' \
+    --ignore-url=//en.wikipedia.org \
+    --ignore-url=//pool.ntp.org \
+    --ignore-url=//www.amazon.co.uk \
+    --ignore-url=//www.example.org \
+    "$@" >stdout 2>stderr
+}
 
-if [[ "${exit_status}" != 0 || -t 0 ]]; then
-  printf "Output in %s\\n" "${destdir}"
-  printf "Exit status: %s\\n" "${exit_status}"
-  set +f
-  cat -- *
-  set -f
-else
-  rm -rf "${destdir}"
-fi
-exit "${exit_status}"
+main() {
+  if [[ ! -t 0 ]]; then
+    sleep $((RANDOM % 600))
+  fi
+  destdir="$(mktemp -d -t linkchecker-cron.XXXXXXXXXX)"
+  cd "${destdir}"
+  database="${HOME}/tmp/linkchecker-cron.sqlite3"
+  if [[ ! -f "${database}" ]]; then
+    create_datebase "${database}"
+  fi
+
+  exit_status=0
+  run_linkchecker "$@" || exit_status="$?"
+  sqlite3 "${database}" < linkchecker-out.sql
+
+  if [[ "${exit_status}" != 0 || -t 0 ]]; then
+    printf "Output in %s\\n" "${destdir}"
+    printf "Exit status: %s\\n" "${exit_status}"
+    set +f
+    cat -- *
+    set -f
+  else
+    rm -rf "${destdir}"
+  fi
+  exit "${exit_status}"
+}
+
+main "$@"
