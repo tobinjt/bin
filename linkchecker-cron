@@ -29,6 +29,7 @@ END_OF_CREATE
 }
 
 run_linkchecker() {
+  local url="$1" hostname="$2"
   # - Cut down on output so this can be run from cron, but write to a file that
   #   can be displayed on failure or when run interactively.
   # - Check external links but do not recurse on external sites.
@@ -43,12 +44,12 @@ run_linkchecker() {
     --file-output=text \
     --file-output=sql \
     --check-extern \
-    --no-follow-url='!(www.johntobin.ie|www.arianetobin.ie)' \
+    --no-follow-url="!${hostname}" \
     --ignore-url=//en.wikipedia.org \
     --ignore-url=//pool.ntp.org \
     --ignore-url=//www.amazon.co.uk \
     --ignore-url=//www.example.org \
-    "$@" >stdout 2>stderr
+    "${url}" > stdout 2> stderr
 }
 
 report_persistently_bad_urls() {
@@ -66,19 +67,17 @@ SELECT urlname, counts
 END_OF_QUERY
 }
 
-main() {
-  if [[ ! -t 0 ]]; then
-    sleep $((RANDOM % 600))
-  fi
-  # TODO: per-host databases?
-  local destdir exit_status=0 database="${HOME}/tmp/linkchecker-cron.sqlite3"
+check_one_website() {
+  local url="$1" hostname exit_status=0
+  hostname="$(sed -e 's,https\?://,,' -e 's,/$,,' <<<"${url}")"
+  local database="${HOME}/tmp/linkchecker-cron.${hostname}.sqlite3"
   if [[ ! -f "${database}" ]]; then
     create_datebase "${database}"
   fi
-  destdir="$(mktemp -d -t linkchecker-cron.XXXXXXXXXX)"
-  cd "${destdir}"
+  mkdir -p "${hostname}"
+  cd "${hostname}"
 
-  run_linkchecker "$@" || exit_status="$?"
+  run_linkchecker "${url}" "${hostname}" || exit_status="$?"
   if [[ "${exit_status}" != 0 ]]; then
     sqlite3 "${database}" < linkchecker-out.sql
     local output date_threshold
@@ -86,9 +85,23 @@ main() {
     # TODO: raise the count threshold?
     output="$(report_persistently_bad_urls "${database}" "${date_threshold}" 2)"
     if [[ -n "${output}" ]]; then
-      printf "Bad URLs since %s\\n%s\\n" "${date_threshold}" "${output}"
+      printf "Bad URLs for %s since %s\\n%s\\n" \
+        "${url}" "${date_threshold}" "${output}"
     fi
   fi
+  return "${exit_status}"
+}
+
+main() {
+  if [[ ! -t 0 ]]; then
+    sleep $((RANDOM % 600))
+  fi
+  local destdir url exit_status=0
+  destdir="$(mktemp -d -t linkchecker-cron.XXXXXXXXXX)"
+  for url in "$@"; do
+    cd "${destdir}"
+    check_one_website "${url}" || exit_status="$?"
+  done
 
   if [[ -t 0 ]]; then
     printf "Output in %s\\n" "${destdir}"
