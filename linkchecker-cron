@@ -85,8 +85,9 @@ check_one_website() {
     # TODO: raise the count threshold?
     output="$(report_persistently_bad_urls "${database}" "${date_threshold}" 2)"
     if [[ -n "${output}" ]]; then
-      printf "Bad URLs for %s since %s\\n%s\\n" \
-        "${url}" "${date_threshold}" "${output}"
+      printf "Bad URLs for %s since %s\\n" \
+        "${url}" "${date_threshold}"
+      awk -F '|' '{print $2, $1}' <<<"${output}"
     fi
   fi
   return "${exit_status}"
