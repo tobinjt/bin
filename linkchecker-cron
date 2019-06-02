@@ -4,6 +4,8 @@ set -e -f -u -o pipefail
 
 create_datebase() {
   local database="$1"
+  # The schema is taken from /usr/share/doc/linkchecker/examples/create.sql and
+  # the timestamp column added.
   sqlite3 "${database}" <<END_OF_CREATE
 CREATE TABLE linksdb (
   urlname       VARCHAR(256) NOT NULL,
@@ -53,13 +55,13 @@ run_linkchecker() {
 }
 
 report_persistently_bad_urls() {
-  local database="$1" date_threshold="$2" count_threshold="$3" output
+  local database="$1" date_threshold="$2" count_threshold="$3"
   sqlite3 "${database}" << END_OF_QUERY
 CREATE TEMP TABLE url_counts
   AS SELECT urlname, COUNT(urlname) AS counts
     FROM linksdb
     WHERE timestamp > '${date_threshold}'
-    GROUP by urlname;
+    GROUP BY urlname;
 
 SELECT urlname, counts
   FROM url_counts
@@ -69,7 +71,7 @@ END_OF_QUERY
 
 check_one_website() {
   local url="$1" hostname exit_status=0
-  hostname="$(sed -e 's,https\?://,,' -e 's,/$,,' <<<"${url}")"
+  hostname="$(sed -e 's,https\?://,,' -e 's,/.*$,,' <<<"${url}")"
   local database="${HOME}/tmp/linkchecker-cron.${hostname}.sqlite3"
   if [[ ! -f "${database}" ]]; then
     create_datebase "${database}"
@@ -80,7 +82,6 @@ check_one_website() {
   run_linkchecker "${url}" "${hostname}" || exit_status="$?"
   if [[ "${exit_status}" != 0 ]]; then
     sqlite3 "${database}" < linkchecker-out.sql
-    # TODO: raise the count threshold?
     local output date_threshold count_threshold=3
     date_threshold="$(date --date '2 days ago' +%Y-%m-%d)"
     output="$(report_persistently_bad_urls "${database}" "${date_threshold}" \
