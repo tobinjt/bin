@@ -44,7 +44,7 @@ run_linkchecker() {
     --file-output=text \
     --file-output=sql \
     --check-extern \
-    --no-follow-url="!${hostname}" \
+    --no-follow-url="!://${hostname}/" \
     --ignore-url=//en.wikipedia.org \
     --ignore-url=//pool.ntp.org \
     --ignore-url=//www.amazon.co.uk \
@@ -63,7 +63,7 @@ CREATE TEMP TABLE url_counts
 
 SELECT urlname, counts
   FROM url_counts
-  WHERE counts > ${count_threshold};
+  WHERE counts >= ${count_threshold};
 END_OF_QUERY
 }
 
@@ -80,10 +80,11 @@ check_one_website() {
   run_linkchecker "${url}" "${hostname}" || exit_status="$?"
   if [[ "${exit_status}" != 0 ]]; then
     sqlite3 "${database}" < linkchecker-out.sql
-    local output date_threshold
-    date_threshold="$(date --date '2 days ago' +%Y-%m-%d)"
     # TODO: raise the count threshold?
-    output="$(report_persistently_bad_urls "${database}" "${date_threshold}" 2)"
+    local output date_threshold count_threshold=3
+    date_threshold="$(date --date '2 days ago' +%Y-%m-%d)"
+    output="$(report_persistently_bad_urls "${database}" "${date_threshold}" \
+                "${count_threshold}")"
     if [[ -n "${output}" ]]; then
       printf "Bad URLs for %s since %s\\n" \
         "${url}" "${date_threshold}"
