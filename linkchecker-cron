@@ -47,10 +47,6 @@ run_linkchecker() {
     --file-output=sql \
     --check-extern \
     --no-follow-url="!://${hostname}/" \
-    --ignore-url=//en.wikipedia.org \
-    --ignore-url=//pool.ntp.org \
-    --ignore-url=//www.amazon.co.uk \
-    --ignore-url=//www.example.org \
     "${url}" > stdout 2> stderr
 }
 
