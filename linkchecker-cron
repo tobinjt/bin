@@ -102,7 +102,7 @@ main() {
     check_one_website "${url}" || exit_status="$?"
   done
 
-  if [[ -t 0 ]]; then
+  if [[ -t 0 || "${exit_status}" != 0 ]]; then
     printf "Output in %s\\n" "${destdir}"
   else
     rm -rf "${destdir}"
