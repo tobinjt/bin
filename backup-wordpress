@@ -38,7 +38,7 @@ main() {
       --user="${db_user}" --password="${db_password}" \
       "${db_name}" \
     | bzip2 -c > "${db_name}_${date}".sql.bz2
-  flock "${HOME}/tmp/locks/backup-wordpress__tmpreaper" tmpreaper --mtime 90d .
+  flock "${HOME}/tmp/locks/backup-wordpress__tmpreaper" tmpreaper --mtime 45d .
 }
 
 main "$1"
