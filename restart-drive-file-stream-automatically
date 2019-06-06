@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local APP="/Applications/Google Drive File Stream.app/Contents/MacOS"
+  APP+="/Google Drive File Stream"
+  local DEST="drive-file-stream.restart.plist"
+  local LABEL="DriveFileStream.restart"
+
+  if [[ "$#" -eq 0 ]]; then
+    main start
+  else
+    restart-app-automatically "${DEST}" "${APP}" "${LABEL}" "$@"
+  fi
+}
+
+main "$@"
