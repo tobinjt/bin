@@ -66,7 +66,7 @@ END_OF_QUERY
 }
 
 check_one_website() {
-  local url="$1" hostname exit_status=0
+  local url="$1" hostname
   hostname="$(sed -e 's,https\?://,,' -e 's,/.*$,,' <<<"${url}")"
   local database="${HOME}/tmp/linkchecker-cron.${hostname}.sqlite3"
   if [[ ! -f "${database}" ]]; then
@@ -75,8 +75,7 @@ check_one_website() {
   mkdir -p "${hostname}"
   cd "${hostname}"
 
-  run_linkchecker "${url}" "${hostname}" || exit_status="$?"
-  if [[ "${exit_status}" != 0 ]]; then
+  if ! run_linkchecker "${url}" "${hostname}"; then
     sqlite3 "${database}" < linkchecker-out.sql
     local output date_threshold count_threshold=3
     date_threshold="$(date --date '2 days ago' +%Y-%m-%d)"
@@ -86,9 +85,10 @@ check_one_website() {
       printf "Bad URLs for %s since %s\\n" \
         "${url}" "${date_threshold}"
       awk -F '|' '{print $2, $1}' <<<"${output}"
+      return 1
     fi
   fi
-  return "${exit_status}"
+  return 0
 }
 
 main() {
