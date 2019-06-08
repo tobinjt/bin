@@ -7,12 +7,17 @@ check_redirects() {
   shift
   local failures=0 url
   for url in "$@"; do
-    # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a case-insensitive
-    # check.
-    if curl --silent --show-error --head "${url}" \
-        | grep -i -q "^location: ${expected_url}"; then
-      continue
-    fi
+    local _
+    for _ in $(seq 1 5); do
+      # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a
+      # case-insensitive check.
+      if curl --silent --show-error --head "${url}" \
+          | grep -i -q "^location: ${expected_url}"; then
+        # Go to the outer loop.
+        continue 2
+      fi
+      sleep 5
+    done
     failures=$((failures + 1))
     printf "Bad/missing redirect for %s, expected %s\\n" \
       "${url}" "${expected_url}"
