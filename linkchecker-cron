@@ -34,9 +34,8 @@ run_linkchecker() {
   local url="$1" hostname="$2"
   # - Cut down on output so this can be run from cron, but write to a file that
   #   can be displayed on failure or when run interactively.
+  # - Use a small threadpool to hopefully reduce false positive failures.
   # - Check external links but do not recurse on external sites.
-  # - Exclude domains that definitely won't work; list was determined through
-  #   debugging and perserverence.
   # - stderr will frequently have a warning about SSL certificates.
   # - To figure out problems run with '--debug=checking' and look for the URLs
   #   that keep getting checked at the end.
@@ -45,6 +44,7 @@ run_linkchecker() {
     --quiet \
     --file-output=text \
     --file-output=sql \
+    --threads=10 \
     --check-extern \
     --no-follow-url="!://${hostname}/" \
     "${url}" > stdout 2> stderr
