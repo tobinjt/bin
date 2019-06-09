@@ -53,15 +53,20 @@ run_linkchecker() {
 report_persistently_bad_urls() {
   local database="$1" date_threshold="$2" count_threshold="$3"
   sqlite3 "${database}" << END_OF_QUERY
-CREATE TEMP TABLE url_counts
-  AS SELECT urlname, COUNT(urlname) AS counts
+CREATE TEMP TABLE url_timestamps
+  AS SELECT DISTINCT urlname, strftime('%Y-%m-%d %H', timestamp) AS date_hour
     FROM linksdb
     WHERE timestamp > '${date_threshold}'
+    GROUP BY urlname, timestamp;
+
+CREATE TEMP TABLE url_counts
+  AS SELECT urlname, COUNT(date_hour) AS count_date_hour
+    FROM url_timestamps
     GROUP BY urlname;
 
-SELECT urlname, counts
+SELECT urlname
   FROM url_counts
-  WHERE counts >= ${count_threshold};
+  WHERE count_date_hour >= ${count_threshold};
 END_OF_QUERY
 }
 
