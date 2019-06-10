@@ -82,7 +82,7 @@ check_one_website() {
 
   if ! run_linkchecker "${url}" "${hostname}"; then
     sqlite3 "${database}" < linkchecker-out.sql
-    local output date_threshold count_threshold=5
+    local output date_threshold count_threshold=12
     date_threshold="$(date --date '2 days ago' +%Y-%m-%d)"
     output="$(report_persistently_bad_urls "${database}" "${date_threshold}" \
                 "${count_threshold}")"
