@@ -15,7 +15,8 @@ fi
 WEBSITE="$1"
 DIR="$(mktemp -d /tmp/check-links-XXXXXXXXXX)"
 LOG="${DIR}/wget.log"
-readonly WEBSITE DIR LOG
+STATUS_FILE="${DIR}/request_status"
+readonly WEBSITE DIR LOG STATUS_FILE
 cd "${DIR}"
 
 if [[ ! -t 0 ]]; then
@@ -34,15 +35,40 @@ wget \
   --page-requisites \
   "${WEBSITE}" || true
 
-# -- marks the start of a request; replace the hold space with that line.
-# Delete successful request (200) logs.
-# When any other status is seen, append the line to the hold space, swap the
-# hold and pattern spaces, then print the pattern space.
-PROBLEMS="$(sed -n \
-              -e '/^--/ h' \
-              -e '/HTTP request sent, awaiting response... 200/ d' \
-              -e '/HTTP request sent, awaiting response.../ { H; g; p; }' \
-              "${LOG}")"
+# -- marks the start of a request; replace the hold space with that line.  When
+# the request status is seen, append the line to the hold space, swap the hold
+# and pattern spaces, replace newline with space to join the lines, then print
+# the pattern space.
+sed -n \
+    -e '/^--/ h' \
+    -e '/HTTP request sent, awaiting response.../ { H; g; s/\n/ /; p; }' \
+    "${LOG}" > "${STATUS_FILE}"
+PROBLEMS="$(awk '
+# Save URLs into either GOOD_URLS or BAD_URLS.
+{
+  if (match($0, "200 OK$")) {
+    for (i = 1; i < NF; i++) {
+      if (match($i, "https?://")) {
+        GOOD_URLS[$i] = $0;
+      }
+    }
+  } else {
+    for (i = 1; i < NF; i++) {
+      if (match($i, "https?://")) {
+        BAD_URLS[$i] = $0;
+      }
+    }
+  }
+}
+# Check every URL in BAD_URLS; if it is found in GOOD_URLS a retry was
+# successful, otherwise print it.
+END {
+  for (url in BAD_URLS) {
+    if (! url in GOOD_URLS) {
+      print BAD_URLS[url];
+    }
+  }
+}' "${STATUS_FILE}")"
 # Check for common error messages too.
 PROBLEMS+="$(grep -r -F -e 'Fatal error' "${DIR}" || true)"
 
