@@ -8,13 +8,38 @@ debug_host_output() {
 }
 
 find_address() {
-  local atype="$1" pattern="$2" host_output_file="$3"
+  local atype="$1" pattern="$2" host_output_file="$3" print_error="$4"
   readonly atype pattern host_output_file hostname
-  if ! grep -q "${pattern}" "${host_output_file}"; then
+  if grep -q "${pattern}" "${host_output_file}"; then
+    return 0
+  fi
+  if [[ "${print_error}" == 1 ]]; then
     echo "Bad ${atype} address: pattern '${pattern}' not found" >&2
     debug_host_output "${host_output_file}" >&2
-    return 1
   fi
+  return 1
+}
+
+find_address_loop() {
+  local atype="$1" hostname="$2" pattern="$3" host_output_file="$4"
+  readonly atype hostname pattern host_output_file
+  local i max_attempts=5
+  for i in $(seq 1 "${max_attempts}"); do
+    host "${hostname}" > "${host_output_file}"
+    if [[ "${i}" == "${max_attempts}" ]]; then
+      if ! find_address "${atype}" "${pattern}" "${host_output_file}" 1; then
+        return 1
+      else
+        return 0
+      fi
+    else
+      if find_address "ipv4" "${pattern}" "${host_output_file}" 0; then
+        return 0
+      fi
+    fi
+    sleep 60
+  done
+  printf "find_address_loop: internal error, reached end of function\n" >&2
 }
 
 maybe_remove_output_file() {
@@ -32,17 +57,20 @@ check_dns_for_host() {
 
   # www.johntobin.ie has address 88.99.86.190
   # www.johntobin.ie has IPv6 address 2a01:4f8:c17:7156::2
-  local host_output_file pattern retval=0
+  local host_output_file retval=0
   host_output_file="$(mktemp /tmp/check-dns.XXXXXXXXXXXX)"
   readonly host_output_file
-  host "${hostname}" > "${host_output_file}"
 
+  local pattern
   pattern="^${hostname} has address ${ipv4_address}\$"
-  if ! find_address "ipv4" "${pattern}" "${host_output_file}"; then
+  if ! find_address_loop "ipv4" "${hostname}" "${pattern}" \
+         "${host_output_file}"; then
     retval=1
   fi
+
   pattern="^${hostname} has IPv6 address ${ipv6_address}\$"
-  if ! find_address "ipv6" "${pattern}" "${host_output_file}"; then
+  if ! find_address_loop "ipv6" "${hostname}" "${pattern}" \
+         "${host_output_file}"; then
     retval=1
   fi
 
@@ -68,7 +96,7 @@ check_mx_for_host() {
   local record pattern retval=0
   for record in "$@"; do
     pattern="^${hostname} mail is handled by ${record}\$"
-    if ! find_address "MX" "${pattern}" "${host_output_file}"; then
+    if ! find_address "MX" "${pattern}" "${host_output_file}" 1; then
       retval=1
     fi
   done
