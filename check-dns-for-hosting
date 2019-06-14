@@ -25,7 +25,7 @@ find_address_loop() {
   readonly atype hostname pattern host_output_file
   local i max_attempts=5
   for i in $(seq 1 "${max_attempts}"); do
-    host "${hostname}" > "${host_output_file}"
+    host -t "${atype}" "${hostname}" > "${host_output_file}"
     if [[ "${i}" == "${max_attempts}" ]]; then
       if ! find_address "${atype}" "${pattern}" "${host_output_file}" 1; then
         return 1
@@ -33,7 +33,7 @@ find_address_loop() {
         return 0
       fi
     else
-      if find_address "ipv4" "${pattern}" "${host_output_file}" 0; then
+      if find_address "${atype}" "${pattern}" "${host_output_file}" 0; then
         return 0
       fi
     fi
@@ -57,19 +57,18 @@ check_dns_for_host() {
 
   # www.johntobin.ie has address 88.99.86.190
   # www.johntobin.ie has IPv6 address 2a01:4f8:c17:7156::2
-  local host_output_file retval=0
+  local host_output_file pattern retval=0
   host_output_file="$(mktemp /tmp/check-dns.XXXXXXXXXXXX)"
   readonly host_output_file
 
-  local pattern
   pattern="^${hostname} has address ${ipv4_address}\$"
-  if ! find_address_loop "ipv4" "${hostname}" "${pattern}" \
+  if ! find_address_loop "A" "${hostname}" "${pattern}" \
          "${host_output_file}"; then
     retval=1
   fi
 
   pattern="^${hostname} has IPv6 address ${ipv6_address}\$"
-  if ! find_address_loop "ipv6" "${hostname}" "${pattern}" \
+  if ! find_address_loop "AAAA" "${hostname}" "${pattern}" \
          "${host_output_file}"; then
     retval=1
   fi
@@ -91,12 +90,12 @@ check_mx_for_host() {
   local host_output_file
   host_output_file="$(mktemp /tmp/check-dns.XXXXXXXXXXXX)"
   readonly host_output_file
-  host -t MX "${hostname}" > "${host_output_file}"
 
   local record pattern retval=0
   for record in "$@"; do
     pattern="^${hostname} mail is handled by ${record}\$"
-    if ! find_address "MX" "${pattern}" "${host_output_file}" 1; then
+    if ! find_address_loop "MX" "${hostname}" "${pattern}" \
+           "${host_output_file}"; then
       retval=1
     fi
   done
