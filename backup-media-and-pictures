@@ -8,6 +8,7 @@ retry() {
     sleep "${sleep_time}"
   done
 }
+
 unmountdisk() {
   local type="$1" disk
   # sync and sleep so hopefully data is fully flushed and unmounting succeeds.
@@ -22,6 +23,7 @@ unmountdisk() {
 
 backup_directory() {
   local srcdir="$1" destdir="$2"
+  shift 2
   readonly destdir srcdir
 
   if [[ ! -d "${destdir}" ]]; then
@@ -39,12 +41,12 @@ backup_directory() {
     exit 1
   fi
 
-  rsync -a --verbose --delete "${srcdir}" "${destdir}"
+  rsync -a --verbose --delete "$@" "${srcdir}" "${destdir}"
 }
 
 main() {
-  backup_directory "/Users/johntobin/Media/" "/Volumes/Backup/Media/"
-  backup_directory "/Users/johntobin/Pictures/" "/Volumes/Backup/Pictures/"
+  backup_directory "/Users/johntobin/Media/" "/Volumes/Backup/Media/" "$@"
+  backup_directory "/Users/johntobin/Pictures/" "/Volumes/Backup/Pictures/" "$@"
 
   # Unmount the disks, starting with the filesystem and then doing CoreStorage.
   retry unmountdisk "Apple_HFS"
