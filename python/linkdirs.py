@@ -433,11 +433,11 @@ def parse_arguments(argv: CommandLineArgs) -> typing.Tuple[argparse.Namespace,
   argv_parser.add_argument(
       "--dryrun", action="store_true", dest="dryrun", default=False,
       help=textwrap.fill("""Perform a trial run with no changes made
-                         (default: %default)"""))
+                         (default: %(default)s)"""))
   argv_parser.add_argument(
       "--force", action="store_true", dest="force", default=False,
       help=textwrap.fill("""Remove existing files if necessary (default:
-                         %default)"""))
+                         %(default)s)"""))
   argv_parser.add_argument(
       "--ignore_file", action="append", dest="ignore_file", metavar="FILENAME",
       default=[],
@@ -450,7 +450,7 @@ def parse_arguments(argv: CommandLineArgs) -> typing.Tuple[argparse.Namespace,
       default=[
           "CVS", ".git", ".gitignore", ".gitmodules", ".hg", ".svn", "*.swp"],
       help=textwrap.fill("""Extra shell patterns to ignore (appended to this
-                         list: %default).  To specify multiple filenames, use
+                         list: %(default)s).  To specify multiple filenames, use
                          this option multiple times."""))
   argv_parser.add_argument(
       "--ignore_unexpected_children", action="store_true",
@@ -459,17 +459,17 @@ def parse_arguments(argv: CommandLineArgs) -> typing.Tuple[argparse.Namespace,
                          ignore unexpected child directories in
                          DESTINATION_DIRECTORY; unexpected grandchild
                          directories of DESTINATION_DIRECTORY will not be
-                         ignored (default: %default)"""))
+                         ignored (default: %(default)s)"""))
   argv_parser.add_argument(
       "--report_unexpected_files", action="store_true",
       dest="report_unexpected_files", default=False,
       help=textwrap.fill("""Report unexpected files in DESTINATION_DIRECTORY
-                         (default: %default)"""))
+                         (default: %(default)s)"""))
   argv_parser.add_argument(
       "--delete_unexpected_files", action="store_true",
       dest="delete_unexpected_files", default=False,
       help=textwrap.fill("""Delete unexpected files in DESTINATION_DIRECTORY
-                         (default: %default)"""))
+                         (default: %(default)s)"""))
   argv_parser.add_argument('args', nargs='+', metavar='NUMBER_OF_NINES',
                            default=[], help='See usage for details')
 
