@@ -39,7 +39,6 @@ CommandLineArgs = typing.List[str]
 
 class Error(Exception):
   """Base class for exceptions."""
-  pass
 
 
 class UnexpectedPaths(typing.NamedTuple(
