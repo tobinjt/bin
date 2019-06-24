@@ -2,26 +2,33 @@
 
 set -e -f -u -o pipefail
 
+check_single_rediect() {
+  local expected_url="$1" check_url="$2"
+  local _
+  for _ in $(seq 1 5); do
+    # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a
+    # case-insensitive check.
+    if curl --silent --show-error --head "${check_url}" \
+        | grep -i -q "^location: ${expected_url}"; then
+      # Go to the outer loop.
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
+
 check_redirects() {
   local expected_url="$1"
   shift
   local failures=0 url
   for url in "$@"; do
-    local _
-    for _ in $(seq 1 5); do
-      # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a
-      # case-insensitive check.
-      if curl --silent --show-error --head "${url}" \
-          | grep -i -q "^location: ${expected_url}"; then
-        # Go to the outer loop.
-        continue 2
-      fi
-      sleep 5
-    done
-    failures=$((failures + 1))
-    printf "Bad/missing redirect for %s, expected %s\\n" \
-      "${url}" "${expected_url}"
-    curl --head "${url}"
+    if ! check_single_rediect "${expected_url}" "${url}"; then
+      failures=$((failures + 1))
+      printf "Bad/missing redirect for %s, expected %s\\n" \
+        "${url}" "${expected_url}"
+      curl --head "${url}"
+    fi
   done
   return "${failures}"
 }
