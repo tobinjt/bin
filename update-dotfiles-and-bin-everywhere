@@ -3,8 +3,10 @@
 set -e -f -u -o pipefail
 
 retry() {
-  local sleep_time=10
+  local sleep_time=10 message="$1"
+  shift
   until "$@"; do
+    printf "Retrying %s\n" "${message}"
     sleep "${sleep_time}"
   done
 }
@@ -12,20 +14,22 @@ update-single-host() {
   local host="$1"
 
   printf "\\n\\n\\njohntobin@%s\\n" "${host}"
-  retry ssh -o ControlMaster=no -t "johntobin@${host}" update-dotfiles-and-bin
+  retry "johntobin@${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
+    update-dotfiles-and-bin
   printf "\\n\\n\\nroot@%s\\n" "${host}"
   # sudo dscl . -change /Users/root UserShell /bin/sh /bin/bash
-  retry ssh -o ControlMaster=no -t "johntobin@${host}" \
+  retry "root@${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
     sudo --login update-dotfiles-and-bin
   printf "\\n\\n\\narianetobin@%s\\n" "${host}"
-  retry ssh -o ControlMaster=no -t "arianetobin@${host}" update-dotfiles-and-bin
+  retry "arianetobin@${host}" ssh -o ControlMaster=no -t "arianetobin@${host}" \
+    update-dotfiles-and-bin
 }
 
 main() {
   if [[ "$#" -eq 0 ]]; then
     exec "$0" laptop home hosting
   fi
-  retry update-dotfiles-and-bin
+  retry "initial update" update-dotfiles-and-bin
   local host
   for host in "$@"; do
     update-single-host "${host}"
