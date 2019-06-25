@@ -36,7 +36,6 @@ MAX_ALLOWED_DELAY = 'max_allowed_delay'
 
 class Error(Exception):
   """Base class for exceptions."""
-  pass
 
 
 class ParsedSentinels(typing.NamedTuple(
