@@ -10,10 +10,9 @@ check_single_rediect() {
     # case-insensitive check.
     if curl --silent --show-error --head "${check_url}" \
         | grep -i -q "^location: ${expected_url}"; then
-      # Go to the outer loop.
       return 0
     fi
-    sleep 5
+    sleep 30
   done
   return 1
 }
