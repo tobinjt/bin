@@ -34,6 +34,10 @@ check_redirects() {
 }
 
 main() {
+  if [[ ! -t 0 ]]; then
+    sleep $((RANDOM % 600))
+  fi
+
   check_redirects "https://www.arianetobin.ie" \
     "http://ariane.ie" \
     "https://ariane.ie" \
