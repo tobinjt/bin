@@ -42,4 +42,6 @@ main() {
   fi
 }
 
+# To make debugging error messages about git hooks more possible.
+set -x
 main "$@"
