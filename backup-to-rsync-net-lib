@@ -102,7 +102,7 @@ run_rsync() {
   unset SSH_AUTH_SOCK
   local flags=()
   if [[ "${options}" == "--delete" ]]; then
-    flags+=("--delete")
+    flags+=("--delete" "--delete-excluded")
   fi
   if [[ "${options}" != "--pull" ]]; then
     flags+=("--filter=dir-merge rsync-net_filters")
