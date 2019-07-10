@@ -102,7 +102,7 @@ run_rsync() {
   unset SSH_AUTH_SOCK
   local flags=()
   if [[ "${options}" == "--delete" ]]; then
-    flags+=("--delete")
+    flags+=("--delete" "--delete-excluded")
   fi
   if [[ "${options}" != "--pull" ]]; then
     flags+=("--filter=dir-merge rsync-net_filters")
@@ -131,7 +131,7 @@ run_rsync() {
   # value 24, which is a magic exit code that means some files disappeared
   # during the transfer.  TODO: do I really need to do this?
   local exit_status=0
-  ( rsync --archive --bwlimit=100K \
+  ( rsync --archive --bwlimit=500K \
         --partial-dir=.rsync-partial --partial \
         --rsh="ssh -i ${ssh_key_path}" \
         "${flags[@]:+${flags[@]}}" \
