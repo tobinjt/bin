@@ -66,8 +66,8 @@ make_ssh_key() {
   if [[ "${options}" == "--delete" ]]; then
     printf " --delete"
   fi
-  printf " --partial-dir=.rsync-partial"
-  printf " . %s\"" "${dest_dir}"
+  printf " --partial-dir .rsync-partial"
+  printf " . %s/\"" "${dest_dir}"
   printf ",no-pty,no-agent-forwarding,no-port-forwarding "
   cat "${ssh_key_path}.pub"
 }
