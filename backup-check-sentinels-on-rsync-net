@@ -27,7 +27,7 @@ main() {
   trap "rm -rf \"${destdir}\"" EXIT
 
   run_rsync --pull "${hostname_for_key}" "${subdir}" "${destdir}"
-  "${HOME}/bin/check_backup_sentinels" "${destdir}/sentinel"
+  "${HOME}/bin/check_backup_sentinels" "${destdir}"
 }
 
 main "$@"
