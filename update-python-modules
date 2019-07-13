@@ -2,26 +2,59 @@
 
 set -e -f -u -o pipefail
 
-os="$(uname -s)"
-if [[ "${os}" != "Darwin" ]]; then
-  printf "Only Mac OS is supported, sorry.\\n" >&2
+usage() {
+  printf "Usage: %s flexget|pytest\\n" "$0" >&2
   exit 1
-fi
+}
 
-# An automatic update will occur when installing python, so do a manual update
-# first to reduce the time where python is not installed.
-brew update
-if [[ -d /usr/local/Cellar/python ]]; then
-  brew remove --ignore-dependencies python
-fi
-# BEWARE: this will nuke any other locally installed packages, so those packages
-# need to be listed below for reinstallation.
-set +f
-rm -rf /usr/local/lib/python*/site-packages
-set -f
-brew install python
-# I'm not distinguishing between different machines, just install everything
-# everywhere for simplicity.
-# - mypy needs lxml.
-pip install flexget lxml mock mypy pyfakefs pylint pytest pytest-cov \
-  transmissionrpc
+update_and_install() {
+  # An automatic update will occur when installing python, so do a manual update
+  # first to reduce the time where python is not installed.
+  brew update
+  if [[ -d /usr/local/Cellar/python ]]; then
+    brew remove --ignore-dependencies python
+  fi
+  # BEWARE: this will nuke any other locally installed packages, so those
+  # packages need to be included in the list for reinstallation.
+  set +f
+  rm -rf /usr/local/lib/python*/site-packages
+  set -f
+  brew install python
+  pip install "$@"
+}
+
+main() {
+  local os
+  os="$(uname -s)"
+  if [[ "${os}" != "Darwin" ]]; then
+    printf "Only Mac OS is supported, sorry.\\n" >&2
+    exit 1
+  fi
+
+  if [[ "$#" -ne 1 ]]; then
+    usage
+  fi
+  case "$1" in
+    flexget)
+      update_and_install "flexget" "transmissionrpc"
+      flexget-wrapper
+      ;;
+    pytest)
+      # mypy needs lxml but doesn't depend on it.
+      update_and_install "lxml" "mock" "mypy" "pyfakefs" "pylint" "pytest" \
+        "pytest-cov"
+      # Check that tools work properly.
+      cd "${HOME}/bin/python"
+      pytest
+      set +f
+      pylint -- *.py
+      mypy -- *.py
+      set -f
+      ;;
+    *)
+      usage
+      ;;
+  esac
+}
+
+main "$@"
