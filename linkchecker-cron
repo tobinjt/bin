@@ -51,7 +51,8 @@ run_linkchecker() {
 }
 
 report_persistently_bad_urls() {
-  local database="$1" date_threshold="$2" count_threshold="$3"
+  local database="$1" date_threshold="$2" count_threshold="$3" fifty_minutes_ago
+  fifty_minutes_ago="$(date --date '50 minutes ago' '+%Y-%m-%d %H:%M')"
   sqlite3 "${database}" << END_OF_QUERY
 CREATE TEMP TABLE url_timestamps
   AS SELECT DISTINCT urlname, strftime('%Y-%m-%d %H', timestamp) AS date_hour
@@ -65,8 +66,9 @@ CREATE TEMP TABLE url_counts
     GROUP BY urlname;
 
 SELECT urlname
-  FROM url_counts
-  WHERE count_date_hour >= ${count_threshold};
+  FROM url_counts NATURAL JOIN linksdb
+  WHERE count_date_hour >= ${count_threshold}
+    AND timestamp > '${fifty_minutes_ago}';
 END_OF_QUERY
 }
 
