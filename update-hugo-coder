@@ -34,6 +34,10 @@ main() {
       changes-for-upstream
     git push
   fi
+  if ! git config branch.changes-for-upstream.remote; then
+    git branch --set-upstream-to=origin/changes-for-upstream \
+      changes-for-upstream
+  fi
   git pull
   git merge master
   git push
