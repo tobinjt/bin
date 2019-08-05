@@ -18,6 +18,8 @@ main() {
   dotfiles -f -X
   # Push to upstream, update vim helptags, etc.
   update-dotfiles-and-bin
+  # Install syntax checkers and other necessary tools.
+  install-extra-tools-for-vim
 }
 
 main "$@"
