@@ -29,4 +29,5 @@ if type go >& /dev/null; then
 </pre>
 SIGNING
   codesign --entitlements "${xml}" -fs gdb-cert "$(type -P dlv)"
+  rm "${xml}"
 fi
