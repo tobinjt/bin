@@ -9,4 +9,6 @@ if type go >& /dev/null; then
   # so I don't need to install them a second time.
   go get -u github.com/golang/lint/golint
   go get -u golang.org/x/lint/golint
+  # Debugger.
+  go get -u github.com/go-delve/delve/cmd/dlv
 fi
