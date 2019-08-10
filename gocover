@@ -3,19 +3,6 @@
 set -e -f -u -o pipefail
 
 filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
-# I want ${filename} to be expanded now, because when we exit
-# successfully it will be out of scope and cannot be expanded.
-# shellcheck disable=SC2064
-trap "rm -f \"${filename}\"" EXIT
-
 go test --coverprofile="${filename}" --covermode=count
-if go tool cover --func="${filename}" \
-     | grep -v -w \
-        -e '100.0%$' \
-        -e '^total:' \
-        -e 'main' \
-        -e 'projectEuler[[:digit:]_]\+' \
-        ; then
-  go tool cover --html="${filename}"
-  exit 1
-fi
+go tool cover --html="${filename}"
+rm -f "${filename}"
