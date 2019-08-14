@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e -u -o pipefail
+
+if grep 'Test[[:lower:]]' ./*_test.go; then
+  echo "Bad test name, it won't be run" >&2
+  exit 1
+fi
+
+files="$(gofmt -l ./*.go)"
+if [[ -n "${files}" ]]; then
+  echo "Badly-formatted files: ${files}" >&2
+  echo "Fix with:" >&2
+  echo "$ gofmt -w ${files}" >&2
+  exit 1
+fi
+
+# Check for missing error handling.
+errcheck -asserts -blank
+
+# Coverage runs tests, so there's no need to run them separately.
+filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
+# I want ${filename} to be expanded now, because when we exit
+# successfully it will be out of scope and cannot be expanded.
+# shellcheck disable=SC2064
+trap "rm -f \"${filename}\"" EXIT
+
+go test --coverprofile="${filename}" --covermode=count
+if go tool cover --func="${filename}" \
+     | grep -v -w \
+        -e '100.0%$' \
+        -e '^total:' \
+        -e 'main' \
+        -e 'projectEuler[[:digit:]_]\+' \
+        ; then
+  exit 1
+fi
