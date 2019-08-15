@@ -6,10 +6,9 @@ if type go >& /dev/null; then
   # Binaries needed by vim-go.
   vim -c 'execute ":GoUpdateBinaries" | :quit'
 
-  # Tool used by Syntastic; some of the tools are installed by GoUpdateBinaries
+  # Tools used by Syntastic; some of the tools are installed by GoUpdateBinaries
   # so I don't need to install them a second time.
-  go get -u github.com/golang/lint/golint
-  go get -u golang.org/x/lint/golint
+  go get -u golang.org/x/tools/cmd/gotype
 
   # Debugger; installed by vim-go, manual instructions at
   # https://github.com/go-delve/delve/blob/master/Documentation/installation/osx/install.md
