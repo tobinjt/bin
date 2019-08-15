@@ -2,7 +2,7 @@
 
 set -e -u -o pipefail
 
-if grep 'Test[[:lower:]]' ./*_test.go; then
+if grep '^func Test[[:lower:]]' ./*_test.go; then
   echo "Bad test name, it won't be run" >&2
   exit 1
 fi
