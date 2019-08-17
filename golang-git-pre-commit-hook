@@ -25,7 +25,7 @@ filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
 # shellcheck disable=SC2064
 trap "rm -f \"${filename}\"" EXIT
 
-go test --coverprofile="${filename}" --covermode=count
+go test --coverprofile="${filename}" --covermode=set
 if go tool cover --func="${filename}" \
      | grep -v -w \
         -e '100.0%$' \
