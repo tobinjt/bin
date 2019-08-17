@@ -3,6 +3,6 @@
 set -e -f -u -o pipefail
 
 filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
-go test --coverprofile="${filename}" --covermode=count
+go test --coverprofile="${filename}" --covermode=set
 go tool cover --html="${filename}"
 rm -f "${filename}"
