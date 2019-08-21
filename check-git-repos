@@ -8,6 +8,9 @@ PATH="${HOME}/bin:${PATH}"
 main() {
   local repo result=0
   for repo in "$@"; do
+    if [[ ! -d "${repo}/.git" ]]; then
+      continue
+    fi
     if ! (cd "${repo}" && git check-local-copy-is-clean); then
       result=1
     fi
