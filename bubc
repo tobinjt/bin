@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Sleep between commands to reduce the chance of errors like:
+# "Error: Another active Homebrew update process is already in progress."
+brew update
+sleep 1
+if [[ -n "$(brew outdated)" ]]; then
+  # Fetch everything first to minimise the time that binaries are unavailable.
+  brew fetch --force-bottle "$(brew outdated)"
+  sleep 1
+  brew upgrade --force-bottle
+  sleep 1
+fi
+brew cask upgrade
+sleep 1
+brew cleanup
