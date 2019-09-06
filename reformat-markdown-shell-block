@@ -12,6 +12,6 @@ fi
 
 # shellcheck disable=SC2016
 printf '```%s\n' "${filetype}"
-sed -e 's/^    //' "$@"
+sed -e 's/^    //' -e 's/^\$ //' "$@"
 # shellcheck disable=SC2016
 printf '```\n'
