@@ -2,10 +2,8 @@
 
 set -e -f -u -o pipefail
 
-# Verbose logging for debugging.
-AUTOSSH_DEBUG=0
 AUTOSSH_LOGFILE="${HOME}/tmp/autossh-logs"
-export AUTOSSH_DEBUG AUTOSSH_LOGFILE
+export AUTOSSH_LOGFILE
 while true; do
   # -M 0: disable monitoring, rely on ssh checking connectivity.
   /usr/local/bin/autossh -M 0 hosting-home-reverse-tunnel || true
