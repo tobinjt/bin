@@ -41,12 +41,12 @@ leftover_pids() {
 }
 
 main() {
-  kill_leftovers "$1"
   local exit_status=0 timeout=60
   if [[ "$#" -gt 1 && "$1" =~ ^[0-9]+$ ]]; then
     timeout="$1"
     shift
   fi
+  kill_leftovers "$1"
   # Run the app.
   "$@" || exit_status="$?"
   sleep "${timeout}"
