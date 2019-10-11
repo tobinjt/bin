@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+
+# Cleanup Adobe logs.
+dir="${HOME}/Library/Logs/"
+if [[ -d "${dir}" ]]; then
+  (cd "${dir}" && rm -f PDApp*20*.log)
+fi
+
+# Cleanup Plex updates.
+dir="${HOME}/Library/Application Support/Plex Media Server/Updates"
+if [[ -d "${dir}" ]]; then
+  tmpreaper --mtime 7d "${dir}"
+fi
