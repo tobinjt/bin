@@ -6,7 +6,12 @@ set -e -f -u -o pipefail
 # Cleanup Adobe logs.
 dir="${HOME}/Library/Logs/"
 if [[ -d "${dir}" ]]; then
-  (cd "${dir}" && rm -f PDApp*20*.log)
+  (cd "${dir}" \
+    && set +f \
+    && rm -f PDApp*20*.log \
+    && rm -f NGLClient_default*20*.log \
+    && rm -f oobelib*20*.log \
+  )
 fi
 
 # Cleanup Plex updates.
