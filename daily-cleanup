@@ -2,6 +2,8 @@
 
 set -e -f -u -o pipefail
 
+# For tmpreaper.
+PATH="/usr/local/sbin:${PATH}"
 
 # Cleanup Adobe logs.
 dir="${HOME}/Library/Logs/"
