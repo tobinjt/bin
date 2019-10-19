@@ -84,10 +84,8 @@ update_git_checkout_and_push() {
   git clean -f -f -d
 
   # We can't push to https:// URLs.
-  if git transport-is-ssh; then
+  if ! git transport-is-https; then
     git push
-  else
-    echo "Cannot push to https:// URLs."
   fi
 }
 
