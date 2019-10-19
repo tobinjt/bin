@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+repo_url="$(git config --get remote.origin.url)"
+# Explicit SSH.
+if [[ "${repo_url:0:6}" == "ssh://" ]]; then
+  exit 0
+fi
+# HTTP/HTTPS.
+if [[ "${repo_url:0:8}" == "https://" ]]; then
+  exit 1
+fi
+if [[ "${repo_url:0:7}" == "http://" ]]; then
+  exit 1
+fi
+# Explicit file, or implicit file.
+if [[ "${repo_url:0:7}" == "file://" ]]; then
+  exit 1
+fi
+if [[ "${repo_url:0:1}" == "/" ]]; then
+  exit 1
+fi
+# Git protocol.
+if [[ "${repo_url:0:6}" == "git://" ]]; then
+  exit 1
+fi
+# Must be ssh.
+exit 0
