@@ -33,19 +33,10 @@ check_git_works() {
   fi
 }
 
-origin_is_ssh() {
-  local repo_url
-  repo_url="$(git config --get remote.origin.url)"
-  if [[ "${repo_url:0:8}" == "https://" ]]; then
-    return 1
-  fi
-  return 0
-}
-
 need_ssh_agent() {
   local dir
   for dir in $(bin_sources) $(dotfiles_sources); do
-    if (cd "${dir}" && origin_is_ssh); then
+    if (cd "${dir}" && git transport-is-ssh); then
       return 0
     fi
   done
@@ -93,7 +84,7 @@ update_git_checkout_and_push() {
   git clean -f -f -d
 
   # We can't push to https:// URLs.
-  if origin_is_ssh; then
+  if git transport-is-ssh; then
     git push
   else
     echo "Cannot push to https:// URLs."
