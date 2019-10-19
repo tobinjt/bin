@@ -11,6 +11,9 @@ main() {
     if [[ ! -d "${repo}/.git" ]]; then
       continue
     fi
+    if (cd "${repo}" && git transport-is-https); then
+      continue
+    fi
     if ! (cd "${repo}" && git check-local-copy-is-clean); then
       result=1
     fi
