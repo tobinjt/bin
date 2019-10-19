@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+repo_url="$(git config --get remote.origin.url)"
+[[ "${repo_url:0:8}" == "https://" ]]
