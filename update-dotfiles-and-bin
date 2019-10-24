@@ -132,17 +132,16 @@ main() {
     (cd "${dir}" && update_git_checkout_and_push "${dir}")
     # Forcibly update.  There is a risk that we clobber a file in our home
     # directory with a file we've just checked out, but the alternative is for
-    # the user to forcibly update manually.
-    dotfiles -f
+    # the user to forcibly update manually.  This also prevents files that have
+    # been deleted from the current repo being left behind in $HOME if updating
+    # a later repo fails.
+    dotfiles -X -f
     # Check for unfinished changes; this happens when submodules are removed
     # because git won't delete the submodule directory.  Do this after running
     # dotfiles, otherwise there is a high chance that the next run of this
     # program will find diffs and will exit.
     (cd "${dir}" && git check-local-copy-is-clean)
   done
-
-  # Delete unexpected files and directories.
-  dotfiles -X -f
 }
 
 # Make sure $HOME/bin is in $PATH to support running
