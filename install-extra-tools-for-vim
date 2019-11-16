@@ -3,6 +3,9 @@
 set -e -f -u -o pipefail
 
 if type go >& /dev/null; then
+  # Clean up old stuff; occasionally installation has problems because of
+  # previous layouts or something, so clean up first.
+  (cd "${GOPATH}" && rm -rf bin pkg)
   # Binaries needed by vim-go.
   vim -c 'execute ":GoUpdateBinaries" | :quit'
 
