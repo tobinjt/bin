@@ -5,7 +5,13 @@ set -e -f -u -o pipefail
 if type go >& /dev/null; then
   # Clean up old stuff; occasionally installation has problems because of
   # previous layouts or something, so clean up first.
-  (cd "${GOPATH}" && rm -rf bin pkg)
+  # Go makes everything readonly for some reason so fix directory permissions to
+  # enable deletion.
+  dirs=(bin pkg)
+  (cd "${GOPATH}" \
+    && mkdir -p "${dirs[@]}" \
+    && find "${dirs[@]}" -type d -print0 | xargs -0 chmod 755 \
+    && rm -rf "${dirs[@]}")
   # Binaries needed by vim-go.
   vim -c 'execute ":GoUpdateBinaries" | :quit'
 
