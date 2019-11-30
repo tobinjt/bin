@@ -3,11 +3,11 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "Usage: %s flexget|pytest\\n" "$0" >&2
+  printf "Usage: %s\\n" "$0" >&2
   exit 1
 }
 
-update_and_install() {
+clean_python_install() {
   # An automatic update will occur when installing python, so do a manual update
   # first to reduce the time where python is not installed.
   brew update
@@ -20,41 +20,52 @@ update_and_install() {
   rm -rf /usr/local/lib/python*/site-packages
   set -f
   brew install python
-  pip install "$@"
+}
+
+pipenv_install() {
+  local destdir="$1"
+  shift
+
+  mkdir -p "${destdir}"
+  cd "${destdir}"
+  pipenv install "$@"
 }
 
 main() {
-  local os
-  os="$(uname -s)"
-  if [[ "${os}" != "Darwin" ]]; then
+  if [[ "$(uname -s)" != "Darwin" ]]; then
     printf "Only Mac OS is supported, sorry.\\n" >&2
     exit 1
   fi
-
-  if [[ "$#" -ne 1 ]]; then
+  if [[ "$#" -ne 0 ]]; then
     usage
   fi
-  case "$1" in
-    flexget)
-      update_and_install "flexget" "transmissionrpc"
-      flexget-wrapper
-      ;;
-    pytest)
-      # mypy needs lxml but doesn't depend on it.
-      update_and_install "lxml" "mock" "mypy" "pyfakefs" "pylint" "pytest" \
-        "pytest-cov"
-      # Check that tools work properly.
-      cd "${HOME}/bin/python"
-      pytest
-      set +f
-      pylint -- *.py
-      mypy -- *.py
-      set -f
-      ;;
-    *)
-      usage
-      ;;
-  esac
+
+  unset PYTHONDONTWRITEBYTECODE
+  clean_python_install
+  pip3 install pipenv
+  local basedir="${HOME}/tmp/python"
+
+  # Flexget.
+  pipenv_install "${basedir}/flexget" "flexget" "transmissionrpc"
+  if [[ -d "${HOME}/.flexget/logs" ]]; then
+    # Only test on machines where I normally run flexget.
+    flexget-wrapper
+  fi
+
+  # Home assistant
+  pipenv_install "${basedir}/home_assistant" homeassistant
+  # TODO: validate?
+
+  # Python development is installed globally so it's easier to use.
+  # mypy needs lxml but doesn't depend on it.
+  pip3 install "lxml" "mock" "mypy" "pyfakefs" "pylint" "pytest" "pytest-cov"
+  # Check that tools work properly.
+  cd "${HOME}/bin/python"
+  pytest
+  set +f
+  pylint -- *.py
+  mypy -- *.py
+  set -f
 }
 
 main "$@"
