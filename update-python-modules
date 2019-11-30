@@ -63,7 +63,7 @@ main() {
   fi
 
   # Home assistant
-  pip_install "${basedir}/home_assistant" homeassistant
+  # pip_install "${basedir}/home_assistant" homeassistant
   # TODO: validate?
 
   # Python development is installed globally so it's easier to use.
