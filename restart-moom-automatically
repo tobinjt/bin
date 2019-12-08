@@ -8,7 +8,7 @@ main() {
   local LABEL="Moom.restart"
 
   if [[ "$#" -eq 0 ]]; then
-    main start
+    main help
   else
     restart-app-automatically "${DEST}" "${APP}" "${LABEL}" "$@"
   fi
