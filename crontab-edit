@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+if [[ "$#" -eq 0 ]]; then
+  # Program is being run interactively.
+
+  # I deliberately want REAL_EDITOR to not be affected by changes to EDITOR, and
+  # REAL_EDITOR only being available to the child process is intended.
+  # shellcheck disable=SC2098
+  # shellcheck disable=SC2097
+  REAL_EDITOR="${EDITOR}" EDITOR="$0" crontab -e
+else
+  # Program is being run by crontab.
+  cd "${HOME}/src/private-configs"
+  git check-local-copy-is-clean --ignore-unpushed-commits
+  git pull
+  git push
+  FILENAME="crontab.${USER}.${HOSTNAME/local/lan}"
+  if [[ ! -f "${FILENAME}" ]]; then
+    touch "${FILENAME}"
+  fi
+  vimdiff "${FILENAME}" "$@"
+  diff -u "${FILENAME}" "$@" || true
+  if ! git check-local-copy-is-clean; then
+    # Git tracks symlinks, so it does not follow them, so I need to follow them.
+    if [[ -L "${FILENAME}" ]]; then
+      git add "$(readlink "${FILENAME}")"
+    else
+      git add "${FILENAME}"
+    fi
+    EDITOR="${REAL_EDITOR}" git commit --edit \
+      --message 'BEWARE: An empty commit message will cause the commit to fail!'
+  fi
+  git pull
+  git push
+fi
