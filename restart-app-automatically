@@ -56,25 +56,39 @@ main() {
     fi
     output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
   fi
-  if ! launchctl list | grep -q "${LABEL}"; then
-    launchctl load "${DEST}"
-  fi
 
   case "${ACTION}" in
     stop)
-      printf "WARNING: stop is unreliable, consider using unload unstead\\n" >&2
+      printf "WARNING: stop is unreliable, consider using unload instead\\n" >&2
+      if launchctl list | grep -q "${LABEL}"; then
+        launchctl "${ACTION}" "${LABEL}"
+      fi
+      ;;
+    list|start)
+      if ! launchctl list | grep -q "${LABEL}"; then
+        launchctl load "${DEST}"
+        sleep 1
+      fi
       launchctl "${ACTION}" "${LABEL}"
       ;;
-    list|remove|start)
-      launchctl "${ACTION}" "${LABEL}"
+    remove)
+      if launchctl list | grep -q "${LABEL}"; then
+        launchctl "${ACTION}" "${LABEL}"
+        sleep 1
+      fi
       ;;
-    load|unload)
-      launchctl "${ACTION}" "${DEST}"
+    load)
+      launchctl "${ACTION}" -w "${LABEL}"
+      ;;
+    unload)
+      if launchctl list | grep -q "${LABEL}"; then
+        launchctl "${ACTION}" -w "${LABEL}"
+      fi
       ;;
     restart)
       launchctl unload "${DEST}"
       sleep 1
-      launchctl load "${DEST}"
+      launchctl load -w "${DEST}"
       launchctl start "${LABEL}"
       ;;
     *)
