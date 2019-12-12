@@ -64,7 +64,7 @@ PROBLEMS="$(awk '
 # successful, otherwise print it.
 END {
   for (url in BAD_URLS) {
-    if (! url in GOOD_URLS) {
+    if (url in GOOD_URLS == 0) {
       print BAD_URLS[url];
     }
   }
