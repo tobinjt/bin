@@ -58,38 +58,45 @@ main() {
   fi
 
   case "${ACTION}" in
-    stop)
-      printf "WARNING: stop is unreliable, consider using unload instead\\n" >&2
-      if launchctl list | grep -q "${LABEL}"; then
-        launchctl "${ACTION}" "${LABEL}"
-      fi
-      ;;
-    list|start)
+    list)
       if ! launchctl list | grep -q "${LABEL}"; then
         launchctl load "${DEST}"
         sleep 1
       fi
       launchctl "${ACTION}" "${LABEL}"
       ;;
-    remove)
-      if launchctl list | grep -q "${LABEL}"; then
-        launchctl "${ACTION}" "${LABEL}"
-        sleep 1
-      fi
-      ;;
     load)
       launchctl "${ACTION}" -w "${LABEL}"
       ;;
-    unload)
+    remove)
       if launchctl list | grep -q "${LABEL}"; then
-        launchctl "${ACTION}" -w "${LABEL}"
+        launchctl "${ACTION}" "${LABEL}"
       fi
       ;;
     restart)
       launchctl unload "${DEST}"
       sleep 1
       launchctl load -w "${DEST}"
+      sleep 1
       launchctl start "${LABEL}"
+      ;;
+    start)
+      if ! launchctl list | grep -q "${LABEL}"; then
+        launchctl load -w "${DEST}"
+        sleep 1
+      fi
+      launchctl "${ACTION}" "${LABEL}"
+      ;;
+    stop)
+      printf "WARNING: stop is unreliable, consider using unload instead\\n" >&2
+      if launchctl list | grep -q "${LABEL}"; then
+        launchctl "${ACTION}" "${LABEL}"
+      fi
+      ;;
+    unload)
+      if launchctl list | grep -q "${LABEL}"; then
+        launchctl "${ACTION}" -w "${LABEL}"
+      fi
       ;;
     *)
       printf "Unknown action: %s\\n" "${ACTION}" >&2
