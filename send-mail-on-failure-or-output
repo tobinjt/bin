@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Run a command and send a mail if the command fails or produces output.
+# Redirects stdout and stderr, so if your command or caller does that it won't
+# work properly.
+
+set -e -f -u -o pipefail
+
+address="$1"
+shift
+output="$(mktemp -t output.XXXXXXXXXXXXXXXX)"
+trap 'rm -f "${output}"' EXIT
+
+set +e
+"$@" > "${output}" 2>&1
+exit_status="$?"
+set -e
+if [[ "${exit_status}" -ne 0 || -s "${output}" ]]; then
+  (printf "Exit status: %s\\nOutput:\\n" "${exit_status}";
+    cat "${output}"
+  ) | mail -s "$*" "${address}" 
+fi
