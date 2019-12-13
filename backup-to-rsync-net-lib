@@ -7,6 +7,9 @@ set -e -f -u -o pipefail
 PATH="${HOME}/bin:/usr/local/bin:${PATH}"
 
 __NUM_FAILED_BACKUPS=0
+if [[ -t 0 ]]; then
+  __VERBOSE=1
+fi
 backup() {
   if ! backup-single-directory-to-rsync-net "$@"; then
     ((__NUM_FAILED_BACKUPS++))
@@ -14,7 +17,7 @@ backup() {
 }
 
 all_backups_succeeded() {
-  if [[ "${__NUM_FAILED_BACKUPS}" -ne 0 && -t 0 ]]; then
+  if [[ "${__NUM_FAILED_BACKUPS}" -ne 0 && "${__VERBOSE}" == 1 ]]; then
     # Only show error when interactive because I don't want output in cron jobs.
     printf "%d failed backups\\n" "${__NUM_FAILED_BACKUPS}" >&2
   fi
@@ -108,7 +111,7 @@ run_rsync() {
     flags+=("--filter=dir-merge rsync-net_filters")
     flags+=("--filter=dir-merge,- .gitignore")
   fi
-  if [[ -t 0 ]]; then
+  if [[ "${__VERBOSE}" == 1 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
     flags+=("--info=progress2,stats" "--progress" "--verbose")
