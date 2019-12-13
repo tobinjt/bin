@@ -6,17 +6,18 @@
 
 set -e -f -u -o pipefail
 
-address="$1"
+DESTINATION="$1"
 shift
-output="$(mktemp -t output.XXXXXXXXXXXXXXXX)"
-trap 'rm -f "${output}"' EXIT
+OUTPUT_FILE="$(mktemp -t OUTPUT_FILE.XXXXXXXXXXXXXXXX)"
+trap 'rm -f "${OUTPUT_FILE}"' EXIT
+readonly DESTINATION OUTPUT_FILE
 
-set +e
-"$@" > "${output}" 2>&1
-exit_status="$?"
-set -e
-if [[ "${exit_status}" -ne 0 || -s "${output}" ]]; then
-  (printf "Exit status: %s\\nOutput:\\n" "${exit_status}";
-    cat "${output}"
-  ) | mail -s "$*" "${address}" 
+EXIT_STATUS=0
+"$@" > "${OUTPUT_FILE}" 2>&1 || EXIT_STATUS="$?"
+
+if [[ "${EXIT_STATUS}" -ne 0 || -s "${OUTPUT_FILE}" ]]; then
+  (printf "Exit status: %s\\nOutput:\\n" "${EXIT_STATUS}";
+    cat "${OUTPUT_FILE}"
+  ) | mail -s "$*" "${DESTINATION}"
 fi
+exit "${EXIT_STATUS}"
