@@ -7,6 +7,7 @@ set -e -f -u -o pipefail
 PATH="${HOME}/bin:/usr/local/bin:${PATH}"
 
 __NUM_FAILED_BACKUPS=0
+__VERBOSE=0
 if [[ -t 0 ]]; then
   __VERBOSE=1
 fi
