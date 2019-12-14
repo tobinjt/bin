@@ -2,10 +2,8 @@
 
 set -e -f -u -o pipefail
 
-debug_host_output() {
-  local host_output_file="$1"
-  sed -e 's/^/->/' -e 's/$/<-/' "${host_output_file}"
-}
+SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=60
+NUMBER_OF_ATTEMPTS=5
 
 find_address() {
   local atype="$1" pattern="$2" host_output_file="$3" print_error="$4"
@@ -14,8 +12,9 @@ find_address() {
     return 0
   fi
   if [[ "${print_error}" == 1 ]]; then
-    echo "Bad ${atype} address: pattern '${pattern}' not found" >&2
-    debug_host_output "${host_output_file}" >&2
+    printf "Bad %s address: pattern '%s' not found\\n" \
+      "${atype}" "${pattern}" >&2
+    sed -e 's/^/->/' -e 's/$/<-/' "${host_output_file}" >&2
   fi
   return 1
 }
@@ -23,23 +22,15 @@ find_address() {
 find_address_loop() {
   local atype="$1" hostname="$2" pattern="$3" host_output_file="$4"
   readonly atype hostname pattern host_output_file
-  local i max_attempts=5
-  for i in $(seq 1 "${max_attempts}"); do
+  for _ in $(seq 1 $((NUMBER_OF_ATTEMPTS - 1))); do
     host -t "${atype}" "${hostname}" > "${host_output_file}"
-    if [[ "${i}" == "${max_attempts}" ]]; then
-      if ! find_address "${atype}" "${pattern}" "${host_output_file}" 1; then
-        return 1
-      else
-        return 0
-      fi
-    else
-      if find_address "${atype}" "${pattern}" "${host_output_file}" 0; then
-        return 0
-      fi
+    if find_address "${atype}" "${pattern}" "${host_output_file}" 0; then
+      return 0
     fi
-    sleep 60
+    sleep "${SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS}"
   done
-  printf "find_address_loop: internal error, reached end of function\n" >&2
+  find_address "${atype}" "${pattern}" "${host_output_file}" 1 || true
+  return 1
 }
 
 maybe_remove_output_file() {
@@ -47,7 +38,7 @@ maybe_remove_output_file() {
   if [ "${retval}" -eq 0 ]; then
     rm "${host_output_file}"
   else
-    echo "host output in ${host_output_file}"
+    printf "host output in %s\\n" "${host_output_file}"
   fi
 }
 
