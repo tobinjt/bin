@@ -7,34 +7,39 @@
 
 set -e -f -u -o pipefail
 
-IGNORE_EXIT_STATUS=0
-if [[ "${1:-}" == "--ignore_exit_status" ]]; then
-  IGNORE_EXIT_STATUS=1
+main() {
+  local IGNORE_EXIT_STATUS=0
+  if [[ "${1:-}" == "--ignore_exit_status" ]]; then
+    IGNORE_EXIT_STATUS=1
+    shift
+  fi
+  local DESTINATION="$1"
   shift
-fi
-DESTINATION="$1"
-shift
-if [[ "$#" -eq 0 ]]; then
-  printf "No command to run!\\n" >&2
-  exit 1
-fi
-OUTPUT_FILE="$(mktemp -t OUTPUT_FILE.XXXXXXXXXXXXXXXX)"
-trap 'rm -f "${OUTPUT_FILE}"' EXIT
-readonly DESTINATION OUTPUT_FILE
+  if [[ "$#" -eq 0 ]]; then
+    printf "No command to run!\\n" >&2
+    exit 1
+  fi
+  local OUTPUT_FILE
+  OUTPUT_FILE="$(mktemp -t OUTPUT_FILE.XXXXXXXXXXXXXXXX)"
+  trap 'rm -f "${OUTPUT_FILE}"' EXIT
+  readonly DESTINATION OUTPUT_FILE
 
-EXIT_STATUS=0
-"$@" > "${OUTPUT_FILE}" 2>&1 || EXIT_STATUS="$?"
+  local EXIT_STATUS=0
+  "$@" > "${OUTPUT_FILE}" 2>&1 || EXIT_STATUS="$?"
 
-SEND_MAIL=0
-if [[ "${EXIT_STATUS}" -ne 0 && "${IGNORE_EXIT_STATUS}" -eq 0 ]]; then
-  SEND_MAIL=1
-fi
-if [[ -s "${OUTPUT_FILE}" ]]; then
-  SEND_MAIL=1
-fi
-if [[ "${SEND_MAIL}" -eq 1 ]]; then
-  (printf "Exit status: %s\\nOutput:\\n" "${EXIT_STATUS}";
-    cat "${OUTPUT_FILE}"
-  ) | mail -s "${USER}@${HOSTNAME}: $*" "${DESTINATION}"
-fi
-exit "${EXIT_STATUS}"
+  local SEND_MAIL=0
+  if [[ "${EXIT_STATUS}" -ne 0 && "${IGNORE_EXIT_STATUS}" -eq 0 ]]; then
+    SEND_MAIL=1
+  fi
+  if [[ -s "${OUTPUT_FILE}" ]]; then
+    SEND_MAIL=1
+  fi
+  if [[ "${SEND_MAIL}" -eq 1 ]]; then
+    (printf "Exit status: %s\\nOutput:\\n" "${EXIT_STATUS}";
+      cat "${OUTPUT_FILE}"
+    ) | mail -s "${USER}@${HOSTNAME}: $*" "${DESTINATION}"
+  fi
+  exit "${EXIT_STATUS}"
+}
+
+main "$@"
