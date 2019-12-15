@@ -6,6 +6,8 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/errno.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -17,6 +19,7 @@ int main(int argc __attribute__((unused)), char **argv) {
   }
   if (pid == 0) {
     execvp(argv[1], &argv[1]);
+    fprintf(stderr, "Executing \"%s\" failed: %s\n", argv[1], strerror(errno));
     exit(EXIT_FAILURE);
   }
 
