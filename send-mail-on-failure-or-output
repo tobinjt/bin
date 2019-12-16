@@ -15,14 +15,11 @@ main() {
   fi
   local DESTINATION="$1"
   shift
+  readonly IGNORE_EXIT_STATUS DESTINATION
   if [[ "$#" -eq 0 ]]; then
     printf "No command to run!\\n" >&2
     exit 1
   fi
-  local OUTPUT_FILE
-  OUTPUT_FILE="$(mktemp -t OUTPUT_FILE.XXXXXXXXXXXXXXXX)"
-  trap 'rm -f "${OUTPUT_FILE}"' EXIT
-  readonly DESTINATION OUTPUT_FILE
 
   local EXIT_STATUS=0
   "$@" > "${OUTPUT_FILE}" 2>&1 || EXIT_STATUS="$?"
@@ -39,7 +36,16 @@ main() {
       cat "${OUTPUT_FILE}"
     ) | mail -s "${USER}@${HOSTNAME}: $*" "${DESTINATION}"
   fi
-  exit "${EXIT_STATUS}"
+  return "${EXIT_STATUS}"
 }
 
-main "$@"
+# Set this up unconditionally so it is set up once and cleaned up once,
+# including during testing.
+OUTPUT_FILE="$(mktemp -t send-mail-on-failure-or-output.XXXXXXXXXXXXXXXX)"
+trap 'rm -f "${OUTPUT_FILE}"' EXIT
+
+# Only run main if being executed directly; do nothing if sourced for testing.
+# Use basename so that it can be run as 'bash -x ./program ...'.
+if [[ "$(basename "${BASH_SOURCE[0]}")" == "$(basename "${0}")" ]]; then
+  main "$@"
+fi

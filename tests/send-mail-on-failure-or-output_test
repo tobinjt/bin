@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# shellcheck disable=SC1091
+source ../send-mail-on-failure-or-output
+
+mail() {
+  if grep "do-not@mail" <<< "$*"; then
+    printf "mail should not have been called for %s\\n" "$*" >&2
+    exit 1
+  fi
+  printf "mail: args are: \"%s\"\\n" "$*"
+}
+
+output_to_stderr() {
+  printf "stderr output\\n" >&2
+}
+
+output_and_failure() {
+  printf "some output\\n"
+  false
+}
+
+output="$(mktemp -t send-mail-on-failure-or-output_test.XXXXXXXXXXXXXXXXX)"
+{ main 1do-not@mail true;
+  main 2do-send@mail false && printf "Unexpected success 2do-send@mail\\n";
+  main 3do-send@mail echo foo;
+  main --ignore_exit_status 4do-not@mail false \
+    && printf "Unexpected success 4do-not@mail\\n";
+  main --ignore_exit_status 5do-send@mail echo bar;
+  main 6do-send@mail output_to_stderr;
+  main 7do-send@mail output_and_failure \
+    && printf "Unexpected success 7do-not@mail\\n";
+} > "${output}"
+diff -u send-mail-on-failure-or-output_test.stdout "${output}"
+rm -f "${output}"

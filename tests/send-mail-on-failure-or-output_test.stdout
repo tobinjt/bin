@@ -1,0 +1,5 @@
+mail: args are: "-s johntobin@johns-new-air.lan: false 2do-send@mail"
+mail: args are: "-s johntobin@johns-new-air.lan: echo foo 3do-send@mail"
+mail: args are: "-s johntobin@johns-new-air.lan: echo bar 5do-send@mail"
+mail: args are: "-s johntobin@johns-new-air.lan: output_to_stderr 6do-send@mail"
+mail: args are: "-s johntobin@johns-new-air.lan: output_and_failure 7do-send@mail"
