@@ -49,7 +49,7 @@ check_dns_for_host() {
   # www.johntobin.ie has address 88.99.86.190
   # www.johntobin.ie has IPv6 address 2a01:4f8:c17:7156::2
   local host_output_file pattern retval=0
-  host_output_file="$(mktemp /tmp/check-dns.XXXXXXXXXXXX)"
+  host_output_file="$(mktemp -t check-dns.XXXXXXXXXXXX)"
   readonly host_output_file
 
   pattern="^${hostname} has address ${ipv4_address}\$"
@@ -79,7 +79,7 @@ check_mx_for_host() {
   # johntobin.ie mail is handled by 5 alt1.aspmx.l.google.com.
   # johntobin.ie mail is handled by 5 alt2.aspmx.l.google.com.
   local host_output_file
-  host_output_file="$(mktemp /tmp/check-dns.XXXXXXXXXXXX)"
+  host_output_file="$(mktemp -t check-dns.XXXXXXXXXXXX)"
   readonly host_output_file
 
   local record pattern retval=0
@@ -124,16 +124,20 @@ main() {
   return "${retval}"
 }
 
-if [ $# -eq 0 ]; then
-  main \
-    "ariane.ie" \
-    "arianetobin.com" \
-    "arianetobin.ie" \
-    "dev.arianetobin.ie" \
-    "johntobin.ie" \
-    "metalatplay.com" \
-    "metalatwork.com" \
-    "nakedmetalsmith.com"
-else
-  main "$@"
+# Only run main if being executed directly; do nothing if sourced for testing.
+# Use basename so that it can be run as 'bash -x ./program ...'.
+if [[ "$(basename "${BASH_SOURCE[0]}")" == "$(basename "${0}")" ]]; then
+  if [ $# -eq 0 ]; then
+    main \
+      "ariane.ie" \
+      "arianetobin.com" \
+      "arianetobin.ie" \
+      "dev.arianetobin.ie" \
+      "johntobin.ie" \
+      "metalatplay.com" \
+      "metalatwork.com" \
+      "nakedmetalsmith.com"
+  else
+    main "$@"
+  fi
 fi
