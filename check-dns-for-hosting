@@ -38,7 +38,7 @@ maybe_remove_output_file() {
   if [ "${retval}" -eq 0 ]; then
     rm "${host_output_file}"
   else
-    printf "host output in %s\\n" "${host_output_file}"
+    printf "host output in %s\\n" "${host_output_file}" >&2
   fi
 }
 

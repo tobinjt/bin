@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# shellcheck disable=SC1091
+source ../check-dns-for-hosting
+
+SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=0
+export SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS
+
+# Put all temp files in a single directory for easier debugging.
+TMPDIR="$(mktemp -d -t check-dns-for-hosting_test.XXXXXXXXXXXX)"
+# Set up fake host records.
+host_records="$(mktemp -t host_records.XXXXXXXXXXXXXXXXX)"
+host() {
+  local domain="$3"
+  grep "^${domain} " "${host_records}"
+}
+cat > "${host_records}" <<HOST_RECORDS
+# domain1.ie will succeed.
+domain1.ie has address 88.99.86.190
+domain1.ie has IPv6 address 2a01:4f8:c17:7156::2
+www.domain1.ie has address 88.99.86.190
+www.domain1.ie has IPv6 address 2a01:4f8:c17:7156::2
+domain1.ie mail is handled by 1 aspmx.l.google.com.
+domain1.ie mail is handled by 10 aspmx2.googlemail.com.
+domain1.ie mail is handled by 10 aspmx3.googlemail.com.
+domain1.ie mail is handled by 5 alt1.aspmx.l.google.com.
+domain1.ie mail is handled by 5 alt2.aspmx.l.google.com.
+
+# dev.domain2.ie will succeed, without subdomains being checked.
+dev.domain2.ie has address 88.99.86.190
+dev.domain2.ie has IPv6 address 2a01:4f8:c17:7156::2
+dev.domain2.ie mail is handled by 1 aspmx.l.google.com.
+dev.domain2.ie mail is handled by 10 aspmx2.googlemail.com.
+dev.domain2.ie mail is handled by 10 aspmx3.googlemail.com.
+dev.domain2.ie mail is handled by 5 alt1.aspmx.l.google.com.
+dev.domain2.ie mail is handled by 5 alt2.aspmx.l.google.com.
+
+# domain3.ie will fail because there are no records.
+HOST_RECORDS
+
+stdout="$(mktemp -t stdout.XXXXXXXXXXXXXXXXX)"
+stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
+{ main "domain1.ie" || printf "Unexpected failure for domain1.ie\\n" >&2;
+  main "dev.domain2.ie" || printf "Unexpected failure for domain1.ie\\n" >&2;
+  main "domain3.ie" || exit_status="$?";
+  if [[ "${exit_status}" -eq 0 ]]; then
+    printf "Unexpected success for domain1.ie\\n" >&2;
+  fi;
+} > "${stdout}" 2> "${stderr}"
+# Clean up variable output.
+sed -i .bak -e 's/host output in.*/host output in tmpfile/' "${stderr}"
+diff -u "check-dns-for-hosting_test.stdout" "${stdout}"
+diff -u "check-dns-for-hosting_test.stderr" "${stderr}"
+rm -f "${stdout}" "${stderr}"

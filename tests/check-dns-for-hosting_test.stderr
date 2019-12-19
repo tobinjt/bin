@@ -1,0 +1,12 @@
+Bad A address: pattern '^domain3.ie has address 88.99.86.190$' not found
+Bad AAAA address: pattern '^domain3.ie has IPv6 address 2a01:4f8:c17:7156::2$' not found
+host output in tmpfile
+Bad A address: pattern '^www.domain3.ie has address 88.99.86.190$' not found
+Bad AAAA address: pattern '^www.domain3.ie has IPv6 address 2a01:4f8:c17:7156::2$' not found
+host output in tmpfile
+Bad MX address: pattern '^domain3.ie mail is handled by 1 aspmx.l.google.com.$' not found
+Bad MX address: pattern '^domain3.ie mail is handled by 10 aspmx2.googlemail.com.$' not found
+Bad MX address: pattern '^domain3.ie mail is handled by 10 aspmx3.googlemail.com.$' not found
+Bad MX address: pattern '^domain3.ie mail is handled by 5 alt1.aspmx.l.google.com.$' not found
+Bad MX address: pattern '^domain3.ie mail is handled by 5 alt2.aspmx.l.google.com.$' not found
+host output in tmpfile
