@@ -8,8 +8,6 @@ source ../check-dns-for-hosting
 SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=0
 export SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS
 
-# Put all temp files in a single directory for easier debugging.
-TMPDIR="$(mktemp -d -t check-dns-for-hosting_test.XXXXXXXXXXXX)"
 # Set up fake host records.
 host_records="$(mktemp -t host_records.XXXXXXXXXXXXXXXXX)"
 host() {
@@ -31,11 +29,6 @@ domain1.ie mail is handled by 5 alt2.aspmx.l.google.com.
 # dev.domain2.ie will succeed, without subdomains being checked.
 dev.domain2.ie has address 88.99.86.190
 dev.domain2.ie has IPv6 address 2a01:4f8:c17:7156::2
-dev.domain2.ie mail is handled by 1 aspmx.l.google.com.
-dev.domain2.ie mail is handled by 10 aspmx2.googlemail.com.
-dev.domain2.ie mail is handled by 10 aspmx3.googlemail.com.
-dev.domain2.ie mail is handled by 5 alt1.aspmx.l.google.com.
-dev.domain2.ie mail is handled by 5 alt2.aspmx.l.google.com.
 
 # domain3.ie will fail because there are no records.
 HOST_RECORDS
@@ -46,9 +39,36 @@ stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
   main "dev.domain2.ie" || printf "Unexpected failure for domain1.ie\\n" >&2;
   main "domain3.ie" || exit_status="$?";
   if [[ "${exit_status}" -eq 0 ]]; then
-    printf "Unexpected success for domain1.ie\\n" >&2;
+    printf "Unexpected success for domain3.ie\\n" >&2;
   fi;
 } > "${stdout}" 2> "${stderr}"
+
+# Test that retries work.
+# First time host is run output nothing, set up output for the second time.
+host() {
+  # Second time it prints the A record and sets up for the third time.
+  host() {
+    cat <<HOST_RECORDS
+sub.domain4.ie has address 88.99.86.190
+HOST_RECORDS
+
+    # Third time it outputs the AAAA record and sets up to fail from now on.
+    host() {
+      cat <<HOST_RECORDS
+sub.domain4.ie has IPv6 address 2a01:4f8:c17:7156::2
+HOST_RECORDS
+
+      host() {
+        printf "Host should not have been called a third time\\n" >&2
+        return 1
+      }
+    }
+  }
+}
+
+{ main "sub.domain4.ie" || printf "Unexpected failure for domain4.ie\\n" >&2;
+} >> "${stdout}" 2>> "${stderr}"
+
 # Clean up variable output.
 sed -i .bak -e 's/host output in.*/host output in tmpfile/' "${stderr}"
 diff -u "check-dns-for-hosting_test.stdout" "${stdout}"
