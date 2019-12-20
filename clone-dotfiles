@@ -12,9 +12,8 @@ if [[ -z "$(type -a vim)" ]]; then
   exit 1
 fi
 
-DESTDIR="src/dotfiles"
+DESTDIR="${HOME}/src/dotfiles"
 readonly DESTDIR
-cd "${HOME}"
 if [ ! -d "${DESTDIR}" ]; then
   mkdir -p "$(dirname "${DESTDIR}")"
   git clone https://github.com/tobinjt/dotfiles.git "${DESTDIR}"

@@ -42,7 +42,7 @@ TYPE="${TYPE/themes/theme}"
 # Tab completion will add a trailing slash, remove it if present.
 NAME="${3%/}"
 VERSION="$4"
-readonly WORDPRESS_BASE TYPE NAME VERSION SUBDIR
+readonly WORDPRESS_BASE TYPE NAME VERSION
 if [[ "${TYPE}" != "plugin" && "${TYPE}" != "theme" \
         && "${TYPE}" != "wordpress" ]]; then
   usage
