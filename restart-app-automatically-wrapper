@@ -11,44 +11,45 @@ set -e -f -u -o pipefail
 # Kill any leftover processes from previous attempts.  Sleeps for 15 seconds in
 # total if there are leftovers, 0 seconds if not.
 kill_leftovers() {
-  # Assumes that every app looks like "/Applications/Backup and
-  # Sync.app/Contents/MacOS/Backup and Sync".  Strip off /Contents... so that
-  # processes like "/Applications/Backup and
+  # Find and kill processes like "/Applications/Backup and
   # Sync.app/Contents/PlugIns/FinderSyncAPIExtension.appex/Contents/MacOS/FinderSyncAPIExtension"
-  # are found and killed.
-  local app_prefix="${1%/Contents*}"
-  if [[ -z "$(leftover_pids "${app_prefix}")" ]]; then
+  local app="$1"
+  if [[ -z "$(leftover_pids "${app}")" ]]; then
     return 0
   fi
 
-  leftover_pids "${app_prefix}" | xargs kill "-TERM"
+  leftover_pids "${app}" | xargs kill "-TERM"
   sleep 10
-  leftover_pids "${app_prefix}" | xargs kill "-KILL"
+  leftover_pids "${app}" | xargs kill "-KILL"
   sleep 5
 }
 
 leftover_pids() {
-  local app_prefix="$1"
+  local app="$1"
   # ps produces output like:
   # 31329 ??       /Applications/Backup and Sync.app/Contents/MacOS/Backup...
-  # Use grep before awk because escaping the / in ${app_prefix} will be hard.
+  # Use grep before awk because escaping the / in ${app} will be hard.
   # Only kill things that don't have a controlling terminal (??).
   # pgrep doesn't support matching on prefixes, disable shellcheck warning.
   # shellcheck disable=SC2009
   ps -u "${USER}" -x -o pid,tty,comm \
-    | grep -F "${app_prefix}" \
+    | grep -F "${app}" \
     | awk '$2 == "??" { print $1 }'
 }
 
 main() {
-  local exit_status=0 timeout=60
-  if [[ "$#" -gt 1 && "$1" =~ ^[0-9]+$ ]]; then
-    timeout="$1"
-    shift
+  if [[ "$#" -ne 2 ]]; then
+    printf "Usage: %s TIMEOUT APP\nE.g. %s 60 /Applications/Pauses.app\n" \
+      "$0" "$0" >&2
+    exit 1
   fi
-  kill_leftovers "$1"
+  local exit_status=0 timeout="$1" app="$2"
+  # Backwards compatibility: /Applications/Pauses.app and
+  # /Applications/Pauses.app/Contents/MacOS/Pauses
+  app="${app%/Contents*}"
+  kill_leftovers "${app}"
   # Run the app.
-  "$@" || exit_status="$?"
+  open -W "${app}" || exit_status="$?"
   sleep "${timeout}"
   exit "${exit_status}"
 }
