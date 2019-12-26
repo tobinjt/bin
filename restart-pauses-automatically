@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 main() {
-  local APP="/Applications/Pauses.app/Contents/MacOS/Pauses"
+  local APP="/Applications/Pauses.app"
   local DEST="pauses.restart.plist"
   local LABEL="Pauses.restart"
 

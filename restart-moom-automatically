@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 main() {
-  local APP="/Applications/Moom.app/Contents/MacOS/Moom"
+  local APP="/Applications/Moom.app"
   local DEST="moom.restart.plist"
   local LABEL="Moom.restart"
 

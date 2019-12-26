@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 main() {
-  local APP="/Applications/Backup and Sync.app/Contents/MacOS/Backup and Sync"
+  local APP="/Applications/Backup and Sync.app"
   local DEST="backup-and-sync.restart.plist"
   local LABEL="BackupAndSync.restart"
 

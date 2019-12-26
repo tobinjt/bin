@@ -3,8 +3,7 @@
 set -e -f -u -o pipefail
 
 main() {
-  local APP="/Applications/Google Drive File Stream.app/Contents/MacOS"
-  APP+="/Google Drive File Stream"
+  local APP="/Applications/Google Drive File Stream.app"
   local DEST="drive-file-stream.restart.plist"
   local LABEL="DriveFileStream.restart"
 
