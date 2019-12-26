@@ -7,6 +7,7 @@ output_plist() {
   # Set up launchd to automatically restart the app when it exits.
   # https://developer.apple.com/library/content/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html
   # man launchd.plist
+  # Cookbook section in https://www.launchd.info/
   cat <<END_OF_PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -26,22 +27,26 @@ output_plist() {
 END_OF_PLIST
 }
 
+usage() {
+    cat >&2 <<USAGE
+Usage: $0 DEST_FILE APP_PATH SERVICE_LABEL ACTION [TIMEOUT]
+E.g. $0 pauses.restart.plist /Applications/Pauses.app Pauses.restart start
+- ACTION must be one of: list load remove restart start stop unload
+- DEST_FILE will be written in ${HOME}/Library/LaunchAgents
+- APP_PATH should be the path to the application base directory, e.g.
+  /Applications/foo.app
+USAGE
+    return 1
+}
+
 main() {
   if [[ "$#" -ne 4 && "$#" -ne 5 ]]; then
-    printf "Usage: %s DEST_FILE APP_PATH SERVICE_LABEL ACTION [TIMEOUT]\\n" "$0" >&2
-    printf "E.g. %s %s %s %s %s\\n" "$0" "pauses.restart.plist" \
-      "/Applications/Pauses.app/Contents/MacOS/Pauses" "Pauses.restart" \
-      "start" >&2
-    printf "ACTION must be one of: %s\\n" \
-      "list load remove restart start stop unload" >&2
-    exit 1
+    usage
+    return 1
   fi
 
-  local DEST_FILE="$1" APP="$2" LABEL="$3" ACTION="$4" TIMEOUT=60
-  local DEST="${HOME}/Library/LaunchAgents/${DEST_FILE}"
-  if [[ "$#" -eq 5 ]]; then
-    TIMEOUT="$5"
-  fi
+  local DEST="${HOME}/Library/LaunchAgents/${DEST_FILE}/$1"
+  local APP="$2" LABEL="$3" ACTION="$4" TIMEOUT="${5:-60}"
 
   if [[ ! -f "${DEST}" ]]; then
       output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
@@ -53,6 +58,9 @@ main() {
       launchctl unload "${DEST}"
       # Give the app some time to exit.
       sleep 10
+      # We do not load the config again; any action that needs the config to be
+      # loaded ensures that it's loaded, which also handles the situation where
+      # the user manually unloaded the config.
     fi
     output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
   fi
@@ -100,10 +108,7 @@ main() {
       ;;
     *)
       printf "Unknown action: %s\\n" "${ACTION}" >&2
-      printf "Usage: %s ACTION\\n" "$0" >&2
-      printf "ACTION must be one of: %s\\n" \
-        "list load remove restart start stop unload" >&2
-      return 1
+      usage
       ;;
   esac
 }
