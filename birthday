@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """Show the probability of a birthday paradox collision.
 
@@ -13,41 +13,42 @@ import sys
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
-def Factorial(number):
+def factorial(number: float) -> int:
   """Calculate the factorial of a number.
 
   Args:
-    number: an integer.  It will be coerced to an integer using int(), so you
-            can pass a string; if you pass a float, it will be rounded by int().
+    number: int.  It will be coerced to an integer using int(), so you can pass
+            a string; if you pass a float, it will be rounded by int().
 
   Returns:
-    The factorial of the argument.
+    int, The factorial of the argument.
 
   Raises:
     ValueError: the number argument could not be coerced to an integer.
   """
 
   number = int(number)
-  factorial = 1
+  fac = 1
   while number > 1:
-    factorial *= number
+    fac *= number
     number -= 1
-  return factorial
+  return fac
 
 
-def Birthday(num_people, num_days):
+def birthday(num_people: int, num_days: int) -> decimal.Decimal:
   """Calculate the probability of a birthday collision.
 
   Args:
-    num_days: the number of days in the year
-    num_people: the number of people
+    num_days: int, the number of days in the year
+    num_people: int, the number of people
 
   Returns:
-    A number between 0 and 1 giving the probability of a collision.
+    decimal.Decimal, a number between 0 and 1 giving the probability of a
+    collision.
   """
 
-  numerator = (decimal.Decimal(Factorial(num_days))
-               / decimal.Decimal(Factorial(num_days - num_people)))
+  numerator = (decimal.Decimal(factorial(num_days))
+               / decimal.Decimal(factorial(num_days - num_people)))
   denominator = decimal.Decimal(num_days) ** decimal.Decimal(num_people)
   probability_of_no_collision = numerator / denominator
   return 1 - probability_of_no_collision
@@ -67,7 +68,7 @@ def main(argv):
   if len(argv) == 3:
     num_days = int(argv[2])
 
-  print Birthday(num_people, num_days)
+  print(birthday(num_people, num_days))
 
 if __name__ == "__main__":
   main(sys.argv)
