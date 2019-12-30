@@ -2,19 +2,29 @@
 
 set -e -f -u -o pipefail
 
-SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
-WEBSITE='https://www.arianetobin.ie/'
-readonly SENTINEL WEBSITE
-# Try multiple times to cover for bad internet at home.
-for _ in $(seq 1 5); do
-  # Redirect to /dev/null rather than using -q: using -q means grep will exit
-  # immediately if a match is found, and then curl can't finish writing to the
-  # pipe so it produces an error message, whereas without -q grep will process
-  # all the input.
-  if curl --silent "${WEBSITE}" | grep -F -i "${SENTINEL}" > /dev/null; then
-    exit 0
-  fi
-  sleep 600
-done
-printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}"
-exit 1
+NUMBER_OF_ATTEMPTS=5
+SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=600
+
+main() {
+  SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
+  WEBSITE='https://www.arianetobin.ie/'
+  # Try multiple times to cover for bad internet at home.
+  for _ in $(seq 1 "${NUMBER_OF_ATTEMPTS}"); do
+    # Redirect to /dev/null rather than using -q: using -q means grep will exit
+    # immediately if a match is found, and then curl can't finish writing to the
+    # pipe so it produces an error message, whereas without -q grep will process
+    # all the input.
+    if curl --silent "${WEBSITE}" | grep -F -i "${SENTINEL}" > /dev/null; then
+      return 0
+    fi
+    sleep "${SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS}"
+  done
+  printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}"
+  return 1
+}
+
+# Only run main if being executed directly; do nothing if sourced for testing.
+# Use basename so that it can be run as 'bash -x ./program ...'.
+if [[ "$(basename "${BASH_SOURCE[0]}")" == "$(basename "${0}")" ]]; then
+  main
+fi
