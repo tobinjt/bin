@@ -4,10 +4,10 @@ set -e -f -u -o pipefail
 
 NUMBER_OF_ATTEMPTS=5
 SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=600
+SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
+WEBSITE='https://www.arianetobin.ie/'
 
 main() {
-  SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
-  WEBSITE='https://www.arianetobin.ie/'
   # Try multiple times to cover for bad internet at home.
   for _ in $(seq 1 "${NUMBER_OF_ATTEMPTS}"); do
     # Redirect to /dev/null rather than using -q: using -q means grep will exit
@@ -19,7 +19,7 @@ main() {
     fi
     sleep "${SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS}"
   done
-  printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}"
+  printf "Did not find sentinel '%s' in %s\\n" "${SENTINEL}" "${WEBSITE}" >&2
   return 1
 }
 
