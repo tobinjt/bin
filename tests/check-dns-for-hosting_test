@@ -58,8 +58,9 @@ HOST_RECORDS
 sub.domain4.ie has IPv6 address 2a01:4f8:c17:7156::2
 HOST_RECORDS
 
+      # Fourth and subsequent times it should not be called.
       host() {
-        printf "Host should not have been called a third time\\n" >&2
+        printf "Host should not have been called a fourth time\\n" >&2
         return 1
       }
     }
