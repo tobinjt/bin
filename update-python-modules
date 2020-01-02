@@ -55,16 +55,11 @@ main() {
   clean_python_install
   pip3 install virtualenv
 
-  # Flexget.
-  pip_install "${basedir}/flexget" "flexget" "transmissionrpc"
+  # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ -d "${HOME}/.flexget/logs" ]]; then
-    # Only test on machines where I normally run flexget.
+    pip_install "${basedir}/flexget" "flexget" "transmissionrpc"
     flexget-wrapper
   fi
-
-  # Home assistant
-  # pip_install "${basedir}/home_assistant" homeassistant
-  # TODO: validate?
 
   # Python development is installed globally so it's easier to use.
   # mypy needs lxml but doesn't depend on it.
