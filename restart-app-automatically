@@ -49,7 +49,8 @@ main() {
   local APP="$2" LABEL="$3" ACTION="$4" TIMEOUT="${5:-60}"
 
   if [[ ! -f "${DEST}" ]]; then
-      output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
+    printf "Creating %s\\n" "${DEST}"
+    output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
   fi
   if ! diff -u "${DEST}" <(output_plist "${APP}" "${LABEL}" "${TIMEOUT}"); then
     if launchctl list | grep -q "${LABEL}"; then
@@ -57,11 +58,13 @@ main() {
       # to be any other way to get launchd to reread the config :(
       launchctl unload "${DEST}"
       # Give the app some time to exit.
+      printf "Sleeping to give launchd time to kill the app.\\n"
       sleep 10
       # We do not load the config again; any action that needs the config to be
       # loaded ensures that it's loaded, which also handles the situation where
       # the user manually unloaded the config.
     fi
+    printf "Updating %s\\n" "${DEST}"
     output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
   fi
 
