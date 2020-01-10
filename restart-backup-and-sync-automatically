@@ -6,11 +6,13 @@ main() {
   local APP="/Applications/Backup and Sync.app"
   local DEST="backup-and-sync.restart.plist"
   local LABEL="BackupAndSync.restart"
+  local SLEEP_BETWEEN_ATTEMPTS="15"
 
   if [[ "$#" -eq 0 ]]; then
     main help
   else
-    restart-app-automatically "${DEST}" "${APP}" "${LABEL}" "$@"
+    restart-app-automatically "${DEST}" "${APP}" "${LABEL}" \
+      "${SLEEP_BETWEEN_ATTEMPTS}" "$@"
   fi
 }
 

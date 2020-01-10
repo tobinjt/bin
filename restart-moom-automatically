@@ -6,11 +6,13 @@ main() {
   local APP="/Applications/Moom.app"
   local DEST="moom.restart.plist"
   local LABEL="Moom.restart"
+  local SLEEP_BETWEEN_ATTEMPTS="5"
 
   if [[ "$#" -eq 0 ]]; then
     main help
   else
-    restart-app-automatically "${DEST}" "${APP}" "${LABEL}" "$@"
+    restart-app-automatically "${DEST}" "${APP}" "${LABEL}" \
+      "${SLEEP_BETWEEN_ATTEMPTS}" "$@"
   fi
 }
 
