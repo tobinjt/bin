@@ -59,6 +59,7 @@ main() {
   if [[ -d "${HOME}/.flexget/logs" ]]; then
     pip_install "${basedir}/flexget" "flexget" "transmissionrpc"
     flexget-wrapper
+    printf "\\n\\n\\n\\n\\n"
   fi
 
   # Python development is installed globally so it's easier to use.
