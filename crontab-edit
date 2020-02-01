@@ -3,15 +3,11 @@
 set -e -f -u -o pipefail
 
 if [[ "$#" -eq 0 ]]; then
-  # Program is being run interactively.
-
-  # I deliberately want REAL_EDITOR to not be affected by changes to EDITOR, and
-  # REAL_EDITOR only being available to the child process is intended.
-  # shellcheck disable=SC2098
-  # shellcheck disable=SC2097
-  REAL_EDITOR="${EDITOR}" EDITOR="$0" crontab -e
+  # Program is being run interactively, set up $EDITOR to run this program again
+  # and trigger the else branch.
+  EDITOR="$0" crontab -e
 else
-  # Program is being run by crontab.
+  # crontab has invoked this as an editor.
   cd "${HOME}/src/private-configs"
   git check-local-copy-is-clean --ignore-unpushed-commits
   git pull
@@ -33,7 +29,7 @@ else
     else
       git add "${FILENAME}"
     fi
-    EDITOR="${REAL_EDITOR}" git commit --edit \
+    EDITOR="vim" git commit --edit \
       --message 'BEWARE: An empty commit message will cause the commit to fail!'
   fi
   git pull
