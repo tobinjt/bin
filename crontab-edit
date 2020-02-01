@@ -21,7 +21,11 @@ else
     touch "${FILENAME}"
   fi
   vimdiff "${FILENAME}" "$@"
-  diff -u "${FILENAME}" "$@" || true
+  while ! diff -u "${FILENAME}" "$@"; do
+    printf "Found diffs between tmp file and repo!\\n"
+    read -r -p "Press enter to edit again: "
+    vimdiff "${FILENAME}" "$@"
+  done
   if ! git check-local-copy-is-clean; then
     # Git tracks symlinks, so it does not follow them, so I need to follow them.
     if [[ -L "${FILENAME}" ]]; then
