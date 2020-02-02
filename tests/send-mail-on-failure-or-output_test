@@ -22,6 +22,8 @@ output_and_failure() {
   false
 }
 
+SUBJECT_PREFIX="test@testing"
+export SUBJECT_PREFIX
 output="$(mktemp -t send-mail-on-failure-or-output_test.XXXXXXXXXXXXXXXXX)"
 { main 1do-not@mail true;
   main 2do-send@mail false && printf "Unexpected success 2do-send@mail\\n";

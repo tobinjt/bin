@@ -31,10 +31,13 @@ main() {
   if [[ -s "${OUTPUT_FILE}" ]]; then
     SEND_MAIL=1
   fi
+
+  # Support overriding the subject prefix to make testing idempotent.
+  local SUBJECT="${SUBJECT_PREFIX:-${USER}@${HOSTNAME}}: $*"
   if [[ "${SEND_MAIL}" -eq 1 ]]; then
     (printf "Exit status: %s\\nOutput:\\n" "${EXIT_STATUS}";
       cat "${OUTPUT_FILE}"
-    ) | mail -s "${USER}@${HOSTNAME}: $*" "${DESTINATION}"
+    ) | mail -s "${SUBJECT}" "${DESTINATION}"
   fi
   return "${EXIT_STATUS}"
 }
