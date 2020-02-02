@@ -7,18 +7,46 @@
 
 set -e -f -u -o pipefail
 
+usage() {
+  printf "%s [OPTIONS] EMAIL_ADDRESS command args\\n" "$0"
+  printf "OPTIONS: --ignore_exit_status\\n"
+}
+
 main() {
   local IGNORE_EXIT_STATUS=0
-  if [[ "${1:-}" == "--ignore_exit_status" ]]; then
-    IGNORE_EXIT_STATUS=1
-    shift
+  while :; do
+    case "${1:-}" in
+      --ignore_exit_status)
+        IGNORE_EXIT_STATUS=1
+        shift
+        ;;
+      --help)
+        usage
+        return 0
+        ;;
+      --*)
+        usage >&2
+        return 1
+        ;;
+      *)
+        break
+    esac
+  done
+  readonly IGNORE_EXIT_STATUS
+
+  if [[ "$#" -eq 0 ]]; then
+    printf "No email address given!\\n" >&2
+    usage >&2
+    return 1
   fi
   local DESTINATION="$1"
   shift
-  readonly IGNORE_EXIT_STATUS DESTINATION
+  readonly DESTINATION
+
   if [[ "$#" -eq 0 ]]; then
     printf "No command to run!\\n" >&2
-    exit 1
+    usage >&2
+    return 1
   fi
 
   local EXIT_STATUS=0
