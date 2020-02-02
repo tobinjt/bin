@@ -9,15 +9,20 @@ set -e -f -u -o pipefail
 
 usage() {
   printf "%s [OPTIONS] EMAIL_ADDRESS command args\\n" "$0"
-  printf "OPTIONS: --ignore_exit_status\\n"
+  printf "OPTIONS: --ignore_exit_status, --only_on_failure\\n"
+  printf "Cannot use --ignore_exit_status and --only_on_failure together\\n"
 }
 
 main() {
-  local IGNORE_EXIT_STATUS=0
+  local IGNORE_EXIT_STATUS=0 ONLY_ON_FAILURE=0
   while :; do
     case "${1:-}" in
       --ignore_exit_status)
         IGNORE_EXIT_STATUS=1
+        shift
+        ;;
+      --only_on_failure)
+        ONLY_ON_FAILURE=1
         shift
         ;;
       --help)
@@ -32,7 +37,11 @@ main() {
         break
     esac
   done
-  readonly IGNORE_EXIT_STATUS
+  readonly IGNORE_EXIT_STATUS ONLY_ON_FAILURE
+  if [[ "${IGNORE_EXIT_STATUS}" -eq 1 && "${ONLY_ON_FAILURE}" -eq 1 ]]; then
+    printf "Cannot use both --ignore_exit_status and --only_on_failure\\n" >&2
+    return 1
+  fi
 
   if [[ "$#" -eq 0 ]]; then
     printf "No email address given!\\n" >&2
@@ -57,7 +66,13 @@ main() {
     SEND_MAIL=1
   fi
   if [[ -s "${OUTPUT_FILE}" ]]; then
-    SEND_MAIL=1
+    if [[ "${ONLY_ON_FAILURE}" -eq 1 ]]; then
+      if [[ "${EXIT_STATUS}" -ne 0 ]]; then
+        SEND_MAIL=1
+      fi
+    else
+      SEND_MAIL=1
+    fi
   fi
 
   # Support overriding the subject prefix to make testing idempotent.

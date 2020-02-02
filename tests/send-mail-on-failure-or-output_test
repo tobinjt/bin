@@ -22,9 +22,19 @@ output_and_failure() {
   false
 }
 
+this_should_not_be_run() {
+  printf "THIS SHOULD NOT BE RUN!!!\n" >&2
+  false
+}
+
 SUBJECT_PREFIX="test@testing"
 export SUBJECT_PREFIX
-output="$(mktemp -t send-mail-on-failure-or-output_test.XXXXXXXXXXXXXXXXX)"
+output="$(mktemp -t stdout.XXXXXXXXXXXXXXXXX)"
+stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
+# Any test where main fails will cause the overall test to fail, unless the
+# failure is checked for.  The best way to check for that is - surprisingly - to
+# check for *success* which both checks for unexpected success and prevents the
+# expected failure from failing the overall test.
 { main 1do-not@mail true;
   main 2do-send@mail false && printf "Unexpected success 2do-send@mail\\n";
   main 3do-send@mail echo foo;
@@ -34,6 +44,13 @@ output="$(mktemp -t send-mail-on-failure-or-output_test.XXXXXXXXXXXXXXXXX)"
   main 6do-send@mail output_to_stderr;
   main 7do-send@mail output_and_failure \
     && printf "Unexpected success 7do-not@mail\\n";
-} > "${output}"
+  main --ignore_exit_status --only_on_failure 8incompatible-arguments@mail \
+      this_should_not_be_run \
+    && printf "Unexpected success 8incompatible-arguments\\n";
+  main --only_on_failure 9no-mail-on-success echo foo;
+  main --only_on_failure 10-mail-on-failure-no-output@mail false \
+    && printf "Unexpected success 10-mail-on-failure-no-output\\n";
+} > "${output}" 2> "${stderr}"
 diff -u send-mail-on-failure-or-output_test.stdout "${output}"
-rm -f "${output}"
+diff -u send-mail-on-failure-or-output_test.stderr "${stderr}"
+rm -f "${output}" "${stderr}"
