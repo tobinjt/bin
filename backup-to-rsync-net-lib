@@ -13,7 +13,7 @@ if [[ -t 0 ]]; then
 fi
 backup() {
   if ! backup-single-directory-to-rsync-net "$@"; then
-    ((__NUM_FAILED_BACKUPS++))
+    ((++__NUM_FAILED_BACKUPS))
   fi
 }
 
