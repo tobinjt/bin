@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Why isn't this a function in backup-to-rsync-net-lib?  Because "set -f"
+# doesn't work properly in a function when that function is called like
+# "if ! the-function; then", so we make it an external command and it works as
+# expected.
+
 set -e -f -u -o pipefail
 
 # shellcheck disable=SC1090
