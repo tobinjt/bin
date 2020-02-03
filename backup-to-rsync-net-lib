@@ -6,6 +6,10 @@ set -e -f -u -o pipefail
 # MacOS.
 PATH="${HOME}/bin:/usr/local/bin:${PATH}"
 
+# If the top-level code was called with -x, then enable it in child processes
+# too.
+export SHELLOPTS
+
 __NUM_FAILED_BACKUPS=0
 __VERBOSE=0
 if [[ -t 0 ]]; then
