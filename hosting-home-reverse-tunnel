@@ -2,7 +2,7 @@
 
 set -e -f -u -o pipefail
 
-AUTOSSH_LOGFILE="${HOME}/tmp/autossh-logs"
+AUTOSSH_LOGFILE="${HOME}/tmp/logs/autossh-logs"
 export AUTOSSH_LOGFILE
 while true; do
   # -M 0: disable monitoring, rely on ssh checking connectivity.
