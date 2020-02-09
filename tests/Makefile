@@ -12,11 +12,6 @@ clean:
 # filename if it doesn't exist.  This means to changes to any file needed for
 # testing will cause tests to be rerun.
 .SECONDEXPANSION:
-.%_timestamp: %_test ../% $$(wildcard %_test.stdout) $$(wildcard %_test.stderr) \
-		$$(wildcard ../%.c)
+.%_timestamp: %_test ../% $$(wildcard %_test.stdout) $$(wildcard %_test.stderr)
 	./$<
 	touch $@
-
-# Disable the built-in rule for compiling C source so that we don't overwrite
-# ../full-disk-access
-.SUFFIXES:
