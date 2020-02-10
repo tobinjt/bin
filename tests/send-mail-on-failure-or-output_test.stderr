@@ -1,1 +1,12 @@
 Cannot use both --ignore_exit_status and --only_on_failure
+./send-mail-on-failure-or-output_test [OPTIONS] EMAIL_ADDRESS command args
+OPTIONS: --ignore_exit_status, --only_on_failure
+Cannot use --ignore_exit_status and --only_on_failure together
+No email address given!
+./send-mail-on-failure-or-output_test [OPTIONS] EMAIL_ADDRESS command args
+OPTIONS: --ignore_exit_status, --only_on_failure
+Cannot use --ignore_exit_status and --only_on_failure together
+No command to run!
+./send-mail-on-failure-or-output_test [OPTIONS] EMAIL_ADDRESS command args
+OPTIONS: --ignore_exit_status, --only_on_failure
+Cannot use --ignore_exit_status and --only_on_failure together

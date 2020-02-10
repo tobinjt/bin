@@ -4,3 +4,6 @@ mail: args are: "-s test@testing: echo bar 5do-send@mail"
 mail: args are: "-s test@testing: output_to_stderr 6do-send@mail"
 mail: args are: "-s test@testing: output_and_failure 7do-send@mail"
 mail: args are: "-s test@testing: false 10-mail-on-failure-no-output@mail"
+./send-mail-on-failure-or-output_test [OPTIONS] EMAIL_ADDRESS command args
+OPTIONS: --ignore_exit_status, --only_on_failure
+Cannot use --ignore_exit_status and --only_on_failure together
