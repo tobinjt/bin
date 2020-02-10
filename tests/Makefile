@@ -1,10 +1,20 @@
-TIMESTAMP_FILES = $(patsubst %_test, .%_timestamp, $(wildcard *_test))
+TEST_PROGRAMS = $(wildcard *_test)
+TIMESTAMP_FILES = $(patsubst %_test, .%_timestamp, $(TEST_PROGRAMS))
+KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
 
-.PHONY: all clean
+.PHONY: all clean coverage
 all: $(TIMESTAMP_FILES)
 
 clean:
 	rm -f $(TIMESTAMP_FILES)
+
+coverage:
+	rm -rf $(KCOVERAGE_DIR)
+	for test_program in $(TEST_PROGRAMS); do \
+		kcov --bash-method=DEBUG --limits=80,90 \
+			--exclude-pattern="$${HOME}/bin/tests" \
+			$(KCOVERAGE_DIR) "./$${test_program}"; \
+	done
 
 # We always depend on %_test and ../%, but only depend on %_test.std{out,err} if
 # they exist.  We use secondary expansion so that % gets expanded in one pass,
