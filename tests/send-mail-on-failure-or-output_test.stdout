@@ -13,7 +13,7 @@ mail: args are: "-s test@testing: output_and_failure 7do-send@mail"
 8incompatible-arguments@mail
 9no-mail-on-success@mail
 10-mail-on-failure-no-output@mail
-mail: args are: "-s test@testing: false 10-mail-on-failure-no-output@mail"
+mail: args are: "-s test@testing: output_and_failure 10-mail-on-failure-no-output@mail"
 11---help@mail
 ./send-mail-on-failure-or-output_test [OPTIONS] EMAIL_ADDRESS command args
 OPTIONS: --ignore_exit_status, --only_on_failure

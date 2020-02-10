@@ -63,7 +63,7 @@ stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
   log 9no-mail-on-success@mail;
   main --only_on_failure 9no-mail-on-success@mail echo foo;
   log 10-mail-on-failure-no-output@mail;
-  main --only_on_failure 10-mail-on-failure-no-output@mail false \
+  main --only_on_failure 10-mail-on-failure-no-output@mail output_and_failure \
     && printf "Unexpected success 10-mail-on-failure-no-output\\n";
   log 11---help@mail;
   main --help || printf "Unexpected failure for --help\\n"
