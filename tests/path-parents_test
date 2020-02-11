@@ -36,7 +36,7 @@ start_test() {
   done
 }
 
-main() {
+test_main() {
   # Argument handling.
   start_test "No args"
   check_command_fails path-parents
@@ -77,4 +77,4 @@ main() {
   rm -r -f "${DIR}"
 }
 
-main
+test_main
