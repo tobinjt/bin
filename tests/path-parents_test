@@ -7,11 +7,8 @@ STDOUT="${DIR}/stdout"
 STDERR="${DIR}/stderr"
 readonly DIR STDOUT STDERR
 
-warn() {
-  echo "$@" >&2
-}
 die() {
-  warn "$@"
+  echo "$@" >&2
   exit 1
 }
 
