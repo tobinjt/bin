@@ -15,27 +15,25 @@ USAGE
 warn() {
   echo "$@" >&2
 }
-die() {
-  warn "$@"
-  exit 1
-}
 
 main() {
-  SKIP=0
+  local SKIP=0
   while getopts hs: flag; do
     case "${flag}" in
       h)
         usage
-        exit 0
+        return 0
         ;;
       s)
         SKIP="${OPTARG}"
         if ! grep -q '^[[:digit:]]\+$' <<< "${SKIP}" > /dev/null; then
-          die "Bad argument '${SKIP}'; argument to -s must be an integer."
+          warn "Bad argument '${SKIP}'; argument to -s must be an integer."
+          return 1
         fi
         ;;
       ?)
-        die "$(usage)"
+        warn "$(usage)"
+        return 1
         ;;
     esac
   done
@@ -47,7 +45,8 @@ main() {
     if [[ -t 0 ]]; then
       warn "Refusing to read from terminal."
       warn ""
-      die "$(usage)"
+      warn "$(usage)"
+      return 1
     fi
     cat
   else
