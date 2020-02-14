@@ -14,12 +14,12 @@ die() {
 
 # Run a command and check the exit code.
 check_command_fails() {
-  if "$@" >> "${STDOUT}" 2>> "${STDERR}"; then
+  if path-parents "$@" >> "${STDOUT}" 2>> "${STDERR}"; then
     die "Command succeeded: $*"
   fi
 }
 check_command_succeeds() {
-  if ! "$@" >> "${STDOUT}" 2>> "${STDERR}"; then
+  if ! path-parents "$@" >> "${STDOUT}" 2>> "${STDERR}"; then
     die "Command failed: $*"
   fi
 }
@@ -36,38 +36,38 @@ start_test() {
 test_main() {
   # Argument handling.
   start_test "No args"
-  check_command_fails path-parents
+  check_command_fails
   start_test "One filename"
-  check_command_succeeds path-parents /etc/passwd
+  check_command_succeeds /etc/passwd
   start_test "Non-existent filename works"
-  check_command_succeeds path-parents /qwerty/asdf/bar/foo/baz
+  check_command_succeeds /qwerty/asdf/bar/foo/baz
   start_test "Only -h"
-  check_command_succeeds path-parents -h
+  check_command_succeeds -h
   start_test "Valid -s"
-  check_command_succeeds path-parents -s 1 /etc/passwd
+  check_command_succeeds -s 1 /etc/passwd
   start_test "Invalid -s"
-  check_command_fails path-parents -s asdf /etc/passwd
+  check_command_fails -s asdf /etc/passwd
 
   # Path variants.
   start_test "Leading slashes"
-  check_command_succeeds path-parents /etc/passwd
-  check_command_succeeds path-parents -s 1 /etc/passwd
+  check_command_succeeds /etc/passwd
+  check_command_succeeds -s 1 /etc/passwd
   start_test "No leading slashes"
-  check_command_succeeds path-parents etc/passwd
-  check_command_succeeds path-parents -s 1 etc/passwd
+  check_command_succeeds etc/passwd
+  check_command_succeeds -s 1 etc/passwd
   start_test "Doubled slashes"
-  check_command_succeeds path-parents etc//passwd
-  check_command_succeeds path-parents -s 1 //etc/passwd
-  check_command_succeeds path-parents -s 2 qwerty//asdf//bar/foo//baz
+  check_command_succeeds etc//passwd
+  check_command_succeeds -s 1 //etc/passwd
+  check_command_succeeds -s 2 qwerty//asdf//bar/foo//baz
 
   start_test "Running out of components."
-  check_command_succeeds path-parents -s 3 etc//passwd
-  check_command_succeeds path-parents -s 10 /qwerty/asdf/bar/foo/baz
+  check_command_succeeds -s 3 etc//passwd
+  check_command_succeeds -s 10 /qwerty/asdf/bar/foo/baz
 
   start_test "Reading from stdin."
-  echo "/qwerty/asdf/bar/foo/baz" | check_command_succeeds path-parents
+  echo "/qwerty/asdf/bar/foo/baz" | check_command_succeeds
   start_test "Reading from stdin and skipping."
-  echo "/qwerty/asdf/bar/foo/baz" | check_command_succeeds path-parents -s 3
+  echo "/qwerty/asdf/bar/foo/baz" | check_command_succeeds -s 3
 
   diff -u path-parents_test.stdout "${STDOUT}"
   diff -u path-parents_test.stderr "${STDERR}"
