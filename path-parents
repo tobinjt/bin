@@ -17,7 +17,11 @@ warn() {
 }
 
 main() {
-  local SKIP=0
+  # Reset OPTIND every time, otherwise successive calls to main will skip
+  # arguments.  E.g. call 'main -s 10 /etc/passwd' and OPTIND=2, then call it
+  # again and because OPTIND stays set the first 2 args are skipped rather than
+  # parsed.
+  local SKIP=0 OPTIND=0
   while getopts hs: flag; do
     case "${flag}" in
       h)

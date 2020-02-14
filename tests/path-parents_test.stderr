@@ -1,8 +1,8 @@
 >>> No args <<<
 Refusing to read from terminal.
 
-Usage: /Users/johntobin/bin/path-parents [-s N] [PATH PATH . . .]
-Usage: /Users/johntobin/bin/path-parents -h
+Usage: ./path-parents_test [-s N] [PATH PATH . . .]
+Usage: ./path-parents_test -h
 If no filenames are provided reads from stdin.
 Args:
   -h: Show usage message.
