@@ -50,6 +50,8 @@ test_main() {
   check_command_succeeds -s 1 /etc/passwd
   start_test "Invalid -s"
   check_command_fails -s asdf /etc/passwd
+  start_test "Unrecognised option"
+  check_command_fails -q /etc/passwd
 
   # Path variants.
   start_test "Leading slashes"

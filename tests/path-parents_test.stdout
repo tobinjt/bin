@@ -19,6 +19,7 @@ Args:
 >>> Valid -s <<<
 /etc/passwd
 >>> Invalid -s <<<
+>>> Unrecognised option <<<
 >>> Leading slashes <<<
 /etc
 /etc/passwd
