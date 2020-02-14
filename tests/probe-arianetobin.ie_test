@@ -31,3 +31,4 @@ stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
 diff -u "probe-arianetobin.ie_test.stdout" "${stdout}"
 diff -u "probe-arianetobin.ie_test.stderr" "${stderr}"
 rm -f "${stdout}" "${stderr}"
+touch .probe-arianetobin.ie_timestamp

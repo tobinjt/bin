@@ -78,3 +78,4 @@ stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
 diff -u send-mail-on-failure-or-output_test.stdout "${output}"
 diff -u send-mail-on-failure-or-output_test.stderr "${stderr}"
 rm -f "${output}" "${stderr}"
+touch .send-mail-on-failure-or-output_timestamp

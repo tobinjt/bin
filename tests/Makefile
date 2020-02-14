@@ -23,5 +23,6 @@ coverage:
 # testing will cause tests to be rerun.
 .SECONDEXPANSION:
 .%_timestamp: %_test ../% $$(wildcard %_test.stdout) $$(wildcard %_test.stderr)
+	rm -f $@
 	./$<
-	touch $@
+	test -f $@

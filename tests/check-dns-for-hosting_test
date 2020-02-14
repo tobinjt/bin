@@ -75,3 +75,4 @@ sed -i .bak -e 's/host output in.*/host output in tmpfile/' "${stderr}"
 diff -u "check-dns-for-hosting_test.stdout" "${stdout}"
 diff -u "check-dns-for-hosting_test.stderr" "${stderr}"
 rm -f "${stdout}" "${stderr}"
+touch .check-dns-for-hosting_timestamp

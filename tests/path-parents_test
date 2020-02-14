@@ -75,3 +75,4 @@ test_main() {
 }
 
 test_main
+touch .path-parents_timestamp

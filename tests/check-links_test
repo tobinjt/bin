@@ -37,3 +37,4 @@ Problems found:
 EXPECTED
 )"
 diff -u <(echo "${expected}") <(echo "${filtered}")
+touch .check-links_timestamp
