@@ -16,6 +16,21 @@ warn() {
   echo "$@" >&2
 }
 
+# Echo args if given or cat stdin if not.
+args_or_stdin() {
+  if [[ "$#" -eq 0 ]]; then
+    if [[ -t 0 ]]; then
+      warn "Refusing to read from terminal."
+      warn ""
+      warn "$(usage)"
+      return 1
+    fi
+    cat
+  else
+    echo "$@"
+  fi
+}
+
 main() {
   # Reset OPTIND every time, otherwise successive calls to main will skip
   # arguments.  E.g. call 'main -s 10 /etc/passwd' and OPTIND=2, then call it
@@ -44,18 +59,7 @@ main() {
   shift $(( OPTIND - 1 ))
   readonly SKIP
 
-
-  if [[ "$#" -eq 0 ]]; then
-    if [[ -t 0 ]]; then
-      warn "Refusing to read from terminal."
-      warn ""
-      warn "$(usage)"
-      return 1
-    fi
-    cat
-  else
-    echo "$@"
-  fi \
+  args_or_stdin "$@" \
     | fmt -1 \
     | awk -v SKIP="${SKIP}" -f "${HOME}/bin/path-parents.awk"
 }
