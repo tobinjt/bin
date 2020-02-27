@@ -8,7 +8,9 @@ if type go >& /dev/null; then
   # Go makes everything readonly for some reason so fix directory permissions to
   # enable deletion.
   dirs=(bin pkg)
-  (cd "${GOPATH}" \
+  (printf "Clearing out %s\\n" "${GOPATH}" \
+    && mkdir "${GOPATH}" \
+    && cd "${GOPATH}" \
     && mkdir -p "${dirs[@]}" \
     && find "${dirs[@]}" -type d -print0 | xargs -0 chmod 755 \
     && rm -rf "${dirs[@]}")
