@@ -10,8 +10,13 @@ die() {
   exit 1
 }
 
+# Suppress Mac OS errors like:
+# find: /Users/johntobin/Desktop: Operation not permitted
+# find: /Users/johntobin/.Trash: Operation not permitted
+# find: /Users/johntobin/Documents: Operation not permitted
+# find: /Users/johntobin/Downloads: Operation not permitted
 find_sources() {
-  find "$1" -maxdepth 2 -mindepth 2 -type d -path "$2/.git" \
+  find "$1" -maxdepth 2 -mindepth 2 -type d -path "$2/.git" 2> /dev/null \
     | sed -e 's,/.git$,,' \
     | sort
 }
