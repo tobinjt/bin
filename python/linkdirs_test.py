@@ -309,6 +309,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {src_dir}/harry/me_too
     {src_dir}/murphy/link_me
     {src_dir}/murphy/me_too
+    {src_dir}/ignore/subdir-link/test3
     # Everything below here is excluded so should not be linked.
     {src_dir}/harry/ignore-me1
     {src_dir}/harry/ignore-me2
@@ -325,6 +326,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {src_dir}/molly/the_brain
     {src_dir}/murphy/pinky
     {src_dir}/murphy/the_brain
+    {src_dir}/ignore/subdir/test1
+    {src_dir}/ignore/subdir/test2
     """.format(src_dir=src_dir)
     self.create_files(files)
 
@@ -338,6 +341,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     molly
     # Patterns to skip.
     ignore-me*
+    # foo/bar should be ignored
+    ignore/subdir
     """
     with open(skip_filename, 'w') as skip_fh:
       skip_fh.write(skip_contents)
@@ -355,8 +360,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       for filename in filenames:
         files.append(os.path.join(dirpath, filename))
     files.sort()
-    expected = ['harry/link_me', 'harry/me_too', 'murphy/link_me',
-                'murphy/me_too']
+    expected = ['harry/link_me', 'harry/me_too', 'ignore/subdir-link/test3',
+                'murphy/link_me', 'murphy/me_too']
     expected = [os.path.join(dest_dir, x) for x in expected]
     self.assertEqual(expected, files)
 
