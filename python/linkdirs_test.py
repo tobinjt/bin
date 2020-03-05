@@ -179,17 +179,29 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {src_dir}/file
     # 'asdf' subdir exists here, so it will be checked in dest_dir.
     {src_dir}/asdf/file
+    {src_dir}/asdf/ignore-some/expected
+    {dest_dir}/asdf/ignore-some/expected
     {dest_dir}/pinky
     {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
     {dest_dir}/subdir/
     # And also a subdir that will be reported.
     {dest_dir}/asdf/report_me/
+    # Ignore this file and directory.
+    {dest_dir}/asdf/ignore-some/should-be-ignored/a-file
     """.format(src_dir=src_dir, dest_dir=dest_dir)
     self.create_files(files)
 
+    skip_filename = 'skip-me'
+    skip_contents = """
+    ignore-some/should-be-ignored
+    """
+    with open(skip_filename, 'w') as skip_fh:
+      skip_fh.write(skip_contents)
+
     actual = linkdirs.real_main(['linkdirs', '--report_unexpected_files',
                                  '--ignore_unexpected_children',
+                                 '--ignore_file=%s' % skip_filename,
                                  src_dir, dest_dir])
     expected = [
         'Unexpected directory: /z/y/x/asdf/report_me',

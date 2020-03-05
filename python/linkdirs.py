@@ -330,7 +330,10 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
 
     full_subdirs = [os.path.join(directory, entry) for entry in subdirs]
     full_files = [os.path.join(directory, entry) for entry in files]
-    skip_more = ["*%s%s" % (os.sep, pattern) for pattern in options.skip]
+    skip_more = [os.sep.join(["*", pattern]) for pattern in options.skip]
+    skip_more.extend([os.sep.join(["*", pattern, "*"])
+                      for pattern in options.skip])
+    full_subdirs = remove_skip_patterns(full_subdirs, skip_more)
     full_files = remove_skip_patterns(full_files, skip_more)
     unexpected_paths.directories.extend(
         [path for path in full_subdirs if path not in expected_files])
