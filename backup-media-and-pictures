@@ -31,8 +31,18 @@ backup_directory() {
     exit 1
   fi
 
+  if ! ls "${destdir}" > /dev/null; then
+    printf "Cannot access destination: %s\\n" "${destdir}" >&2
+    exit 1
+  fi
+
   if [[ ! -d "${srcdir}" ]]; then
     printf "Missing source: %s\\n" "${srcdir}" >&2
+    exit 1
+  fi
+
+  if ! ls "${srcdir}" > /dev/null; then
+    printf "Cannot access source: %s\\n" "${srcdir}" >&2
     exit 1
   fi
 
