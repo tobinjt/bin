@@ -9,7 +9,7 @@ if type go >& /dev/null; then
   # enable deletion.
   dirs=(bin pkg)
   (printf "Clearing out %s\\n" "${GOPATH}" \
-    && mkdir "${GOPATH}" \
+    && mkdir -p "${GOPATH}" \
     && cd "${GOPATH}" \
     && mkdir -p "${dirs[@]}" \
     && find "${dirs[@]}" -type d -print0 | xargs -0 chmod 755 \
