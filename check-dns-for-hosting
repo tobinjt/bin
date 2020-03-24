@@ -54,13 +54,13 @@ check_dns_for_host() {
 
   pattern="^${hostname} has address ${ipv4_address}\$"
   if ! find_address_loop "A" "${hostname}" "${pattern}" \
-         "${host_output_file}"; then
+        "${host_output_file}"; then
     retval=1
   fi
 
   pattern="^${hostname} has IPv6 address ${ipv6_address}\$"
   if ! find_address_loop "AAAA" "${hostname}" "${pattern}" \
-         "${host_output_file}"; then
+        "${host_output_file}"; then
     retval=1
   fi
 
@@ -86,7 +86,7 @@ check_mx_for_host() {
   for record in "$@"; do
     pattern="^${hostname} mail is handled by ${record}\$"
     if ! find_address_loop "MX" "${hostname}" "${pattern}" \
-           "${host_output_file}"; then
+          "${host_output_file}"; then
       retval=1
     fi
   done

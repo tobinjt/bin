@@ -8,12 +8,12 @@ dotfiles_sources() {
 
 cat_some_files() {
   local dir="$1" pattern="$2"
-   find "${dir}" \
-     -name "${pattern}" \
-     -a \( -not -name '*-os-*' -o -name '*-os-'"$(uname -s)"'-*' \) \
-     -print0 \
-   | sort --zero-terminated \
-   | xargs -0 cat
+  find "${dir}" \
+      -name "${pattern}" \
+      -a \( -not -name '*-os-*' -o -name '*-os-'"$(uname -s)"'-*' \) \
+      -print0 \
+    | sort --zero-terminated \
+    | xargs -0 cat
 }
 
 cat_ssh_configs() {
@@ -117,6 +117,8 @@ END_OF_HELP
   # The disabled warning is about reading from and writing to the same file in a
   # single command; in this case it's fine because sort needs to read the entire
   # input before sorting, so there's no race condition.
+  # Strip existing entries from tmp_known_hosts, then append the output to
+  # known_hosts so that missing entries are added.
   sort "${known_hosts}" "${known_hosts}" "${tmp_known_hosts}" \
     | uniq -u >> "${known_hosts}"
 

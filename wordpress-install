@@ -22,7 +22,7 @@ if [[ "$#" -eq 2 && "$2" == "wordpress" ]]; then
   set -- "$1" "wordpress" "wordpress" ""
 fi
 if [[ "$#" -ne 4 && "$#" -ne 3 ]]; then
-   usage
+  usage
 fi
 
 # VERSION is optional.
@@ -110,7 +110,7 @@ fi
 if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
   echo "Downloading ${DOWNLOAD_URLS[${TYPE}]}"
   if ! curl --fail --location --output "${DOWNLOAD_PATH}" \
-         "${DOWNLOAD_URLS[${TYPE}]}" ; then
+        "${DOWNLOAD_URLS[${TYPE}]}" ; then
     rm -f "${DOWNLOAD_PATH}"
     warn "Failed to download: ${DOWNLOAD_URLS[${TYPE}]}"
     if [[ -n "${VERSION}" && "${TYPE}" != "wordpress" ]]; then
