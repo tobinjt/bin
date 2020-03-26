@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 # Update homebrew and list packages that are out of date.
-PATH="/usr/local/bin:/usr/local/sbin:$PATH" 
+PATH="/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
 cd /usr/local/Homebrew
 # Disable automatic git gc and run it manually to prevent output about
@@ -12,7 +12,9 @@ cd /usr/local/Homebrew
 git config --local gc.auto 0
 git config --local gc.autoDetach false
 git gc --quiet
-brew update > /dev/null
+# Try to filter spam output by git.
+brew update 2>&1 > /dev/null \
+  | grep -v -e 'Successfully rebased and updated' -e '^$' || true
 git gc --quiet
 brew outdated
 brew cask outdated
