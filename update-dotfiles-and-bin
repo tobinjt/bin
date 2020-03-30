@@ -73,6 +73,9 @@ update_git_checkout_and_push() {
   # $ git clean -f -f -d
   git check-local-copy-is-clean --ignore-unpushed-commits
 
+  # Explicitly enable the old default behaviour so that git doesn't spew
+  # warnings.
+  git config pull.rebase false
   # Always pull and update submodules.  Note that if we fail before submodules
   # are completely updated there will be uncomitted changes that must be dealt
   # with manually.
