@@ -39,19 +39,8 @@ USAGE
     return 1
 }
 
-main() {
-  if [[ "$#" -ne 5 ]]; then
-    usage
-    return 1
-  fi
-
-  local DEST="${HOME}/Library/LaunchAgents/$1"
-  local APP="$2" LABEL="$3" TIMEOUT="$4" ACTION="$5"
-
-  if [[ ! -f "${DEST}" ]]; then
-    printf "Creating %s\\n" "${DEST}"
-    output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
-  fi
+maybe_reload() {
+  local DEST="$1" APP="$2" LABEL="$3" TIMEOUT="$4"
   if ! diff -u "${DEST}" <(output_plist "${APP}" "${LABEL}" "${TIMEOUT}"); then
     if launchctl list | grep -q "${LABEL}"; then
       # This will kill the app, which is really annoying, but there doesn't seem
@@ -68,6 +57,21 @@ main() {
     printf "Updating %s\\n" "${DEST}"
     output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
   fi
+}
+
+main() {
+  if [[ "$#" -ne 5 ]]; then
+    usage
+    return 1
+  fi
+
+  local DEST="${HOME}/Library/LaunchAgents/$1"
+  local APP="$2" LABEL="$3" TIMEOUT="$4" ACTION="$5"
+
+  if [[ ! -f "${DEST}" ]]; then
+    printf "Creating %s\\n" "${DEST}"
+    output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
+  fi
 
   case "${ACTION}" in
     list)
@@ -79,6 +83,7 @@ main() {
       fi
       ;;
     load)
+      maybe_reload "${DEST}" "${APP}" "${LABEL}" "${TIMEOUT}"
       launchctl load -w "${DEST}"
       ;;
     remove)
@@ -96,6 +101,7 @@ main() {
       launchctl start "${LABEL}"
       ;;
     start)
+      maybe_reload "${DEST}" "${APP}" "${LABEL}" "${TIMEOUT}"
       if ! launchctl list | grep -q "${LABEL}"; then
         launchctl load -w "${DEST}"
         sleep 1
