@@ -8,7 +8,7 @@ check_single_rediect() {
   for _ in $(seq 1 5); do
     # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a
     # case-insensitive check.
-    if curl --silent --show-error --head "${check_url}" \
+    if curl --silent --show-error --head "${check_url}" 2> /dev/null \
         | grep -i -q "^location: ${expected_url}"; then
       return 0
     fi
