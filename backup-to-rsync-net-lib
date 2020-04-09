@@ -149,6 +149,7 @@ run_rsync() {
               -e '^Connection to .* timed out' \
               -e '^Timeout, server .* not responding' \
               -e '^Warning: Permanently added the .* host key .* known hosts' \
+              -e '^client_loop: send disconnect: Broken pipe' \
               -e '^file has vanished:' \
               -e '^packet_write_wait: Connection to .* Broken pipe' \
               -e '^rsync error: error in rsync protocol data stream (code 12)' \
