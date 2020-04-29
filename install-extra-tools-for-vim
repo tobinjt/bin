@@ -16,6 +16,10 @@ if type go >& /dev/null; then
     && rm -rf "${dirs[@]}")
   # Binaries needed by vim-go.
   vim -c 'execute ":GoUpdateBinaries" | :quit'
+  # Clean up tmp directories left behind by vim-go.
+  set +f
+  rm -rf "${HOME}/tmp/vim/tmp/vim-go"*
+  set -f
 
   # Tools used by Syntastic; some of the tools are installed by GoUpdateBinaries
   # so I don't need to install them a second time.
