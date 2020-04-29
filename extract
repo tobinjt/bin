@@ -1,0 +1,67 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+usage() {
+  printf "Usage: %s FILENAME\\n" "$0"
+}
+
+main() {
+  if [[ "$#" -ne 1 ]]; then
+    usage >&2
+    return 1
+  fi
+
+  if [[ "$1" == "-h" ]]; then
+    usage
+    return 0
+  fi
+
+  filename="$1"
+  case "${filename}" in
+    # Recent versions of tar(1) automatically decompress :)
+    # Split into multiple patterns for line length.
+    *.tar|*.tar.zst|*.tbz|*.tbz2|*.tgz|*.tlz|*.txz|*.tzst)
+      tar xf "${filename}"
+      ;;
+    *.tar.bz2|*.tar.gz|*.tar.lrz|*.tar.lz|*.tar.lz4|*.tar.xz|*.tar.zma)
+      tar xf "${filename}"
+      ;;
+    *.7z)
+      7za x "${filename}"
+      ;;
+    *.bz2)
+      bunzip2 "${filename}"
+      ;;
+    *.gz)
+      gunzip "${filename}"
+      ;;
+    *.lrz)
+      lrunzip "${filename}"
+      ;;
+    *.lz4)
+      lz4 -d "${filename}"
+      ;;
+    *.lzma)
+      unlzma "${filename}"
+      ;;
+    *.rar)
+      unrar x -ad "${filename}"
+      ;;
+    *.xz)
+      unxz "${filename}"
+      ;;
+    *.z)
+      uncompress "${filename}"
+      ;;
+    *.zip|*.war|*.jar)
+      unzip "${filename}" -d "${filename%.*}"
+      ;;
+    *)
+      printf "Unrecognised: %s\\n" "${filename}" >&2
+      return 1
+      ;;
+  esac
+}
+
+main "$@"
