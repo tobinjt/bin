@@ -21,3 +21,6 @@ dir="${HOME}/Library/Application Support/Plex Media Server/Updates"
 if [[ -d "${dir}" ]]; then
   tmpreaper --mtime 7d "${dir}"
 fi
+
+# Clean up vim leftovers.
+tmpreaper --mtime 28d "${HOME}/tmp/vim"
