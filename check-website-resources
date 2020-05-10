@@ -1,0 +1,74 @@
+#!/bin/bash
+# Check that the correct resources are returned for specific pages on a website,
+# to guard against bloating.
+
+set -e -f -u -o pipefail
+
+run_wget() {
+  # Fetch URL, extract and transform URLs from wget.log into ACTUAL_FILE, then
+  # diff that against EXPECTED_FILE.
+  local URL="$1" EXPECTED_FILE="$2" ACTUAL_FILE="$3"
+  wget \
+    --output-file wget.log \
+    --execute robots=off \
+    --content-on-error \
+    --wait 1 \
+    --page-requisites \
+    "${URL}"
+  awk '/^--/ { print $3 }' wget.log \
+    | sed -E -e 's#(css|jpg|js|png).pagespeed[^/]*#\1#' -e 's#/A.#/#' \
+    | sort > "${ACTUAL_FILE}"
+  diff -u "${EXPECTED_FILE}" "${ACTUAL_FILE}"
+}
+
+main() {
+  local DIR
+  DIR="$(mktemp -d /tmp/check-website-resources-XXXXXXXXXX)"
+  cd "${DIR}"
+
+  local URL EXPECTED_FILE="expected" ACTUAL_FILE="actual"
+  URL="https://www.arianetobin.ie/"
+  # The blank starting line is deliberate so that the URL we're checking will be
+  # included.
+  sed -e "s#^#${URL}#" > "${EXPECTED_FILE}" <<END_OF_EXPECTED
+
+wp-content/plugins/cart66/cart66_enhanced.css
+wp-content/plugins/cart66/images/xcart66_admin_button.png
+wp-content/plugins/cart66/js/cart66-library.js+jquery.selectBox.js
+wp-content/plugins/cookie-law-info/public/css/cookie-law-info-gdpr.css
+wp-content/plugins/cookie-law-info/public/css/cookie-law-info-public.css
+wp-content/plugins/cookie-law-info/public/js/cookie-law-info-public.js
+wp-content/themes/ariane-theme/images/favicons/favicon.ico
+wp-content/themes/ariane-theme/images/new-logo-optimised.jpg
+wp-content/themes/ariane-theme/slider.js
+wp-content/themes/ariane-theme/style.css
+wp-content/uploads/2015/11/rsz_%C2%A9sylvaindeleu_ariane_tobin_rose_and_yellow_gold_sentinel-1024x645.jpg
+wp-content/uploads/2015/11/rsz_%C2%A9sylvaindeleu_ariane_tobin_rose_and_yellow_gold_sentinel-512x322.jpg
+wp-includes/css/dist/block-library/style.min.css
+wp-includes/js/jquery/jquery.js
+END_OF_EXPECTED
+
+  run_wget "https://www.arianetobin.ie/" "${EXPECTED_FILE}" "${ACTUAL_FILE}"
+  if [[ -t 0 ]]; then
+    echo "Leaving ${DIR} for inspection"
+  else
+    rm -rf "${DIR}"
+  fi
+}
+
+# Only run main if being executed directly; do nothing if sourced for testing.
+# Use basename so that it can be run as 'bash -x ./check-website-resources ...'.
+if [[ "$(basename "${BASH_SOURCE[0]}")" == "$(basename "${0}")" ]]; then
+  if [ "$#" != 0 ] || [ "${1:-}" == '-h' ] || [ "${1:-}" == '--help' ]; then
+    echo "Usage: $0" >&2
+    exit 1
+  fi
+
+  if [[ ! -t 0 ]]; then
+    sleep $((RANDOM % 600))
+  fi
+
+  # Needed for wget on Mac OS.
+  PATH="${PATH}:/usr/local/bin"
+  main "$@"
+fi
