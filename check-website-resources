@@ -9,8 +9,8 @@ run_wget() {
   # diff that against EXPECTED_FILE.
   local URL="$1" EXPECTED_FILE="$2" ACTUAL_FILE="$3"
   wget \
-    --output-file wget.log \
-    --execute robots=off \
+    --output-file=wget.log \
+    --execute=robots=off \
     --content-on-error \
     --wait 1 \
     --page-requisites \
