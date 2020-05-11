@@ -7,7 +7,7 @@ from typing import List, Text
 import unittest
 
 import mock
-#  from pyfakefs import fake_filesystem_unittest
+import pyfakefs
 
 import check_website_resources
 
@@ -15,6 +15,18 @@ import check_website_resources
 def split_inline_string(string: Text) -> List[Text]:
   """Split a multi-line inline string, stripping empty start and end lines."""
   return textwrap.dedent(string).strip().split('\n')
+
+
+class TestReadWgetLog(unittest.TestCase):
+  """Tests for read_wget_log."""
+
+  def test_simple(self):
+    """A very simple test."""
+    with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+      patcher.fs.create_file(check_website_resources.WGET_LOG,
+                             contents='asdf\n1234\n')
+      actual = check_website_resources.read_wget_log()
+      self.assertEqual(['asdf\n', '1234\n'], actual)
 
 
 @mock.patch('subprocess.run')
