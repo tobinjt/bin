@@ -8,7 +8,8 @@ to guard against bloating.
 
 import difflib
 import logging
-#  import re
+import os
+import re
 import subprocess
 from typing import List, Text
 
@@ -61,6 +62,36 @@ def run_wget(url: Text) -> List[Text]:
     return []
 
 
+def reverse_pagespeed_mangling(paths: List[Text]) -> List[Text]:
+  """Reverse the changes made to paths by mod_pagespeed.
+
+  This is based on reverse engineering the paths returned on Ariane's website,
+  it's not complete or accurate.
+
+  Args:
+    paths: a list of paths.
+  Returns:
+    A list of paths; mangled paths will be reversed, unmangled paths will be
+    unchanged.
+  """
+  new_paths = []
+  replacements = {
+      # foo/bar.css is rewritten to foo/A.bar.css.pagespeed...
+      '.css': r'^A\.',
+      # foo/bar.png is rewritten to foo/xbar.png.pagespeed...
+      '.png': r'^x',
+      }
+  for path in paths:
+    path = re.sub(r'(css|jpg|js|png)\.pagespeed\...\..*\.\1$', r'\1', path)
+    for extension, regex in replacements.items():
+      if path.endswith(extension):
+        directory, filename = os.path.split(path)
+        filename = re.sub(regex, '', filename)
+        path = os.path.join(directory, filename)
+    new_paths.append(path)
+  return new_paths
+
+
 def check_single_url(url: Text, expected_resources: List[Text]) -> List[Text]:
   """Check a single URL requires only the expected resources.
 
@@ -79,6 +110,7 @@ def check_single_url(url: Text, expected_resources: List[Text]) -> List[Text]:
   for line in log_lines:
     if line.startswith('--'):
       actual_resources.append(line.split(' ')[-1])
+  actual_resources = reverse_pagespeed_mangling(actual_resources)
   actual_resources.sort()
 
   expected_resources.sort()

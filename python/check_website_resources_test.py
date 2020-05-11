@@ -52,6 +52,44 @@ class TestRunWget(unittest.TestCase):
       self.assertEqual([], actual)
 
 
+class TestReversePageSpeedMangling(unittest.TestCase):
+  """Tests for reverse_pagespeed_mangling."""
+  def test_simple(self):
+    """A simple test."""
+    inputs = split_inline_string(
+        """
+        /ariane-theme/images/new-logo-optimised.jpg.pagespeed.ce.yvq_6R_CGM.jpg
+        /cart66/A.cart66_enhanced.css.pagespeed.cf.BLPYiFTVpx.css
+        /css/dist/block-library/A.style.min.css.pagespeed.cf._93gOJAMuK.css
+        /images/xcart66_admin_button.png.pagespeed.ic.nU-s0MGYCa.png
+        /js/cart66-library.js+jquery.selectBox.js.pagespeed.jc.UhX2CG36B8.js
+        /js/jquery/jquery.js.pagespeed.jm.gp20iU5FlU.js
+        /public/css/A.cookie-law-info-gdpr.css.pagespeed.cf.rBqo-ZhFB1.css
+        /public/css/A.cookie-law-info-public.css.pagespeed.cf.9bzBAumhiD.css
+        /public/js/cookie-law-info-public.js.pagespeed.jm.fOf_UkWyBH.js
+        /themes/ariane-theme/A.style.css.pagespeed.cf.lD0ZgzpJDA.css
+        /themes/ariane-theme/images/favicons/favicon.ico
+        /themes/ariane-theme/slider.js.pagespeed.jm.g0mntm2Nxd.js
+        """)
+    actual = check_website_resources.reverse_pagespeed_mangling(inputs)
+    expected = split_inline_string(
+        """
+        /ariane-theme/images/new-logo-optimised.jpg
+        /cart66/cart66_enhanced.css
+        /css/dist/block-library/style.min.css
+        /images/cart66_admin_button.png
+        /js/cart66-library.js+jquery.selectBox.js
+        /js/jquery/jquery.js
+        /public/css/cookie-law-info-gdpr.css
+        /public/css/cookie-law-info-public.css
+        /public/js/cookie-law-info-public.js
+        /themes/ariane-theme/style.css
+        /themes/ariane-theme/images/favicons/favicon.ico
+        /themes/ariane-theme/slider.js
+        """)
+    self.assertEqual(expected, actual)
+
+
 @mock.patch('check_website_resources.run_wget')
 class TestCheckSingleUrl(unittest.TestCase):
   """Tests for check_single_url."""
@@ -84,6 +122,17 @@ class TestCheckSingleUrl(unittest.TestCase):
         'asdf', ['resource_1', 'resource_2', 'return_baz'])
     self.assertEqual([], actual)
 
+  def test_demangling(self, mock_run_wget):
+    """Test that resources are demangled."""
+    mock_run_wget.return_value = split_inline_string(
+        """
+        -- /images/new-logo-optimised.jpg.pagespeed.ce.yvq_6R_CGM.jpg
+        -- resource_2
+        """)
+    actual = check_website_resources.check_single_url(
+        'asdf', ['/images/new-logo-optimised.jpg', 'resource_2'])
+    self.assertEqual([], actual)
+
   def test_extra_resource(self, mock_run_wget):
     """Test for there being an unexpected resource."""
     mock_run_wget.return_value = split_inline_string(
@@ -103,6 +152,7 @@ class TestCheckSingleUrl(unittest.TestCase):
         +resource_2
         """)
     self.assertEqual(expected, actual)
+
 
 if __name__ == '__main__':
   unittest.main()
