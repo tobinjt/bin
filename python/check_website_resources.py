@@ -7,11 +7,12 @@ to guard against bloating.
 """
 
 import difflib
+import json
 import logging
 import os
 import re
 import subprocess
-from typing import List, Text
+from typing import Dict, List, Text
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -122,3 +123,15 @@ def check_single_url(url: Text, expected_resources: List[Text]) -> List[Text]:
     return []
   errors = ['Unexpected resource diffs for %s:' % url]
   return errors + diffs
+
+
+def read_config(path: Text) -> Dict[Text, List[Text]]:
+  """Read the specified config and parse it as JSON.
+
+  Args:
+    path: path to the file to read.
+  Returns:
+    Dict mapping URL keys to lists of expected resources.
+  """
+  with open(path, 'r') as filehandle:
+    return json.loads(filehandle.read())

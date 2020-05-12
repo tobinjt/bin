@@ -29,6 +29,32 @@ class TestReadWgetLog(unittest.TestCase):
       self.assertEqual(['asdf\n', '1234\n'], actual)
 
 
+class TestReadConfig(unittest.TestCase):
+  """Tests for read_config."""
+
+  def test_simple(self):
+    """A very simple test."""
+    with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+      contents = """
+          {
+              "URL": [
+                  "resource 1",
+                  "resource 2"
+              ]
+          }
+          """
+      expected = {
+          'URL': [
+              'resource 1',
+              'resource 2',
+              ]
+          }
+      filename = 'test.json'
+      patcher.fs.create_file(filename, contents=contents)
+      actual = check_website_resources.read_config(filename)
+      self.assertEqual(expected, actual)
+
+
 @mock.patch('subprocess.run')
 @mock.patch('check_website_resources.read_wget_log')
 class TestRunWget(unittest.TestCase):
