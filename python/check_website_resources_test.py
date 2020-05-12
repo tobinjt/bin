@@ -180,5 +180,13 @@ class TestCheckSingleUrl(unittest.TestCase):
     self.assertEqual(expected, actual)
 
 
+class TestParseArguments(unittest.TestCase):
+  """Tests for parse_arguments."""
+  def test_simple(self):
+    """A simple test."""
+    options = check_website_resources.parse_arguments(['foo.json'])
+    self.assertEqual('foo.json', options.config)
+
+
 if __name__ == '__main__':
   unittest.main()

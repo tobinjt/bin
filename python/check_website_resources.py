@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
-"""%(prog)s
+"""%(prog)s JSON_CONFIG_FILE
 
 Check that the correct resources are returned for specific pages on a website,
-to guard against bloating.
+to guard against bloating.  JSON_CONFIG_FILE specifies the URLs and resources.
 """
 
+import argparse
 import difflib
 import json
 import logging
 import os
 import re
 import subprocess
+import sys
 from typing import Dict, List, Text
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -135,3 +137,31 @@ def read_config(path: Text) -> Dict[Text, List[Text]]:
   """
   with open(path, 'r') as filehandle:
     return json.loads(filehandle.read())
+
+
+def parse_arguments(argv: List[Text]) -> argparse.Namespace:
+  """Parse command line arguments.
+
+  Args:
+    argv: the arguments to parse.
+  Returns:
+    argparse.Namespace, with attributes set based on the arguments.
+  """
+  description = '\n'.join(__doc__.split('\n')[1:])
+  usage = __doc__.split('\n')[0]
+
+  argv_parser = argparse.ArgumentParser(
+      description=description, usage=usage,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+  argv_parser.add_argument(
+      'config', metavar='JSON_CONFIG_FILE',
+      help='Config file specifying URLs and expected resources')
+  return argv_parser.parse_args(argv)
+
+
+def main(argv: List[Text]) -> None:
+  options = parse_arguments(argv[1:])
+
+
+if __name__ == '__main__':
+  main(sys.argv)
