@@ -172,6 +172,9 @@ def read_config(path: Text) -> List[SingleURLConfig]:
       # TODO: validate the config.
       url = host['url']
       resources = host['resources']
+      if url not in resources:
+        # The URL needs to be included, but do that automatically for the user.
+        resources.insert(0, url)
       config.append(SingleURLConfig(url=url, resources=resources))
     return config
 

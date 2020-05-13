@@ -33,8 +33,34 @@ class TestReadWgetLog(unittest.TestCase):
 class TestReadConfig(unittest.TestCase):
   """Tests for read_config."""
 
-  def test_simple(self):
-    """A very simple test."""
+  def test_url_is_included(self):
+    """Test explicit inclusion of URL works."""
+    with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+      contents = """
+          [
+            {
+              "url": "www.example.com",
+              "resources": [
+                "www.example.com",
+                "resource 1",
+                "resource 2"
+              ]
+            }
+          ]
+          """
+      expected = [
+          check_website_resources.SingleURLConfig(
+              url='www.example.com',
+              resources=['www.example.com', 'resource 1', 'resource 2']
+              )
+          ]
+      filename = 'test.json'
+      patcher.fs.create_file(filename, contents=contents)
+      actual = check_website_resources.read_config(filename)
+      self.assertEqual(expected, actual)
+
+  def test_url_is_not_included(self):
+    """Test URL not being included works."""
     with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
       contents = """
           [
@@ -50,7 +76,7 @@ class TestReadConfig(unittest.TestCase):
       expected = [
           check_website_resources.SingleURLConfig(
               url='www.example.com',
-              resources=['resource 1', 'resource 2']
+              resources=['www.example.com', 'resource 1', 'resource 2']
               )
           ]
       filename = 'test.json'
@@ -233,7 +259,8 @@ class TestMain(unittest.TestCase):
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
-        mock_wget.return_value = ['-- resource_1', '-- resource_2']
+        mock_wget.return_value = [
+            '-- www.example.com', '-- resource_1', '-- resource_2']
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
           status = check_website_resources.main(['unused', filename])
           self.assertEqual(0, status)
@@ -246,7 +273,8 @@ class TestMain(unittest.TestCase):
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
-        mock_wget.return_value = ['-- resource_1', '-- resource_3']
+        mock_wget.return_value = [
+            '-- www.example.com', '-- resource_1', '-- resource_3']
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
           status = check_website_resources.main(['unused', filename])
           self.assertEqual(1, status)
@@ -256,10 +284,11 @@ class TestMain(unittest.TestCase):
               Unexpected resource diffs for www.example.com:
               --- expected
               +++ actual
-              @@ -1,2 +1,2 @@
+              @@ -1,3 +1,3 @@
                resource_1
               -resource_2
               +resource_3
+               www.example.com
               """)
           self.assertEqual(expected, warnings)
 
