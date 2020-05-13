@@ -215,7 +215,7 @@ class TestParseArguments(unittest.TestCase):
   def test_simple(self):
     """A simple test."""
     options = check_website_resources.parse_arguments(['foo.json'])
-    self.assertEqual('foo.json', options.config)
+    self.assertEqual(['foo.json'], options.config_files)
 
 
 class TestMain(unittest.TestCase):
