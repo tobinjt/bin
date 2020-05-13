@@ -1,7 +1,6 @@
 """Tests for check_website_resources."""
 
 import io
-import json
 import logging
 import subprocess
 import textwrap
@@ -38,19 +37,22 @@ class TestReadConfig(unittest.TestCase):
     """A very simple test."""
     with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
       contents = """
-          {
-              "URL": [
-                  "resource 1",
-                  "resource 2"
+          [
+            {
+              "url": "www.example.com",
+              "resources": [
+                "resource 1",
+                "resource 2"
               ]
-          }
+            }
+          ]
           """
-      expected = {
-          'URL': [
-              'resource 1',
-              'resource 2',
-              ]
-          }
+      expected = [
+          check_website_resources.SingleURLConfig(
+              url='www.example.com',
+              resources=['resource 1', 'resource 2']
+              )
+          ]
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=contents)
       actual = check_website_resources.read_config(filename)
@@ -192,11 +194,23 @@ class TestParseArguments(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
   """Tests for main()."""
+  TEST_JSON_CONFIG = """
+      [
+        {
+          "url": "www.example.com",
+          "resources": [
+            "resource_1",
+            "resource_2"
+          ]
+        }
+      ]
+      """
+
   def test_empty_config(self):
     """Test with an empty config."""
     with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
       filename = 'test.json'
-      patcher.fs.create_file(filename, contents='{}')
+      patcher.fs.create_file(filename, contents='[]')
       status = check_website_resources.main(['unused', filename])
       self.assertEqual(0, status)
 
@@ -204,8 +218,7 @@ class TestMain(unittest.TestCase):
     """Force wget to fail."""
     with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
       filename = 'test.json'
-      contents = json.dumps({'not a url': []})
-      patcher.fs.create_file(filename, contents=contents)
+      patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
         mock_wget.return_value = []
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
@@ -218,13 +231,7 @@ class TestMain(unittest.TestCase):
     """Test that expected resources causes zero messages."""
     with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
       filename = 'test.json'
-      contents = json.dumps({
-          'url_goes_here': [
-              'resource_1',
-              'resource_2'
-              ]
-          })
-      patcher.fs.create_file(filename, contents=contents)
+      patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
         mock_wget.return_value = ['-- resource_1', '-- resource_2']
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
@@ -237,13 +244,7 @@ class TestMain(unittest.TestCase):
     """Test that unexpected resources are handled properly."""
     with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
       filename = 'test.json'
-      contents = json.dumps({
-          'url_goes_here': [
-              'resource_1',
-              'resource_2'
-              ]
-          })
-      patcher.fs.create_file(filename, contents=contents)
+      patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
         mock_wget.return_value = ['-- resource_1', '-- resource_3']
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
@@ -252,7 +253,7 @@ class TestMain(unittest.TestCase):
           warnings = mock_stderr.getvalue().rstrip('\n').split('\n')
           expected = split_inline_string(
               """
-              Unexpected resource diffs for url_goes_here:
+              Unexpected resource diffs for www.example.com:
               --- expected
               +++ actual
               @@ -1,2 +1,2 @@

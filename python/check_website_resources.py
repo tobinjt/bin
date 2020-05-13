@@ -4,6 +4,22 @@
 
 Check that the correct resources are returned for specific pages on a website,
 to guard against bloating.  JSON_CONFIG_FILE specifies the URLs and resources.
+
+JSON_CONFIG_FILE must contain a single list of dicts, where each dict has keys
+"url" and "resources" with respective values being a string URL to check and a
+list of string resource URLs.
+
+Example JSON_CONFIG_FILE:
+
+  [
+    {
+      "url": "https://example.com/",
+      "resources": [
+        "https://example.com/javascript.js"
+        "https://example.com/style.css",
+      ]
+    }
+  ]
 """
 
 import argparse
@@ -15,7 +31,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import Dict, List, Text
+from typing import List, NamedTuple, Text
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -27,6 +43,17 @@ WGET_ARGS = [
     '--content-on-error',
     '--page-requisites',
     ]
+
+
+class SingleURLConfig(NamedTuple):
+  """Config for a single URL.
+
+  Attributes:
+    url: URL to check.
+    resources: expected resources
+  """
+  url: Text
+  resources: List[Text]
 
 
 def read_wget_log() -> List[Text]:
@@ -130,16 +157,22 @@ def check_single_url(url: Text, expected_resources: List[Text]) -> List[Text]:
   return errors + diffs
 
 
-def read_config(path: Text) -> Dict[Text, List[Text]]:
+def read_config(path: Text) -> List[SingleURLConfig]:
   """Read the specified config and parse it as JSON.
 
   Args:
     path: path to the file to read.
   Returns:
-    Dict mapping URL keys to lists of expected resources.
+    List of SingleURLConfig.
   """
   with open(path, 'r') as filehandle:
-    return json.loads(filehandle.read())
+    data = json.loads(filehandle.read())
+    config = []
+    for host in data:
+      url = host['url']
+      resources = host['resources']
+      config.append(SingleURLConfig(url=url, resources=resources))
+    return config
 
 
 def parse_arguments(argv: List[Text]) -> argparse.Namespace:
@@ -171,8 +204,8 @@ def main(argv: List[Text]) -> int:
   # This will create temporary directories during tests but that's OK.
   with tempfile.TemporaryDirectory() as tmp_dir_name:
     os.chdir(tmp_dir_name)
-    for url, resources in config.items():
-      messages.extend(check_single_url(url, resources))
+    for host in config:
+      messages.extend(check_single_url(host.url, host.resources))
     os.chdir(cwd_fd)
   if messages:
     print('\n'.join(messages), file=sys.stderr)
