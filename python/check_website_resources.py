@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from typing import Dict, List, Text
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -166,8 +167,13 @@ def main(argv: List[Text]) -> int:
   options = parse_arguments(argv[1:])
   config = read_config(options.config)
   messages = []
-  for url, resources in config.items():
-    messages.extend(check_single_url(url, resources))
+  cwd_fd = os.open(os.curdir, os.O_DIRECTORY)
+  # This will create temporary directories during tests but that's OK.
+  with tempfile.TemporaryDirectory() as tmp_dir_name:
+    os.chdir(tmp_dir_name)
+    for url, resources in config.items():
+      messages.extend(check_single_url(url, resources))
+    os.chdir(cwd_fd)
   if messages:
     print('\n'.join(messages), file=sys.stderr)
     return 1
