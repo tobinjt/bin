@@ -42,10 +42,10 @@ def read_wget_log() -> List[Text]:
   ValueError: was already stopped
 
   Returns:
-    A list of log lines.
+    A list of log lines with newlines stripped.
   """
   with open(WGET_LOG, 'r') as wget_log:
-    return wget_log.readlines()
+    return [line.rstrip('\n') for line in wget_log.readlines()]
 
 
 def run_wget(url: Text) -> List[Text]:

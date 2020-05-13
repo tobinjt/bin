@@ -28,7 +28,7 @@ class TestReadWgetLog(unittest.TestCase):
       patcher.fs.create_file(check_website_resources.WGET_LOG,
                              contents='asdf\n1234\n')
       actual = check_website_resources.read_wget_log()
-      self.assertEqual(['asdf\n', '1234\n'], actual)
+      self.assertEqual(['asdf', '1234'], actual)
 
 
 class TestReadConfig(unittest.TestCase):
