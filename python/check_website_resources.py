@@ -115,8 +115,10 @@ def check_single_url(url: Text, expected_resources: List[Text]) -> List[Text]:
       actual_resources.append(line.split(' ')[-1])
   actual_resources = reverse_pagespeed_mangling(actual_resources)
   actual_resources.sort()
+  logging.info('Actual resources for %s: %s', url, actual_resources)
 
   expected_resources.sort()
+  logging.info('Expected resources for %s: %s', url, expected_resources)
   diff_generator = difflib.unified_diff(
       expected_resources, actual_resources,
       fromfile='expected', tofile='actual')
@@ -159,9 +161,18 @@ def parse_arguments(argv: List[Text]) -> argparse.Namespace:
   return argv_parser.parse_args(argv)
 
 
-def main(argv: List[Text]) -> None:
+def main(argv: List[Text]) -> int:
+  """Main."""
   options = parse_arguments(argv[1:])
+  config = read_config(options.config)
+  messages = []
+  for url, resources in config.items():
+    messages.extend(check_single_url(url, resources))
+  if messages:
+    print('\n'.join(messages), file=sys.stderr)
+    return 1
+  return 0
 
 
 if __name__ == '__main__':
-  main(sys.argv)
+  sys.exit(main(sys.argv))

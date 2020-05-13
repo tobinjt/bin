@@ -1,5 +1,7 @@
 """Tests for check_website_resources."""
 
+import io
+import json
 import logging
 import subprocess
 import textwrap
@@ -186,6 +188,79 @@ class TestParseArguments(unittest.TestCase):
     """A simple test."""
     options = check_website_resources.parse_arguments(['foo.json'])
     self.assertEqual('foo.json', options.config)
+
+
+class TestMain(unittest.TestCase):
+  """Tests for main()."""
+  def test_empty_config(self):
+    """Test with an empty config."""
+    with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+      filename = 'test.json'
+      patcher.fs.create_file(filename, contents='{}')
+      status = check_website_resources.main(['unused', filename])
+      self.assertEqual(0, status)
+
+  def test_wget_fails(self):
+    """Force wget to fail."""
+    with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+      filename = 'test.json'
+      contents = json.dumps({'not a url': []})
+      patcher.fs.create_file(filename, contents=contents)
+      with mock.patch('check_website_resources.run_wget') as mock_wget:
+        mock_wget.return_value = []
+        with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
+          status = check_website_resources.main(['unused', filename])
+          self.assertEqual(1, status)
+          warnings = mock_stderr.getvalue()
+          self.assertEqual('Running wget failed\n', warnings)
+
+  def test_expected_resources(self):
+    """Test that expected resources causes zero messages."""
+    with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+      filename = 'test.json'
+      contents = json.dumps({
+          'url_goes_here': [
+              'resource_1',
+              'resource_2'
+              ]
+          })
+      patcher.fs.create_file(filename, contents=contents)
+      with mock.patch('check_website_resources.run_wget') as mock_wget:
+        mock_wget.return_value = ['-- resource_1', '-- resource_2']
+        with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
+          status = check_website_resources.main(['unused', filename])
+          self.assertEqual(0, status)
+          warnings = mock_stderr.getvalue()
+          self.assertEqual('', warnings)
+
+  def test_unexpected_resources(self):
+    """Test that unexpected resources are handled properly."""
+    with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+      filename = 'test.json'
+      contents = json.dumps({
+          'url_goes_here': [
+              'resource_1',
+              'resource_2'
+              ]
+          })
+      patcher.fs.create_file(filename, contents=contents)
+      with mock.patch('check_website_resources.run_wget') as mock_wget:
+        mock_wget.return_value = ['-- resource_1', '-- resource_3']
+        with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
+          status = check_website_resources.main(['unused', filename])
+          self.assertEqual(1, status)
+          warnings = mock_stderr.getvalue().rstrip('\n').split('\n')
+          expected = split_inline_string(
+              """
+              Unexpected resource diffs for url_goes_here:
+              --- expected
+              +++ actual
+              @@ -1,2 +1,2 @@
+               resource_1
+              -resource_2
+              +resource_3
+              """)
+          self.assertEqual(expected, warnings)
 
 
 if __name__ == '__main__':
