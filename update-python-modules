@@ -67,7 +67,7 @@ main() {
 
   # Python development is installed globally so it's easier to use.
   # mypy needs lxml but doesn't depend on it.
-  pip3 install "lxml" "mock" "mypy" "pyfakefs" "pylint" "pytest" "pytest-cov"
+  pip3 install lxml mock mypy pudb pyfakefs pylint pytest pytest-cov
   # Check that tools work properly.
   cd "${HOME}/bin/python"
   pytest
