@@ -169,6 +169,7 @@ def read_config(path: Text) -> List[SingleURLConfig]:
     data = json.loads(filehandle.read())
     config = []
     for host in data:
+      # TODO: validate the config.
       url = host['url']
       resources = host['resources']
       config.append(SingleURLConfig(url=url, resources=resources))
