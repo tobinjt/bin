@@ -210,6 +210,9 @@ def parse_arguments(argv: List[Text]) -> argparse.Namespace:
 def main(argv: List[Text]) -> int:
   """Main."""
   options = parse_arguments(argv[1:])
+  # On MacOS wget is in /usr/local/bin which is not in the default PATH cron
+  # passes to child processes.
+  os.environ['PATH'] += ':/usr/local/bin'
   messages = []
   host_configs = []
   for filename in options.config_files:
