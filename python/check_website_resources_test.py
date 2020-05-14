@@ -51,7 +51,8 @@ class TestReadConfig(unittest.TestCase):
       expected = [
           check_website_resources.SingleURLConfig(
               url='www.example.com',
-              resources=['www.example.com', 'resource 1', 'resource 2']
+              resources=['www.example.com', 'resource 1', 'resource 2'],
+              cookies={},
               )
           ]
       filename = 'test.json'
@@ -76,7 +77,8 @@ class TestReadConfig(unittest.TestCase):
       expected = [
           check_website_resources.SingleURLConfig(
               url='www.example.com',
-              resources=['www.example.com', 'resource 1', 'resource 2']
+              resources=['www.example.com', 'resource 1', 'resource 2'],
+              cookies={},
               )
           ]
       filename = 'test.json'
@@ -154,7 +156,7 @@ class TestCheckSingleUrl(unittest.TestCase):
     """TODO: WRITE ACTUAL TEST. Test for resources being correct."""
     mock_run_wget.return_value = ['TODO: WRITE ACTUAL TEST.']
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=[])
+        url='asdf', resources=[], cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -162,7 +164,7 @@ class TestCheckSingleUrl(unittest.TestCase):
     """Test for correctly handling wget failure."""
     mock_run_wget.return_value = []
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=[])
+        url='asdf', resources=[], cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual(['Running wget failed'], actual)
 
@@ -177,7 +179,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- foo bar return_baz
         """)
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=['resource_1', 'resource_2', 'return_baz'])
+        url='asdf', resources=['resource_1', 'resource_2', 'return_baz'],
+        cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -189,7 +192,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=['/images/new-logo-optimised.jpg', 'resource_2'])
+        url='asdf', resources=['/images/new-logo-optimised.jpg', 'resource_2'],
+        cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -201,7 +205,7 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=['resource_1'])
+        url='asdf', resources=['resource_1'], cookies={})
     actual = check_website_resources.check_single_url(config)
     expected = split_inline_string(
         """
@@ -212,6 +216,21 @@ class TestCheckSingleUrl(unittest.TestCase):
          resource_1
         +resource_2
         """)
+    self.assertEqual(expected, actual)
+
+
+class TestGenerateCookiesFileContents(unittest.TestCase):
+  """Tests for generate_cookies_file_contents."""
+  def test_simple(self):
+    """A simple test."""
+    expected = split_inline_string(
+        """
+        # Netscape HTTP Cookie File
+        www.example.com\tFALSE\t/\tFALSE\t0\tcookie_1\tyes
+        www.example.com\tFALSE\t/\tFALSE\t0\tcookie_2\tno
+        """)
+    actual = check_website_resources.generate_cookies_file_contents(
+        'https://www.example.com/', {'cookie_1': 'yes', 'cookie_2': 'no'})
     self.assertEqual(expected, actual)
 
 

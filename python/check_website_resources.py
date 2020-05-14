@@ -7,7 +7,8 @@ to guard against bloating.  JSON_CONFIG_FILE specifies the URLs and resources.
 
 JSON_CONFIG_FILE must contain a single list of dicts, where each dict has keys
 "url" and "resources" with respective values being a string URL to check and a
-list of string resource URLs.
+list of string resource URLs.  Each dict can optionally have a "cookies" key
+whose value is a dict mapping cookie names to values.
 
 Example JSON_CONFIG_FILE:
 
@@ -38,7 +39,8 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import List, NamedTuple, Text
+from typing import Dict, List, NamedTuple, Text
+import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -58,9 +60,11 @@ class SingleURLConfig(NamedTuple):
   Attributes:
     url: URL to check.
     resources: expected resources
+    cookies: cookies to send with request
   """
   url: Text
   resources: List[Text]
+  cookies: Dict[Text, Text]
 
 
 def read_wget_log() -> List[Text]:
@@ -178,11 +182,34 @@ def read_config(path: Text) -> List[SingleURLConfig]:
       # TODO: validate the config.
       url = host['url']
       resources = host['resources']
+      cookies = host.get('cookies', {})
       if url not in resources:
         # The URL needs to be included, but do that automatically for the user.
         resources.insert(0, url)
-      config.append(SingleURLConfig(url=url, resources=resources))
+      config.append(SingleURLConfig(url=url, resources=resources,
+                                    cookies=cookies))
     return config
+
+
+def generate_cookies_file_contents(url: Text, cookies: Dict[Text, Text]
+                                   ) -> List[Text]:
+  """Generate the contents of a cookies file.
+
+  It would be much cleaner to use http.cookiejar for this, but after spending
+  ~three hours on that approach I gave up, it's not suitable for standalone use.
+
+  Args:
+    url: the URL being processed; the hostname will be extracted from it.
+    cookies: the cookies to include.
+  Returns:
+    A list of lines for the file.
+  """
+  lines = ['# Netscape HTTP Cookie File']
+  host = urllib.parse.urlparse(url).hostname
+  for key, value in cookies.items():
+    # www.arianetobin.ie	FALSE	/	FALSE	1617567351	viewed_cookie_policy	yes
+    lines.append('%s\tFALSE\t/\tFALSE\t0\t%s\t%s' % (host, key, value))
+  return lines
 
 
 def parse_arguments(argv: List[Text]) -> argparse.Namespace:
