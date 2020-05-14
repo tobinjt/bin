@@ -30,6 +30,18 @@ class TestReadWgetLog(unittest.TestCase):
       self.assertEqual(['asdf', '1234'], actual)
 
 
+class TestWriteCookiesFile(unittest.TestCase):
+  """Tests for write_cookies_file."""
+
+  def test_simple(self):
+    """A very simple test."""
+    with pyfakefs.fake_filesystem_unittest.Patcher():
+      lines = ['asdf', '1234']
+      check_website_resources.write_cookies_file(lines)
+      with open(check_website_resources.COOKIES_FILE) as filehandle:
+        self.assertEqual('asdf\n1234\n', filehandle.read())
+
+
 class TestReadConfig(unittest.TestCase):
   """Tests for read_config."""
 

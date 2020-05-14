@@ -44,6 +44,7 @@ import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
+COOKIES_FILE = 'cookies.txt'
 WGET_LOG = 'wget.log'
 WGET_ARGS = [
     'wget',
@@ -85,6 +86,18 @@ def read_wget_log() -> List[Text]:
   """
   with open(WGET_LOG, 'r') as wget_log:
     return [line.rstrip('\n') for line in wget_log.readlines()]
+
+
+def write_cookies_file(lines: List[Text]):
+  """Write cookies.txt.
+
+  See read_wget_log() for why this function exists.
+
+  Args:
+    A list of lines to write.
+  """
+  with open(COOKIES_FILE, 'w') as cookies_txt:
+    print('\n'.join(lines), file=cookies_txt)
 
 
 def run_wget(url: Text) -> List[Text]:
