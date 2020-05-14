@@ -15,14 +15,21 @@ main() {
 
   local rootdir
   rootdir="$(git rev-parse --show-toplevel)"
+  # Fetch remote content if possible but don't apply it, so that unmerged
+  # commits show up in the output of git status.
+  if [[ -n "${SSH_AUTH_SOCK:-}" ]] || ! git transport-is-ssh; then
+    git remote update > /dev/null
+  fi
+
   # Check for uncommitted changes.
-  local output result=0
+  local output result=0 status_was_shown=0
   output="$(git status --short)"
   if [[ -n "${output}" ]]; then
     # Use human readable git status because it's more familiar.
     printf "Uncommitted changes in %s\\n" "${rootdir}" >&2
     git status >&2
     result=1
+    status_was_shown=1
   fi
 
   if [[ "${ignore_unpushed_commits}" -eq 1 ]]; then
@@ -49,6 +56,22 @@ main() {
     printf "Unpushed commits in %s\\n%s\\n" "${rootdir}" "${output}" >&2
     result=1
   fi
+
+  if [[ "${status_was_shown}" -eq 1 ]]; then
+    return "${result}"
+  fi
+
+  # Check for unmerged upstream commits.
+  # There only way I can find to check if there are upstream commits to merge is
+  # to grep the human-readable output, none of the machine readable output
+  # includes this info :(  Don't show all of git status because it might have
+  # been shown before.
+  output="$(git status | grep -A 1 'Your branch is behind')"
+  if [[ -n "${output}" ]]; then
+    printf "Unmerged commits in %s:\\n%s\\n" "${rootdir}" "${output}" >&2
+    result=1
+  fi
+
   return "${result}"
 }
 
