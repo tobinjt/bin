@@ -107,10 +107,20 @@ class TestRunWget(unittest.TestCase):
   def test_called_correctly(self, mock_read, mock_subprocess):
     """Test that subprocess.run is called correctly."""
     mock_read.return_value = ['foo bar baz\n']
-    actual = check_website_resources.run_wget('asdf')
+    actual = check_website_resources.run_wget('asdf', False)
     self.assertEqual(mock_read.return_value, actual)
     mock_subprocess.assert_called_once_with(
         check_website_resources.WGET_ARGS + ['asdf'],
+        check=True, capture_output=True)
+
+  def test_cookies(self, mock_read, mock_subprocess):
+    """Test that cookies are used."""
+    mock_read.return_value = ['foo bar baz\n']
+    actual = check_website_resources.run_wget('asdf', True)
+    self.assertEqual(mock_read.return_value, actual)
+    mock_subprocess.assert_called_once_with(
+        (check_website_resources.WGET_ARGS
+         + ['--load-cookies=cookies.txt', 'asdf']),
         check=True, capture_output=True)
 
   def test_process_fails(self, unused_mock_read, mock_subprocess):
@@ -118,7 +128,7 @@ class TestRunWget(unittest.TestCase):
     mock_subprocess.side_effect = subprocess.CalledProcessError(
         returncode=1, cmd=['blah'], stderr='wget: command not found')
     with self.assertLogs(level=logging.ERROR):
-      actual = check_website_resources.run_wget('asdf')
+      actual = check_website_resources.run_wget('asdf', False)
       self.assertEqual([], actual)
 
 

@@ -100,17 +100,22 @@ def write_cookies_file(lines: List[Text]):
     print('\n'.join(lines), file=cookies_txt)
 
 
-def run_wget(url: Text) -> List[Text]:
+def run_wget(url: Text, load_cookies: bool) -> List[Text]:
   """Run wget to fetch the specified URL, returning the contents of wget.log.
 
   Args:
     url: the URL to check.
+    load_cookies: if True, add --load-cookies=cookies.txt to wget args.
 
   Returns:
     The contents of wget.log, or an empty list if running wget failed.
   """
   try:
-    subprocess.run(WGET_ARGS + [url], check=True, capture_output=True)
+    args = WGET_ARGS.copy()
+    if load_cookies:
+      args.append('--load-cookies=cookies.txt')
+    args.append(url)
+    subprocess.run(args, check=True, capture_output=True)
     return read_wget_log()
   except subprocess.CalledProcessError as err:
     logging.error('wget for %s failed: %s', url, err.stderr)
@@ -156,7 +161,7 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   Returns:
     A list of error messages.
   """
-  log_lines = run_wget(config.url)
+  log_lines = run_wget(config.url, False)
   if not log_lines:
     return ['Running wget failed']
 
