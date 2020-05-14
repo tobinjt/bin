@@ -130,17 +130,16 @@ def reverse_pagespeed_mangling(paths: List[Text]) -> List[Text]:
   return new_paths
 
 
-def check_single_url(url: Text, expected_resources: List[Text]) -> List[Text]:
+def check_single_url(config: SingleURLConfig) -> List[Text]:
   """Check a single URL requires only the expected resources.
 
   Args:
-    url: the URL to check.
-    expected_resources: the expected resources.
+    config: a SingleURLConfig.
 
   Returns:
     A list of error messages.
   """
-  log_lines = run_wget(url)
+  log_lines = run_wget(config.url)
   if not log_lines:
     return ['Running wget failed']
 
@@ -150,17 +149,17 @@ def check_single_url(url: Text, expected_resources: List[Text]) -> List[Text]:
       actual_resources.append(line.split(' ')[-1])
   actual_resources = reverse_pagespeed_mangling(actual_resources)
   actual_resources.sort()
-  logging.info('Actual resources for %s: %s', url, actual_resources)
+  logging.info('Actual resources for %s: %s', config.url, actual_resources)
 
-  expected_resources.sort()
-  logging.info('Expected resources for %s: %s', url, expected_resources)
+  config.resources.sort()
+  logging.info('Expected resources for %s: %s', config.url, config.resources)
   diff_generator = difflib.unified_diff(
-      expected_resources, actual_resources,
+      config.resources, actual_resources,
       fromfile='expected', tofile='actual')
   diffs = [d.rstrip('\n') for d in diff_generator]
   if not diffs:
     return []
-  errors = ['Unexpected resource diffs for %s:' % url]
+  errors = ['Unexpected resource diffs for %s:' % config.url]
   return errors + diffs
 
 
@@ -223,7 +222,7 @@ def main(argv: List[Text]) -> int:
   with tempfile.TemporaryDirectory() as tmp_dir_name:
     os.chdir(tmp_dir_name)
     for host in host_configs:
-      messages.extend(check_single_url(host.url, host.resources))
+      messages.extend(check_single_url(host))
     os.chdir(cwd_fd)
   if messages:
     print('\n'.join(messages), file=sys.stderr)

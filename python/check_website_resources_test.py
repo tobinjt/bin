@@ -153,15 +153,17 @@ class TestCheckSingleUrl(unittest.TestCase):
   def test_success(self, mock_run_wget):
     """TODO: WRITE ACTUAL TEST. Test for resources being correct."""
     mock_run_wget.return_value = ['TODO: WRITE ACTUAL TEST.']
-    actual = check_website_resources.check_single_url(
-        'asdf', [])
+    config = check_website_resources.SingleURLConfig(
+        url='asdf', resources=[])
+    actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
   def test_wget_fails(self, mock_run_wget):
     """Test for correctly handling wget failure."""
     mock_run_wget.return_value = []
-    actual = check_website_resources.check_single_url(
-        'asdf', [])
+    config = check_website_resources.SingleURLConfig(
+        url='asdf', resources=[])
+    actual = check_website_resources.check_single_url(config)
     self.assertEqual(['Running wget failed'], actual)
 
   def test_parsing(self, mock_run_wget):
@@ -174,8 +176,9 @@ class TestCheckSingleUrl(unittest.TestCase):
         ignore this too
         -- foo bar return_baz
         """)
-    actual = check_website_resources.check_single_url(
-        'asdf', ['resource_1', 'resource_2', 'return_baz'])
+    config = check_website_resources.SingleURLConfig(
+        url='asdf', resources=['resource_1', 'resource_2', 'return_baz'])
+    actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
   def test_demangling(self, mock_run_wget):
@@ -185,8 +188,9 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- /images/new-logo-optimised.jpg.pagespeed.ce.yvq_6R_CGM.jpg
         -- resource_2
         """)
-    actual = check_website_resources.check_single_url(
-        'asdf', ['/images/new-logo-optimised.jpg', 'resource_2'])
+    config = check_website_resources.SingleURLConfig(
+        url='asdf', resources=['/images/new-logo-optimised.jpg', 'resource_2'])
+    actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
   def test_extra_resource(self, mock_run_wget):
@@ -196,8 +200,9 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- resource_1
         -- resource_2
         """)
-    actual = check_website_resources.check_single_url(
-        'asdf', ['resource_1'])
+    config = check_website_resources.SingleURLConfig(
+        url='asdf', resources=['resource_1'])
+    actual = check_website_resources.check_single_url(config)
     expected = split_inline_string(
         """
         Unexpected resource diffs for asdf:
