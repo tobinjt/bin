@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""%(prog)s JSON_CONFIG_FILE
+"""%(prog)s JSON_CONFIG_FILE [JSON_CONFIG_FILE2...]
 
 Check that the correct resources are returned for specific pages on a website,
 to guard against bloating.  JSON_CONFIG_FILE specifies the URLs and resources.
@@ -17,6 +17,13 @@ Example JSON_CONFIG_FILE:
       "resources": [
         "https://example.com/javascript.js"
         "https://example.com/style.css",
+      ]
+    },
+    {
+      "url": "https://www.example.com/",
+      "resources": [
+        "https://www.example.com/javascript.js"
+        "https://www.example.com/style.css",
       ]
     }
   ]
@@ -172,6 +179,9 @@ def read_config(path: Text) -> List[SingleURLConfig]:
       # TODO: validate the config.
       url = host['url']
       resources = host['resources']
+      if url not in resources:
+        # The URL needs to be included, but do that automatically for the user.
+        resources.insert(0, url)
       config.append(SingleURLConfig(url=url, resources=resources))
     return config
 
@@ -191,21 +201,25 @@ def parse_arguments(argv: List[Text]) -> argparse.Namespace:
       description=description, usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      'config', metavar='JSON_CONFIG_FILE',
-      help='Config file specifying URLs and expected resources')
+      'config_files', nargs='*', metavar='JSON_CONFIG_FILE',
+      help=('Config file specifying URLs and expected resources (multiple'
+            ' files are supported but are completely independent)'))
   return argv_parser.parse_args(argv)
 
 
 def main(argv: List[Text]) -> int:
   """Main."""
   options = parse_arguments(argv[1:])
-  config = read_config(options.config)
   messages = []
+  host_configs = []
+  for filename in options.config_files:
+    host_configs.extend(read_config(filename))
   cwd_fd = os.open(os.curdir, os.O_DIRECTORY)
+
   # This will create temporary directories during tests but that's OK.
   with tempfile.TemporaryDirectory() as tmp_dir_name:
     os.chdir(tmp_dir_name)
-    for host in config:
+    for host in host_configs:
       messages.extend(check_single_url(host.url, host.resources))
     os.chdir(cwd_fd)
   if messages:
