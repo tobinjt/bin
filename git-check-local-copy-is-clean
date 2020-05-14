@@ -66,7 +66,7 @@ main() {
   # to grep the human-readable output, none of the machine readable output
   # includes this info :(  Don't show all of git status because it might have
   # been shown before.
-  output="$(git status | grep -A 1 'Your branch is behind')"
+  output="$(git status | grep -A 1 'Your branch is behind' || true)"
   if [[ -n "${output}" ]]; then
     printf "Unmerged commits in %s:\\n%s\\n" "${rootdir}" "${output}" >&2
     result=1
