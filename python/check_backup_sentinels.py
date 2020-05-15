@@ -10,7 +10,6 @@ Files in DIRECTORY:
     we're travelling and a laptop is at home.  Contains seconds since the epoch.
   - HOSTNAME.max_allowed_delay: max delay, in seconds, for backups from
     HOSTNAME.  Contains a number of seconds.
-TODO: write more.
 """
 
 import fileinput

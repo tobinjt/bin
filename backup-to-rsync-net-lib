@@ -137,7 +137,7 @@ run_rsync() {
 
   # Save the exit status if rsync fails so that it can be checked for the magic
   # value 24, which is a magic exit code that means some files disappeared
-  # during the transfer.  TODO: do I really need to do this?
+  # during the transfer.
   local exit_status=0
   ( rsync --archive --bwlimit=500K \
         --partial-dir=.rsync-partial --partial \
