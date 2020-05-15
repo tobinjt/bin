@@ -161,7 +161,10 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   Returns:
     A list of error messages.
   """
-  log_lines = run_wget(config.url, False)
+  if config.cookies:
+    lines = generate_cookies_file_contents(config.url, config.cookies)
+    write_cookies_file(lines)
+  log_lines = run_wget(config.url, bool(config.cookies))
   if not log_lines:
     return ['Running wget failed']
 

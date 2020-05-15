@@ -241,6 +241,23 @@ class TestCheckSingleUrl(unittest.TestCase):
         """)
     self.assertEqual(expected, actual)
 
+  def test_cookies(self, mock_run_wget):
+    """Test that cookies are handled properly."""
+    mock_run_wget.return_value = split_inline_string(
+        """
+        -- resource_1
+        -- resource_2
+        """)
+    config = check_website_resources.SingleURLConfig(
+        url='https://www.example.com/', resources=['resource_1', 'resource_2'],
+        cookies={'foo': 'bar'})
+    with pyfakefs.fake_filesystem_unittest.Patcher():
+      actual = check_website_resources.check_single_url(config)
+      with open(check_website_resources.COOKIES_FILE) as filehandle:
+        lines = filehandle.readlines()
+        self.assertEqual('# Netscape HTTP Cookie File\n', lines[0])
+      self.assertEqual([], actual)
+
 
 class TestGenerateCookiesFileContents(unittest.TestCase):
   """Tests for generate_cookies_file_contents."""
