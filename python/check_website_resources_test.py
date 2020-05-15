@@ -51,19 +51,18 @@ class TestReadConfig(unittest.TestCase):
       contents = """
           [
             {
-              "url": "www.example.com",
+              "url": "https://www.example.com/",
               "resources": [
-                "www.example.com",
-                "resource 1",
-                "resource 2"
+                "https://www.example.com/",
+                "resource 1"
               ]
             }
           ]
           """
       expected = [
           check_website_resources.SingleURLConfig(
-              url='www.example.com',
-              resources=['www.example.com', 'resource 1', 'resource 2'],
+              url='https://www.example.com/',
+              resources=['https://www.example.com/', 'resource 1'],
               cookies={},
               )
           ]
@@ -78,18 +77,17 @@ class TestReadConfig(unittest.TestCase):
       contents = """
           [
             {
-              "url": "www.example.com",
+              "url": "https://www.example.com/",
               "resources": [
-                "resource 1",
-                "resource 2"
+                "resource 1"
               ]
             }
           ]
           """
       expected = [
           check_website_resources.SingleURLConfig(
-              url='www.example.com',
-              resources=['www.example.com', 'resource 1', 'resource 2'],
+              url='https://www.example.com/',
+              resources=['https://www.example.com/', 'resource 1'],
               cookies={},
               )
           ]
@@ -107,20 +105,20 @@ class TestRunWget(unittest.TestCase):
   def test_called_correctly(self, mock_read, mock_subprocess):
     """Test that subprocess.run is called correctly."""
     mock_read.return_value = ['foo bar baz\n']
-    actual = check_website_resources.run_wget('asdf', False)
+    actual = check_website_resources.run_wget('https://www.example.com/', False)
     self.assertEqual(mock_read.return_value, actual)
     mock_subprocess.assert_called_once_with(
-        check_website_resources.WGET_ARGS + ['asdf'],
+        check_website_resources.WGET_ARGS + ['https://www.example.com/'],
         check=True, capture_output=True)
 
   def test_cookies(self, mock_read, mock_subprocess):
     """Test that cookies are used."""
     mock_read.return_value = ['foo bar baz\n']
-    actual = check_website_resources.run_wget('asdf', True)
+    actual = check_website_resources.run_wget('https://www.example.com/', True)
     self.assertEqual(mock_read.return_value, actual)
     mock_subprocess.assert_called_once_with(
         (check_website_resources.WGET_ARGS
-         + ['--load-cookies=cookies.txt', 'asdf']),
+         + ['--load-cookies=cookies.txt', 'https://www.example.com/']),
         check=True, capture_output=True)
 
   def test_process_fails(self, unused_mock_read, mock_subprocess):
@@ -128,7 +126,8 @@ class TestRunWget(unittest.TestCase):
     mock_subprocess.side_effect = subprocess.CalledProcessError(
         returncode=1, cmd=['blah'], stderr='wget: command not found')
     with self.assertLogs(level=logging.ERROR):
-      actual = check_website_resources.run_wget('asdf', False)
+      actual = check_website_resources.run_wget('https://www.example.com/',
+                                                False)
       self.assertEqual([], actual)
 
 
@@ -175,10 +174,10 @@ class TestCheckSingleUrl(unittest.TestCase):
   """Tests for check_single_url."""
 
   def test_success(self, mock_run_wget):
-    """TODO: WRITE ACTUAL TEST. Test for resources being correct."""
-    mock_run_wget.return_value = ['TODO: WRITE ACTUAL TEST.']
+    """Very basic success test."""
+    mock_run_wget.return_value = ['-- resource_1']
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=[], cookies={})
+        url='https://www.example.com/', resources=['resource_1'], cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -186,7 +185,7 @@ class TestCheckSingleUrl(unittest.TestCase):
     """Test for correctly handling wget failure."""
     mock_run_wget.return_value = []
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=[], cookies={})
+        url='https://www.example.com/', resources=[], cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual(['Running wget failed'], actual)
 
@@ -201,7 +200,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- foo bar return_baz
         """)
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=['resource_1', 'resource_2', 'return_baz'],
+        url='https://www.example.com/',
+        resources=['resource_1', 'resource_2', 'return_baz'],
         cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
@@ -214,7 +214,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=['/images/new-logo-optimised.jpg', 'resource_2'],
+        url='https://www.example.com/',
+        resources=['/images/new-logo-optimised.jpg', 'resource_2'],
         cookies={})
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
@@ -227,11 +228,11 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='asdf', resources=['resource_1'], cookies={})
+        url='https://www.example.com/', resources=['resource_1'], cookies={})
     actual = check_website_resources.check_single_url(config)
     expected = split_inline_string(
         """
-        Unexpected resource diffs for asdf:
+        Unexpected resource diffs for https://www.example.com/:
         --- expected
         +++ actual
         @@ -1 +1,2 @@
@@ -254,6 +255,12 @@ class TestGenerateCookiesFileContents(unittest.TestCase):
     actual = check_website_resources.generate_cookies_file_contents(
         'https://www.example.com/', {'cookie_1': 'yes', 'cookie_2': 'no'})
     self.assertEqual(expected, actual)
+
+  def test_bad_url(self):
+    """Crash when a hostname cannot be extracted."""
+    with self.assertRaises(ValueError):
+      check_website_resources.generate_cookies_file_contents(
+          'not_a_url', {'cookie_1': 'yes', 'cookie_2': 'no'})
 
 
 class TestParseArguments(unittest.TestCase):

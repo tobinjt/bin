@@ -224,6 +224,8 @@ def generate_cookies_file_contents(url: Text, cookies: Dict[Text, Text]
   """
   lines = ['# Netscape HTTP Cookie File']
   host = urllib.parse.urlparse(url).hostname
+  if host is None:
+    raise ValueError('Unable to extract hostname from URL %s' % url)
   for key, value in cookies.items():
     # www.arianetobin.ie	FALSE	/	FALSE	1617567351	viewed_cookie_policy	yes
     lines.append('%s\tFALSE\t/\tFALSE\t0\t%s\t%s' % (host, key, value))
