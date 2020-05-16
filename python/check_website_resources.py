@@ -39,7 +39,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import Dict, List, NamedTuple, Text
+from typing import Any, Dict, List, NamedTuple, Text
 import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -188,6 +188,53 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   return errors + diffs
 
 
+def validate_user_config(path: Text, configs: Any):
+  """Validate the config supplied by the user.
+
+  Args:
+    path: path of the config file, used for error messages.
+    configs: the data structure returned by json.loads().
+  Raises:
+    ValueError if any validation fails.
+  """
+  if not isinstance(configs, list):
+    raise ValueError('%s: Top-level data structure must be a list' % path)
+  for config in configs:
+    if not isinstance(config, dict):
+      raise ValueError('%s: All entries in the list must be dicts' % path)
+    known_keys = set(['url', 'resources', 'cookies'])
+    actual_keys = set(config.keys())
+    if not actual_keys.issubset(known_keys):
+      bad_keys = ', '.join(list(actual_keys - known_keys))
+      raise ValueError('%s: Unsupported key(s): %s' % (path, bad_keys))
+    if 'url' not in config:
+      raise ValueError('%s: required config "url" not provided' % path)
+    if 'resources' not in config:
+      raise ValueError('%s: required config "resources" not provided' % path)
+    if 'cookies' not in config:
+      config['cookies'] = {}
+
+    if not isinstance(config['url'], str):
+      raise ValueError('%s: url must be a string' % path)
+
+    if not isinstance(config['resources'], list):
+      raise ValueError('%s: resources must be a list of strings' % path)
+    bad_resources = [str(r) for r in config['resources']
+                     if not isinstance(r, str)]
+    if bad_resources:
+      raise ValueError('%s: all resources must be strings: %s'
+                       % (path, ', '.join(bad_resources)))
+
+    if not isinstance(config['cookies'], dict):
+      raise ValueError('%s: cookies must be a dict' % path)
+    cookies = list(config['cookies'].keys()) + list(config['cookies'].values())
+    bad_cookies = [str(cookie) for cookie in cookies
+                   if not isinstance(cookie, str)]
+    if bad_cookies:
+      raise ValueError('%s: everything in cookies must be strings: %s'
+                       % (path, ', '.join(bad_cookies)))
+
+
 def read_config(path: Text) -> List[SingleURLConfig]:
   """Read the specified config and parse it as JSON.
 
@@ -198,18 +245,14 @@ def read_config(path: Text) -> List[SingleURLConfig]:
   """
   with open(path, 'r') as filehandle:
     data = json.loads(filehandle.read())
-    config = []
-    for host in data:
-      # TODO: validate the config.
-      url = host['url']
-      resources = host['resources']
-      cookies = host.get('cookies', {})
-      if url not in resources:
-        # The URL needs to be included, but do that automatically for the user.
-        resources.insert(0, url)
-      config.append(SingleURLConfig(url=url, resources=resources,
-                                    cookies=cookies))
-    return config
+  validate_user_config(path, data)
+  configs = []
+  for config in data:
+    if config['url'] not in config['resources']:
+      # The URL needs to be included, but do that automatically for the user.
+      config['resources'].insert(0, config['url'])
+    configs.append(SingleURLConfig(**config))
+  return configs
 
 
 def generate_cookies_file_contents(url: Text, cookies: Dict[Text, Text]

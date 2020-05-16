@@ -97,6 +97,48 @@ class TestReadConfig(unittest.TestCase):
       self.assertEqual(expected, actual)
 
 
+class TestValidateUserConfig(unittest.TestCase):
+  """Tests for validate_user_config."""
+  def test_validation(self):
+    """Tests for all the validations."""
+    # "assertion message": data structure.
+    tests = {
+        'Top-level data structure': 1,
+        'All entries in the list must be dicts': [1],
+        'Unsupported key': [{'asdf': 1}],
+        'required config "url" not provided': [{'resources': 1}],
+        'required config "resources" not provided': [{'url': 1}],
+        'url must be a string': [{'url': 1, 'resources': []}],
+        'resources must be a list of strings': [{'url': 'x', 'resources': 1}],
+        'all resources must be strings': [{'url': 'x', 'resources': [1]}],
+        'cookies must be a dict': [
+            {'url': 'x', 'resources': ['x'], 'cookies': 1}],
+        'everything in cookies must be strings': [
+            {'url': 'x', 'resources': ['x'], 'cookies': {1: 'x'}}],
+        'everything in cookies must be strings.': [
+            {'url': 'x', 'resources': ['x'], 'cookies': {'x': 1}}],
+        }
+    for message, data in tests.items():
+      with self.subTest(message):
+        with self.assertRaisesRegex(ValueError, 'config.json:.*' + message):
+          check_website_resources.validate_user_config('config.json', data)
+
+  def test_valid_config(self):  # pylint: disable=no-self-use
+    """Test that a valid config does not trigger any exceptions."""
+    data = [
+        {
+            'url': 'http://www.example.com/',
+            'resources': ['http://www.example.com/style.css'],
+            'cookies': {'key': 'value'},
+            },
+        {
+            'url': 'http://example.com/',
+            'resources': ['http://example.com/style.css'],
+            },
+        ]
+    check_website_resources.validate_user_config('config.json', data)
+
+
 @mock.patch('subprocess.run')
 @mock.patch('check_website_resources.read_wget_log')
 class TestRunWget(unittest.TestCase):
