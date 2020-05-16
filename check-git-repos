@@ -4,17 +4,40 @@ set -e -f -u -o pipefail
 
 PATH="${HOME}/bin:${PATH}"
 
-# Check that git repos don't have any uncommitted or unpushed changes.
+# Check that git repos don't have any uncommitted, unpushed, or unpulled
+# changes.
+check_single_repo() {
+  local pull="$1"
+  if [[ ! -d ".git" ]]; then
+    # Make it easy to run "check-git-repos ~/src/*".
+    return 0
+  fi
+  if git check-local-copy-is-clean; then
+    return 0
+  fi
+  if [[ "${pull}" -eq 0 ]]; then
+    return 1
+  fi
+  git pull
+  git check-local-copy-is-clean
+}
+
 main() {
+  local pull=0
+  if [[ "$#" -gt 0 && "$1" == "--pull" ]]; then
+    pull=1
+    shift
+  fi
   local repo result=0
   for repo in "$@"; do
-    if [[ ! -d "${repo}/.git" ]]; then
+    # Make it easy to run "check-git-repos ~/src/*".
+    if [[ ! -d "${repo}" ]]; then
       continue
     fi
-    if (cd "${repo}" && git transport-is-https); then
-      continue
-    fi
-    if ! (cd "${repo}" && git check-local-copy-is-clean); then
+    # Bizzare Posix sh behaviour :(  See
+    # https://unix.stackexchange.com/questions/65532/why-does-set-e-not-work-inside-subshells-with-parenthesis-followed-by-an-or
+    (cd "${repo}"; check_single_repo "${pull}") &
+    if ! wait "$!"; then
       result=1
     fi
   done
