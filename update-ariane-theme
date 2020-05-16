@@ -13,12 +13,14 @@ commit_all() {
   # the dev website, and if there are changes in the production website the code
   # is explicit about which directory to automatically commit changes in.
   cd "${dir}/${subdir}"
+  printf "Processing %s/%s\\n" "${dir}" "${subdir}"
   git check-local-copy-is-clean --ignore-unpushed-commits
   # Sync with upstream.
   git pull
   git push
   # Update parent repo so that backups and updates work.
   cd "${dir}"
+  printf "Processing %s\\n" "${dir}"
   if ! git check-local-copy-is-clean 2>/dev/null; then
     git add "${subdir}"
     git commit -m 'Updated ariane-theme.'
@@ -28,7 +30,7 @@ commit_all() {
 main() {
   if [[ "$#" -eq 0 ]]; then
     # Update dev.
-    commit_all "${HOME}/dev.arianetobin.ie"
+    commit_all "${HOME}/src/dev.arianetobin.ie"
     # Update www.
     ssh -o ControlMaster=no arianetobin@hosting \
       "${HOME}/bin/update-ariane-theme" argument_just_to_trigger_other_branch
@@ -38,7 +40,7 @@ main() {
     sudo touch /var/cache/mod_pagespeed/cache.flush
   else
     # This is being run over ssh as arianetobin.
-    commit_all "${HOME}/arianetobin.ie/"
+    commit_all "${HOME}/src/arianetobin.ie/"
   fi
 }
 
