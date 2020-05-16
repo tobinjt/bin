@@ -2,13 +2,6 @@
 
 set -e -f -u -o pipefail
 
-retry() {
-  local sleep_time=10
-  until "$@"; do
-    sleep "${sleep_time}"
-  done
-}
-
 unmountdisk() {
   local type="$1" disk
   # sync and sleep so hopefully data is fully flushed and unmounting succeeds.
@@ -59,8 +52,8 @@ main() {
   backup_directory "/Users/johntobin/Pictures/" "/Volumes/Backup/Pictures/" "$@"
 
   # Unmount the disks, starting with the filesystem and then doing CoreStorage.
-  retry unmountdisk "Apple_HFS"
-  retry unmountdisk "Apple_CoreStorage"
+  retry 10 "Unmounting first disk" unmountdisk "Apple_HFS"
+  retry 10 "Unmounting second disk" unmountdisk "Apple_CoreStorage"
 }
 
 main "$@"
