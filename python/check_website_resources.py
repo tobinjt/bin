@@ -5,10 +5,14 @@
 Check that the correct resources are returned for specific pages on a website,
 to guard against bloating.  JSON_CONFIG_FILE specifies the URLs and resources.
 
-JSON_CONFIG_FILE must contain a single list of dicts, where each dict has keys
-"url" and "resources" with respective values being a string URL to check and a
-list of string resource URLs.  Each dict can optionally have a "cookies" key
-whose value is a dict mapping cookie names to values.
+JSON_CONFIG_FILE must contain a single list of dicts, each dict containing:
+- url (required): the URL to check
+- resources (required): list of expected resources for the URL.
+- cookies (optional): dict of cookie keys to cookie values to send when
+  requesting the URL.
+- comment (optional): a comment to display in messages to more easily identify
+  which URL diffs are being reported on (e.g. when a URL is listed multiple
+  times with different cookies).
 
 Example JSON_CONFIG_FILE:
 
@@ -25,7 +29,11 @@ Example JSON_CONFIG_FILE:
       "resources": [
         "https://www.example.com/javascript.js"
         "https://www.example.com/style.css",
-      ]
+      ],
+      "cookies": {
+        "cart_id": "13579"
+      },
+      "comment": "something useful"
     }
   ]
 """
@@ -62,10 +70,12 @@ class SingleURLConfig(NamedTuple):
     url: URL to check.
     resources: expected resources
     cookies: cookies to send with request
+    comment: comment to help identify the config.
   """
   url: Text
   resources: List[Text]
   cookies: Dict[Text, Text]
+  comment: Text
 
 
 def read_wget_log() -> List[Text]:
@@ -166,7 +176,7 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
     write_cookies_file(lines)
   log_lines = run_wget(config.url, bool(config.cookies))
   if not log_lines:
-    return ['Running wget failed']
+    return ['%s (%s): running wget failed' % (config.url, config.comment)]
 
   actual_resources = []
   for line in log_lines:
@@ -174,22 +184,28 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
       actual_resources.append(line.split(' ')[-1])
   actual_resources = reverse_pagespeed_mangling(actual_resources)
   actual_resources.sort()
-  logging.info('Actual resources for %s: %s', config.url, actual_resources)
+  logging.info('Actual resources for %s (%s): %s', config.url, config.comment,
+               actual_resources)
 
   config.resources.sort()
-  logging.info('Expected resources for %s: %s', config.url, config.resources)
+  logging.info('Expected resources for %s (%s): %s', config.url,
+               config.resources, config.comment)
   diff_generator = difflib.unified_diff(
       config.resources, actual_resources,
       fromfile='expected', tofile='actual')
   diffs = [d.rstrip('\n') for d in diff_generator]
   if not diffs:
     return []
-  errors = ['Unexpected resource diffs for %s:' % config.url]
+  errors = ['Unexpected resource diffs for %s (%s):'
+            % (config.url, config.comment)]
   return errors + diffs
 
 
 def validate_user_config(path: Text, configs: Any):
-  """Validate the config supplied by the user.
+  """Validate the configs supplied by the user.
+
+  NOTE: the configs will be modified in-place to fill missing fields with
+  defaults.
 
   Args:
     path: path of the config file, used for error messages.
@@ -202,7 +218,7 @@ def validate_user_config(path: Text, configs: Any):
   for config in configs:
     if not isinstance(config, dict):
       raise ValueError('%s: All entries in the list must be dicts' % path)
-    known_keys = set(['url', 'resources', 'cookies'])
+    known_keys = set(['url', 'resources', 'cookies', 'comment'])
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
       bad_keys = ', '.join(list(actual_keys - known_keys))
@@ -213,9 +229,14 @@ def validate_user_config(path: Text, configs: Any):
       raise ValueError('%s: required config "resources" not provided' % path)
     if 'cookies' not in config:
       config['cookies'] = {}
+    if 'comment' not in config:
+      config['comment'] = config['url']
 
     if not isinstance(config['url'], str):
       raise ValueError('%s: url must be a string' % path)
+
+    if not isinstance(config['comment'], str):
+      raise ValueError('%s: comment must be a string' % path)
 
     if not isinstance(config['resources'], list):
       raise ValueError('%s: resources must be a list of strings' % path)
