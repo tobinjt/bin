@@ -84,7 +84,7 @@ main() {
   case "${ACTION}" in
     list)
       if ! launchctl list | grep -q "${LABEL}"; then
-        printf "%s aka %s is not loaded\\n" "${DEST}" "${LABEL}"
+        printf "%s aka %s is not loaded\\n" "${DEST}" "${LABEL}" >&2
         return 1
       else
         launchctl list "${LABEL}"
@@ -100,9 +100,11 @@ main() {
       fi
       ;;
     restart)
-      launchctl stop "${LABEL}"
-      sleep 3
-      launchctl_unload "${DEST}"
+      if launchctl list | grep -q "${LABEL}"; then
+        launchctl stop "${LABEL}"
+        sleep 3
+        launchctl_unload "${DEST}"
+      fi
       sleep 1
       launchctl load -w "${DEST}"
       sleep 1
