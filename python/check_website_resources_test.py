@@ -64,6 +64,7 @@ class TestReadConfig(unittest.TestCase):
               url='https://www.example.com/',
               resources=['https://www.example.com/', 'resource 1'],
               cookies={},
+              comment='https://www.example.com/',
               )
           ]
       filename = 'test.json'
@@ -89,6 +90,7 @@ class TestReadConfig(unittest.TestCase):
               url='https://www.example.com/',
               resources=['https://www.example.com/', 'resource 1'],
               cookies={},
+              comment='https://www.example.com/',
               )
           ]
       filename = 'test.json'
@@ -109,6 +111,8 @@ class TestValidateUserConfig(unittest.TestCase):
         'required config "url" not provided': [{'resources': 1}],
         'required config "resources" not provided': [{'url': 1}],
         'url must be a string': [{'url': 1, 'resources': []}],
+        'comment must be a string': [
+            {'url': 'x', 'resources': [], 'comment': 1}],
         'resources must be a list of strings': [{'url': 'x', 'resources': 1}],
         'all resources must be strings': [{'url': 'x', 'resources': [1]}],
         'cookies must be a dict': [
@@ -219,7 +223,8 @@ class TestCheckSingleUrl(unittest.TestCase):
     """Very basic success test."""
     mock_run_wget.return_value = ['-- resource_1']
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=['resource_1'], cookies={})
+        url='https://www.example.com/', resources=['resource_1'], cookies={},
+        comment='comment')
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -227,9 +232,11 @@ class TestCheckSingleUrl(unittest.TestCase):
     """Test for correctly handling wget failure."""
     mock_run_wget.return_value = []
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=[], cookies={})
+        url='https://www.example.com/', resources=[], cookies={},
+        comment='comment')
     actual = check_website_resources.check_single_url(config)
-    self.assertEqual(['Running wget failed'], actual)
+    self.assertEqual(['https://www.example.com/ (comment): running wget '
+                      + 'failed'], actual)
 
   def test_parsing(self, mock_run_wget):
     """Test parsing."""
@@ -244,7 +251,8 @@ class TestCheckSingleUrl(unittest.TestCase):
     config = check_website_resources.SingleURLConfig(
         url='https://www.example.com/',
         resources=['resource_1', 'resource_2', 'return_baz'],
-        cookies={})
+        cookies={},
+        comment='comment')
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -258,7 +266,8 @@ class TestCheckSingleUrl(unittest.TestCase):
     config = check_website_resources.SingleURLConfig(
         url='https://www.example.com/',
         resources=['/images/new-logo-optimised.jpg', 'resource_2'],
-        cookies={})
+        cookies={},
+        comment='comment')
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -270,11 +279,12 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=['resource_1'], cookies={})
+        url='https://www.example.com/', resources=['resource_1'], cookies={},
+        comment='comment')
     actual = check_website_resources.check_single_url(config)
     expected = split_inline_string(
         """
-        Unexpected resource diffs for https://www.example.com/:
+        Unexpected resource diffs for https://www.example.com/ (comment):
         --- expected
         +++ actual
         @@ -1 +1,2 @@
@@ -292,7 +302,7 @@ class TestCheckSingleUrl(unittest.TestCase):
         """)
     config = check_website_resources.SingleURLConfig(
         url='https://www.example.com/', resources=['resource_1', 'resource_2'],
-        cookies={'foo': 'bar'})
+        cookies={'foo': 'bar'}, comment='comment')
     with pyfakefs.fake_filesystem_unittest.Patcher():
       actual = check_website_resources.check_single_url(config)
       with open(check_website_resources.COOKIES_FILE) as filehandle:
@@ -363,7 +373,8 @@ class TestMain(unittest.TestCase):
           status = check_website_resources.main(['unused', filename])
           self.assertEqual(1, status)
           warnings = mock_stderr.getvalue()
-          self.assertEqual('Running wget failed\n', warnings)
+          self.assertEqual('www.example.com (www.example.com): running wget '
+                           + 'failed\n', warnings)
 
   def test_expected_resources(self):
     """Test that expected resources causes zero messages."""
@@ -393,7 +404,7 @@ class TestMain(unittest.TestCase):
           warnings = mock_stderr.getvalue().rstrip('\n').split('\n')
           expected = split_inline_string(
               """
-              Unexpected resource diffs for www.example.com:
+              Unexpected resource diffs for www.example.com (www.example.com):
               --- expected
               +++ actual
               @@ -1,3 +1,3 @@

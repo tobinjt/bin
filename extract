@@ -3,21 +3,11 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "Usage: %s FILENAME\\n" "$0"
+  printf "Usage: %s FILENAME [FILENAMES]\\n" "$0"
 }
 
-main() {
-  if [[ "$#" -ne 1 ]]; then
-    usage >&2
-    return 1
-  fi
-
-  if [[ "$1" == "-h" ]]; then
-    usage
-    return 0
-  fi
-
-  filename="$1"
+extract_single() {
+  local filename="$1"
   case "${filename}" in
     # Recent versions of tar(1) automatically decompress :)
     # Split into multiple patterns for line length.
@@ -62,6 +52,23 @@ main() {
       return 1
       ;;
   esac
+}
+
+main() {
+  if [[ "$#" -eq 0 ]]; then
+    usage >&2
+    return 1
+  fi
+
+  if [[ "$1" == "-h" ]]; then
+    usage
+    return 0
+  fi
+
+  local filename
+  for filename in "$@"; do
+    extract_single "${filename}"
+  done
 }
 
 main "$@"
