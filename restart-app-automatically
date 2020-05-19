@@ -2,6 +2,14 @@
 
 set -e -f -u -o pipefail
 
+launchctl_unload() {
+  # launchctl unload "${file}" produces an annoying message to stderr:
+  # "${file}": Operation now in progress
+  # Suppress that so that cron jobs are quiet.
+  # Pass all arguments so that `"${file}"` and `-w "${file}"` can be used.
+  (launchctl unload "$@" 2>&1) | grep -v 'Operation now in progress' || true
+}
+
 output_plist() {
   local app="$1" label="$2" timeout="$3"
   # Set up launchd to automatically restart the app when it exits.
@@ -49,7 +57,7 @@ maybe_reload() {
       # Give the app some time to exit.
       printf "Sleeping to give launchd time to kill the app.\\n"
       sleep 3
-      launchctl unload "${DEST}"
+      launchctl_unload "${DEST}"
       # We do not load the config again; any action that needs the config to be
       # loaded ensures that it's loaded, which also handles the situation where
       # the user manually unloaded the config.
@@ -94,7 +102,7 @@ main() {
     restart)
       launchctl stop "${LABEL}"
       sleep 3
-      launchctl unload "${DEST}"
+      launchctl_unload "${DEST}"
       sleep 1
       launchctl load -w "${DEST}"
       sleep 1
@@ -118,7 +126,7 @@ main() {
       if launchctl list | grep -q "${LABEL}"; then
         launchctl stop "${LABEL}"
         sleep 3
-        launchctl unload -w "${DEST}"
+        launchctl_unload -w "${DEST}"
       fi
       ;;
     *)
