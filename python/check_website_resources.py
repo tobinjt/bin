@@ -178,10 +178,11 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   if not log_lines:
     return ['%s (%s): running wget failed' % (config.url, config.comment)]
 
-  actual_resources = []
+  fetched_resources = set()
   for line in log_lines:
     if line.startswith('--'):
-      actual_resources.append(line.split(' ')[-1])
+      fetched_resources.add(line.split(' ')[-1])
+  actual_resources = list(fetched_resources)
   actual_resources = reverse_pagespeed_mangling(actual_resources)
   actual_resources.sort()
   logging.info('Actual resources for %s (%s): %s', config.url, config.comment,

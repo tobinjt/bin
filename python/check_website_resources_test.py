@@ -245,6 +245,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         -- resource_1
         -x- ignore_this
         -- resource_2
+        -x- resource_2 is repeated but should not be included twice.
+        -- resource_2
         ignore this too
         -- foo bar return_baz
         """)
