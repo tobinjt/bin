@@ -19,6 +19,7 @@ check_single_repo() {
     return 1
   fi
   git pull
+  git push
   git check-local-copy-is-clean
 }
 
