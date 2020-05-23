@@ -18,8 +18,11 @@ check_single_repo() {
   if [[ "${pull}" -eq 0 ]]; then
     return 1
   fi
-  git pull
-  git push
+  if git config remote.origin.url >& /dev/null; then
+    # Pull and push requires an origin.
+    git pull
+    git push
+  fi
   git check-local-copy-is-clean
 }
 
