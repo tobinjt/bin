@@ -4,6 +4,7 @@ set -e -f -u -o pipefail
 
 update-dotfiles-and-bin-everywhere
 for host in laptop home hosting; do
+  printf "\n\n\nProcessing %s\\n" "${host}"
   # shellcheck disable=SC2016
   retry 10 "${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
     'check-git-repos --pull "${HOME}/bin" "${HOME}/src/"*'
