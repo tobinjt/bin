@@ -10,8 +10,7 @@ unmountdisk() {
   disk="$(diskutil list \
             | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }' \
             | sed -e 's/s[[:digit:]]$//')"
-  printf "unmounting %s which is %s\\n" "${type}" "${disk}"
-  diskutil unmountdisk "${disk}"
+  retry 10 "unmounting ${type} which is ${disk}" diskutil unmountdisk "${disk}"
 }
 
 backup_directory() {
@@ -52,8 +51,8 @@ main() {
   backup_directory "/Users/johntobin/Pictures/" "/Volumes/Backup/Pictures/" "$@"
 
   # Unmount the disks, starting with the filesystem and then doing CoreStorage.
-  retry 10 "Unmounting first disk" unmountdisk "Apple_HFS"
-  retry 10 "Unmounting second disk" unmountdisk "Apple_CoreStorage"
+  unmountdisk "Apple_HFS"
+  unmountdisk "Apple_CoreStorage"
 }
 
 main "$@"
