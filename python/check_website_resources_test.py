@@ -299,6 +299,19 @@ class TestCheckSingleUrl(unittest.TestCase):
         """)
     self.assertEqual(expected, actual)
 
+  def test_optional_resource(self, mock_run_wget):
+    """Test for optional resource being accepted."""
+    mock_run_wget.return_value = split_inline_string(
+        """
+        -- resource_1
+        -- resource_2
+        """)
+    config = check_website_resources.SingleURLConfig(
+        url='https://www.example.com/', resources=['resource_1'], cookies={},
+        comment='comment', optional_resources=['resource_2'])
+    actual = check_website_resources.check_single_url(config)
+    self.assertEqual([], actual)
+
   def test_cookies(self, mock_run_wget):
     """Test that cookies are handled properly."""
     mock_run_wget.return_value = split_inline_string(

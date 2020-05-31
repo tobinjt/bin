@@ -189,8 +189,10 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   for line in log_lines:
     if line.startswith('--'):
       fetched_resources.add(line.split(' ')[-1])
-  actual_resources = list(fetched_resources)
-  actual_resources = reverse_pagespeed_mangling(actual_resources)
+  actual_resources = reverse_pagespeed_mangling(list(fetched_resources))
+  # Strip out any optional_resources.
+  actual_resources = list(set(actual_resources)
+                          - set(config.optional_resources))
   actual_resources.sort()
   logging.info('Actual resources for %s (%s): %s', config.url, config.comment,
                actual_resources)
