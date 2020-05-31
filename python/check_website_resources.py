@@ -33,7 +33,10 @@ Example JSON_CONFIG_FILE:
       "cookies": {
         "cart_id": "13579"
       },
-      "comment": "something useful"
+      "comment": "something useful",
+      "optional_resources": [
+        "https://www.example.com/foo.js",
+      ]
     }
   ]
 """
@@ -69,6 +72,7 @@ class SingleURLConfig(NamedTuple):
   Attributes:
     url: URL to check.
     resources: expected resources
+    optional_resources: optional resources
     cookies: cookies to send with request
     comment: comment to help identify the config.
   """
@@ -76,6 +80,7 @@ class SingleURLConfig(NamedTuple):
   resources: List[Text]
   cookies: Dict[Text, Text]
   comment: Text
+  optional_resources: List[Text] = []
 
 
 def read_wget_log() -> List[Text]:
@@ -202,6 +207,43 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   return errors + diffs
 
 
+def validate_list_of_strings(path: Text, name: Text, data: List[Text]):
+  """Validate a data structure is a list of strings.
+
+  Args:
+    path: path to the config file, used in error messages.
+    name: name of the data structure, used in error messages.
+    data: the data structure to validate.
+  Raises:
+    ValueError if any validation fails.
+  """
+  if not isinstance(data, list):
+    raise ValueError('%s: "%s" must be a list of strings' % (path, name))
+  bad = [str(r) for r in data if not isinstance(r, str)]
+  if bad:
+    raise ValueError('%s: all "%s" must be strings: %s'
+                     % (path, name, ', '.join(bad)))
+
+
+def validate_dict_of_strings(path: Text, name: Text, data: List[Text]):
+  """Validate a data structure is a dict of string -> string.
+
+  Args:
+    path: path to the config file, used in error messages.
+    name: name of the data structure, used in error messages.
+    data: the data structure to validate.
+  Raises:
+    ValueError if any validation fails.
+  """
+  if not isinstance(data, dict):
+    raise ValueError('%s: "%s" must be a dict' % (path, name))
+  contents = list(data.keys()) + list(data.values())
+  bad = [str(c) for c in contents if not isinstance(c, str)]
+  if bad:
+    raise ValueError('%s: everything in "%s" must be strings: %s'
+                     % (path, name, ', '.join(bad)))
+
+
 def validate_user_config(path: Text, configs: Any):
   """Validate the configs supplied by the user.
 
@@ -219,7 +261,8 @@ def validate_user_config(path: Text, configs: Any):
   for config in configs:
     if not isinstance(config, dict):
       raise ValueError('%s: All entries in the list must be dicts' % path)
-    known_keys = set(['url', 'resources', 'cookies', 'comment'])
+    known_keys = set(['url', 'resources', 'cookies', 'comment',
+                      'optional_resources'])
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
       bad_keys = ', '.join(list(actual_keys - known_keys))
@@ -232,6 +275,8 @@ def validate_user_config(path: Text, configs: Any):
       config['cookies'] = {}
     if 'comment' not in config:
       config['comment'] = config['url']
+    if 'optional_resources' not in config:
+      config['optional_resources'] = []
 
     if not isinstance(config['url'], str):
       raise ValueError('%s: url must be a string' % path)
@@ -239,22 +284,11 @@ def validate_user_config(path: Text, configs: Any):
     if not isinstance(config['comment'], str):
       raise ValueError('%s: comment must be a string' % path)
 
-    if not isinstance(config['resources'], list):
-      raise ValueError('%s: resources must be a list of strings' % path)
-    bad_resources = [str(r) for r in config['resources']
-                     if not isinstance(r, str)]
-    if bad_resources:
-      raise ValueError('%s: all resources must be strings: %s'
-                       % (path, ', '.join(bad_resources)))
+    validate_list_of_strings(path, 'resources', config['resources'])
+    validate_list_of_strings(path, 'optional_resources',
+                             config['optional_resources'])
+    validate_dict_of_strings(path, 'cookies', config['cookies'])
 
-    if not isinstance(config['cookies'], dict):
-      raise ValueError('%s: cookies must be a dict' % path)
-    cookies = list(config['cookies'].keys()) + list(config['cookies'].values())
-    bad_cookies = [str(cookie) for cookie in cookies
-                   if not isinstance(cookie, str)]
-    if bad_cookies:
-      raise ValueError('%s: everything in cookies must be strings: %s'
-                       % (path, ', '.join(bad_cookies)))
 
 
 def read_config(path: Text) -> List[SingleURLConfig]:

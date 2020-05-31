@@ -113,13 +113,17 @@ class TestValidateUserConfig(unittest.TestCase):
         'url must be a string': [{'url': 1, 'resources': []}],
         'comment must be a string': [
             {'url': 'x', 'resources': [], 'comment': 1}],
-        'resources must be a list of strings': [{'url': 'x', 'resources': 1}],
-        'all resources must be strings': [{'url': 'x', 'resources': [1]}],
-        'cookies must be a dict': [
+        '"resources" must be a list of strings': [{'url': 'x', 'resources': 1}],
+        'all "resources" must be strings': [{'url': 'x', 'resources': [1]}],
+        '"optional_resources" must be a list of strings': [
+            {'url': 'x', 'resources': [], 'optional_resources': 1}],
+        'all "optional_resources" must be strings': [
+            {'url': 'x', 'resources': [], 'optional_resources': [1]}],
+        '"cookies" must be a dict': [
             {'url': 'x', 'resources': ['x'], 'cookies': 1}],
-        'everything in cookies must be strings': [
+        'everything in "cookies" must be strings': [
             {'url': 'x', 'resources': ['x'], 'cookies': {1: 'x'}}],
-        'everything in cookies must be strings.': [
+        'everything in "cookies" must be strings.': [
             {'url': 'x', 'resources': ['x'], 'cookies': {'x': 1}}],
         }
     for message, data in tests.items():
