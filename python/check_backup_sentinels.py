@@ -19,15 +19,15 @@ import os
 import re
 import sys
 import time
-import typing
+from typing import Dict, List, Tuple
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
 # Type annotation aliases.
-SentinelMap = typing.Dict[str, int]
-Messages = typing.List[str]
-Warnings = typing.List[str]
+SentinelMap = Dict[str, int]
+Messages = List[str]
+Warnings = List[str]
 
 # Filename contents.
 SLEEPING_UNTIL = 'sleeping_until'
@@ -90,7 +90,7 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
 
 
 def check_sentinels(sentinels: ParsedSentinels,
-                    max_global_delay: int) -> typing.Tuple[Warnings, Messages]:
+                    max_global_delay: int) -> Tuple[Warnings, Messages]:
   """Check sentinels for backups that are too old and return warnings.
 
   Args:
@@ -102,7 +102,7 @@ def check_sentinels(sentinels: ParsedSentinels,
     debugging purposes.
   """
   warnings = []
-  messages = []  # type: typing.List[str]
+  messages = []  # type: List[str]
   now = int(time.time())
   message = ('Backup for "%(host)s" too old:'
              ' current time %(now)d/%(now_human)s;'

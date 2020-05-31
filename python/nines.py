@@ -17,7 +17,7 @@ __author__ = 'johntobin@johntobin.ie (John Tobin)'
 import argparse
 import itertools
 import sys
-import typing
+from typing import List
 
 
 # Args >= PERCENT_THRESHOLD are interpreted as percentages, < PERCENT_THRESHOLD
@@ -137,7 +137,7 @@ def nines(num_nines: float) -> str:
              strip_trailing_zeros(downtime_seconds),
              format_duration(downtime_seconds)))
 
-def main(argv: typing.List[str]) -> None:
+def main(argv: List[str]) -> None:
   description = '\n'.join(__doc__.split('\n')[1:]) % {
       'PT': PERCENT_THRESHOLD,
   }

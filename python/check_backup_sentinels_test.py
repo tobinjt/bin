@@ -2,7 +2,7 @@
 
 from io import StringIO
 import os
-import typing
+from typing import Dict
 import unittest
 
 import mock
@@ -17,7 +17,7 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
   def setUp(self):
     self.setUpPyfakefs()
 
-  def create_files_for_test(self, data: typing.Dict[str, str]) -> None:
+  def create_files_for_test(self, data: Dict[str, str]) -> None:
     """Create files for tests."""
     for (filename, contents) in data.items():
       # pylint: disable=no-member
@@ -277,7 +277,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   def setUp(self):
     self.setUpPyfakefs()
 
-  def create_files_for_test(self, data: typing.Dict[str, str]) -> None:
+  def create_files_for_test(self, data: Dict[str, str]) -> None:
     """Create files for tests."""
     for (filename, contents) in data.items():
       # pylint: disable=no-member

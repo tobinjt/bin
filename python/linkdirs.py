@@ -18,7 +18,7 @@ import stat
 import sys
 import textwrap
 import time
-import typing
+from typing import List, Tuple
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -27,15 +27,15 @@ __author__ = "johntobin@johntobin.ie (John Tobin)"
 # A single path.
 Path = str
 # A list of directories, filenames, or paths.
-Paths = typing.List[str]
+Paths = List[str]
 # Diffs between files.
-Diffs = typing.List[str]
+Diffs = List[str]
 # Messages to print.
-Messages = typing.List[str]
+Messages = List[str]
 # Shell patterns to skip.
-SkipPatterns = typing.List[str]
+SkipPatterns = List[str]
 # Command line args.
-CommandLineArgs = typing.List[str]
+CommandLineArgs = List[str]
 
 
 class Error(Exception):
@@ -421,8 +421,8 @@ def read_skip_patterns_from_file(filename: Path) -> SkipPatterns:
   return patterns
 
 
-def parse_arguments(argv: CommandLineArgs) -> typing.Tuple[argparse.Namespace,
-                                                           Messages]:
+def parse_arguments(argv: CommandLineArgs) -> Tuple[argparse.Namespace,
+                                                    Messages]:
   """Parse the arguments provided by the user.
 
   Args:

@@ -26,12 +26,12 @@ import argparse
 import fileinput
 import re
 import sys
-import typing
+from typing import List
 
 __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 
-def parse_arguments(argv: typing.List[str]) -> argparse.Namespace:
+def parse_arguments(argv: List[str]) -> argparse.Namespace:
   """Parse the arguments provided by the user.
 
   Args:
@@ -100,8 +100,8 @@ def parse_arguments(argv: typing.List[str]) -> argparse.Namespace:
   return options
 
 
-def process_files(filenames: typing.List[str], columns: typing.List[int],
-                  delimiter: str, separator: str) -> typing.List[str]:
+def process_files(filenames: List[str], columns: List[int],
+                  delimiter: str, separator: str) -> List[str]:
   """Process files and return specified columns.
 
   Args:
@@ -136,7 +136,7 @@ def process_files(filenames: typing.List[str], columns: typing.List[int],
   return output
 
 
-def main(argv: typing.List[str]) -> None:
+def main(argv: List[str]) -> None:
   options = parse_arguments(argv[1:])
   output = process_files(options.filenames, options.columns, options.delimiter,
                          options.separator)
