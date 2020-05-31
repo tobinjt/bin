@@ -12,6 +12,7 @@ Files in DIRECTORY:
     HOSTNAME.  Contains a number of seconds.
 """
 
+import dataclasses
 import fileinput
 import glob
 import os
@@ -37,12 +38,8 @@ class Error(Exception):
   """Base class for exceptions."""
 
 
-class ParsedSentinels(typing.NamedTuple(
-    'ParsedSentinels',
-    [('timestamps', SentinelMap),
-     ('sleeping_until', SentinelMap),
-     ('max_allowed_delay', SentinelMap),
-    ])):
+@dataclasses.dataclass
+class ParsedSentinels:
   """Container for parsed sentinels.
 
   Attributes:
@@ -50,6 +47,9 @@ class ParsedSentinels(typing.NamedTuple(
     sleeping_until: timestamps for when sleeping machines are due back.
     max_allowed_delay: max delay, in seconds, for backups from a machine.
   """
+  timestamps: SentinelMap
+  sleeping_until: SentinelMap
+  max_allowed_delay: SentinelMap
 
 
 def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
