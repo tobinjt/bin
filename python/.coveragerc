@@ -8,7 +8,7 @@ omit =
 
 [report]
 # Fail if less that this percentage of lines are covered.
-fail_under = 90
+fail_under = 95
 # In reports, show which lines are missing.
 show_missing = True
 # Exclude some untestable lines from coverage.
