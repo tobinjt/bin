@@ -42,6 +42,7 @@ Example JSON_CONFIG_FILE:
 """
 
 import argparse
+import dataclasses
 import difflib
 import json
 import logging
@@ -50,7 +51,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, List, NamedTuple, Text
+from typing import Any, Dict, List, Text
 import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -66,7 +67,8 @@ WGET_ARGS = [
     ]
 
 
-class SingleURLConfig(NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class SingleURLConfig:
   """Config for a single URL.
 
   Attributes:
@@ -78,9 +80,9 @@ class SingleURLConfig(NamedTuple):
   """
   url: Text
   resources: List[Text]
-  cookies: Dict[Text, Text]
   comment: Text
-  optional_resources: List[Text] = []
+  cookies: Dict[Text, Text] = dataclasses.field(default_factory=dict)
+  optional_resources: List[Text] = dataclasses.field(default_factory=list)
 
 
 def read_wget_log() -> List[Text]:
