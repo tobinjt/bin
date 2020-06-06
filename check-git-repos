@@ -21,7 +21,10 @@ check_single_repo() {
   if git config remote.origin.url >& /dev/null; then
     # Pull and push requires an origin.
     git pull
-    git push
+    # Can't push to HTTPS repos without auth.
+    if ! git transport-is-https; then
+      git push
+    fi
   fi
   git check-local-copy-is-clean
 }
