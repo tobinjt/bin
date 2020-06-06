@@ -176,9 +176,9 @@ class TestRunWget(unittest.TestCase):
     mock_subprocess.side_effect = subprocess.CalledProcessError(
         returncode=1, cmd=['blah'], stderr='wget: command not found')
     with self.assertLogs(level=logging.ERROR):
-      actual = check_website_resources.run_wget('https://www.example.com/',
-                                                False)
-      self.assertEqual([], actual)
+      with self.assertRaisesRegex(check_website_resources.WgetFailedException,
+                                  r'wget for https://www.example.com/'):
+        check_website_resources.run_wget('https://www.example.com/', False)
 
 
 class TestReversePageSpeedMangling(unittest.TestCase):
@@ -234,13 +234,14 @@ class TestCheckSingleUrl(unittest.TestCase):
 
   def test_wget_fails(self, mock_run_wget):
     """Test for correctly handling wget failure."""
-    mock_run_wget.return_value = []
+    mock_run_wget.side_effect = check_website_resources.WgetFailedException(
+        'forced failure')
     config = check_website_resources.SingleURLConfig(
         url='https://www.example.com/', resources=[], cookies={},
         comment='comment')
     actual = check_website_resources.check_single_url(config)
     self.assertEqual(['https://www.example.com/ (comment): running wget '
-                      + 'failed'], actual)
+                      + 'failed; forced failure'], actual)
 
   def test_parsing(self, mock_run_wget):
     """Test parsing."""
@@ -387,13 +388,14 @@ class TestMain(unittest.TestCase):
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
-        mock_wget.return_value = []
+        mock_wget.side_effect = check_website_resources.WgetFailedException(
+            'forced failure')
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
           status = check_website_resources.main(['unused', filename])
           self.assertEqual(1, status)
           warnings = mock_stderr.getvalue()
           self.assertEqual('www.example.com (www.example.com): running wget '
-                           + 'failed\n', warnings)
+                           + 'failed; forced failure\n', warnings)
 
   def test_expected_resources(self):
     """Test that expected resources causes zero messages."""
