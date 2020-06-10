@@ -67,6 +67,14 @@ WGET_ARGS = [
     ]
 
 
+class Error(Exception):
+  """Base class for exceptions."""
+
+
+class WgetFailedException(Error):
+  """Running wget failed."""
+
+
 @dataclasses.dataclass(frozen=True)
 class SingleURLConfig:
   """Config for a single URL.
@@ -125,18 +133,22 @@ def run_wget(url: Text, load_cookies: bool) -> List[Text]:
     load_cookies: if True, add --load-cookies=cookies.txt to wget args.
 
   Returns:
-    The contents of wget.log, or an empty list if running wget failed.
+    The contents of wget.log.
+
+  Raises:
+    WgetFailedException if running wget failed.
   """
+  args = WGET_ARGS.copy()
+  if load_cookies:
+    args.append('--load-cookies=cookies.txt')
+  args.append(url)
   try:
-    args = WGET_ARGS.copy()
-    if load_cookies:
-      args.append('--load-cookies=cookies.txt')
-    args.append(url)
     subprocess.run(args, check=True, capture_output=True)
     return read_wget_log()
   except subprocess.CalledProcessError as err:
-    logging.error('wget for %s failed: %s', url, err.stderr)
-    return []
+    message = 'wget for %s failed: %s; %s' % (url, err.stderr, str(err))
+    logging.error(message)
+    raise WgetFailedException(message)
 
 
 def reverse_pagespeed_mangling(paths: List[Text]) -> List[Text]:
@@ -181,9 +193,11 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   if config.cookies:
     lines = generate_cookies_file_contents(config.url, config.cookies)
     write_cookies_file(lines)
-  log_lines = run_wget(config.url, bool(config.cookies))
-  if not log_lines:
-    return ['%s (%s): running wget failed' % (config.url, config.comment)]
+  try:
+    log_lines = run_wget(config.url, bool(config.cookies))
+  except WgetFailedException as err:
+    return ['%s (%s): running wget failed; %s'
+            % (config.url, config.comment, str(err))]
 
   fetched_resources = set()
   for line in log_lines:
