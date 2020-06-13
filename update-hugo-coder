@@ -86,8 +86,10 @@ main() {
   # Check for diffs in template files that need to be copied over.
   printf "*** Checking for diffs that need to be copied over in %s\\n" \
     "${WEBSITE_DIR}/${THEME_SUBDIR}"
+  set -x
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
   diff -Naur layouts/posts layouts/blog
+  set +x
 }
 
 main "$@"
