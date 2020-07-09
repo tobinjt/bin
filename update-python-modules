@@ -34,7 +34,7 @@ pip_install() {
   cd "${destdir}"
   # shellcheck disable=SC1091
   source bin/activate
-  pip3 install "$@"
+  pip3.8 install "$@"
   deactivate
 }
 
@@ -56,7 +56,7 @@ main() {
   local basedir="${HOME}/tmp/python"
   rm -rf "${basedir}"
   clean_python_install
-  pip3 install virtualenv
+  pip3.8 install virtualenv
 
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ -d "${HOME}/.flexget/logs" ]]; then
@@ -67,7 +67,7 @@ main() {
 
   # Python development is installed globally so it's easier to use.
   # mypy needs lxml but doesn't depend on it.
-  pip3 install lxml mock mypy pudb pyfakefs pylint pytest pytest-cov
+  pip3.8 install lxml mock mypy pudb pyfakefs pylint pytest pytest-cov
   # Check that tools work properly.
   cd "${HOME}/bin/python"
   pytest
