@@ -11,9 +11,12 @@ clean_python_install() {
   # An automatic update will occur when installing python, so do a manual update
   # first to reduce the time where python is not installed.
   brew update
-  if [[ -d /usr/local/Cellar/python ]]; then
-    brew remove --ignore-dependencies python
-  fi
+  set +f
+  local dir dirs=(/usr/local/Cellar/python*)
+  set -f
+  for dir in "${dirs[@]}"; do
+    brew remove --ignore-dependencies "$(basename "${dir}")"
+  done
   # BEWARE: this will nuke any other locally installed packages, so those
   # packages need to be included in the list for reinstallation.
   set +f
