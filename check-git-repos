@@ -4,20 +4,7 @@ set -e -f -u -o pipefail
 
 PATH="${HOME}/bin:${PATH}"
 
-# Check that git repos don't have any uncommitted, unpushed, or unpulled
-# changes.
-check_single_repo() {
-  local pull="$1"
-  if [[ ! -d ".git" ]]; then
-    # Make it easy to run "check-git-repos ~/src/*".
-    return 0
-  fi
-  if git check-local-copy-is-clean; then
-    return 0
-  fi
-  if [[ "${pull}" -eq 0 ]]; then
-    return 1
-  fi
+git_pull_if_possible() {
   if git config remote.origin.url >& /dev/null; then
     # Pull and push requires an origin.
     git pull
@@ -26,6 +13,27 @@ check_single_repo() {
       git push
     fi
   fi
+}
+
+# Check that git repos don't have any uncommitted, unpushed, or unpulled
+# changes.
+check_single_repo() {
+  local pull="$1"
+  if [[ ! -d ".git" ]]; then
+    # Make it easy to run "check-git-repos ~/src/*".
+    return 0
+  fi
+  if [[ "${pull}" -eq 1 ]]; then
+    # Pull to start with so that unpulled changes don't cause failures.
+    git_pull_if_possible
+  fi
+  if git check-local-copy-is-clean; then
+    return 0
+  fi
+  if [[ "${pull}" -eq 0 ]]; then
+    return 1
+  fi
+  git_pull_if_possible
   git check-local-copy-is-clean
 }
 
