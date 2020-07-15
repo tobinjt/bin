@@ -70,6 +70,10 @@ main() {
   else
     rm -rf "${DIR}"
   fi
+  if [[ -n "${PROBLEMS}" ]]; then
+    return 1
+  fi
+  return 0
 }
 
 # Only run main if being executed directly; do nothing if sourced for testing.
