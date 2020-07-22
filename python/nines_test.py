@@ -65,10 +65,34 @@ class TestMain(unittest.TestCase):
 
   @mock.patch('sys.exit')
   @mock.patch('sys.stdout', new_callable=StringIO)
-  def test_no_args(self, mock_stdout, _):
+  @mock.patch('sys.stderr', new_callable=StringIO)
+  def test_no_args(self, mock_stderr, mock_stdout, _):
     """Test main."""
     nines.main(['argv0'])
     self.assertEqual('', mock_stdout.getvalue())
+    # The name of the program is pytest when running tests.
+    expected = ('usage: pytest NUMBER_OF_NINES [NUMBER_OF_NINES . . .]\n'
+                'pytest: error: the following arguments are required: '
+                'NUMBER_OF_NINES\n')
+    self.assertEqual(expected, mock_stderr.getvalue())
+
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=StringIO)
+  def test_help(self, mock_stdout, _):
+    """Test --help to ensure that the description is correctly set up."""
+    nines.main(['argv0', '--help'])
+    # The name of the program is pytest when running tests.
+    substrings = ['usage: pytest NUMBER_OF_NINES [NUMBER_OF_NINES . . .]',
+                  'Display the number of seconds of downtime that N nines ',
+                  'Arguments >= 20 (e.g. 75) are interpreted as percentages',
+                  'arguments < 20 are interpreted as a number of nines.',
+                  'NUMBER_OF_NINES  See usage for details',
+                  ]
+    # The position of newlines depends on the width of the terminal, so remove
+    # them for consistency.
+    stdout = mock_stdout.getvalue().replace('\n', ' ')
+    for substring in substrings:
+      self.assertIn(substring, stdout)
 
 
 if __name__ == '__main__':  # pragma: no mutate
