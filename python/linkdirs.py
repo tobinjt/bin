@@ -526,5 +526,5 @@ def main(argv: CommandLineArgs):
   sys.exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no mutate
   main(sys.argv)

@@ -518,5 +518,5 @@ class TestMisc(fake_filesystem_unittest.TestCase):
     self.assertEqual('rm -r %s\n' % test_dir, mock_stdout.getvalue())
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   unittest.main()

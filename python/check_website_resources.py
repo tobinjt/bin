@@ -397,5 +397,5 @@ def main(argv: List[Text]) -> int:
   return 0
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   sys.exit(main(sys.argv))

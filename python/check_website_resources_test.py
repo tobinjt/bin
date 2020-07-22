@@ -437,5 +437,5 @@ class TestMain(unittest.TestCase):
           self.assertEqual(expected, warnings)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   unittest.main()

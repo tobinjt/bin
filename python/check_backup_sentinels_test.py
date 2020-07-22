@@ -320,5 +320,5 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.assertEqual('', messages)
     mock_exit.assert_called_with(1)
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   unittest.main()

@@ -151,5 +151,5 @@ def main(argv: List[str]) -> None:
   for num_nines in options.args:
     print(nines(parse_nines_arg(num_nines)))
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   main(sys.argv)

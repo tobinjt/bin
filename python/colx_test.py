@@ -112,5 +112,5 @@ class TestMain(fake_filesystem_unittest.TestCase):
     colx.main(['argv0', '2', '1', filename])
     self.assertEqual('two one\n', mock_stdout.getvalue())
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   unittest.main()

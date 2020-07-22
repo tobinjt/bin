@@ -144,5 +144,5 @@ def main(argv: List[str]) -> None:
     print(line)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   main(sys.argv)

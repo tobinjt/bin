@@ -71,5 +71,5 @@ class TestMain(unittest.TestCase):
     self.assertEqual('', mock_stdout.getvalue())
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   unittest.main()
