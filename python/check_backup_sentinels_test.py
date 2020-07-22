@@ -61,8 +61,8 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
         '%s.%s' % (os.path.join(testdir, hostname), 'qwerty'): '5432\n',
     }
     self.create_files_for_test(files)
-    self.assertRaises(check_backup_sentinels.Error,
-                      check_backup_sentinels.parse_sentinels, testdir, 7)
+    self.assertRaisesRegex(check_backup_sentinels.Error, '^Bad format.*qwerty',
+                           check_backup_sentinels.parse_sentinels, testdir, 7)
 
 
 class TestCheckSentinels(unittest.TestCase):
@@ -147,21 +147,25 @@ class TestCheckSentinels(unittest.TestCase):
 
   @mock.patch('time.time')
   def test_one_backup_is_old(self, mock_time):
-    """One backup is old"""
+    """One backup (asdf) is old"""
     host1 = 'asdf'
     host2 = 'qwerty'
+    host3 = 'foobar'
     hour = 60 * 60
     timestamps = {
         host1: 4 * hour,
         host2: 8 * hour,
+        host3: 8 * hour,
     }
     max_allowed_delay = {
         host1: 2 * hour,
         host2: hour,
+        host3: hour,
     }
     sleeping_until = {
         host1: 0,
         host2: 0,
+        host3: 0,
     }
     sentinels = check_backup_sentinels.ParsedSentinels(
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
@@ -179,7 +183,7 @@ class TestCheckSentinels(unittest.TestCase):
     # Do not truncate diffs.
     self.maxDiff = None  # pylint: disable=invalid-name
     self.assertEqual(expected_warnings, warnings)
-    self.assertEqual(2, len(messages))
+    self.assertEqual(3, len(messages))
 
   @mock.patch('time.time')
   def test_one_host_is_sleeping(self, mock_time):
