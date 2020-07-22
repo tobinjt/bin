@@ -25,13 +25,16 @@ __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
 # Type annotation aliases.
-SentinelMap = Dict[str, int]
-Messages = List[str]
-Warnings = List[str]
+# Mutating these doesn't cause tests to fail because they are just used for type
+# checking.
+SentinelMap = Dict[str, int]  # pragma: no mutate
+Messages = List[str]          # pragma: no mutate
+Warnings = List[str]          # pragma: no mutate
 
 # Filename contents.
-SLEEPING_UNTIL = 'sleeping_until'
-MAX_ALLOWED_DELAY = 'max_allowed_delay'
+# These constants are used consistently so mutating them doesn't provide signal.
+SLEEPING_UNTIL = 'sleeping_until'        # pragma: no mutate
+MAX_ALLOWED_DELAY = 'max_allowed_delay'  # pragma: no mutate
 
 
 class Error(Exception):
@@ -172,5 +175,5 @@ def main(argv):
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no mutate
   main(sys.argv)
