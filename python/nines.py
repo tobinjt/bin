@@ -39,8 +39,12 @@ def strip_trailing_zeros(number: float) -> str:
     Number, with any unnecessary trailing zeros removed.
   """
   string = str(number)
-  if string.find('.') != -1:
-    string = string.rstrip('0').rstrip('.')
+  if string.find('.') >= 0:
+    # Strip 0, then ., so we don't strip '10.0' to '1'.
+    # Mutating the rstrip() argument by adding 'XX' doesn't add any signal
+    # because that just adds more characters to strip, and those characters can
+    # never occur.
+    string = string.rstrip('0').rstrip('.')  # pragma: no mutate
   return string
 
 
@@ -57,8 +61,7 @@ def format_duration(seconds: float) -> str:
   for (number, label) in ((1, 'second'),
                           (60, 'minute'),
                           (60, 'hour'),
-                          (24, 'day'),
-                          (365, 'year')):
+                          (24, 'day')):
     seconds_so_far *= number
     time_units[seconds_so_far] = label
 
@@ -115,7 +118,7 @@ def nines_into_percent(num_nines: float) -> float:
   num, remainder = divmod(num_nines, 1)
   digits = ['0.'] + list(itertools.repeat('9', int(num)))
   # 0 -> '', 0.5 -> 5
-  digits.append(str(remainder).lstrip('0.').lstrip('.'))
+  digits.append(str(remainder).lstrip('0').lstrip('.'))
   result = 100 * float(''.join(digits))
   return result
 

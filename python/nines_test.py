@@ -14,8 +14,11 @@ class TestParsing(unittest.TestCase):
   def test_nines_into_percent(self):
     """Test nines_into_percent."""
     for nine, percent in [
+        (0, 0),
+        (0.5, 50),
         (1, 90),
         (2, 99),
+        (2.0, 99),
         (2.5, 99.5),
         (3, 99.9),
         (4, 99.99),
@@ -24,11 +27,14 @@ class TestParsing(unittest.TestCase):
 
   def test_parse_nines_arg(self):
     """Test general parsing."""
+    self.assertEqual(0, nines.parse_nines_arg('0'))
+    self.assertEqual(21, nines.parse_nines_arg('21'))
     self.assertEqual(80, nines.parse_nines_arg('80'))
+    self.assertEqual(100, nines.parse_nines_arg('100'))
     for nine, message in [
-        ('as', 'Argument is not a number'),
-        ('-5', 'You cannot have a negative uptime'),
-        ('453', 'You cannot have more than 100% uptime'),
+        ('as', '^Argument is not a number'),
+        ('-5', '^You cannot have a negative uptime'),
+        ('101', '^You cannot have more than 100% uptime'),
         ]:
       self.assertRaisesRegex(ValueError, message, nines.parse_nines_arg, nine)
 
@@ -42,6 +48,7 @@ class TestFormatting(unittest.TestCase):
     self.assertEqual('123', nines.strip_trailing_zeros('123.0'))
     self.assertEqual('10', nines.strip_trailing_zeros('10'))
     self.assertEqual('10.1', nines.strip_trailing_zeros('10.1'))
+    self.assertEqual('.1', nines.strip_trailing_zeros('.1'))
 
   def test_format_duration(self):
     """Tests for format_duration."""
