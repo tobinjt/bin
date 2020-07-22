@@ -38,8 +38,10 @@ def strip_trailing_zeros(number: float) -> str:
   Returns:
     Number, with any unnecessary trailing zeros removed.
   """
+  # Don't mutate because '> 0' and '>= 0' aren't different in a meaningful way
+  # here.
   string = str(number)
-  if string.find('.') >= 0:
+  if string.find('.') > 0:  # pragma: no mutate
     # Strip 0, then ., so we don't strip '10.0' to '1'.
     # Mutating the rstrip() argument by adding 'XX' doesn't add any signal
     # because that just adds more characters to strip, and those characters can
@@ -118,7 +120,10 @@ def nines_into_percent(num_nines: float) -> float:
   num, remainder = divmod(num_nines, 1)
   digits = ['0.'] + list(itertools.repeat('9', int(num)))
   # 0 -> '', 0.5 -> 5
-  digits.append(str(remainder).lstrip('0').lstrip('.'))
+  # Mutating the rstrip() argument by adding 'XX' doesn't add any signal because
+  # that just adds more characters to strip, and those characters can never
+  # occur.
+  digits.append(str(remainder).lstrip('0').lstrip('.'))  # pragma: no mutate
   result = 100 * float(''.join(digits))
   return result
 
