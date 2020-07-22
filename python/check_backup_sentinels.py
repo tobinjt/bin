@@ -161,7 +161,8 @@ def check_sentinels(sentinels: ParsedSentinels,
 def main(argv):
   if len(argv) != 2 or not os.path.isdir(argv[1]):
     raise Error('Usage: %s DIRECTORY' % argv[0])
-  day = 24 * 60 * 60
+  # There's no benefit to mutating this constant.
+  day = 24 * 60 * 60  # pragma: no mutate
   sentinels = parse_sentinels(argv[1], day)
   (warnings, messages) = check_sentinels(sentinels, day)
   if sys.stdin.isatty():
