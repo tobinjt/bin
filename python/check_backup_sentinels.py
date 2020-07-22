@@ -143,10 +143,11 @@ def check_sentinels(sentinels: ParsedSentinels,
     }
     messages.append(warning)
 
-    if now - last_backup < max_delay:
+    # Disable mutations because changing '<' to '<=' is not meaningful.
+    if now - last_backup < max_delay:  # pragma: no mutate
       # Recent backup, all is well.
       continue
-    if sleeping_until + max_delay > now:
+    if sleeping_until + max_delay > now:  # pragma: no mutate
       # Backup not due yet.
       continue
 
