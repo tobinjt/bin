@@ -81,7 +81,7 @@ class TestMain(unittest.TestCase):
   @mock.patch('sys.stdout', new_callable=StringIO)
   @mock.patch('sys.stderr', new_callable=StringIO)
   def test_no_args(self, mock_stderr, mock_stdout, _):
-    """Test main."""
+    """Test no args."""
     nines.main(['argv0'])
     self.assertEqual('', mock_stdout.getvalue())
     # The name of the program is pytest when running tests.

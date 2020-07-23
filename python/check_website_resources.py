@@ -220,7 +220,8 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   diff_generator = difflib.unified_diff(
       config.resources, actual_resources,
       fromfile='expected', tofile='actual')
-  diffs = [d.rstrip('\n') for d in diff_generator]
+  diffs = [d.rstrip('\n')  # pragma: no mutate
+           for d in diff_generator]
   if not diffs:
     return []
   errors = ['Unexpected resource diffs for %s (%s):'
@@ -286,8 +287,10 @@ def validate_user_config(path: Text, configs: Any):
                       'optional_resources'])
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
-      bad_keys = ', '.join(list(actual_keys - known_keys))
-      raise ValueError('%s: Unsupported key(s): %s' % (path, bad_keys))
+      bad_keys = list(actual_keys - known_keys)
+      bad_keys.sort()
+      raise ValueError('%s: Unsupported key(s): %s'
+                       % (path, ', '.join(bad_keys)))
     if 'url' not in config:
       raise ValueError('%s: required config "url" not provided' % path)
     if 'resources' not in config:
@@ -370,7 +373,7 @@ def parse_arguments(argv: List[Text]) -> argparse.Namespace:
       description=description, usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      'config_files', nargs='*', metavar='JSON_CONFIG_FILE',
+      'config_files', nargs='+', metavar='JSON_CONFIG_FILE', default=[],
       help=('Config file specifying URLs and expected resources (multiple'
             ' files are supported but are completely independent)'))
   return argv_parser.parse_args(argv)
@@ -381,7 +384,7 @@ def main(argv: List[Text]) -> int:
   options = parse_arguments(argv[1:])
   # On MacOS wget is in /usr/local/bin which is not in the default PATH cron
   # passes to child processes.
-  os.environ['PATH'] += ':/usr/local/bin'
+  os.environ['PATH'] += ':/usr/local/bin'  # pragma: no mutate
   messages = []
   host_configs = []
   for filename in options.config_files:

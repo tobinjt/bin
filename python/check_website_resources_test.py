@@ -107,24 +107,23 @@ class TestValidateUserConfig(unittest.TestCase):
     tests = {
         'Top-level data structure': 1,
         'All entries in the list must be dicts': [1],
-        'Unsupported key': [{'asdf': 1}],
+        'Unsupported key.s.: asdf, qwerty': [{'asdf': 1, 'qwerty': 2}],
         'required config "url" not provided': [{'resources': 1}],
         'required config "resources" not provided': [{'url': 1}],
         'url must be a string': [{'url': 1, 'resources': []}],
         'comment must be a string': [
             {'url': 'x', 'resources': [], 'comment': 1}],
         '"resources" must be a list of strings': [{'url': 'x', 'resources': 1}],
-        'all "resources" must be strings': [{'url': 'x', 'resources': [1]}],
+        'all "resources" must be strings: 1, 2': [
+            {'url': 'x', 'resources': [1, 2]}],
         '"optional_resources" must be a list of strings': [
             {'url': 'x', 'resources': [], 'optional_resources': 1}],
-        'all "optional_resources" must be strings': [
-            {'url': 'x', 'resources': [], 'optional_resources': [1]}],
+        'all "optional_resources" must be strings: 1, 2': [
+            {'url': 'x', 'resources': [], 'optional_resources': [1, 2]}],
         '"cookies" must be a dict': [
             {'url': 'x', 'resources': ['x'], 'cookies': 1}],
-        'everything in "cookies" must be strings': [
-            {'url': 'x', 'resources': ['x'], 'cookies': {1: 'x'}}],
-        'everything in "cookies" must be strings.': [
-            {'url': 'x', 'resources': ['x'], 'cookies': {'x': 1}}],
+        'everything in "cookies" must be strings: 1, 2': [
+            {'url': 'x', 'resources': ['x'], 'cookies': {1: 'x', 'y': 2}}],
         }
     for message, data in tests.items():
       with self.subTest(message):
@@ -347,7 +346,7 @@ class TestGenerateCookiesFileContents(unittest.TestCase):
 
   def test_bad_url(self):
     """Crash when a hostname cannot be extracted."""
-    with self.assertRaises(ValueError):
+    with self.assertRaisesRegex(ValueError, '^Unable to extract hostname'):
       check_website_resources.generate_cookies_file_contents(
           'not_a_url', {'cookie_1': 'yes', 'cookie_2': 'no'})
 
@@ -435,6 +434,36 @@ class TestMain(unittest.TestCase):
                www.example.com
               """)
           self.assertEqual(expected, warnings)
+
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=io.StringIO)
+  @mock.patch('sys.stderr', new_callable=io.StringIO)
+  def test_no_args(self, mock_stderr, mock_stdout, _):
+    """Test no args."""
+    check_website_resources.main(['argv0'])
+    self.assertEqual('', mock_stdout.getvalue())
+    # The name of the program is pytest when running tests.
+    expected = ('usage: pytest JSON_CONFIG_FILE [JSON_CONFIG_FILE2...]\n'
+                'pytest: error: the following arguments are required: '
+                'JSON_CONFIG_FILE\n')
+    self.assertEqual(expected, mock_stderr.getvalue())
+
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=io.StringIO)
+  def test_help(self, mock_stdout, _):
+    """Test --help to ensure that the description is correctly set up."""
+    check_website_resources.main(['argv0', '--help'])
+    # The name of the program is pytest when running tests.
+    substrings = [
+        'usage: pytest JSON_CONFIG_FILE [JSON_CONFIG_FILE2...]',
+        '\n\nCheck that the correct resources are returned for',
+        '\nJSON_CONFIG_FILE must contain a single list of dicts',
+        'JSON_CONFIG_FILE  Config file specifying URLs and expected',
+        '(multiple files are supported but are completely',
+        ]
+    stdout = mock_stdout.getvalue()
+    for substring in substrings:
+      self.assertIn(substring, stdout)
 
 
 if __name__ == '__main__':  # pragma: no mutate
