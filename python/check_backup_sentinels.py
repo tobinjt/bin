@@ -31,7 +31,7 @@ SentinelMap = Dict[str, int]  # pragma: no mutate
 Messages = List[str]          # pragma: no mutate
 Warnings = List[str]          # pragma: no mutate
 
-# Filename contents.
+# Filename constants.
 # These constants are used consistently so mutating them doesn't provide signal.
 SLEEPING_UNTIL = 'sleeping_until'        # pragma: no mutate
 MAX_ALLOWED_DELAY = 'max_allowed_delay'  # pragma: no mutate

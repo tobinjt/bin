@@ -128,7 +128,7 @@ class TestValidateUserConfig(unittest.TestCase):
         }
     for message, data in tests.items():
       with self.subTest(message):
-        with self.assertRaisesRegex(ValueError, 'config.json:.*' + message):
+        with self.assertRaisesRegex(ValueError, '^config.json:.*' + message):
           check_website_resources.validate_user_config('config.json', data)
 
   def test_valid_config(self):  # pylint: disable=no-self-use
@@ -177,7 +177,7 @@ class TestRunWget(unittest.TestCase):
         returncode=1, cmd=['blah'], stderr='wget: command not found')
     with self.assertLogs(level=logging.ERROR):
       with self.assertRaisesRegex(check_website_resources.WgetFailedException,
-                                  r'wget for https://www.example.com/'):
+                                  r'^wget for https://www.example.com/ failed'):
         check_website_resources.run_wget('https://www.example.com/', False)
 
 

@@ -56,14 +56,15 @@ import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
-COOKIES_FILE = 'cookies.txt'
-WGET_LOG = 'wget.log'
-WGET_ARGS = [
-    'wget',
-    '--output-file=' + WGET_LOG,
-    '--execute=robots=off',
-    '--content-on-error',
-    '--page-requisites',
+# These constants are used consistently so mutating them doesn't provide signal.
+COOKIES_FILE = 'cookies.txt'      # pragma: no mutate
+WGET_LOG = 'wget.log'             # pragma: no mutate
+WGET_ARGS = [                     # pragma: no mutate
+    'wget',                       # pragma: no mutate
+    '--output-file=' + WGET_LOG,  # pragma: no mutate
+    '--execute=robots=off',       # pragma: no mutate
+    '--content-on-error',         # pragma: no mutate
+    '--page-requisites',          # pragma: no mutate
     ]
 
 
@@ -110,7 +111,8 @@ def read_wget_log() -> List[Text]:
     A list of log lines with newlines stripped.
   """
   with open(WGET_LOG, 'r') as wget_log:
-    return [line.rstrip('\n') for line in wget_log.readlines()]
+    return [line.rstrip('\n')  # pragma: no mutate
+            for line in wget_log.readlines()]
 
 
 def write_cookies_file(lines: List[Text]):
@@ -208,12 +210,13 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   actual_resources = list(set(actual_resources)
                           - set(config.optional_resources))
   actual_resources.sort()
-  logging.info('Actual resources for %s (%s): %s', config.url, config.comment,
-               actual_resources)
+  # No tests for logging, perhaps I should add some?
+  logging.info('Actual resources for %s (%s): %s',  # pragma: no mutate
+               config.url, config.comment, actual_resources)
 
   config.resources.sort()
-  logging.info('Expected resources for %s (%s): %s', config.url,
-               config.resources, config.comment)
+  logging.info('Expected resources for %s (%s): %s',  # pragma: no mutate
+               config.url, config.resources, config.comment)
   diff_generator = difflib.unified_diff(
       config.resources, actual_resources,
       fromfile='expected', tofile='actual')
