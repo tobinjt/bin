@@ -1,5 +1,6 @@
 """Tests for check_website_resources."""
 
+import dataclasses
 import io
 import logging
 import subprocess
@@ -44,6 +45,22 @@ class TestWriteCookiesFile(unittest.TestCase):
 
 class TestReadConfig(unittest.TestCase):
   """Tests for read_config."""
+
+  def test_configs_are_immutable(self):
+    """Configs should be immutable so I don't accidentally alter them.
+
+    Note that this only affects top-level fields, the contents of dicts and
+    lists can still be changed.
+    """
+    config = check_website_resources.SingleURLConfig(
+        url='https://www.example.com/',
+        resources=['https://www.example.com/', 'resource 1'],
+        cookies={},
+        comment='https://www.example.com/',
+        )
+    with self.assertRaisesRegex(dataclasses.FrozenInstanceError,
+                                'cannot assign to field'):
+      config.url = 'overwritten'
 
   def test_url_is_included(self):
     """Test explicit inclusion of URL works."""

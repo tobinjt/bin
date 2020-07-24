@@ -90,7 +90,7 @@ class SingleURLConfig:
   url: Text
   resources: List[Text]
   comment: Text
-  cookies: Dict[Text, Text] = dataclasses.field(default_factory=dict)
+  cookies: Dict[Text, Text]
   optional_resources: List[Text] = dataclasses.field(default_factory=list)
 
 
@@ -366,7 +366,7 @@ def parse_arguments(argv: List[Text]) -> argparse.Namespace:
   Returns:
     argparse.Namespace, with attributes set based on the arguments.
   """
-  description = '\n'.join(__doc__.split('\n')[1:])
+  description = '\n'.join(__doc__.split('\n')[1:])  # pragma: no mutate
   usage = __doc__.split('\n')[0]
 
   argv_parser = argparse.ArgumentParser(
