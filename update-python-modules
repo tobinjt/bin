@@ -25,7 +25,7 @@ clean_python_install() {
   brew install python
 }
 
-pip_install() {
+virtualenv_install() {
   local destdir="$1"
   shift
 
@@ -63,7 +63,7 @@ main() {
 
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ -d "${HOME}/.flexget/logs" ]]; then
-    pip_install "${basedir}/flexget" "flexget" "transmissionrpc"
+    virtualenv_install "${basedir}/flexget" "flexget" "transmissionrpc"
     flexget-wrapper
     printf "\\n\\n\\n\\n\\n"
   fi
