@@ -1,6 +1,6 @@
 """Tests for colx."""
 
-from io import StringIO
+import io
 import unittest
 
 import mock
@@ -65,6 +65,44 @@ class TestArgumentParsing(unittest.TestCase):
       mock_error.assert_called_once_with(
           'At least one COLUMN argument is required.')
 
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=io.StringIO)
+  @mock.patch('sys.stderr', new_callable=io.StringIO)
+  def test_no_args(self, mock_stderr, mock_stdout, _):
+    """Test no args."""
+    colx.parse_arguments(['argv0'])
+    self.assertEqual('', mock_stdout.getvalue())
+    # The name of the program is pytest when running tests.
+    expected = ('usage: pytest [OPTIONS] COLUMN [COLUMNS] [FILES]\n'
+                'pytest: error: At least one COLUMN argument is required.\n')
+    self.assertEqual(expected, mock_stderr.getvalue())
+
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=io.StringIO)
+  def test_help(self, mock_stdout, _):
+    """Test --help to ensure that the description is correctly set up."""
+    colx.parse_arguments(['argv0', '--help'])
+    # The name of the program is pytest when running tests.
+    substrings = [
+        'usage: pytest [OPTIONS] COLUMN [COLUMNS] [FILES]\n',
+        '\n\nExtract the specified columns from FILES or stdin.\n',
+        'Column numbering starts at 1, not 0; column 0 is the entire line, '
+        'just like awk.',
+        'Negative column numbers are accepted; -1 is the last column',
+        'Column ranges of the form 3:8, -3:1, 7:-7, and -1:-3 are accepted.',
+        'COLUMNS_THEN_FILES    Any argument that looks like a column specifier',
+        'remaining arguments are used as',
+        '-d DELIMITER, --delimiter DELIMITER',
+        ' Regex delimiting input columns; ',
+        '-s SEPARATOR, --separator SEPARATOR',
+        ' Separator between output columns',
+        ' backslash escape sequences will be expanded',
+        ]
+    stdout = mock_stdout.getvalue()
+    for substring in substrings:
+      with self.subTest('Testing -->>%s<<--' % substring):
+        self.assertIn(substring, stdout)
+
 
 class TestProcessFiles(fake_filesystem_unittest.TestCase):
   """Tests for file processing."""
@@ -103,7 +141,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
   def setUp(self):
     self.setUpPyfakefs()
 
-  @mock.patch('sys.stdout', new_callable=StringIO)
+  @mock.patch('sys.stdout', new_callable=io.StringIO)
   def test_main(self, mock_stdout):
     """Test main."""
     filename = 'input'
