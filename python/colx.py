@@ -74,7 +74,9 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
     column_range = re.search(r'^(-?\d+):(-?\d+)$', arg)
     if column_range:
       first, last = int(column_range.group(1)), int(column_range.group(2))
-      if first > last:
+      # mutmut mutates this to 'first >= last', which isn't useful, because if
+      # 'first == last' then the increments don't matter.
+      if first > last:  # pragma: no mutate
         increment = -1
         last -= 1
       else:
@@ -121,7 +123,11 @@ def process_files(filenames: List[str], columns: List[int],
       # mutmut mutates this to 'first_index = 1', which causes an infinite loop.
       first_index += 1  # pragma: no mutate
     last_index = len(split_columns) - 1
-    while last_index > first_index and not split_columns[last_index]:
+    # mutmut mutates '>' to '>=' and vice versa.  There is a test for handling
+    # empty input, and that's the only way that the indices could overlap, so I
+    # know this is safe either way.
+    while (last_index > first_index  # pragma: no mutate
+           and not split_columns[last_index]):
       last_index -= 1
     input_columns.extend(split_columns[first_index:last_index + 1])
 

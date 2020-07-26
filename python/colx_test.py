@@ -28,10 +28,11 @@ class TestArgumentParsing(unittest.TestCase):
              'filenames': ['asdf'],
          }),
         # The second digit should be a filename.
-        (['1', 'asdf', '2'],
+        # The second non-digit argument should be accepted.
+        (['1', 'asdf', '2', 'qwerty'],
          {
              'columns': [1],
-             'filenames': ['asdf', '2'],
+             'filenames': ['asdf', '2', 'qwerty'],
          }),
         # Support ranges.
         (['1:4', 'asdf', '2'],
@@ -51,11 +52,18 @@ class TestArgumentParsing(unittest.TestCase):
              'columns': [-4, -3, -2, -1],
              'filenames': ['asdf', '2'],
          }),
+        # Ranges with same start and end.
+        (['4:4', 'asdf', '2'],
+         {
+             'columns': [4],
+             'filenames': ['asdf', '2'],
+         }),
     ]
     for (args, expected) in tests:
-      actual = colx.parse_arguments(args)
-      for key in expected:
-        self.assertEqual(getattr(actual, key), expected[key])
+      with self.subTest('Parsing %s' % args):
+        actual = colx.parse_arguments(args)
+        for key in expected:
+          self.assertEqual(getattr(actual, key), expected[key])
 
   def test_error_checking(self):  # pylint: disable=no-self-use
     """Tests for error checking."""
@@ -123,8 +131,16 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
     filename = 'input'
     with open(filename, 'w') as tfh:
       tfh.write('  one two  \n')
-    output = colx.process_files([filename], [2], ' ', ':')
+    output = colx.process_files([filename], [2, 3], ' ', ':')
     self.assertEqual(['two'], output)
+
+  def test_all_empty_columns(self):
+    """Test behaviour when all columns are empty."""
+    filename = 'input'
+    with open(filename, 'w') as tfh:
+      tfh.write('!!!!\n')
+    output = colx.process_files([filename], [2, 3], '!', ':')
+    self.assertEqual([''], output)
 
   def test_column_too_large(self):
     """Test columns larger than input."""
