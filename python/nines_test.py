@@ -106,7 +106,8 @@ class TestMain(unittest.TestCase):
     # them for consistency.
     stdout = mock_stdout.getvalue().replace('\n', ' ')
     for substring in substrings:
-      self.assertIn(substring, stdout)
+      with self.subTest('Testing -->>%s<<--' % substring):
+        self.assertIn(substring, stdout)
 
 
 if __name__ == '__main__':  # pragma: no mutate
