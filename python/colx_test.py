@@ -128,11 +128,16 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
 
   def test_strip_empty_columns(self):
     """Test that empty leading and trailing columns are stripped."""
-    filename = 'input'
-    with open(filename, 'w') as tfh:
-      tfh.write('  one two  \n')
-    output = colx.process_files([filename], [2, 3], ' ', ':')
-    self.assertEqual(['two'], output)
+    for (test_input, test_output) in [
+        ('  leading\n', 'leading'),
+        ('trailing  \n', 'trailing'),
+        ('  both \n', 'both'),
+        ]:
+      filename = 'input'
+      with open(filename, 'w') as tfh:
+        tfh.write(test_input)
+      output = colx.process_files([filename], [1], ' ', ':')
+      self.assertEqual([test_output], output)
 
   def test_all_empty_columns(self):
     """Test behaviour when all columns are empty."""
