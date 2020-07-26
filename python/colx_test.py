@@ -136,7 +136,7 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
       filename = 'input'
       with open(filename, 'w') as tfh:
         tfh.write(test_input)
-      output = colx.process_files([filename], [1], ' ', ':')
+      output = colx.process_files([filename], [1, 2], ' ', ':')
       self.assertEqual([test_output], output)
 
   def test_all_empty_columns(self):

@@ -128,7 +128,8 @@ def process_files(filenames: List[str], columns: List[int],
     # know this is safe either way.
     while (last_index > first_index  # pragma: no mutate
            and not split_columns[last_index]):
-      last_index -= 1
+      # mutmut mutates this to 'last_index = 1', which causes an infinite loop.
+      last_index -= 1  # pragma: no mutate
     input_columns.extend(split_columns[first_index:last_index + 1])
 
     output_columns = []
