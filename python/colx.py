@@ -62,7 +62,9 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
 
   options.columns = []
   options.filenames = []
-  remaining_args_are_filenames = False
+  # mutmut mutates this to '= None', which evaluates to False in a boolean
+  # context, so it's a meaningless mutation.
+  remaining_args_are_filenames = False  # pragma: no mutate
   for arg in options.args:
     if remaining_args_are_filenames:
       options.filenames.append(arg)
@@ -109,14 +111,15 @@ def process_files(filenames: List[str], columns: List[int],
   """
   output = []
   for line in fileinput.input(filenames):
-    line = line.rstrip('\n')
+    line = line.rstrip('\n')  # pragma: no mutate
     input_columns = [line]
     split_columns = re.split(delimiter, line)
 
     # Strip leading and trailing empty fields.
     first_index = 0
     while len(split_columns) > first_index and not split_columns[first_index]:
-      first_index += 1
+      # mutmut mutates this to 'first_index = 1', which causes an infinite loop.
+      first_index += 1  # pragma: no mutate
     last_index = len(split_columns) - 1
     while last_index > first_index and not split_columns[last_index]:
       last_index -= 1
