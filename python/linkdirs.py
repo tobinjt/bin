@@ -25,17 +25,17 @@ __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # Type definitions.
 # A single path.
-Path = str
+Path = str                    # pragma: no mutate
 # A list of directories, filenames, or paths.
-Paths = List[str]
+Paths = List[str]             # pragma: no mutate
 # Diffs between files.
-Diffs = List[str]
+Diffs = List[str]             # pragma: no mutate
 # Messages to print.
-Messages = List[str]
+Messages = List[str]          # pragma: no mutate
 # Shell patterns to skip.
-SkipPatterns = List[str]
+SkipPatterns = List[str]      # pragma: no mutate
 # Command line args.
-CommandLineArgs = List[str]
+CommandLineArgs = List[str]   # pragma: no mutate
 
 
 class Error(Exception):
@@ -78,13 +78,13 @@ class LinkResults:
     self.errors.extend(other.errors)
 
 
-def safe_unlink(unlink_me: Path, dryrun: bool = True) -> None:
+def safe_unlink(unlink_me: Path, dryrun: bool) -> None:
   """Remove a file or directory, or print shell commands that would do so.
 
   Args:
     unlink_me: the file or directory to be removed.
     dryrun:    if True, shell commands are printed; if False, unlink_me is
-               removed.  Defaults to True.
+               removed.
 
   Raises:
     OSError: there was a problem removing unlink_me.
@@ -103,14 +103,14 @@ def safe_unlink(unlink_me: Path, dryrun: bool = True) -> None:
 
 
 def safe_link(source_filename: Path, dest_filename: Path,
-              dryrun: bool = True) -> None:
+              dryrun: bool) -> None:
   """Link one file to another, or print shell commands that would do so.
 
   Args:
     source_filename: existing filename.
     dest_filename:   new filename.
     dryrun:          if True, shell commands are printed; if False, files are
-                     linked.  Defaults to True.
+                     linked.
   Raises:
     OSError: there was a problem linking files.
   """
@@ -136,16 +136,18 @@ def diff(old_filename: Path, new_filename: Path) -> Diffs:
     OSError: an error occurred reading one of the files.
   """
 
+  # pyfakefs doesn't seem to validate the mode, so stop mutating it.
   old_timestamp = time.ctime(os.stat(old_filename).st_mtime)
-  old_contents = open(old_filename, "r").readlines()
+  old_contents = open(old_filename, "r").readlines()  # pragma: no mutate
   new_timestamp = time.ctime(os.stat(new_filename).st_mtime)
-  new_contents = open(new_filename, "r").readlines()
+  new_contents = open(new_filename, "r").readlines()  # pragma: no mutate
   diff_generator = difflib.unified_diff(new_contents, old_contents,
                                         new_filename, old_filename,
                                         new_timestamp, old_timestamp)
   # Strip the newline here because one will be added later when printing the
   # messages.
-  return [d.rstrip('\n') for d in diff_generator]
+  return [d.rstrip('\n') # pragma: no mutate
+          for d in diff_generator]
 
 
 def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:
@@ -454,8 +456,11 @@ def parse_arguments(argv: CommandLineArgs) -> Tuple[argparse.Namespace,
   argv_parser.add_argument(
       "--ignore_pattern", action="append", dest="ignore_pattern",
       metavar="FILENAME",
+      # There is no signal from mutating these constants; I could add tests for
+      # every one, but it doesn't help.
       default=[
-          "CVS", ".git", ".gitignore", ".gitmodules", ".hg", ".svn", "*.swp"],
+          "CVS", ".git", ".gitignore", ".gitmodules",  # pragma: no mutate
+          ".hg", ".svn", "*.swp"],  # pragma: no mutate
       help=textwrap.fill("""Extra shell patterns to ignore (appended to this
                          list: %(default)s).  To specify multiple filenames, use
                          this option multiple times."""))
