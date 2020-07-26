@@ -146,7 +146,7 @@ def nines(num_nines: float) -> str:
              format_duration(downtime_seconds)))
 
 def main(argv: List[str]) -> None:
-  description = '\n'.join(__doc__.split('\n')[1:]) % {
+  description = '\n'.join(__doc__.split('\n')[2:]) % {
       'PT': PERCENT_THRESHOLD,
   }
   usage = __doc__.split('\n')[0]
