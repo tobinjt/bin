@@ -20,6 +20,7 @@ main() {
   local test="${source%.py}_test.py"
 
   local exit_status=0
+  pytest "${test}"
   time mutmut --runner "pytest ${test}" --paths-to-mutate "${source}" run \
     || exit_status="$?"
   # The file will have been rewritten and no longer executable.
