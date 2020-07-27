@@ -482,7 +482,7 @@ def parse_arguments(argv: CommandLineArgs) -> Tuple[argparse.Namespace,
       dest="delete_unexpected_files", default=False,
       help=textwrap.fill("""Delete unexpected files in DESTINATION_DIRECTORY
                          (default: %(default)s)"""))
-  argv_parser.add_argument('args', nargs='+', metavar='NUMBER_OF_NINES',
+  argv_parser.add_argument('args', nargs='+', metavar='DIRECTORIES',
                            default=[], help='See usage for details')
 
   options = argv_parser.parse_args(argv[1:])

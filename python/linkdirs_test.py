@@ -503,6 +503,50 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
 
 
+class TestUsage(unittest.TestCase):
+  """Tests for usage messages."""
+
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=StringIO)
+  @mock.patch('sys.stderr', new_callable=StringIO)
+  def test_no_args(self, mock_stderr, mock_stdout, _):
+    """Test no args."""
+    linkdirs.real_main(['argv0'])
+    self.assertEqual('', mock_stdout.getvalue())
+    # The name of the program is pytest when running tests.
+    expected = (
+        'usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY\n'
+        'pytest: error: the following arguments are required: DIRECTORIES\n')
+    self.assertEqual(expected, mock_stderr.getvalue())
+
+  @mock.patch('sys.exit')
+  @mock.patch('sys.stdout', new_callable=StringIO)
+  def test_help(self, mock_stdout, _):
+    """Test --help to ensure that the description is correctly set up."""
+    linkdirs.real_main(['argv0', '--help'])
+    # The name of the program is pytest when running tests.
+    substrings = [
+        'usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] ',
+        '--dryrun Perform a trial run with no changes made (default: False)',
+        '--force Remove existing files if necessary (default: False)',
+        '--ignore_file FILENAME File containing shell patterns to ignore.',
+        '--ignore_pattern FILENAME Extra shell patterns to ignore',
+        "['CVS', '.git', '.gitignore', '.gitmodules', '.hg', '.svn', '*.swp']",
+        '--ignore_unexpected_children When checking for unexpected files or',
+        '--report_unexpected_files Report unexpected files in'
+        ' DESTINATION_DIRECTORY (default: False)',
+        '--delete_unexpected_files Delete unexpected files in'
+        ' DESTINATION_DIRECTORY (default: False)',
+        ]
+    # The position of newlines depends on the width of the terminal, so remove
+    # them for consistency.  Likewise spaces.
+    stdout = mock_stdout.getvalue().replace('\n', ' ')
+    stdout = re.sub(r'\s+', ' ', stdout)
+    for substring in substrings:
+      with self.subTest('Testing -->>%s<<--' % substring):
+        self.assertIn(substring, stdout)
+
+
 class TestMisc(fake_filesystem_unittest.TestCase):
   """Tests for code that can't otherwise be tested."""
 
