@@ -156,6 +156,15 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                         os.path.dirname(dest_file)])
     self.assert_files_are_linked(src_file, dest_file)
 
+  def test_source_dir_replaced_once(self):
+    """/src/foo/src/bar => /dest/foo/src/bar, not /dest/foo/dest/bar."""
+    src_file = '/a/b/foo/a/b/file'
+    self.create_files('%s:qwerty' % src_file)
+
+    dest_file = '/z/y/foo/a/b/file'
+    linkdirs.real_main(['linkdirs', '/a/b', '/z/y'])
+    self.assert_files_are_linked(src_file, dest_file)
+
   def test_replace_same_contents(self):
     """File with same contents is replaced with link."""
     src_file = '/a/b/c/file'
@@ -549,6 +558,13 @@ class TestUsage(unittest.TestCase):
     for substring in substrings:
       with self.subTest('Testing -->>%s<<--' % substring):
         self.assertIn(substring, stdout)
+    # Check that the description is set up properly.
+    self.assertRegex(
+        stdout,
+        r'^usage: pytest .OPTIONS. SOURCE_DIRECTORY .....'
+        r' DESTINATION_DIRECTORY Link all files in SOURCE_DIRECTORY'
+        r' .SOURCE_DIRECTORY.... to DESTINATION_DIRECTORY, creating the'
+        r' destination directory hierarchy where')
 
 
 class TestMisc(fake_filesystem_unittest.TestCase):
