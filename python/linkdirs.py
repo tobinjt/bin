@@ -191,7 +191,7 @@ def link_dir(source: Path, dest: Path,
   """
 
   results = LinkResults([], [], [])
-  for directory, subdirs, files in os.walk(source, topdown=True):
+  for directory, subdirs, files in os.walk(source):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
     subdirs[:] = remove_skip_patterns(subdirs, options.skip)
@@ -321,12 +321,11 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
     Messages to print.
   """
 
-  expected_files = {dest_dir: 1}
-  for entry in expected_files_list:
-    expected_files[entry] = 1
+  expected_files = set(expected_files_list)
+  expected_files.add(dest_dir)
 
   unexpected_paths = UnexpectedPaths([], [])
-  for directory, subdirs, files in os.walk(dest_dir, topdown=True):
+  for directory, subdirs, files in os.walk(dest_dir):
     subdirs[:] = remove_skip_patterns(subdirs, options.skip)
     subdirs.sort()
     files = remove_skip_patterns(files, options.skip)

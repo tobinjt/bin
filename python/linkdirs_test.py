@@ -249,8 +249,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
     {dest_dir}/subdir/
-    # And also a subdir that will be reported.
+    # And also subdirs that will be reported.
     {dest_dir}/asdf/report_me/
+    {dest_dir}/asdf/report_me_too/
     """.format(src_dir=src_dir, dest_dir=dest_dir)
     self.create_files(files)
 
@@ -259,9 +260,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                                  src_dir, dest_dir])
     expected = [
         'Refusing to delete directories without --force/-f:'
-        ' /z/y/x/asdf/report_me',
+        ' /z/y/x/asdf/report_me /z/y/x/asdf/report_me_too',
         'Unexpected directory: /z/y/x/asdf/report_me',
-        'rmdir /z/y/x/asdf/report_me',
+        'Unexpected directory: /z/y/x/asdf/report_me_too',
+        'rmdir /z/y/x/asdf/report_me_too /z/y/x/asdf/report_me',
     ]
     self.assertEqual(expected, actual)
     # Unexpected files should be deleted.
@@ -527,6 +529,8 @@ class TestUsage(unittest.TestCase):
     # The name of the program is pytest when running tests.
     substrings = [
         'usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] ',
+        'Link all files in SOURCE_DIRECTORY',
+        'positional arguments: DIRECTORIES See usage for details',
         '--dryrun Perform a trial run with no changes made (default: False)',
         '--force Remove existing files if necessary (default: False)',
         '--ignore_file FILENAME File containing shell patterns to ignore.',
