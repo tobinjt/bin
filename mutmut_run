@@ -30,11 +30,10 @@ main() {
     return 0
   fi
 
-  local file exit_status=0
+  local file
   for file in "$@"; do
-    process_single_file "${file}" || exit_status="$?"
+    process_single_file "${file}"
   done
-  return "${exit_status}"
 }
 
 main "$@"
