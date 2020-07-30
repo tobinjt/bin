@@ -136,15 +136,30 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Destination directory perms change if necessary."""
     src_dir = '/a/b/c/dir'
     dest_dir = '/z/y/x/dir'
-    mode = int('0755', base=8)
+    src_mode = int('0755', base=8)
+    dest_mode = int('0700', base=8)
     os.makedirs(src_dir)
     os.makedirs(dest_dir)
-    os.chmod(src_dir, mode)
-    os.chmod(dest_dir, int('0700', base=8))
+    os.chmod(src_dir, src_mode)
+    os.chmod(dest_dir, src_mode)
+    subdirs = ['1', '2', '3', '4']
+    for subdir in subdirs:
+      s_dir = os.path.join(src_dir, subdir)
+      d_dir = os.path.join(dest_dir, subdir)
+      os.makedirs(s_dir)
+      os.chmod(s_dir, src_mode)
+      os.makedirs(d_dir)
+      if int(subdir) % 2 == 0:
+        os.chmod(d_dir, dest_mode)
+      else:
+        os.chmod(d_dir, src_mode)
 
     linkdirs.real_main(['linkdirs', os.path.dirname(src_dir),
                         os.path.dirname(dest_dir)])
-    self.assertEqual(mode, stat.S_IMODE(os.stat(dest_dir).st_mode))
+    self.assertEqual(src_mode, stat.S_IMODE(os.stat(dest_dir).st_mode))
+    for subdir in subdirs:
+      d_dir = os.path.join(dest_dir, subdir)
+      self.assertEqual(src_mode, stat.S_IMODE(os.stat(d_dir).st_mode))
 
   def test_missing_file_is_created(self):
     """Missing file gets created."""
@@ -459,6 +474,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {src_dir}/dir2/file1
     # Test handling a destination that isn't a subdir in dest_dir.
     {src_dir}/dir3/file1
+    {src_dir}/dir4/file1
 
     {dest_dir}/file1:12345
     {dest_dir}/file3:pinky
@@ -471,6 +487,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {dest_dir}/dir1/
     # Test handling a destination that isn't a subdir.
     {dest_dir}/dir3
+    {dest_dir}/dir4
     """.format(src_dir=src_dir, dest_dir=dest_dir)
     self.create_files(files)
     # Test handling of source symlinks - not supported by create_files().
@@ -487,6 +504,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           '-12345',
           '+qwerty',
           '/z/y/x/dir3 is not a directory',
+          '/z/y/x/dir4 is not a directory',
           '/z/y/x/file4: is not a file',
           '/z/y/x/file5: link count is 2',
           'Skipping symbolic link /a/b/c/file6',
@@ -509,6 +527,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           'ln /a/b/c/dir1/file1 /z/y/x/dir1/file1',
           'ln /a/b/c/dir2/file1 /z/y/x/dir2/file1',
           'ln /a/b/c/dir3/file1 /z/y/x/dir3/file1',
+          'ln /a/b/c/dir4/file1 /z/y/x/dir4/file1',
           '',
       ])
       self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
