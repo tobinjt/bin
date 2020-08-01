@@ -13,6 +13,7 @@ process_single_file() {
   local exit_status=0
   pytest "${test}"
   time caffeinate -d -i -m mutmut \
+      --test-time-multiplier 3 \
       --runner "pytest ${test}" --paths-to-mutate "${source}" run \
     || exit_status="$?"
   # The file will have been rewritten and no longer executable.
