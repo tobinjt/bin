@@ -27,14 +27,6 @@ check_single_repo() {
     # Pull to start with so that unpulled changes don't cause failures.
     git_pull_and_push_if_possible
   fi
-  if git check-local-copy-is-clean; then
-    return 0
-  fi
-  # TODO: what benefit is there to pulling and pushing again?
-  if [[ "${pull_and_push}" -eq 0 ]]; then
-    return 1
-  fi
-  git_pull_and_push_if_possible
   git check-local-copy-is-clean
 }
 
