@@ -10,12 +10,20 @@ check_single_host() {
     'check-git-repos --pull "${HOME}/bin" "${HOME}/src/"*'
 }
 
-# Clean up most likely source of diffs first.
-update-dotfiles-and-bin-everywhere
-check_single_host laptop
-check_single_host home
-# Ariane's website needs special treatment, so do that before the more general
-# check of hosting.
-retry 10 hosting ssh -o ControlMaster=no -t johntobin@hosting \
+# Deal with the special cases first.
+# hugo-coder needs to be updated in the right order.
+retry 30 update-hugo-coder update-hugo-coder
+# Ariane's website also needs to be updated in the right order.  Push any local
+# changes first.
+retry 30 check-git-repos --pull "${HOME}/src/ariane-theme"
+retry 30 update-ariane-theme ssh -o ControlMaster=no -t johntobin@hosting \
   update-ariane-theme
-check_single_host hosting
+
+# dotfiles and bin are the next most likely source of diffs, and they can be
+# fixed mostly automatically.
+update-dotfiles-and-bin-everywhere
+
+# Now do the rest of the checks.
+for host in laptop home hosting; do
+  check_single_host "${host}"
+done
