@@ -4,7 +4,7 @@ set -e -f -u -o pipefail
 
 PATH="${HOME}/bin:${PATH}"
 
-git_pull_if_possible() {
+git_pull_and_push_if_possible() {
   if git config remote.origin.url >& /dev/null; then
     # Pull and push requires an origin.
     git pull
@@ -18,29 +18,30 @@ git_pull_if_possible() {
 # Check that git repos don't have any uncommitted, unpushed, or unpulled
 # changes.
 check_single_repo() {
-  local pull="$1"
+  local pull_and_push="$1"
   if [[ ! -d ".git" ]]; then
     # Make it easy to run "check-git-repos ~/src/*".
     return 0
   fi
-  if [[ "${pull}" -eq 1 ]]; then
+  if [[ "${pull_and_push}" -eq 1 ]]; then
     # Pull to start with so that unpulled changes don't cause failures.
-    git_pull_if_possible
+    git_pull_and_push_if_possible
   fi
   if git check-local-copy-is-clean; then
     return 0
   fi
-  if [[ "${pull}" -eq 0 ]]; then
+  # TODO: what benefit is there to pulling and pushing again?
+  if [[ "${pull_and_push}" -eq 0 ]]; then
     return 1
   fi
-  git_pull_if_possible
+  git_pull_and_push_if_possible
   git check-local-copy-is-clean
 }
 
 main() {
-  local pull=0
-  if [[ "$#" -gt 0 && "$1" == "--pull" ]]; then
-    pull=1
+  local pull_and_push=0
+  if [[ "$#" -gt 0 && "$1" == "--pull_and_push" ]]; then
+    pull_and_push=1
     shift
   fi
   local repo result=0
@@ -51,7 +52,7 @@ main() {
     fi
     # Bizzare Posix sh behaviour :(  See
     # https://unix.stackexchange.com/questions/65532/why-does-set-e-not-work-inside-subshells-with-parenthesis-followed-by-an-or
-    (cd "${repo}"; check_single_repo "${pull}") &
+    (cd "${repo}"; check_single_repo "${pull_and_push}") &
     if ! wait "$!"; then
       result=1
     fi

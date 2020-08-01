@@ -7,7 +7,7 @@ check_single_host() {
   printf "\n\n\nProcessing %s\\n" "${host}"
   # shellcheck disable=SC2016
   retry 10 "${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
-    'check-git-repos --pull "${HOME}/bin" "${HOME}/src/"*'
+    'check-git-repos --pull_and_push "${HOME}/bin" "${HOME}/src/"*'
 }
 
 # Deal with the special cases first.
@@ -15,7 +15,7 @@ check_single_host() {
 retry 30 update-hugo-coder update-hugo-coder
 # Ariane's website also needs to be updated in the right order.  Push any local
 # changes first.
-retry 30 check-git-repos --pull "${HOME}/src/ariane-theme"
+retry 30 check-git-repos --pull_and_push "${HOME}/src/ariane-theme"
 retry 30 update-ariane-theme ssh -o ControlMaster=no -t johntobin@hosting \
   update-ariane-theme
 
