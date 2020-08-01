@@ -476,6 +476,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Test handling a destination that isn't a subdir in dest_dir.
     {src_dir}/dir3/file1
     {src_dir}/dir4/file1
+    # Test handling a file that is already linked.
+    {src_dir}/already-linked={dest_dir}/already-linked
 
     {dest_dir}/file1:12345
     {dest_dir}/file3:pinky
@@ -493,6 +495,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.create_files(files)
     # Test handling of source symlinks - not supported by create_files().
     os.symlink(os.path.join(src_dir, 'file5'), os.path.join(src_dir, 'file6'))
+    os.symlink(os.path.join(src_dir, 'file7'), os.path.join(src_dir, 'file8'))
 
     with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--dryrun', src_dir, dest_dir])
@@ -509,6 +512,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           '/z/y/x/file4: is not a file',
           '/z/y/x/file5: link count is 2',
           'Skipping symbolic link /a/b/c/file6',
+          'Skipping symbolic link /a/b/c/file8',
       ]
       self.assertEqual(expected, messages)
       self.assertFalse(os.path.samefile(os.path.join(src_dir, 'file1'),
