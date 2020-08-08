@@ -506,8 +506,10 @@ def real_main(argv: CommandLineArgs) -> Messages:
 
   all_results = LinkResults([], [], [])
   unexpected_msgs = []
-  dest = options.args.pop().rstrip(os.sep)
-  if not os.path.isdir(dest):
+  # When mutmut mutates these lines the tests take long enough for mutmut to
+  # report them as suspicious, so disable mutations.
+  dest = options.args.pop().rstrip(os.sep)  # pragma: no mutate
+  if not os.path.isdir(dest):  # pragma: no mutate
     os.makedirs(dest)
 
   options.skip = ignore_patterns

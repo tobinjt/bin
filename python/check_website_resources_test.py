@@ -7,8 +7,8 @@ import subprocess
 import textwrap
 from typing import List, Text
 import unittest
+from unittest import mock
 
-import mock
 import pyfakefs
 
 import check_website_resources
