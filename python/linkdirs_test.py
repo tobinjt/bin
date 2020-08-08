@@ -6,8 +6,8 @@ import re
 import stat
 import textwrap
 import unittest
+from unittest import mock
 
-import mock
 from pyfakefs import fake_filesystem_unittest
 
 import linkdirs
