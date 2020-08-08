@@ -64,7 +64,7 @@ main() {
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ -d "${HOME}/.flexget/logs" ]]; then
     virtualenv_install "${basedir}/flexget" "flexget" "transmissionrpc"
-    flexget-wrapper
+    flexget-wrapper execute
     printf "\\n\\n\\n\\n\\n"
   fi
 
