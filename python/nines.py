@@ -118,7 +118,8 @@ def nines_into_percent(num_nines: float) -> float:
     parsed nines value.
   """
   num, remainder = divmod(num_nines, 1)
-  digits = ['0.'] + list(itertools.repeat('9', int(num)))
+  digits = ['0.']
+  digits.extend(list(itertools.repeat('9', int(num))))
   # 0 -> '', 0.5 -> 5
   # Mutating the rstrip() argument by adding 'XX' doesn't add any signal because
   # that just adds more characters to strip, and those characters can never
