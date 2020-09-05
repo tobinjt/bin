@@ -12,8 +12,12 @@ if [[ -z "$(type -a vim)" ]]; then
   exit 1
 fi
 
+if [[ "${OSTYPE#darwin}" != "${OSTYPE}" ]]; then
+  brew install python
+fi
+
 # Older version of Python don't have dataclasses, install it if necessary.
-if ! python -c 'import dataclasses'; then
+if ! python3 -c 'import dataclasses'; then
   pip3 install dataclasses
 fi
 
