@@ -23,7 +23,7 @@ retry 30 update-ariane-theme \
 
 # dotfiles and bin are the next most likely source of diffs, and they can be
 # fixed mostly automatically.
-printf "\\n\\n\\ndotfilesi\\n"
+printf "\\n\\n\\ndotfiles\\n"
 update-dotfiles-and-bin-everywhere
 
 # Now do the rest of the checks.

@@ -150,7 +150,7 @@ def run_wget(url: Text, load_cookies: bool) -> List[Text]:
   except subprocess.CalledProcessError as err:
     message = 'wget for %s failed: %s; %s' % (url, err.stderr, str(err))
     logging.error(message)
-    raise WgetFailedException(message)
+    raise WgetFailedException(message) from err
 
 
 def reverse_pagespeed_mangling(paths: List[Text]) -> List[Text]:
