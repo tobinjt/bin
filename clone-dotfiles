@@ -12,7 +12,7 @@ if [[ -z "$(type -a vim)" ]]; then
   exit 1
 fi
 
-if [[ "${OSTYPE#darwin}" != "${OSTYPE}" ]]; then
+if [[ -n "$(type -a brew)" ]]; then
   brew install python
 fi
 
