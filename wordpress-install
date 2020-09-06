@@ -125,6 +125,15 @@ if [[ ! -s "${DOWNLOAD_PATH}" ]]; then
   fi
 fi
 
+# Support manually updating plugins that are excluded from automatic updates.
+EXCLUDED_FILE_CONTENTS=''
+EXCLUDED_FILE_NEEDED="0"
+EXCLUDED_FILE_NAME="${NAME}/excluded-from-automatic-updates"
+if [[ -f "${EXCLUDED_FILE_NAME}" ]]; then
+  EXCLUDED_FILE_CONTENTS="$(cat "${EXCLUDED_FILE_NAME}")"
+  EXCLUDED_FILE_NEEDED="1"
+fi
+
 # There's nothing named wordpress, so this is a no-op when TYPE == wordpress.
 rm -rf "${NAME}"
 unzip -q -o "${DOWNLOAD_PATH}"
@@ -134,6 +143,9 @@ if [[ "${TYPE}" == "wordpress" ]]; then
   # with tar, then delete it.
   tar cf - -C wordpress . | tar xf -
   rm -rf wordpress
+fi
+if [[ "${EXCLUDED_FILE_NEEDED}" -eq 1 ]]; then
+  printf "%s" "${EXCLUDED_FILE_CONTENTS}" > "${EXCLUDED_FILE_NAME}"
 fi
 # --all marks deleted files for deletion in git.
 git add --all .
