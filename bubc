@@ -14,6 +14,6 @@ if [[ -n "$(brew outdated)" ]]; then
   brew upgrade --force-bottle
   sleep 1
 fi
-brew cask upgrade
+brew upgrade --cask
 sleep 1
 brew cleanup
