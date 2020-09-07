@@ -39,15 +39,16 @@ leftover_pids() {
 
 main() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s TIMEOUT APP\nE.g. %s 60 /Applications/Pauses.app\n" \
-      "$0" "$0" >&2
+    printf "Usage: %s --kill|TIMEOUT APP\n" "$0" >&2
+    printf "E.g. %s 60 /Applications/Pauses.app\n" "$0" >&2
+    printf "E.g. %s --kill /Applications/Pauses.app\n" "$0" >&2
     exit 1
   fi
   local exit_status=0 timeout="$1" app="$2"
-  # Backwards compatibility: /Applications/Pauses.app and
-  # /Applications/Pauses.app/Contents/MacOS/Pauses
-  app="${app%/Contents*}"
   kill_leftovers "${app}"
+  if [[ "${timeout}" == "--kill" ]]; then
+    exit 0
+  fi
   # Run the app.
   open -W "${app}" || exit_status="$?"
   sleep "${timeout}"
