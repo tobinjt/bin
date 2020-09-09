@@ -156,4 +156,7 @@ main() {
 #   "ssh foo@bar update-dotfiles-and-bin"
 PATH="${PATH}:${HOME}/bin"
 export PATH
+# Stop git looking for a commit message when 'git pull' is run.
+GIT_MERGE_AUTOEDIT=no
+export GIT_MERGE_AUTOEDIT
 main "$@"

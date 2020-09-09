@@ -5,6 +5,10 @@
 
 set -e -f -u -o pipefail
 
+# Stop git looking for a commit message when 'git pull' is run.
+GIT_MERGE_AUTOEDIT=no
+export GIT_MERGE_AUTOEDIT
+
 readonly DIR="${1:-${HOME}/src/upstream-flexget}"
 readonly SCRIPT="bin/activate"
 

@@ -6,6 +6,10 @@ set -e -u -f -o pipefail
 PATH="/usr/local/bin:${PATH}"
 export PATH
 
+# Stop git looking for a commit message when 'git pull' is run.
+GIT_MERGE_AUTOEDIT=no
+export GIT_MERGE_AUTOEDIT
+
 if [[ -z "$(type -a vim)" ]]; then
   echo "Missing vim :(" >&2
   echo "apt-get install vim-nox" >&2
