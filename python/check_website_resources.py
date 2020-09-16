@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """%(prog)s JSON_CONFIG_FILE [JSON_CONFIG_FILE2...]
 
 Check that the correct resources are returned for specific pages on a website,
@@ -57,15 +56,15 @@ import urllib.parse
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # These constants are used consistently so mutating them doesn't provide signal.
-COOKIES_FILE = 'cookies.txt'      # pragma: no mutate
-WGET_LOG = 'wget.log'             # pragma: no mutate
-WGET_ARGS = [                     # pragma: no mutate
-    'wget',                       # pragma: no mutate
+COOKIES_FILE = 'cookies.txt'  # pragma: no mutate
+WGET_LOG = 'wget.log'  # pragma: no mutate
+WGET_ARGS = [  # pragma: no mutate
+    'wget',  # pragma: no mutate
     '--output-file=' + WGET_LOG,  # pragma: no mutate
-    '--execute=robots=off',       # pragma: no mutate
-    '--content-on-error',         # pragma: no mutate
-    '--page-requisites',          # pragma: no mutate
-    ]
+    '--execute=robots=off',  # pragma: no mutate
+    '--content-on-error',  # pragma: no mutate
+    '--page-requisites',  # pragma: no mutate
+]
 
 
 class Error(Exception):
@@ -111,8 +110,10 @@ def read_wget_log() -> List[Text]:
     A list of log lines with newlines stripped.
   """
   with open(WGET_LOG, 'r') as wget_log:
-    return [line.rstrip('\n')  # pragma: no mutate
-            for line in wget_log.readlines()]
+    return [
+        line.rstrip('\n')  # pragma: no mutate
+        for line in wget_log.readlines()
+    ]
 
 
 def write_cookies_file(lines: List[Text]):
@@ -171,7 +172,7 @@ def reverse_pagespeed_mangling(paths: List[Text]) -> List[Text]:
       '.css': r'^A\.',
       # foo/bar.png is rewritten to foo/xbar.png.pagespeed...
       '.png': r'^x',
-      }
+  }
   for path in paths:
     path = re.sub(r'(css|jpg|js|png)\.pagespeed\...\..*\.\1$', r'\1', path)
     for extension, regex in replacements.items():
@@ -198,8 +199,10 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   try:
     log_lines = run_wget(config.url, bool(config.cookies))
   except WgetFailedException as err:
-    return ['%s (%s): running wget failed; %s'
-            % (config.url, config.comment, str(err))]
+    return [
+        '%s (%s): running wget failed; %s' %
+        (config.url, config.comment, str(err))
+    ]
 
   fetched_resources = set()
   for line in log_lines:
@@ -207,25 +210,35 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
       fetched_resources.add(line.split(' ')[-1])
   actual_resources = reverse_pagespeed_mangling(list(fetched_resources))
   # Strip out any optional_resources.
-  actual_resources = list(set(actual_resources)
-                          - set(config.optional_resources))
+  actual_resources = list(
+      set(actual_resources) - set(config.optional_resources))
   actual_resources.sort()
   # No tests for logging, perhaps I should add some?
-  logging.info('Actual resources for %s (%s): %s',  # pragma: no mutate
-               config.url, config.comment, actual_resources)
+  logging.info(
+      'Actual resources for %s (%s): %s',  # pragma: no mutate
+      config.url,
+      config.comment,
+      actual_resources)
 
   config.resources.sort()
-  logging.info('Expected resources for %s (%s): %s',  # pragma: no mutate
-               config.url, config.resources, config.comment)
-  diff_generator = difflib.unified_diff(
-      config.resources, actual_resources,
-      fromfile='expected', tofile='actual')
-  diffs = [d.rstrip('\n')  # pragma: no mutate
-           for d in diff_generator]
+  logging.info(
+      'Expected resources for %s (%s): %s',  # pragma: no mutate
+      config.url,
+      config.resources,
+      config.comment)
+  diff_generator = difflib.unified_diff(config.resources,
+                                        actual_resources,
+                                        fromfile='expected',
+                                        tofile='actual')
+  diffs = [
+      d.rstrip('\n')  # pragma: no mutate
+      for d in diff_generator
+  ]
   if not diffs:
     return []
-  errors = ['Unexpected resource diffs for %s (%s):'
-            % (config.url, config.comment)]
+  errors = [
+      'Unexpected resource diffs for %s (%s):' % (config.url, config.comment)
+  ]
   return errors + diffs
 
 
@@ -243,8 +256,8 @@ def validate_list_of_strings(path: Text, name: Text, data: List[Text]):
     raise ValueError('%s: "%s" must be a list of strings' % (path, name))
   bad = [str(r) for r in data if not isinstance(r, str)]
   if bad:
-    raise ValueError('%s: all "%s" must be strings: %s'
-                     % (path, name, ', '.join(bad)))
+    raise ValueError('%s: all "%s" must be strings: %s' %
+                     (path, name, ', '.join(bad)))
 
 
 def validate_dict_of_strings(path: Text, name: Text, data: List[Text]):
@@ -262,8 +275,8 @@ def validate_dict_of_strings(path: Text, name: Text, data: List[Text]):
   contents = list(data.keys()) + list(data.values())
   bad = [str(c) for c in contents if not isinstance(c, str)]
   if bad:
-    raise ValueError('%s: everything in "%s" must be strings: %s'
-                     % (path, name, ', '.join(bad)))
+    raise ValueError('%s: everything in "%s" must be strings: %s' %
+                     (path, name, ', '.join(bad)))
 
 
 def validate_user_config(path: Text, configs: Any):
@@ -283,14 +296,14 @@ def validate_user_config(path: Text, configs: Any):
   for config in configs:
     if not isinstance(config, dict):
       raise ValueError('%s: All entries in the list must be dicts' % path)
-    known_keys = set(['url', 'resources', 'cookies', 'comment',
-                      'optional_resources'])
+    known_keys = set(
+        ['url', 'resources', 'cookies', 'comment', 'optional_resources'])
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
       bad_keys = list(actual_keys - known_keys)
       bad_keys.sort()
-      raise ValueError('%s: Unsupported key(s): %s'
-                       % (path, ', '.join(bad_keys)))
+      raise ValueError('%s: Unsupported key(s): %s' %
+                       (path, ', '.join(bad_keys)))
     if 'url' not in config:
       raise ValueError('%s: required config "url" not provided' % path)
     if 'resources' not in config:
@@ -314,7 +327,6 @@ def validate_user_config(path: Text, configs: Any):
     validate_dict_of_strings(path, 'cookies', config['cookies'])
 
 
-
 def read_config(path: Text) -> List[SingleURLConfig]:
   """Read the specified config and parse it as JSON.
 
@@ -335,8 +347,8 @@ def read_config(path: Text) -> List[SingleURLConfig]:
   return configs
 
 
-def generate_cookies_file_contents(url: Text, cookies: Dict[Text, Text]
-                                   ) -> List[Text]:
+def generate_cookies_file_contents(url: Text,
+                                   cookies: Dict[Text, Text]) -> List[Text]:
   """Generate the contents of a cookies file.
 
   It would be much cleaner to use http.cookiejar for this, but after spending
@@ -370,10 +382,14 @@ def parse_arguments(argv: List[Text]) -> argparse.Namespace:
   usage = __doc__.split('\n')[0]
 
   argv_parser = argparse.ArgumentParser(
-      description=description, usage=usage,
+      description=description,
+      usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      'config_files', nargs='+', metavar='JSON_CONFIG_FILE', default=[],
+      'config_files',
+      nargs='+',
+      metavar='JSON_CONFIG_FILE',
+      default=[],
       help=('Config file specifying URLs and expected resources (multiple'
             ' files are supported but are completely independent)'))
   return argv_parser.parse_args(argv)

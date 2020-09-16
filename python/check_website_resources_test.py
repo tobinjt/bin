@@ -57,7 +57,7 @@ class TestReadConfig(unittest.TestCase):
         resources=['https://www.example.com/', 'resource 1'],
         cookies={},
         comment='https://www.example.com/',
-        )
+    )
     with self.assertRaisesRegex(dataclasses.FrozenInstanceError,
                                 'cannot assign to field'):
       config.url = 'overwritten'
@@ -82,8 +82,8 @@ class TestReadConfig(unittest.TestCase):
               resources=['https://www.example.com/', 'resource 1'],
               cookies={},
               comment='https://www.example.com/',
-              )
-          ]
+          )
+      ]
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=contents)
       actual = check_website_resources.read_config(filename)
@@ -108,8 +108,8 @@ class TestReadConfig(unittest.TestCase):
               resources=['https://www.example.com/', 'resource 1'],
               cookies={},
               comment='https://www.example.com/',
-              )
-          ]
+          )
+      ]
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=contents)
       actual = check_website_resources.read_config(filename)
@@ -118,30 +118,64 @@ class TestReadConfig(unittest.TestCase):
 
 class TestValidateUserConfig(unittest.TestCase):
   """Tests for validate_user_config."""
+
   def test_validation(self):
     """Tests for all the validations."""
     # "assertion message": data structure.
     tests = {
         'Top-level data structure': 1,
         'All entries in the list must be dicts': [1],
-        'Unsupported key.s.: asdf, qwerty': [{'asdf': 1, 'qwerty': 2}],
-        'required config "url" not provided': [{'resources': 1}],
-        'required config "resources" not provided': [{'url': 1}],
-        'url must be a string': [{'url': 1, 'resources': []}],
-        'comment must be a string': [
-            {'url': 'x', 'resources': [], 'comment': 1}],
-        '"resources" must be a list of strings': [{'url': 'x', 'resources': 1}],
-        'all "resources" must be strings: 1, 2': [
-            {'url': 'x', 'resources': [1, 2]}],
-        '"optional_resources" must be a list of strings': [
-            {'url': 'x', 'resources': [], 'optional_resources': 1}],
-        'all "optional_resources" must be strings: 1, 2': [
-            {'url': 'x', 'resources': [], 'optional_resources': [1, 2]}],
-        '"cookies" must be a dict': [
-            {'url': 'x', 'resources': ['x'], 'cookies': 1}],
-        'everything in "cookies" must be strings: 1, 2': [
-            {'url': 'x', 'resources': ['x'], 'cookies': {1: 'x', 'y': 2}}],
-        }
+        'Unsupported key.s.: asdf, qwerty': [{
+            'asdf': 1,
+            'qwerty': 2
+        }],
+        'required config "url" not provided': [{
+            'resources': 1
+        }],
+        'required config "resources" not provided': [{
+            'url': 1
+        }],
+        'url must be a string': [{
+            'url': 1,
+            'resources': []
+        }],
+        'comment must be a string': [{
+            'url': 'x',
+            'resources': [],
+            'comment': 1
+        }],
+        '"resources" must be a list of strings': [{
+            'url': 'x',
+            'resources': 1
+        }],
+        'all "resources" must be strings: 1, 2': [{
+            'url': 'x',
+            'resources': [1, 2]
+        }],
+        '"optional_resources" must be a list of strings': [{
+            'url': 'x',
+            'resources': [],
+            'optional_resources': 1
+        }],
+        'all "optional_resources" must be strings: 1, 2': [{
+            'url': 'x',
+            'resources': [],
+            'optional_resources': [1, 2]
+        }],
+        '"cookies" must be a dict': [{
+            'url': 'x',
+            'resources': ['x'],
+            'cookies': 1
+        }],
+        'everything in "cookies" must be strings: 1, 2': [{
+            'url': 'x',
+            'resources': ['x'],
+            'cookies': {
+                1: 'x',
+                'y': 2
+            }
+        }],
+    }
     for message, data in tests.items():
       with self.subTest(message):
         with self.assertRaisesRegex(ValueError, '^config.json:.*' + message):
@@ -153,13 +187,15 @@ class TestValidateUserConfig(unittest.TestCase):
         {
             'url': 'http://www.example.com/',
             'resources': ['http://www.example.com/style.css'],
-            'cookies': {'key': 'value'},
+            'cookies': {
+                'key': 'value'
             },
+        },
         {
             'url': 'http://example.com/',
             'resources': ['http://example.com/style.css'],
-            },
-        ]
+        },
+    ]
     check_website_resources.validate_user_config('config.json', data)
 
 
@@ -173,9 +209,10 @@ class TestRunWget(unittest.TestCase):
     mock_read.return_value = ['foo bar baz\n']
     actual = check_website_resources.run_wget('https://www.example.com/', False)
     self.assertEqual(mock_read.return_value, actual)
-    mock_subprocess.assert_called_once_with(
-        check_website_resources.WGET_ARGS + ['https://www.example.com/'],
-        check=True, capture_output=True)
+    mock_subprocess.assert_called_once_with(check_website_resources.WGET_ARGS +
+                                            ['https://www.example.com/'],
+                                            check=True,
+                                            capture_output=True)
 
   def test_cookies(self, mock_read, mock_subprocess):
     """Test that cookies are used."""
@@ -183,9 +220,10 @@ class TestRunWget(unittest.TestCase):
     actual = check_website_resources.run_wget('https://www.example.com/', True)
     self.assertEqual(mock_read.return_value, actual)
     mock_subprocess.assert_called_once_with(
-        (check_website_resources.WGET_ARGS
-         + ['--load-cookies=cookies.txt', 'https://www.example.com/']),
-        check=True, capture_output=True)
+        (check_website_resources.WGET_ARGS +
+         ['--load-cookies=cookies.txt', 'https://www.example.com/']),
+        check=True,
+        capture_output=True)
 
   def test_process_fails(self, unused_mock_read, mock_subprocess):
     """Test that process failure is handled correctly."""
@@ -199,10 +237,10 @@ class TestRunWget(unittest.TestCase):
 
 class TestReversePageSpeedMangling(unittest.TestCase):
   """Tests for reverse_pagespeed_mangling."""
+
   def test_simple(self):
     """A simple test."""
-    inputs = split_inline_string(
-        """
+    inputs = split_inline_string("""
         /ariane-theme/images/new-logo-optimised.jpg.pagespeed.ce.yvq_6R_CGM.jpg
         /cart66/A.cart66_enhanced.css.pagespeed.cf.BLPYiFTVpx.css
         /css/dist/block-library/A.style.min.css.pagespeed.cf._93gOJAMuK.css
@@ -217,8 +255,7 @@ class TestReversePageSpeedMangling(unittest.TestCase):
         /themes/ariane-theme/slider.js.pagespeed.jm.g0mntm2Nxd.js
         """)
     actual = check_website_resources.reverse_pagespeed_mangling(inputs)
-    expected = split_inline_string(
-        """
+    expected = split_inline_string("""
         /ariane-theme/images/new-logo-optimised.jpg
         /cart66/cart66_enhanced.css
         /css/dist/block-library/style.min.css
@@ -243,7 +280,9 @@ class TestCheckSingleUrl(unittest.TestCase):
     """Very basic success test."""
     mock_run_wget.return_value = ['-- resource_1']
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=['resource_1'], cookies={},
+        url='https://www.example.com/',
+        resources=['resource_1'],
+        cookies={},
         comment='comment')
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
@@ -253,16 +292,19 @@ class TestCheckSingleUrl(unittest.TestCase):
     mock_run_wget.side_effect = check_website_resources.WgetFailedException(
         'forced failure')
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=[], cookies={},
+        url='https://www.example.com/',
+        resources=[],
+        cookies={},
         comment='comment')
     actual = check_website_resources.check_single_url(config)
-    self.assertEqual(['https://www.example.com/ (comment): running wget '
-                      + 'failed; forced failure'], actual)
+    self.assertEqual([
+        'https://www.example.com/ (comment): running wget ' +
+        'failed; forced failure'
+    ], actual)
 
   def test_parsing(self, mock_run_wget):
     """Test parsing."""
-    mock_run_wget.return_value = split_inline_string(
-        """
+    mock_run_wget.return_value = split_inline_string("""
         -- resource_1
         -x- ignore_this
         -- resource_2
@@ -281,8 +323,7 @@ class TestCheckSingleUrl(unittest.TestCase):
 
   def test_demangling(self, mock_run_wget):
     """Test that resources are demangled."""
-    mock_run_wget.return_value = split_inline_string(
-        """
+    mock_run_wget.return_value = split_inline_string("""
         -- /images/new-logo-optimised.jpg.pagespeed.ce.yvq_6R_CGM.jpg
         -- resource_2
         """)
@@ -296,17 +337,17 @@ class TestCheckSingleUrl(unittest.TestCase):
 
   def test_extra_resource(self, mock_run_wget):
     """Test for there being an unexpected resource."""
-    mock_run_wget.return_value = split_inline_string(
-        """
+    mock_run_wget.return_value = split_inline_string("""
         -- resource_1
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=['resource_1'], cookies={},
+        url='https://www.example.com/',
+        resources=['resource_1'],
+        cookies={},
         comment='comment')
     actual = check_website_resources.check_single_url(config)
-    expected = split_inline_string(
-        """
+    expected = split_inline_string("""
         Unexpected resource diffs for https://www.example.com/ (comment):
         --- expected
         +++ actual
@@ -318,27 +359,30 @@ class TestCheckSingleUrl(unittest.TestCase):
 
   def test_optional_resource(self, mock_run_wget):
     """Test for optional resource being accepted."""
-    mock_run_wget.return_value = split_inline_string(
-        """
+    mock_run_wget.return_value = split_inline_string("""
         -- resource_1
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=['resource_1'], cookies={},
-        comment='comment', optional_resources=['resource_2'])
+        url='https://www.example.com/',
+        resources=['resource_1'],
+        cookies={},
+        comment='comment',
+        optional_resources=['resource_2'])
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
   def test_cookies(self, mock_run_wget):
     """Test that cookies are handled properly."""
-    mock_run_wget.return_value = split_inline_string(
-        """
+    mock_run_wget.return_value = split_inline_string("""
         -- resource_1
         -- resource_2
         """)
     config = check_website_resources.SingleURLConfig(
-        url='https://www.example.com/', resources=['resource_1', 'resource_2'],
-        cookies={'foo': 'bar'}, comment='comment')
+        url='https://www.example.com/',
+        resources=['resource_1', 'resource_2'],
+        cookies={'foo': 'bar'},
+        comment='comment')
     with pyfakefs.fake_filesystem_unittest.Patcher():
       actual = check_website_resources.check_single_url(config)
       with open(check_website_resources.COOKIES_FILE) as filehandle:
@@ -349,27 +393,34 @@ class TestCheckSingleUrl(unittest.TestCase):
 
 class TestGenerateCookiesFileContents(unittest.TestCase):
   """Tests for generate_cookies_file_contents."""
+
   def test_simple(self):
     """A simple test."""
-    expected = split_inline_string(
-        """
+    expected = split_inline_string("""
         # Netscape HTTP Cookie File
         www.example.com\tFALSE\t/\tFALSE\t0\tcookie_1\tyes
         www.example.com\tFALSE\t/\tFALSE\t0\tcookie_2\tno
         """)
     actual = check_website_resources.generate_cookies_file_contents(
-        'https://www.example.com/', {'cookie_1': 'yes', 'cookie_2': 'no'})
+        'https://www.example.com/', {
+            'cookie_1': 'yes',
+            'cookie_2': 'no'
+        })
     self.assertEqual(expected, actual)
 
   def test_bad_url(self):
     """Crash when a hostname cannot be extracted."""
     with self.assertRaisesRegex(ValueError, '^Unable to extract hostname'):
       check_website_resources.generate_cookies_file_contents(
-          'not_a_url', {'cookie_1': 'yes', 'cookie_2': 'no'})
+          'not_a_url', {
+              'cookie_1': 'yes',
+              'cookie_2': 'no'
+          })
 
 
 class TestParseArguments(unittest.TestCase):
   """Tests for parse_arguments."""
+
   def test_simple(self):
     """A simple test."""
     options = check_website_resources.parse_arguments(['foo.json'])
@@ -410,8 +461,9 @@ class TestMain(unittest.TestCase):
           status = check_website_resources.main(['unused', filename])
           self.assertEqual(1, status)
           warnings = mock_stderr.getvalue()
-          self.assertEqual('www.example.com (www.example.com): running wget '
-                           + 'failed; forced failure\n', warnings)
+          self.assertEqual(
+              'www.example.com (www.example.com): running wget ' +
+              'failed; forced failure\n', warnings)
 
   def test_expected_resources(self):
     """Test that expected resources causes zero messages."""
@@ -420,7 +472,8 @@ class TestMain(unittest.TestCase):
       patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
         mock_wget.return_value = [
-            '-- www.example.com', '-- resource_1', '-- resource_2']
+            '-- www.example.com', '-- resource_1', '-- resource_2'
+        ]
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
           status = check_website_resources.main(['unused', filename])
           self.assertEqual(0, status)
@@ -434,13 +487,13 @@ class TestMain(unittest.TestCase):
       patcher.fs.create_file(filename, contents=self.TEST_JSON_CONFIG)
       with mock.patch('check_website_resources.run_wget') as mock_wget:
         mock_wget.return_value = [
-            '-- www.example.com', '-- resource_1', '-- resource_3']
+            '-- www.example.com', '-- resource_1', '-- resource_3'
+        ]
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
           status = check_website_resources.main(['unused', filename])
           self.assertEqual(1, status)
           warnings = mock_stderr.getvalue().rstrip('\n').split('\n')
-          expected = split_inline_string(
-              """
+          expected = split_inline_string("""
               Unexpected resource diffs for www.example.com (www.example.com):
               --- expected
               +++ actual
@@ -477,7 +530,7 @@ class TestMain(unittest.TestCase):
         '\nJSON_CONFIG_FILE must contain a single list of dicts',
         'JSON_CONFIG_FILE  Config file specifying URLs and expected',
         '(multiple files are supported but are completely',
-        ]
+    ]
     stdout = mock_stdout.getvalue()
     for substring in substrings:
       with self.subTest('Testing -->>%s<<--' % substring):
