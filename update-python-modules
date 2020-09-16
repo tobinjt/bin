@@ -70,7 +70,8 @@ main() {
 
   # Python development is installed globally so it's easier to use.
   # mypy needs lxml but doesn't depend on it.
-  pip3.8 install lxml mutmut mypy pudb pyfakefs pylint pytest pytest-cov pyyaml
+  pip3.8 install lxml mutmut mypy pudb pyfakefs pylint pytest pytest-cov \
+    pyyaml yapf
   # Check that tools work properly.
   cd "${HOME}/bin/python"
   pytest
