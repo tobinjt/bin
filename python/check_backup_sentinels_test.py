@@ -8,7 +8,7 @@ from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
 
-import check_backup_sentinels
+import check_backup_sentinels as cbs
 
 
 class TestParseSentinels(fake_filesystem_unittest.TestCase):
@@ -31,11 +31,11 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     base = os.path.join(testdir, hostname)
     files = {
         base: '1234\n',
-        '%s.%s' % (base, check_backup_sentinels.SLEEPING_UNTIL): '5432\n',
-        '%s.%s' % (base, check_backup_sentinels.MAX_ALLOWED_DELAY): '98\n',
+        '%s.%s' % (base, cbs.SLEEPING_UNTIL): '5432\n',
+        '%s.%s' % (base, cbs.MAX_ALLOWED_DELAY): '98\n',
     }
     self.create_files_for_test(files)
-    parsed = check_backup_sentinels.parse_sentinels(testdir, 7)
+    parsed = cbs.parse_sentinels(testdir, 7)
     self.assertEqual({hostname: 1234}, parsed.timestamps)
     self.assertEqual({hostname: 5432}, parsed.sleeping_until)
     self.assertEqual({hostname: 98}, parsed.max_allowed_delay)
@@ -48,7 +48,7 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
         os.path.join(testdir, hostname): '31313\n',
     }
     self.create_files_for_test(files)
-    parsed = check_backup_sentinels.parse_sentinels(testdir, 7)
+    parsed = cbs.parse_sentinels(testdir, 7)
     self.assertEqual({hostname: 31313}, parsed.timestamps)
     self.assertEqual({hostname: 7}, parsed.max_allowed_delay)
     self.assertEqual({hostname: 0}, parsed.sleeping_until)
@@ -61,8 +61,8 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
         '%s.%s' % (os.path.join(testdir, hostname), 'qwerty'): '5432\n',
     }
     self.create_files_for_test(files)
-    self.assertRaisesRegex(check_backup_sentinels.Error, '^Bad format.*qwerty',
-                           check_backup_sentinels.parse_sentinels, testdir, 7)
+    self.assertRaisesRegex(cbs.Error, '^Bad format.*qwerty',
+                           cbs.parse_sentinels, testdir, 7)
 
 
 class TestCheckSentinels(unittest.TestCase):
@@ -70,8 +70,8 @@ class TestCheckSentinels(unittest.TestCase):
 
   def test_no_sentinels(self):
     """Test that zero sentinels causes a warning."""
-    sentinels = check_backup_sentinels.ParsedSentinels({}, {}, {})
-    (warnings, messages) = check_backup_sentinels.check_sentinels(sentinels, 11)
+    sentinels = cbs.ParsedSentinels({}, {}, {})
+    (warnings, messages) = cbs.check_sentinels(sentinels, 11)
     expected = ['Zero sentinels passed, something is wrong.']
     self.assertEqual(expected, warnings)
     self.assertEqual(expected, messages)
@@ -94,11 +94,11 @@ class TestCheckSentinels(unittest.TestCase):
         host1: 0,
         host2: 0,
     }
-    sentinels = check_backup_sentinels.ParsedSentinels(
+    sentinels = cbs.ParsedSentinels(
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
         sleeping_until=sleeping_until)
     mock_time.return_value = 8.5 * hour
-    (warnings, _) = check_backup_sentinels.check_sentinels(sentinels, hour)
+    (warnings, _) = cbs.check_sentinels(sentinels, hour)
     self.assertEqual([], warnings)
 
   @mock.patch('time.time')
@@ -119,11 +119,11 @@ class TestCheckSentinels(unittest.TestCase):
         host1: 0,
         host2: 0,
     }
-    sentinels = check_backup_sentinels.ParsedSentinels(
+    sentinels = cbs.ParsedSentinels(
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
         sleeping_until=sleeping_until)
     mock_time.return_value = 12 * hour
-    (warnings, messages) = check_backup_sentinels.check_sentinels(
+    (warnings, messages) = cbs.check_sentinels(
         sentinels, hour)
     expected_warnings = [
         'All backups are delayed by at least 3600 seconds',
@@ -167,11 +167,11 @@ class TestCheckSentinels(unittest.TestCase):
         host2: 0,
         host3: 0,
     }
-    sentinels = check_backup_sentinels.ParsedSentinels(
+    sentinels = cbs.ParsedSentinels(
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
         sleeping_until=sleeping_until)
     mock_time.return_value = 8.5 * hour
-    (warnings, messages) = check_backup_sentinels.check_sentinels(
+    (warnings, messages) = cbs.check_sentinels(
         sentinels, hour)
     expected_warnings = [
         'Backup for "asdf" too old:'
@@ -203,12 +203,12 @@ class TestCheckSentinels(unittest.TestCase):
         host1: 8 * hour,
         host2: 0,
     }
-    sentinels = check_backup_sentinels.ParsedSentinels(
+    sentinels = cbs.ParsedSentinels(
         timestamps=timestamps, max_allowed_delay=max_allowed_delay,
         sleeping_until=sleeping_until)
     # 8 hours sleeping + 2 hours max delay > 9 hours current time.
     mock_time.return_value = 9 * hour
-    (warnings, messages) = check_backup_sentinels.check_sentinels(
+    (warnings, messages) = cbs.check_sentinels(
         sentinels, hour)
     # Do not truncate diffs.
     self.maxDiff = None  # pylint: disable=invalid-name
@@ -229,12 +229,12 @@ class TestMain(fake_filesystem_unittest.TestCase):
 
   def test_bad_args(self):
     """Check that bad args are rejected."""
-    with self.assertRaisesRegex(check_backup_sentinels.Error, '^Usage:.*'):
-      check_backup_sentinels.main(['argv0'])
-    with self.assertRaisesRegex(check_backup_sentinels.Error, '^Usage:.*'):
-      check_backup_sentinels.main(['argv0', 'expected', 'not expected'])
-    with self.assertRaisesRegex(check_backup_sentinels.Error, '^Usage:.*'):
-      check_backup_sentinels.main(['argv0', 'not a directory'])
+    with self.assertRaisesRegex(cbs.Error, '^Usage:.*'):
+      cbs.main(['argv0'])
+    with self.assertRaisesRegex(cbs.Error, '^Usage:.*'):
+      cbs.main(['argv0', 'expected', 'not expected'])
+    with self.assertRaisesRegex(cbs.Error, '^Usage:.*'):
+      cbs.main(['argv0', 'not a directory'])
 
   @mock.patch('sys.exit')
   @mock.patch('check_backup_sentinels.check_sentinels')
@@ -243,7 +243,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
   def test_no_warnings(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
     mock_check.return_value = ([], [])
-    check_backup_sentinels.main(['argv0', self._testdir])
+    cbs.main(['argv0', self._testdir])
     mock_exit.assert_called_with(0)
 
   @mock.patch('sys.exit')
@@ -255,7 +255,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
     expected = ['warning warning']
     mock_check.return_value = (expected, [])
     with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
-      check_backup_sentinels.main(['argv0', self._testdir])
+      cbs.main(['argv0', self._testdir])
       warnings = mock_stderr.getvalue()
       self.assertEqual('%s\n' % expected[0], warnings)
     mock_exit.assert_called_with(1)
@@ -269,7 +269,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
     mock_check.return_value = (['warning warning'], ['message message'])
     with mock.patch('sys.stdin.isatty', return_value=True):
       with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-        check_backup_sentinels.main(['argv0', self._testdir])
+        cbs.main(['argv0', self._testdir])
         output = mock_stdout.getvalue()
         self.assertEqual('message message\n', output)
     mock_exit.assert_called_with(1)
@@ -299,15 +299,14 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     files = {
         host1: str(7 * day),
         host2: str(8 * day),
-        '%s.%s' % (host1, check_backup_sentinels.MAX_ALLOWED_DELAY): str(day),
-        '%s.%s' % (host2,
-                   check_backup_sentinels.MAX_ALLOWED_DELAY): str(2 * day),
+        '%s.%s' % (host1, cbs.MAX_ALLOWED_DELAY): str(day),
+        '%s.%s' % (host2, cbs.MAX_ALLOWED_DELAY): str(2 * day),
     }
     self.create_files_for_test(files)
     mock_time.return_value = 8.5 * day
     with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
       with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
-        check_backup_sentinels.main(['argv0', testdir])
+        cbs.main(['argv0', testdir])
         messages = mock_stdout.getvalue()
         warnings = mock_stderr.getvalue()
         expected = (
