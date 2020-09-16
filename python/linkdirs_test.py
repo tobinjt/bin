@@ -111,8 +111,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.create_files('%s=%s' % (src_file, dest_file))
     self.assert_files_are_linked(src_file, dest_file)
 
-    linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
-                        os.path.dirname(dest_file)])
+    linkdirs.real_main(
+        ['linkdirs',
+         os.path.dirname(src_file),
+         os.path.dirname(dest_file)])
     self.assert_files_are_linked(src_file, dest_file)
 
   def test_dest_perms_unchanged(self):
@@ -129,8 +131,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     os.chmod(dest_dir, mode)
 
     with mock.patch('os.chmod') as fake_chmod:
-      linkdirs.real_main(['linkdirs', os.path.dirname(src_dir),
-                          os.path.dirname(dest_dir)])
+      linkdirs.real_main(
+          ['linkdirs',
+           os.path.dirname(src_dir),
+           os.path.dirname(dest_dir)])
       fake_chmod.assert_not_called()
 
   def test_dest_perms_are_changed(self):
@@ -155,8 +159,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       else:
         os.chmod(d_dir, src_mode)
 
-    linkdirs.real_main(['linkdirs', os.path.dirname(src_dir),
-                        os.path.dirname(dest_dir)])
+    linkdirs.real_main(
+        ['linkdirs',
+         os.path.dirname(src_dir),
+         os.path.dirname(dest_dir)])
     self.assertEqual(src_mode, stat.S_IMODE(os.stat(dest_dir).st_mode))
     for subdir in subdirs:
       d_dir = os.path.join(dest_dir, subdir)
@@ -168,8 +174,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.create_files('%s:qwerty' % src_file)
 
     dest_file = '/z/y/x/file'
-    linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
-                        os.path.dirname(dest_file)])
+    linkdirs.real_main(
+        ['linkdirs',
+         os.path.dirname(src_file),
+         os.path.dirname(dest_file)])
     self.assert_files_are_linked(src_file, dest_file)
 
   def test_source_dir_replaced_once(self):
@@ -189,8 +197,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.create_files('%s:qwerty' % dest_file)
 
     with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
-      linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
-                          os.path.dirname(dest_file)])
+      linkdirs.real_main(
+          ['linkdirs',
+           os.path.dirname(src_file),
+           os.path.dirname(dest_file)])
       self.assert_files_are_linked(src_file, dest_file)
       expected = ('/a/b/c/file and /z/y/x/file are different files but have the'
                   ' same contents; deleting and linking\n')
@@ -224,10 +234,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     with open(skip_filename, 'w') as skip_fh:
       skip_fh.write(skip_contents)
 
-    actual = linkdirs.real_main(['linkdirs', '--report_unexpected_files',
-                                 '--ignore_unexpected_children',
-                                 '--ignore_file=%s' % skip_filename,
-                                 src_dir, dest_dir])
+    actual = linkdirs.real_main([
+        'linkdirs', '--report_unexpected_files', '--ignore_unexpected_children',
+        '--ignore_file=%s' % skip_filename, src_dir, dest_dir
+    ])
     expected = [
         'Unexpected directory: /z/y/x/asdf/report_me',
         'Unexpected file: /z/y/x/pinky',
@@ -254,9 +264,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """.format(src_dir=src_dir, dest_dir=dest_dir)
     self.create_files(files)
 
-    actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
-                                 '--ignore_unexpected_children',
-                                 src_dir, dest_dir])
+    actual = linkdirs.real_main([
+        'linkdirs', '--delete_unexpected_files', '--ignore_unexpected_children',
+        src_dir, dest_dir
+    ])
     self.assertEqual([], actual)
     # Unexpected files should be deleted.
     self.assertFalse(os.path.exists('/z/y/x/the_brain'))
@@ -280,9 +291,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """.format(src_dir=src_dir, dest_dir=dest_dir)
     self.create_files(files)
 
-    actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
-                                 '--ignore_unexpected_children',
-                                 src_dir, dest_dir])
+    actual = linkdirs.real_main([
+        'linkdirs', '--delete_unexpected_files', '--ignore_unexpected_children',
+        src_dir, dest_dir
+    ])
     expected = [
         'Refusing to delete directories without --force/-f:'
         ' /z/y/x/asdf/report_me /z/y/x/asdf/report_me_too',
@@ -318,9 +330,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """.format(src_dir=src_dir, dest_dir=dest_dir)
     self.create_files(files)
 
-    actual = linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
-                                 '--ignore_unexpected_children', '--force',
-                                 src_dir, dest_dir])
+    actual = linkdirs.real_main([
+        'linkdirs', '--delete_unexpected_files', '--ignore_unexpected_children',
+        '--force', src_dir, dest_dir
+    ])
     self.assertEqual([], actual)
     # Unexpected files should be deleted.
     self.assertFalse(os.path.exists('/z/y/x/the_brain'))
@@ -375,20 +388,26 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       skip_fh.write(skip_contents)
 
     dest_dir = '/z/y/x'
-    linkdirs.real_main(['linkdirs', '--ignore_file=%s' % skip_filename,
-                        # Report unexpected files because it exercises more code
-                        # paths.
-                        '--report_unexpected_files',
-                        '--ignore_unexpected_children',
-                        src_dir, dest_dir])
+    linkdirs.real_main([
+        'linkdirs',
+        '--ignore_file=%s' % skip_filename,
+        # Report unexpected files because it exercises more code
+        # paths.
+        '--report_unexpected_files',
+        '--ignore_unexpected_children',
+        src_dir,
+        dest_dir
+    ])
 
     files = []
     for dirpath, unused_x, filenames in os.walk(dest_dir):
       for filename in filenames:
         files.append(os.path.join(dirpath, filename))
     files.sort()
-    expected = ['harry/link_me', 'harry/me_too', 'ignore/subdir-link/test3',
-                'murphy/link_me', 'murphy/me_too']
+    expected = [
+        'harry/link_me', 'harry/me_too', 'ignore/subdir-link/test3',
+        'murphy/link_me', 'murphy/me_too'
+    ]
     expected = [os.path.join(dest_dir, x) for x in expected]
     self.assertEqual(expected, files)
 
@@ -403,8 +422,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.create_files(files)
 
     # Test without --force to generate diffs.
-    actual = linkdirs.real_main(['linkdirs', os.path.dirname(src_file),
-                                 os.path.dirname(dest_file)])
+    actual = linkdirs.real_main(
+        ['linkdirs',
+         os.path.dirname(src_file),
+         os.path.dirname(dest_file)])
     # Strip off timestamps.
     actual = [re.sub(r'\t.*$', '\t', x) for x in actual]
     expected = [
@@ -417,9 +438,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.assertEqual(expected, actual)
 
     # Test with --force to overwrite.
-    actual = linkdirs.real_main(['linkdirs', '--force',
-                                 os.path.dirname(src_file),
-                                 os.path.dirname(dest_file)])
+    actual = linkdirs.real_main([
+        'linkdirs', '--force',
+        os.path.dirname(src_file),
+        os.path.dirname(dest_file)
+    ])
     self.assertEqual([], actual)
     self.assert_files_are_linked(src_file, dest_file)
 
@@ -428,11 +451,13 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.assertEqual(
         ['linkdirs [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY'],
         linkdirs.real_main(['linkdirs', '--force', '/asdf']))
-    self.assertEqual(
-        ['Cannot enable --delete_unexpected_files without '
-         '--ignore_unexpected_children'],
-        linkdirs.real_main(['linkdirs', '--delete_unexpected_files',
-                            '/asdf', '/qwerty']))
+    expected = [
+        'Cannot enable --delete_unexpected_files without '
+        '--ignore_unexpected_children'
+    ]
+    actual = linkdirs.real_main(
+        ['linkdirs', '--delete_unexpected_files', '/asdf', '/qwerty'])
+    self.assertEqual(expected, actual)
 
   def test_force_deletes_dest(self):
     """Force deletes existing files and directories."""
@@ -515,8 +540,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           'Skipping symbolic link /a/b/c/file8',
       ]
       self.assertEqual(expected, messages)
-      self.assertFalse(os.path.samefile(os.path.join(src_dir, 'file1'),
-                                        os.path.join(dest_dir, 'file1')))
+      self.assertFalse(
+          os.path.samefile(os.path.join(src_dir, 'file1'),
+                           os.path.join(dest_dir, 'file1')))
       self.assertTrue(os.path.exists(os.path.join(dest_dir, 'file1')))
       self.assertFalse(os.path.exists(os.path.join(dest_dir, 'file2')))
       self.assertTrue(os.path.exists(os.path.join(dest_dir, 'file3')))
@@ -574,7 +600,7 @@ class TestUsage(unittest.TestCase):
         ' DESTINATION_DIRECTORY (default: False)',
         '--delete_unexpected_files Delete unexpected files in'
         ' DESTINATION_DIRECTORY (default: False)',
-        ]
+    ]
     # The position of newlines depends on the width of the terminal, so remove
     # them for consistency.  Likewise spaces.
     stdout = mock_stdout.getvalue().replace('\n', ' ')
@@ -584,8 +610,7 @@ class TestUsage(unittest.TestCase):
         self.assertIn(substring, stdout)
     # Check that the description is set up properly.
     self.assertRegex(
-        stdout,
-        r'^usage: pytest .OPTIONS. SOURCE_DIRECTORY .....'
+        stdout, r'^usage: pytest .OPTIONS. SOURCE_DIRECTORY .....'
         r' DESTINATION_DIRECTORY Link all files in SOURCE_DIRECTORY'
         r' .SOURCE_DIRECTORY.... to DESTINATION_DIRECTORY, creating the'
         r' destination directory hierarchy where')

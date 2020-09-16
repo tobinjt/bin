@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """%(prog)s [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY
 
 Link all files in SOURCE_DIRECTORY [SOURCE_DIRECTORY...] to
@@ -22,20 +21,19 @@ from typing import List, Tuple
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
-
 # Type definitions.
 # A single path.
-Path = str                    # pragma: no mutate
+Path = str  # pragma: no mutate
 # A list of directories, filenames, or paths.
-Paths = List[str]             # pragma: no mutate
+Paths = List[str]  # pragma: no mutate
 # Diffs between files.
-Diffs = List[str]             # pragma: no mutate
+Diffs = List[str]  # pragma: no mutate
 # Messages to print.
-Messages = List[str]          # pragma: no mutate
+Messages = List[str]  # pragma: no mutate
 # Shell patterns to skip.
-SkipPatterns = List[str]      # pragma: no mutate
+SkipPatterns = List[str]  # pragma: no mutate
 # Command line args.
-CommandLineArgs = List[str]   # pragma: no mutate
+CommandLineArgs = List[str]  # pragma: no mutate
 
 
 class Error(Exception):
@@ -102,8 +100,7 @@ def safe_unlink(unlink_me: Path, dryrun: bool) -> None:
       shutil.rmtree(unlink_me)
 
 
-def safe_link(source_filename: Path, dest_filename: Path,
-              dryrun: bool) -> None:
+def safe_link(source_filename: Path, dest_filename: Path, dryrun: bool) -> None:
   """Link one file to another, or print shell commands that would do so.
 
   Args:
@@ -116,8 +113,8 @@ def safe_link(source_filename: Path, dest_filename: Path,
   """
 
   if dryrun:
-    print("ln %s %s" % (pipes.quote(source_filename),
-                        pipes.quote(dest_filename)))
+    print("ln %s %s" %
+          (pipes.quote(source_filename), pipes.quote(dest_filename)))
   else:
     os.link(source_filename, dest_filename)
 
@@ -146,8 +143,10 @@ def diff(old_filename: Path, new_filename: Path) -> Diffs:
                                         new_timestamp, old_timestamp)
   # Strip the newline here because one will be added later when printing the
   # messages.
-  return [d.rstrip('\n') # pragma: no mutate
-          for d in diff_generator]
+  return [
+      d.rstrip('\n')  # pragma: no mutate
+      for d in diff_generator
+  ]
 
 
 def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:
@@ -209,8 +208,8 @@ def link_dir(source: Path, dest: Path,
         if not options.dryrun:
           os.chmod(dest_dir, source_mode)
         else:
-          print("chmod %s %s" % (oct(source_mode).replace('o', ''),
-                                 pipes.quote(dest_dir)))
+          print("chmod %s %s" %
+                (oct(source_mode).replace('o', ''), pipes.quote(dest_dir)))
         continue
 
       if os.path.exists(dest_dir):
@@ -289,7 +288,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
 
     # If the destination is already linked don't change it without --force.
     # mypy doesn't understand this line.
-    num_links = os.stat(dest_filename)[stat.ST_NLINK] # type: ignore
+    num_links = os.stat(dest_filename)[stat.ST_NLINK]  # type: ignore
     if num_links != 1:
       results.errors.append("%s: link count is %d" % (dest_filename, num_links))
       continue
@@ -332,8 +331,10 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
     files.sort()
 
     if directory == dest_dir and options.ignore_unexpected_children:
-      unexpected = [subdir for subdir in subdirs
-                    if os.path.join(directory, subdir) not in expected_files]
+      unexpected = [
+          subdir for subdir in subdirs
+          if os.path.join(directory, subdir) not in expected_files
+      ]
       for subdir in unexpected:
         subdirs.remove(subdir)
 
@@ -372,8 +373,10 @@ def delete_unexpected_files(unexpected_paths: UnexpectedPaths,
   if not unexpected_paths.directories:
     return []
   if not options.force:
-    return ["Refusing to delete directories without --force/-f: %s"
-            % " ".join(unexpected_paths.directories)]
+    return [
+        "Refusing to delete directories without --force/-f: %s" %
+        " ".join(unexpected_paths.directories)
+    ]
   # Descending sort by length, so that child directories are removed before
   # parent directories.
   unexpected_paths.directories.sort(key=len, reverse=True)
@@ -397,10 +400,11 @@ def format_unexpected_files(unexpected_paths: UnexpectedPaths) -> Messages:
   unexpected_paths.directories.sort()
   unexpected_paths.files.sort()
   unexpected_msgs = []
-  unexpected_msgs.extend(["Unexpected directory: %s" % path
-                          for path in unexpected_paths.directories])
-  unexpected_msgs.extend(["Unexpected file: %s" % path
-                          for path in unexpected_paths.files])
+  unexpected_msgs.extend([
+      "Unexpected directory: %s" % path for path in unexpected_paths.directories
+  ])
+  unexpected_msgs.extend(
+      ["Unexpected file: %s" % path for path in unexpected_paths.files])
   if unexpected_paths.files:
     unexpected_msgs.append("rm %s" % " ".join(unexpected_paths.files))
   if unexpected_paths.directories:
@@ -422,8 +426,8 @@ def read_skip_patterns_from_file(filename: Path) -> SkipPatterns:
   return patterns
 
 
-def parse_arguments(argv: CommandLineArgs) -> Tuple[argparse.Namespace,
-                                                    Messages]:
+def parse_arguments(
+    argv: CommandLineArgs) -> Tuple[argparse.Namespace, Messages]:
   """Parse the arguments provided by the user.
 
   Args:
@@ -436,53 +440,80 @@ def parse_arguments(argv: CommandLineArgs) -> Tuple[argparse.Namespace,
   usage = __doc__.split('\n')[0]
   description = '\n'.join(__doc__.split('\n')[2:])
   argv_parser = argparse.ArgumentParser(
-      description=description, usage=usage,
+      description=description,
+      usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      "--dryrun", action="store_true", dest="dryrun", default=False,
+      "--dryrun",
+      action="store_true",
+      dest="dryrun",
+      default=False,
       help=textwrap.fill("""Perform a trial run with no changes made
                          (default: %(default)s)"""))
   argv_parser.add_argument(
-      "--force", action="store_true", dest="force", default=False,
+      "--force",
+      action="store_true",
+      dest="force",
+      default=False,
       help=textwrap.fill("""Remove existing files if necessary (default:
                          %(default)s)"""))
   argv_parser.add_argument(
-      "--ignore_file", action="append", dest="ignore_file", metavar="FILENAME",
+      "--ignore_file",
+      action="append",
+      dest="ignore_file",
+      metavar="FILENAME",
       default=[],
       help=textwrap.fill("""File containing shell patterns to ignore.  To
                          specify multiple filenames, use this option multiple
                          times."""))
   argv_parser.add_argument(
-      "--ignore_pattern", action="append", dest="ignore_pattern",
+      "--ignore_pattern",
+      action="append",
+      dest="ignore_pattern",
       metavar="FILENAME",
       # There is no signal from mutating these constants; I could add tests for
       # every one, but it doesn't help.
       default=[
-          "CVS", ".git", ".gitignore", ".gitmodules",  # pragma: no mutate
-          ".hg", ".svn", "*.swp"],  # pragma: no mutate
+          "CVS",
+          ".git",
+          ".gitignore",
+          ".gitmodules",  # pragma: no mutate
+          ".hg",
+          ".svn",
+          "*.swp"
+      ],  # pragma: no mutate
       help=textwrap.fill("""Extra shell patterns to ignore (appended to this
                          list: %(default)s).  To specify multiple filenames, use
                          this option multiple times."""))
   argv_parser.add_argument(
-      "--ignore_unexpected_children", action="store_true",
-      dest="ignore_unexpected_children", default=False,
+      "--ignore_unexpected_children",
+      action="store_true",
+      dest="ignore_unexpected_children",
+      default=False,
       help=textwrap.fill("""When checking for unexpected files or directories,
                          ignore unexpected child directories in
                          DESTINATION_DIRECTORY; unexpected grandchild
                          directories of DESTINATION_DIRECTORY will not be
                          ignored (default: %(default)s)"""))
   argv_parser.add_argument(
-      "--report_unexpected_files", action="store_true",
-      dest="report_unexpected_files", default=False,
+      "--report_unexpected_files",
+      action="store_true",
+      dest="report_unexpected_files",
+      default=False,
       help=textwrap.fill("""Report unexpected files in DESTINATION_DIRECTORY
                          (default: %(default)s)"""))
   argv_parser.add_argument(
-      "--delete_unexpected_files", action="store_true",
-      dest="delete_unexpected_files", default=False,
+      "--delete_unexpected_files",
+      action="store_true",
+      dest="delete_unexpected_files",
+      default=False,
       help=textwrap.fill("""Delete unexpected files in DESTINATION_DIRECTORY
                          (default: %(default)s)"""))
-  argv_parser.add_argument('args', nargs='+', metavar='DIRECTORIES',
-                           default=[], help='See usage for details')
+  argv_parser.add_argument('args',
+                           nargs='+',
+                           metavar='DIRECTORIES',
+                           default=[],
+                           help='See usage for details')
 
   options = argv_parser.parse_args(argv[1:])
   messages = []
@@ -517,8 +548,8 @@ def real_main(argv: CommandLineArgs) -> Messages:
     source = source.rstrip(os.sep)
     all_results.extend(link_dir(source, dest, options))
   if options.report_unexpected_files or options.delete_unexpected_files:
-    unexpected_msgs.extend(report_unexpected_files(
-        dest, all_results.expected_files, options))
+    unexpected_msgs.extend(
+        report_unexpected_files(dest, all_results.expected_files, options))
 
   return all_results.diffs + all_results.errors + unexpected_msgs
 
