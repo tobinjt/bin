@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """%(prog)s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]
 
 Display the number of seconds of downtime that N nines uptime allows.  Uptime is
@@ -18,7 +17,6 @@ import argparse
 import itertools
 import sys
 from typing import List
-
 
 # Args >= PERCENT_THRESHOLD are interpreted as percentages, < PERCENT_THRESHOLD
 # are interpreted as a number of nines.
@@ -60,10 +58,8 @@ def format_duration(seconds: float) -> str:
   """
   time_units = {}
   seconds_so_far = 1
-  for (number, label) in ((1, 'second'),
-                          (60, 'minute'),
-                          (60, 'hour'),
-                          (24, 'day')):
+  units = ((1, 'second'), (60, 'minute'), (60, 'hour'), (24, 'day'))
+  for (number, label) in units:
     seconds_so_far *= number
     time_units[seconds_so_far] = label
 
@@ -74,9 +70,9 @@ def format_duration(seconds: float) -> str:
       plural = ''
       if num_time_units > 1:
         plural = 's'
-      durations.append('%d %s%s' % (num_time_units,
-                                    time_units[seconds_per_time_unit],
-                                    plural))
+      durations.append(
+          '%d %s%s' %
+          (num_time_units, time_units[seconds_per_time_unit], plural))
   return ', '.join(durations)
 
 
@@ -141,24 +137,28 @@ def nines(num_nines: float) -> str:
   seconds_per_year = 60 * 60 * 24 * 365
   downtime_seconds = downtime_fraction * seconds_per_year
 
-  return ('%s%%: %s seconds (%s)'
-          % (strip_trailing_zeros(num_nines),
-             strip_trailing_zeros(downtime_seconds),
-             format_duration(downtime_seconds)))
+  return (
+      '%s%%: %s seconds (%s)' %
+      (strip_trailing_zeros(num_nines), strip_trailing_zeros(downtime_seconds),
+       format_duration(downtime_seconds)))
+
 
 def main(argv: List[str]) -> None:
   description = '\n'.join(__doc__.split('\n')[2:]) % {
       'PT': PERCENT_THRESHOLD,
   }
   usage = __doc__.split('\n')[0]
-  argv_parser = argparse.ArgumentParser(
-      description=description, usage=usage)
-  argv_parser.add_argument('args', nargs='+', metavar='NUMBER_OF_NINES',
-                           default=[], help='See usage for details')
+  argv_parser = argparse.ArgumentParser(description=description, usage=usage)
+  argv_parser.add_argument('args',
+                           nargs='+',
+                           metavar='NUMBER_OF_NINES',
+                           default=[],
+                           help='See usage for details')
   options = argv_parser.parse_args(argv[1:])
 
   for num_nines in options.args:
     print(nines(parse_nines_arg(num_nines)))
+
 
 if __name__ == '__main__':  # pragma: no mutate
   main(sys.argv)

@@ -21,7 +21,7 @@ class TestParsing(unittest.TestCase):
         (2.5, 99.5),
         (3, 99.9),
         (4, 99.99),
-        ]:
+    ]:
       self.assertEqual(percent, nines.nines_into_percent(nine))
 
   def test_parse_nines_arg(self):
@@ -34,14 +34,14 @@ class TestParsing(unittest.TestCase):
         ('21', 21),
         ('80', 80),
         ('100', 100),
-        ]:
+    ]:
       self.assertAlmostEqual(result, nines.parse_nines_arg(nine), places=10)
 
     for nine, message in [
         ('as', '^Argument is not a number'),
         ('-5', '^You cannot have a negative uptime'),
         ('101', '^You cannot have more than 100% uptime'),
-        ]:
+    ]:
       self.assertRaisesRegex(ValueError, message, nines.parse_nines_arg, nine)
 
 
@@ -70,8 +70,10 @@ class TestMain(unittest.TestCase):
   def test_main(self, mock_stdout):
     """Test main."""
     nines.main(['argv0', '2', '7'])
-    expected = ['99%: 315360 seconds (3 days, 15 hours, 36 minutes)\n',
-                '99.99999', '3.1535999965', '(3 seconds)\n']
+    expected = [
+        '99%: 315360 seconds (3 days, 15 hours, 36 minutes)\n', '99.99999',
+        '3.1535999965', '(3 seconds)\n'
+    ]
     output = mock_stdout.getvalue()
     for exp in expected:
       self.assertIn(exp, output)
@@ -95,12 +97,13 @@ class TestMain(unittest.TestCase):
     """Test --help to ensure that the description is correctly set up."""
     nines.main(['argv0', '--help'])
     # The name of the program is pytest when running tests.
-    substrings = ['usage: pytest NUMBER_OF_NINES [NUMBER_OF_NINES . . .]',
-                  'Display the number of seconds of downtime that N nines ',
-                  'Arguments >= 20 (e.g. 75) are interpreted as percentages',
-                  'arguments < 20 are interpreted as a number of nines.',
-                  'NUMBER_OF_NINES  See usage for details',
-                  ]
+    substrings = [
+        'usage: pytest NUMBER_OF_NINES [NUMBER_OF_NINES . . .]',
+        'Display the number of seconds of downtime that N nines ',
+        'Arguments >= 20 (e.g. 75) are interpreted as percentages',
+        'arguments < 20 are interpreted as a number of nines.',
+        'NUMBER_OF_NINES  See usage for details',
+    ]
     # The position of newlines depends on the width of the terminal, so remove
     # them for consistency.
     stdout = mock_stdout.getvalue().replace('\n', ' ')
