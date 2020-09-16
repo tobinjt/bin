@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """%(prog)s [OPTIONS] DIRECTORY
 
 Check sentinel times for all files in DIRECTORY.
@@ -23,17 +22,16 @@ from typing import Dict, List, Tuple
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
-
 # Type annotation aliases.
 # Mutating these doesn't cause tests to fail because they are just used for type
 # checking.
 SentinelMap = Dict[str, int]  # pragma: no mutate
-Messages = List[str]          # pragma: no mutate
-Warnings = List[str]          # pragma: no mutate
+Messages = List[str]  # pragma: no mutate
+Warnings = List[str]  # pragma: no mutate
 
 # Filename constants.
 # These constants are used consistently so mutating them doesn't provide signal.
-SLEEPING_UNTIL = 'sleeping_until'        # pragma: no mutate
+SLEEPING_UNTIL = 'sleeping_until'  # pragma: no mutate
 MAX_ALLOWED_DELAY = 'max_allowed_delay'  # pragma: no mutate
 
 
@@ -119,11 +117,13 @@ def check_sentinels(sentinels: ParsedSentinels,
     messages.append(warnings[-1])
     return (warnings, messages)
 
-  globally_delayed = [host for host in sentinels.timestamps
-                      if now - sentinels.timestamps[host] > max_global_delay]
+  globally_delayed = [
+      host for host in sentinels.timestamps
+      if now - sentinels.timestamps[host] > max_global_delay
+  ]
   if len(globally_delayed) == len(sentinels.timestamps):
-    warnings.append('All backups are delayed by at least %d seconds'
-                    % max_global_delay)
+    warnings.append('All backups are delayed by at least %d seconds' %
+                    max_global_delay)
     messages.append(warnings[-1])
 
   for (host, last_backup) in sentinels.timestamps.items():
@@ -154,8 +154,8 @@ def check_sentinels(sentinels: ParsedSentinels,
     # Something is wrong :(
     warnings.append(warning)
 
-  messages = sorted([message.replace('too old', 'debug info')
-                     for message in messages])
+  messages = sorted(
+      [message.replace('too old', 'debug info') for message in messages])
   return (warnings, messages)
 
 
