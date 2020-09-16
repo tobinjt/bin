@@ -90,6 +90,11 @@ main() {
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
   diff -Naur layouts/posts layouts/blog
   set +x
+
+  # Update on hosting
+  printf "*** Updating on hosting\\n"
+  ssh -t hosting 'cd src/johntobin.ie && GIT_MERGE_AUTOEDIT=no git pull'
+  ssh -t hosting 'cd src/johntobin.ie && git submodule update'
 }
 
 # Stop git looking for a commit message when 'git pull' is run.
