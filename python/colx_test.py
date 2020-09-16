@@ -8,6 +8,7 @@ from pyfakefs import fake_filesystem_unittest
 
 import colx
 
+
 class TestArgumentParsing(unittest.TestCase):
   """Tests for argument parsing."""
 
@@ -16,48 +17,41 @@ class TestArgumentParsing(unittest.TestCase):
 
     tests = [
         # Very simple test.
-        (['1', 'asdf'],
-         {
-             'columns': [1],
-             'filenames': ['asdf'],
-         }),
+        (['1', 'asdf'], {
+            'columns': [1],
+            'filenames': ['asdf'],
+        }),
         # Negative index.
-        (['--', '-1', 'asdf'],
-         {
-             'columns': [-1],
-             'filenames': ['asdf'],
-         }),
+        (['--', '-1', 'asdf'], {
+            'columns': [-1],
+            'filenames': ['asdf'],
+        }),
         # The second digit should be a filename.
         # The second non-digit argument should be accepted.
-        (['1', 'asdf', '2', 'qwerty'],
-         {
-             'columns': [1],
-             'filenames': ['asdf', '2', 'qwerty'],
-         }),
+        (['1', 'asdf', '2', 'qwerty'], {
+            'columns': [1],
+            'filenames': ['asdf', '2', 'qwerty'],
+        }),
         # Support ranges.
-        (['1:4', 'asdf', '2'],
-         {
-             'columns': [1, 2, 3, 4],
-             'filenames': ['asdf', '2'],
-         }),
+        (['1:4', 'asdf', '2'], {
+            'columns': [1, 2, 3, 4],
+            'filenames': ['asdf', '2'],
+        }),
         # Reversed ranges.
-        (['8:4', 'asdf', '2'],
-         {
-             'columns': [8, 7, 6, 5, 4],
-             'filenames': ['asdf', '2'],
-         }),
+        (['8:4', 'asdf', '2'], {
+            'columns': [8, 7, 6, 5, 4],
+            'filenames': ['asdf', '2'],
+        }),
         # Negative ranges.
-        (['--', '-4:-1', 'asdf', '2'],
-         {
-             'columns': [-4, -3, -2, -1],
-             'filenames': ['asdf', '2'],
-         }),
+        (['--', '-4:-1', 'asdf', '2'], {
+            'columns': [-4, -3, -2, -1],
+            'filenames': ['asdf', '2'],
+        }),
         # Ranges with same start and end.
-        (['4:4', 'asdf', '2'],
-         {
-             'columns': [4],
-             'filenames': ['asdf', '2'],
-         }),
+        (['4:4', 'asdf', '2'], {
+            'columns': [4],
+            'filenames': ['asdf', '2'],
+        }),
     ]
     for (args, expected) in tests:
       with self.subTest('Parsing %s' % args):
@@ -105,7 +99,7 @@ class TestArgumentParsing(unittest.TestCase):
         '-s SEPARATOR, --separator SEPARATOR',
         ' Separator between output columns',
         ' backslash escape sequences will be expanded',
-        ]
+    ]
     stdout = mock_stdout.getvalue()
     for substring in substrings:
       with self.subTest('Testing -->>%s<<--' % substring):
@@ -132,7 +126,7 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
         ('  leading\n', 'leading'),
         ('trailing  \n', 'trailing'),
         ('  both \n', 'both'),
-        ]:
+    ]:
       filename = 'input'
       with open(filename, 'w') as tfh:
         tfh.write(test_input)
@@ -170,6 +164,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
       tfh.write('one two three\n')
     colx.main(['argv0', '2', '1', filename])
     self.assertEqual('two one\n', mock_stdout.getvalue())
+
 
 if __name__ == '__main__':  # pragma: no mutate
   unittest.main()

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """%(prog)s [OPTIONS] COLUMN [COLUMNS] [FILES]
 
 Extract the specified columns from FILES or stdin.
@@ -43,22 +42,28 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
   usage = __doc__.split('\n')[0]
 
   argv_parser = argparse.ArgumentParser(
-      description=description, usage=usage,
+      description=description,
+      usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      '-d', '--delimiter', default=r'\s+',
+      '-d',
+      '--delimiter',
+      default=r'\s+',
       help='Regex delimiting input columns; defaults to whitespace')
   argv_parser.add_argument(
-      '-s', '--separator', default=' ',
+      '-s',
+      '--separator',
+      default=' ',
       help='Separator between output columns; defaults to a single space; '
-           'backslash escape sequences will be expanded')
-  argv_parser.add_argument('args', nargs='*', metavar='COLUMNS_THEN_FILES',
+      'backslash escape sequences will be expanded')
+  argv_parser.add_argument('args',
+                           nargs='*',
+                           metavar='COLUMNS_THEN_FILES',
                            help='Any argument that looks like a column '
                            'specifier is used as one, then remaining arguments'
                            ' are used as filenames')
   options = argv_parser.parse_args(argv)
-  options.separator = bytes(
-      options.separator, "utf-8").decode("unicode_escape")
+  options.separator = bytes(options.separator, "utf-8").decode("unicode_escape")
 
   options.columns = []
   options.filenames = []
@@ -99,8 +104,8 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
   return options
 
 
-def process_files(filenames: List[str], columns: List[int],
-                  delimiter: str, separator: str) -> List[str]:
+def process_files(filenames: List[str], columns: List[int], delimiter: str,
+                  separator: str) -> List[str]:
   """Process files and return specified columns.
 
   Args:
