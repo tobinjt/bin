@@ -143,7 +143,7 @@ def nines(num_nines: float, days: float) -> str:
       'seconds': strip_trailing_zeros(downtime_seconds),
       'human': format_duration(downtime_seconds),
       'days': days,
-      }
+  }
   return '{nines}%: {seconds} seconds ({human}) per {days} days'.format(**data)
 
 
