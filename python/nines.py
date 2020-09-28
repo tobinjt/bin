@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""%(prog)s NUMBER_OF_NINES [NUMBER_OF_NINES . . .]
+"""%(prog)s NUMBER_OF_NINES [NUMBER_OF_DAYS]
 
 Display the number of seconds of downtime that N nines uptime allows.  Uptime is
 usually described as N nines, e.g. 3 nines is 99.9%% uptime, 6 nines is
-99.9999%% uptime.  This program displays how much downtime per year is allowed
-by N nines uptime, e.g. 6 nines uptime allows 31.536 seconds per year of
-downtime.
+99.9999%% uptime.  This program displays how much downtime per NUMBER_OF_DAYS
+(default 365) is allowed by N nines uptime, e.g. 6 nines uptime allows 31.536
+seconds per 365 days of downtime.
 
 Arguments >= %(PT)s (e.g. 75) are interpreted as percentages, arguments < %(PT)s
 are interpreted as a number of nines.
@@ -125,22 +125,26 @@ def nines_into_percent(num_nines: float) -> float:
   return result
 
 
-def nines(num_nines: float) -> str:
+def nines(num_nines: float, days: float) -> str:
   """Calculate nines for a number
 
   Args:
     num_nines: nines to calculate.
+    days: number of days to calculate across.
   Returns:
     result to print.
   """
   downtime_fraction = (100 - num_nines) / 100
-  seconds_per_year = 60 * 60 * 24 * 365
-  downtime_seconds = downtime_fraction * seconds_per_year
+  seconds = 60 * 60 * 24 * days
+  downtime_seconds = downtime_fraction * seconds
 
-  return (
-      '%s%%: %s seconds (%s)' %
-      (strip_trailing_zeros(num_nines), strip_trailing_zeros(downtime_seconds),
-       format_duration(downtime_seconds)))
+  data = {
+      'nines': strip_trailing_zeros(num_nines),
+      'seconds': strip_trailing_zeros(downtime_seconds),
+      'human': format_duration(downtime_seconds),
+      'days': days,
+      }
+  return '{nines}%: {seconds} seconds ({human}) per {days} days'.format(**data)
 
 
 def main(argv: List[str]) -> None:
@@ -149,15 +153,19 @@ def main(argv: List[str]) -> None:
   }
   usage = __doc__.split('\n')[0]
   argv_parser = argparse.ArgumentParser(description=description, usage=usage)
-  argv_parser.add_argument('args',
-                           nargs='+',
+  argv_parser.add_argument('nines',
                            metavar='NUMBER_OF_NINES',
-                           default=[],
+                           type=float,
+                           help='See usage for details')
+  argv_parser.add_argument('days',
+                           nargs='?',
+                           metavar='NUMBER_OF_DAYS',
+                           default=365,
+                           type=float,
                            help='See usage for details')
   options = argv_parser.parse_args(argv[1:])
 
-  for num_nines in options.args:
-    print(nines(parse_nines_arg(num_nines)))
+  print(nines(parse_nines_arg(options.nines), options.days))
 
 
 if __name__ == '__main__':  # pragma: no mutate

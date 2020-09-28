@@ -69,36 +69,39 @@ class TestMain(unittest.TestCase):
   @mock.patch('sys.stdout', new_callable=StringIO)
   def test_main(self, mock_stdout):
     """Test main."""
-    nines.main(['argv0', '2', '7'])
+    for arg in ['2', '7']:
+      nines.main(['argv0', arg])
     expected = [
-        '99%: 315360 seconds (3 days, 15 hours, 36 minutes)\n', '99.99999',
-        '3.1535999965', '(3 seconds)\n'
+        '99%: 315360 seconds (3 days, 15 hours, 36 minutes) per 365 days',
+        '99.99999000000001%: 3.1535999965194605 seconds (3 seconds) per 365 '
     ]
     output = mock_stdout.getvalue()
     for exp in expected:
       self.assertIn(exp, output)
 
+  @mock.patch('nines.parse_nines_arg', return_value=99)
   @mock.patch('sys.exit')
   @mock.patch('sys.stdout', new_callable=StringIO)
   @mock.patch('sys.stderr', new_callable=StringIO)
-  def test_no_args(self, mock_stderr, mock_stdout, _):
+  def test_no_args(self, mock_stderr, _, mock_exit, __):
     """Test no args."""
     nines.main(['argv0'])
-    self.assertEqual('', mock_stdout.getvalue())
     # The name of the program is pytest when running tests.
-    expected = ('usage: pytest NUMBER_OF_NINES [NUMBER_OF_NINES . . .]\n'
+    expected = ('usage: pytest NUMBER_OF_NINES [NUMBER_OF_DAYS]\n'
                 'pytest: error: the following arguments are required: '
                 'NUMBER_OF_NINES\n')
     self.assertEqual(expected, mock_stderr.getvalue())
+    mock_exit.assert_called()
 
+  @mock.patch('nines.parse_nines_arg', return_value=99)
   @mock.patch('sys.exit')
   @mock.patch('sys.stdout', new_callable=StringIO)
-  def test_help(self, mock_stdout, _):
+  def test_help(self, mock_stdout, mock_exit, __):
     """Test --help to ensure that the description is correctly set up."""
     nines.main(['argv0', '--help'])
     # The name of the program is pytest when running tests.
     substrings = [
-        'usage: pytest NUMBER_OF_NINES [NUMBER_OF_NINES . . .]',
+        'usage: pytest NUMBER_OF_NINES [NUMBER_OF_DAYS]',
         'Display the number of seconds of downtime that N nines ',
         'Arguments >= 20 (e.g. 75) are interpreted as percentages',
         'arguments < 20 are interpreted as a number of nines.',
@@ -110,6 +113,7 @@ class TestMain(unittest.TestCase):
     for substring in substrings:
       with self.subTest('Testing -->>%s<<--' % substring):
         self.assertIn(substring, stdout)
+    mock_exit.assert_called()
 
 
 if __name__ == '__main__':  # pragma: no mutate
