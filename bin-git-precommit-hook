@@ -8,9 +8,10 @@ files_changed_in_dir() {
     | grep "^${dir}/"
 }
 
-if files_changed_in_dir tests; then
-  make -C tests
-fi
+# Unconditionally run these tests because properly checking whether running them
+# is necessary would duplicate the Makefile.  If nothing has changed this is a
+# no-op, if something has changed the tests are fast and need to be run.
+make -C tests
 
 if files_changed_in_dir python; then
   ( cd python
