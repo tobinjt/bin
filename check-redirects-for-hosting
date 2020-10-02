@@ -5,7 +5,7 @@ set -e -f -u -o pipefail
 check_single_rediect() {
   local expected_url="$1" check_url="$2"
   local _
-  for _ in $(seq 1 5); do
+  for ((i = 0; i < 5; i++)); do
     # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a
     # case-insensitive check.
     if curl --silent --show-error --head "${check_url}" 2> /dev/null \

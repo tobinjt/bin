@@ -42,7 +42,7 @@ fix_single_volume() {
   trap 'hdiutil detach "${device}" > /dev/null' ERR
   local i max=5
   # Multiple attempts seem to help, so try a few times.
-  for i in $(seq 1 "${max}"); do
+  for ((i = 0; i < max; i++)); do
     if [[ "${verbose}" -eq 1 ]]; then
       printf "\\n\\nAttempt %d/%d\\n" "${i}" "${max}"
     fi

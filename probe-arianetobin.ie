@@ -9,7 +9,7 @@ WEBSITE='https://www.arianetobin.ie/'
 
 main() {
   # Try multiple times to cover for bad internet at home.
-  for _ in $(seq 1 "${NUMBER_OF_ATTEMPTS}"); do
+  for ((i = 0; i < NUMBER_OF_ATTEMPTS; i++)); do
     # Redirect to /dev/null rather than using -q: using -q means grep will exit
     # immediately if a match is found, and then curl can't finish writing to the
     # pipe so it produces an error message, whereas without -q grep will process

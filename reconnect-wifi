@@ -30,7 +30,7 @@ check_wifi() {
   log "Starting checks"
   # Make separate attempts with delays between then to cope with some transient
   # failures.
-  for i in $(seq 1 "${ATTEMPTS}"); do
+  for ((i = 0; i < ATTEMPTS; i++)); do
     if ping -c 5 -o -q "${INTERNAL_IP}" >& /dev/null; then
       log "attempt ${i}: internal ping succeeded"
       exit 0

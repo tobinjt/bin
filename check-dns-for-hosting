@@ -22,7 +22,7 @@ find_address() {
 find_address_loop() {
   local atype="$1" hostname="$2" pattern="$3" host_output_file="$4"
   readonly atype hostname pattern host_output_file
-  for _ in $(seq 1 $((NUMBER_OF_ATTEMPTS - 1))); do
+  for ((i = 1; i < NUMBER_OF_ATTEMPTS; i++)); do
     host -t "${atype}" "${hostname}" > "${host_output_file}"
     if find_address "${atype}" "${pattern}" "${host_output_file}" 0; then
       return 0
