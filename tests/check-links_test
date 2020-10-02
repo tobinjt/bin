@@ -29,7 +29,7 @@ HTTP request sent, awaiting response... 200 OK
 WGET
 }
 
-output="$(main "https://www.johntobin.ie/" >&1)"
+output="$(main "https://www.johntobin.ie/" >&1 || true)"
 filtered="$(sed -e '/for further investigation/d' <<<"${output}")"
 expected="$(cat <<EXPECTED
 Problems found:
