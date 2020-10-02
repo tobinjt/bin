@@ -17,5 +17,4 @@ brew update 2>&1 > /dev/null \
   | grep -v -e 'Successfully rebased and updated' -e '^$' || true
 git gc --quiet
 brew outdated
-brew outdated --cask
 brew doctor | grep -v 'Your system is ready to brew.' || true
