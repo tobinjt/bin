@@ -10,11 +10,7 @@ brew() {
 }
 
 brew update
-if [[ -n "$(brew outdated)" ]]; then
-  # Fetch everything first to minimise the time that binaries are unavailable.
-  # shellcheck disable=SC2046
-  brew fetch --force-bottle $(brew outdated --formula)
-  brew upgrade --force-bottle
-fi
+# Separately upgrade formula and casks so I can force bottles.
+brew upgrade --force-bottle --formula
 brew upgrade --cask
 brew cleanup
