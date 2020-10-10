@@ -20,6 +20,9 @@ warn() {
 args_or_stdin() {
   if [[ "$#" -eq 0 ]]; then
     if [[ -t 0 ]]; then
+      # This is untested, because when running tests from git pre-commit hooks
+      # stdin is not connected to a terminal, so there is no way to test this
+      # without horrible hacks.
       warn "Refusing to read from terminal."
       warn ""
       warn "$(usage)"

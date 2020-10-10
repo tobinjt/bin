@@ -11,7 +11,13 @@ STDERR="${DIR}/stderr"
 readonly DIR STDOUT STDERR
 
 die() {
-  echo "$@" >&2
+  local lines=10
+  ( echo "$@"
+    printf -- "\\n---------- Last %d lines of STDERR ----------\\n" "${lines}"
+    tail -n "${lines}" "${STDERR}"
+    printf -- "\\n---------- Last %d lines of STDOUT ----------\\n" "${lines}"
+    tail -n "${lines}" "${STDOUT}"
+  ) >&2
   exit 1
 }
 
@@ -38,8 +44,6 @@ start_test() {
 
 test_main() {
   # Argument handling.
-  start_test "No args"
-  check_command_fails
   start_test "One filename"
   check_command_succeeds /etc/passwd
   start_test "Non-existent filename works"
@@ -52,6 +56,8 @@ test_main() {
   check_command_fails -s asdf /etc/passwd
   start_test "Unrecognised option"
   check_command_fails -q /etc/passwd
+  start_test "No args reads stdin"
+  check_command_succeeds < <(echo /a/b/c)
 
   # Path variants.
   start_test "Leading slashes"

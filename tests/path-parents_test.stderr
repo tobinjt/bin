@@ -1,13 +1,3 @@
->>> No args <<<
-Refusing to read from terminal.
-
-Usage: ./path-parents_test [-s N] [PATH PATH . . .]
-Usage: ./path-parents_test -h
-If no filenames are provided reads from stdin.
-Args:
-  -h: Show usage message.
-  -s N: Skip output of paths with N or fewer components (/bin has 1 component),
-        /bin/test has 2 components.
 >>> One filename <<<
 >>> Non-existent filename works <<<
 >>> Only -h <<<
@@ -23,6 +13,7 @@ Args:
   -h: Show usage message.
   -s N: Skip output of paths with N or fewer components (/bin has 1 component),
         /bin/test has 2 components.
+>>> No args reads stdin <<<
 >>> Leading slashes <<<
 >>> No leading slashes <<<
 >>> Doubled slashes <<<
