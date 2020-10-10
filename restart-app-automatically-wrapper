@@ -27,14 +27,13 @@ kill_leftovers() {
 leftover_pids() {
   local app="$1"
   # ps produces output like:
-  # 31329 ??       /Applications/Backup and Sync.app/Contents/MacOS/Backup...
+  # 31329 /Applications/Backup and Sync.app/Contents/MacOS/Backup...
   # Use grep before awk because escaping the / in ${app} will be hard.
-  # Only kill things that don't have a controlling terminal (??).
   # pgrep doesn't support matching on prefixes, disable shellcheck warning.
   # shellcheck disable=SC2009
-  ps -u "${USER}" -x -o pid,tty,comm \
-    | grep -F "${app}" \
-    | awk '$2 == "??" { print $1 }'
+  ps -u "${USER}" -x -o pid,comm \
+    | (grep -F "${app}" || true) \
+    | awk '{ print $1 }'
 }
 
 main() {
