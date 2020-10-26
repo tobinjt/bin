@@ -84,13 +84,13 @@ check_one_website() {
 
   if ! run_linkchecker "${url}" "${hostname}"; then
     sqlite3 "${database}" < linkchecker-out.sql
-    local output date_threshold count_threshold=12
+    local output date_threshold count_threshold=6
     date_threshold="$(date --date '2 days ago' +%Y-%m-%d)"
     output="$(report_persistently_bad_urls "${database}" "${date_threshold}" \
                 "${count_threshold}")"
     if [[ -n "${output}" ]]; then
-      printf "Bad URLs for %s since %s\\n" \
-        "${url}" "${date_threshold}"
+      printf "Bad URLs at least %d times for %s since %s\\n" \
+        "${count_threshold}" "${url}" "${date_threshold}"
       awk -F '|' '{print $2, $1}' <<<"${output}"
       return 1
     fi
