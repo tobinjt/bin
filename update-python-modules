@@ -14,6 +14,9 @@ clean_python_install() {
   set +f
   local dir dirs=(/usr/local/Cellar/python*)
   set -f
+  # Deleting site-packages will break pip.  The postinstall needs to run to
+  # setup pip => fully delete all Python versions and reinstall them.  `brew
+  # reinstall` would be an option but would leave unnecessary versions around.
   for dir in "${dirs[@]}"; do
     brew remove --ignore-dependencies "$(basename "${dir}")"
   done
@@ -22,6 +25,23 @@ clean_python_install() {
   set +f
   rm -rf /usr/local/lib/python*/site-packages
   set -f
+
+  # Frequently there are installed package depending on 2 Python versions, but
+  # installing "python" will only install the latest Python, so figure out all
+  # required versions.
+  local version uses
+  # `brew search python@` returns all kinds of packages, so list all packages
+  # and grep instead.
+  for version in $(brew search | grep python@); do
+    uses="$(brew uses --installed "${version}")"
+    if [[ -z "${uses}" ]]; then
+      printf "Skipping unnecessary version %s\\n" "${version}"
+      continue
+    fi
+    printf "Installing version %s required by %s\\n" "${version}" "${uses}"
+    brew install "${version}"
+  done
+  # This seems to be unnecessary but not harmful so leave it in.
   brew install python
 }
 
