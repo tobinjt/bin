@@ -9,7 +9,11 @@ brew() {
   sleep 1
 }
 
-brew update
+# Only update if we haven't updated recently.
+file="/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/.git/FETCH_HEAD"
+if [[ -n "$(find "${file}" -mtime +3h)" ]]; then
+  brew update
+fi
 # Separately upgrade formula and casks so I can force bottles.
 brew upgrade --force-bottle --formula
 brew upgrade --cask
