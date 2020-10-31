@@ -90,8 +90,15 @@ main() {
 
   # Python development is installed globally so it's easier to use.
   # mypy needs lxml but doesn't depend on it.
-  pip3 install lxml mutmut mypy pudb pyfakefs pylint pytest pytest-cov \
-    pyyaml yapf
+  # Install packages one by one so that it's easier to figure out which package
+  # is broken when something goes wrong.
+  local package packages=(lxml mutmut mypy pudb pyfakefs pylint pytest)
+  packages+=(pytest-cov pyyaml yapf)
+  for package in "${packages[@]}"; do
+    printf "\n\nInstalling package %s\\n" "${package}"
+    pip3 install "${package}"
+  done
+
   # Check that tools work properly.
   cd "${HOME}/bin/python"
   pytest
