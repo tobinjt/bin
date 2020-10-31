@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "Usage: %s\\n" "$0" >&2
+  printf "Usage: %s [--skip_clean_install]\\n" "$0" >&2
   exit 1
 }
 
@@ -66,6 +66,11 @@ main() {
     printf "Only Mac OS is supported, sorry.\\n" >&2
     exit 1
   fi
+  local skip_clean_install=0
+  if [[ "$#" -eq 1 && "$1" == "--skip_clean_install" ]]; then
+    skip_clean_install=1
+    shift
+  fi
   if [[ "$#" -ne 0 ]]; then
     usage
   fi
@@ -78,7 +83,9 @@ main() {
   # Clean up existing install.
   local basedir="${HOME}/tmp/python"
   rm -rf "${basedir}"
-  clean_python_install
+  if [[ "${skip_clean_install}" -eq 0 ]]; then
+    clean_python_install
+  fi
   pip3 install virtualenv
 
   # Flexget.  Only install and test on machines where I normally run flexget.
