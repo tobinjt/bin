@@ -112,12 +112,20 @@ rewrite_database_contents() {
 }
 
 main2() {
-  if [[ "$#" -ne 3 || ! -f "$2/wp-config.php" || ! -f "$3" ]]; then
+  if [[ "$#" -ne 3 ]]; then
     printf "Usage: %s DOMAIN WORDPRESS_BASE_DIR DATABASE_DUMP\\n" "$0" >&2
     return 1
   fi
   local domain="$1" wp_config="$2/wp-config.php" dump="$3"
   readonly domain wp_config dump
+  if [[ ! -f "${wp_config}" ]]; then
+    printf "%s: missing wp-config.php %s\\n" "$0" "${wp_config}" >&2
+    return 1
+  fi
+  if [[ ! -f "$3" ]]; then
+    printf "%s: missing backup %s\\n" "$0" "${dump}" >&2
+    return 1
+  fi
 
   printf "Domain: %s\\n" "${domain}"
   printf "Wordpress config: %s\\n" "${wp_config}"
@@ -143,7 +151,8 @@ main() {
   fi
   printf "Triggering backup.\\n"
   backup-wordpress "/home/arianetobin/arianetobin.ie"
-  main2 arianetobin.ie "${HOME}/dev.arianetobin.ie" "$(find_latest_dump ariane)"
+  main2 arianetobin.ie "${HOME}/src/dev.arianetobin.ie" \
+    "$(find_latest_dump ariane)"
 }
 
 main "$@"
