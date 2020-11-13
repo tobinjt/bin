@@ -91,6 +91,15 @@ main() {
   diff -Naur layouts/posts layouts/blog
   set +x
 
+  # Update the live site with whatever has changed.
+  printf "*** Diffing and pushing to production\\n"
+  cd "${WEBSITE_DIR}"
+  make diff_content
+  make push
+
+  # Flush the mod_pagespeed cache to prevent mismatches and rejected content.
+  ssh -t hosting 'sudo touch /var/cache/mod_pagespeed/cache.flush'
+
   # Update on other machines.
   local machine
   for machine in hosting imac; do
@@ -98,9 +107,6 @@ main() {
     ssh -t "${machine}" 'cd src/johntobin.ie && GIT_MERGE_AUTOEDIT=no git pull'
     ssh -t "${machine}" 'cd src/johntobin.ie && git submodule update'
   done
-
-  # Flush the mod_pagespeed cache to prevent mismatches and rejected content.
-  ssh -t hosting 'sudo touch /var/cache/mod_pagespeed/cache.flush'
 }
 
 # Stop git looking for a commit message when 'git pull' is run.
