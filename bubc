@@ -15,6 +15,9 @@ if [[ -n "$(find "${file}" -mtime +3h)" ]]; then
   brew update
 fi
 # Separately upgrade formula and casks so I can force bottles.
-brew upgrade --force-bottle --formula
+# Sometimes a formula doesn't have a bottle and upgrading will fail, so we
+# survive the failure and try again without forcing bottle.
+brew upgrade --force-bottle --formula || true
+brew upgrade --formula
 brew upgrade --cask
 brew cleanup
