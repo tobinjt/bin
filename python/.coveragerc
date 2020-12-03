@@ -18,4 +18,4 @@ exclude_lines =
 
 [html]
 # Where to write output.
-directory = /Users/johntobin/tmp/coverage
+directory = ../../tmp/coverage
