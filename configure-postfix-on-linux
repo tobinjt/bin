@@ -19,8 +19,9 @@ main() {
     cat > "${sasl_file}" <<END_OF_SASL
 [smtp.gmail.com]:587 ${email}:${password}
 END_OF_SASL
-    postmap hash:"${sasl_file}"
   fi
+  postmap hash:"${sasl_file}"
+
   cat > /etc/postfix/virtual <<END_OF_VIRTUAL
 root johntobin@johntobin.ie
 arianetobin johntobin@johntobin.ie
@@ -38,6 +39,10 @@ END_OF_VIRTUAL
   postconf smtp_sasl_security_options="noanonymous"
   postconf smtp_use_tls="yes"
   postconf virtual_alias_maps="hash:/etc/postfix/virtual"
+  # Cargo culting these settings from old hosting.
+  postconf default_transport="smtp"
+  postconf relay_transport="relay"
+
   postfix reload
 }
 
