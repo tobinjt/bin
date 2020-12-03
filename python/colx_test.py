@@ -77,7 +77,8 @@ class TestArgumentParsing(unittest.TestCase):
     # The name of the program is pytest when running tests.
     expected = ('usage: pytest [OPTIONS] COLUMN [COLUMNS] [FILES]\n'
                 'pytest: error: At least one COLUMN argument is required.\n')
-    self.assertEqual(expected, mock_stderr.getvalue())
+    self.assertEqual(expected,
+                     mock_stderr.getvalue().replace('pytest-3', 'pytest'))
 
   @mock.patch('sys.exit')
   @mock.patch('sys.stdout', new_callable=io.StringIO)
@@ -100,7 +101,7 @@ class TestArgumentParsing(unittest.TestCase):
         ' Separator between output columns',
         ' backslash escape sequences will be expanded',
     ]
-    stdout = mock_stdout.getvalue()
+    stdout = mock_stdout.getvalue().replace('pytest-3', 'pytest')
     for substring in substrings:
       with self.subTest('Testing -->>%s<<--' % substring):
         self.assertIn(substring, stdout)

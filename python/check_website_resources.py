@@ -405,14 +405,12 @@ def main(argv: List[Text]) -> int:
   host_configs = []
   for filename in options.config_files:
     host_configs.extend(read_config(filename))
-  cwd_fd = os.open(os.curdir, os.O_DIRECTORY)
 
   # This will create temporary directories during tests but that's OK.
   with tempfile.TemporaryDirectory() as tmp_dir_name:
     os.chdir(tmp_dir_name)
     for host in host_configs:
       messages.extend(check_single_url(host))
-    os.chdir(cwd_fd)
   if messages:
     print('\n'.join(messages), file=sys.stderr)
     return 1

@@ -512,11 +512,13 @@ class TestMain(unittest.TestCase):
     """Test no args."""
     check_website_resources.main(['argv0'])
     self.assertEqual('', mock_stdout.getvalue())
-    # The name of the program is pytest when running tests.
+    # The name of the program is pytest when running tests.  Except when it's
+    # pytest-3, so handle that too.
     expected = ('usage: pytest JSON_CONFIG_FILE [JSON_CONFIG_FILE2...]\n'
                 'pytest: error: the following arguments are required: '
                 'JSON_CONFIG_FILE\n')
-    self.assertEqual(expected, mock_stderr.getvalue())
+    actual = mock_stderr.getvalue().replace('pytest-3', 'pytest')
+    self.assertEqual(expected, actual)
 
   @mock.patch('sys.exit')
   @mock.patch('sys.stdout', new_callable=io.StringIO)
@@ -531,7 +533,7 @@ class TestMain(unittest.TestCase):
         'JSON_CONFIG_FILE  Config file specifying URLs and expected',
         '(multiple files are supported but are completely',
     ]
-    stdout = mock_stdout.getvalue()
+    stdout = mock_stdout.getvalue().replace('pytest-3', 'pytest')
     for substring in substrings:
       with self.subTest('Testing -->>%s<<--' % substring):
         self.assertIn(substring, stdout)
