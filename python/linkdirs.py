@@ -9,6 +9,7 @@ necessary.
 import argparse
 import dataclasses
 import difflib
+import filecmp
 import fnmatch
 import os
 import pipes
@@ -294,15 +295,14 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
       continue
 
     # Check for diffs.
-    file_diffs = diff(source_filename, dest_filename)
-    if file_diffs:
-      results.diffs.extend(file_diffs)
+    if filecmp.cmp(source_filename, dest_filename, shallow=False):
+      print("%s and %s are different files but have the same contents; "
+            "deleting and linking" % (source_filename, dest_filename))
+      safe_unlink(dest_filename, options.dryrun)
+      safe_link(source_filename, dest_filename, options.dryrun)
       continue
 
-    print("%s and %s are different files but have the same contents; "
-          "deleting and linking" % (source_filename, dest_filename))
-    safe_unlink(dest_filename, options.dryrun)
-    safe_link(source_filename, dest_filename, options.dryrun)
+    results.diffs.extend(diff(source_filename, dest_filename))
 
   return results
 

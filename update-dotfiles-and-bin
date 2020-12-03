@@ -92,7 +92,10 @@ update_git_checkout_and_push() {
   git clean -f -f -d
 
   # We can't push to https:// URLs.
-  if ! git transport-is-https; then
+  if git transport-is-https; then
+    printf "%s: %s: skipping https:// upstream; %s\\n" \
+      "$0" "${dir}" "unpushed commits will cause later failure"
+  else
     git push
   fi
 }

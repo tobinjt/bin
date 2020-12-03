@@ -39,6 +39,7 @@ END_OF_VIRTUAL
   postconf smtp_tls_security_level="encrypt"
   postconf smtp_use_tls="yes"
   postconf virtual_alias_maps="hash:/etc/postfix/virtual"
+  postfix reload
 }
 
 main "$@"
