@@ -28,7 +28,6 @@ johntobin johntobin@johntobin.ie
 END_OF_VIRTUAL
   postmap hash:/etc/postfix/virtual
 
-  postconf compatibility_level=2
   postconf inet_interfaces="loopback-only"
   postconf inet_protocols="all"
   postconf mydestination="localhost.localdomain, localhost"
@@ -41,7 +40,4 @@ END_OF_VIRTUAL
   postconf virtual_alias_maps="hash:/etc/postfix/virtual"
 }
 
-
-printf "THIS IS UNTESTED!\\n" >&2
-exit 1
 main "$@"
