@@ -71,7 +71,7 @@ HOST_RECORDS
 } >> "${stdout}" 2>> "${stderr}"
 
 # Clean up variable output.
-sed -i .bak -e 's/host output in.*/host output in tmpfile/' "${stderr}"
+sed -i.bak -e 's/host output in.*/host output in tmpfile/' "${stderr}"
 diff -u "check-dns-for-hosting_test.stdout" "${stdout}"
 diff -u "check-dns-for-hosting_test.stderr" "${stderr}"
 rm -f "${stdout}" "${stderr}"
