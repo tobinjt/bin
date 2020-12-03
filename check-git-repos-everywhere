@@ -20,6 +20,8 @@ retry 30 initial-ariane-theme \
 printf "\\n\\n\\nariane-theme\\n"
 retry 30 update-ariane-theme \
   ssh -o ControlMaster=no -t johntobin@hosting update-ariane-theme
+retry 30 update-ariane-theme \
+  ssh -o ControlMaster=no -t johntobin@hosting-new update-ariane-theme
 
 # dotfiles and bin are the next most likely source of diffs, and they can be
 # fixed mostly automatically.
@@ -27,6 +29,6 @@ printf "\\n\\n\\ndotfiles\\n"
 update-dotfiles-and-bin-everywhere
 
 # Now do the rest of the checks.
-for host in laptop home hosting; do
+for host in laptop home hosting hosting-new; do
   check_single_host "${host}"
 done

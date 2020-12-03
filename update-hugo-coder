@@ -102,7 +102,7 @@ main() {
 
   # Update on other machines.
   local machine
-  for machine in hosting imac; do
+  for machine in hosting hosting-new imac; do
     printf "*** Updating on %s\\n" "${machine}"
     ssh -t "${machine}" 'cd src/johntobin.ie && GIT_MERGE_AUTOEDIT=no git pull'
     ssh -t "${machine}" 'cd src/johntobin.ie && git submodule update'
