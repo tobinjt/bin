@@ -2,13 +2,6 @@
 
 set -e -f -u -o pipefail
 
-# Sleep between commands to reduce the chance of errors like:
-# "Error: Another active Homebrew update process is already in progress."
-brew() {
-  command brew "$@"
-  sleep 1
-}
-
 # Only update if we haven't updated recently.
 file="/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/.git/FETCH_HEAD"
 if [[ -n "$(find "${file}" -mtime +3h)" ]]; then
