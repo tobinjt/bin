@@ -6,11 +6,15 @@ set -e -f -u -o pipefail
 file="/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/.git/FETCH_HEAD"
 if [[ -n "$(find "${file}" -mtime +3h)" ]]; then
   brew update
+  sleep 2
 fi
 # Separately upgrade formula and casks so I can force bottles.
 # Sometimes a formula doesn't have a bottle and upgrading will fail, so we
 # survive the failure and try again without forcing bottle.
 brew upgrade --force-bottle --formula || true
+sleep 2
 brew upgrade --formula
+sleep 2
 brew upgrade --cask
+sleep 2
 brew cleanup
