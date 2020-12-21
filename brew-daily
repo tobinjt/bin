@@ -3,19 +3,29 @@
 set -e -f -u -o pipefail
 
 # Update homebrew and list packages that are out of date.
+
+disable_git_auto_gc_and_manually_gc() {
+  local dir="$1"
+  git -C "${dir}" config --local gc.auto 0
+  git -C "${dir}" config --local gc.autoDetach false
+  git -C "${dir}" gc --quiet
+}
+
 PATH="/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
-cd /usr/local/Homebrew
+
 # Disable automatic git gc and run it manually to prevent output about
-# automatically running it.  Sadly disabling it doesn't actually work, git still
-# runs it and spews a warning about it.  Annoying.
-git config --local gc.auto 0
-git config --local gc.autoDetach false
-git gc --quiet
+# automatically running it.
+set +f
+git_dirs=(/usr/local/Homebrew /usr/local/Homebrew/Library/Taps/homebrew/*)
+set -f
+for dir in "${git_dirs[@]}"; do
+  disable_git_auto_gc_and_manually_gc "${dir}"
+done
+
 # Try to filter spam output by git.
 brew update 2>&1 > /dev/null \
   | grep -v -e 'Successfully rebased and updated' -e '^$' || true
-git gc --quiet
 brew outdated
 if [[ "$(date +%A)" == "Saturday" ]]; then
   brew doctor | grep -v 'Your system is ready to brew.' || true
