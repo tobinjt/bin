@@ -32,7 +32,7 @@ clean_python_install() {
   local version uses
   # `brew search python@` returns all kinds of packages, so list all packages
   # and grep instead.
-  for version in $(brew search | grep python@); do
+  for version in $(brew formulae | grep python@); do
     uses="$(brew uses --installed "${version}")"
     if [[ -z "${uses}" ]]; then
       printf "Skipping unnecessary version %s\\n" "${version}"
