@@ -14,8 +14,10 @@ if type go >& /dev/null; then
     && mkdir -p "${dirs[@]}" \
     && find "${dirs[@]}" -type d -print0 | xargs -0 chmod 755 \
     && rm -rf "${dirs[@]}")
-  # Binaries needed by vim-go.
-  vim -c 'execute ":GoUpdateBinaries" | :quit'
+  # Binaries needed by vim-go; use GoInstallBinaries because GoUpdateBinaries
+  # would install second copies of homebrew binaries; all the existing binaries
+  # have been deleted so fresh binaries will be built.
+  vim -c 'execute ":GoInstallBinaries" | :quit'
   # Clean up tmp directories left behind by vim-go.
   set +f
   rm -rf "${HOME}/tmp/vim/tmp/vim-go"*
