@@ -3,24 +3,18 @@
 set -e -f -u -o pipefail
 
 if type go >& /dev/null; then
-  # Clean up old stuff; occasionally installation has problems because of
-  # previous layouts or something, so clean up first.
-  # Go makes everything readonly for some reason so fix directory permissions to
-  # enable deletion.
-  dirs=(bin pkg)
-  (printf "Clearing out %s\\n" "${GOPATH}" \
-    && mkdir -p "${GOPATH}" \
-    && cd "${GOPATH}" \
-    && mkdir -p "${dirs[@]}" \
-    && find "${dirs[@]}" -type d -print0 | xargs -0 chmod 755 \
-    && rm -rf "${dirs[@]}")
+  # Clean up old binaries so that GoInstallBinaries will install updated
+  # binaries.
+  bindir="${GOPATH}/bin"
+  printf "Clearing out %s\\n" "${bindir}"
+  rm -r -f "${bindir}"
   # Binaries needed by vim-go; use GoInstallBinaries because GoUpdateBinaries
   # would install second copies of homebrew binaries; all the existing binaries
   # have been deleted so fresh binaries will be built.
   vim -c 'execute ":GoInstallBinaries" | :quit'
   # Clean up tmp directories left behind by vim-go.
   set +f
-  rm -rf "${HOME}/tmp/vim/tmp/vim-go"*
+  rm -r -f "${HOME}/tmp/vim/tmp/vim-go"*
   set -f
 
   # Tools used by Syntastic; some of the tools are installed by GoUpdateBinaries
