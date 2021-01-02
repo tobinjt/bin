@@ -32,6 +32,7 @@ if go tool cover --func="${filename}" \
         -e '^total:' \
         -e 'main' \
         -e 'projectEuler[[:digit:]_]\+' \
+        -e 'aoc[[:digit:]]\{4\}_[[:digit:]]\+' \
         ; then
   exit 1
 fi
