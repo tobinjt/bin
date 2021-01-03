@@ -16,7 +16,11 @@ if [[ -n "${files}" ]]; then
 fi
 
 # Check for missing error handling.
-errcheck -asserts -blank
+if ! errcheck -asserts -blank; then
+  echo "Missing error handling :(" >&2
+  echo "errcheck -asserts -blank"
+  exit 1
+fi
 
 # Coverage runs tests, so there's no need to run them separately.
 filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
