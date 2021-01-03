@@ -19,7 +19,7 @@ update-single-host() {
 
 main() {
   if [[ "$#" -eq 0 ]]; then
-    exec "$0" laptop home hosting hosting-new
+    exec "$0" laptop home hosting
   fi
   retry 10 "initial update" update-dotfiles-and-bin
   local host
