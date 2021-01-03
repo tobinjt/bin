@@ -16,10 +16,10 @@ host() {
 }
 cat > "${host_records}" <<HOST_RECORDS
 # domain1.ie will succeed.
-domain1.ie has address 88.99.86.190
-domain1.ie has IPv6 address 2a01:4f8:c17:7156::2
-www.domain1.ie has address 88.99.86.190
-www.domain1.ie has IPv6 address 2a01:4f8:c17:7156::2
+domain1.ie has address 168.119.99.114
+domain1.ie has IPv6 address 2a01:4f8:c010:21a::1
+www.domain1.ie has address 168.119.99.114
+www.domain1.ie has IPv6 address 2a01:4f8:c010:21a::1
 domain1.ie mail is handled by 1 aspmx.l.google.com.
 domain1.ie mail is handled by 10 aspmx2.googlemail.com.
 domain1.ie mail is handled by 10 aspmx3.googlemail.com.
@@ -27,8 +27,8 @@ domain1.ie mail is handled by 5 alt1.aspmx.l.google.com.
 domain1.ie mail is handled by 5 alt2.aspmx.l.google.com.
 
 # dev.domain2.ie will succeed, without subdomains being checked.
-dev.domain2.ie has address 88.99.86.190
-dev.domain2.ie has IPv6 address 2a01:4f8:c17:7156::2
+dev.domain2.ie has address 168.119.99.114
+dev.domain2.ie has IPv6 address 2a01:4f8:c010:21a::1
 
 # domain3.ie will fail because there are no records.
 HOST_RECORDS
@@ -49,13 +49,13 @@ host() {
   # Second time it prints the A record and sets up for the third time.
   host() {
     cat <<HOST_RECORDS
-sub.domain4.ie has address 88.99.86.190
+sub.domain4.ie has address 168.119.99.114
 HOST_RECORDS
 
     # Third time it outputs the AAAA record and sets up to fail from now on.
     host() {
       cat <<HOST_RECORDS
-sub.domain4.ie has IPv6 address 2a01:4f8:c17:7156::2
+sub.domain4.ie has IPv6 address 2a01:4f8:c010:21a::1
 HOST_RECORDS
 
       # Fourth and subsequent times it should not be called.

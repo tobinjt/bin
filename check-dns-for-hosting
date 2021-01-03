@@ -97,7 +97,7 @@ check_mx_for_host() {
 
 main() {
   local hostname retval=0
-  local ipv4_address="88.99.86.190" ipv6_address="2a01:4f8:c17:7156::2"
+  local ipv4_address="168.119.99.114" ipv6_address="2a01:4f8:c010:21a::1"
   local mx_addresses=("1 aspmx.l.google.com." "10 aspmx2.googlemail.com." \
                       "10 aspmx3.googlemail.com." "5 alt1.aspmx.l.google.com." \
                       "5 alt2.aspmx.l.google.com.")
