@@ -3,8 +3,7 @@
 set -e -f -u -o pipefail
 
 check_single_rediect() {
-  local expected_url="$1" check_url="$2"
-  local _
+  local expected_url="$1" check_url="$2" sleep_time="$3"
   for ((i = 0; i < 5; i++)); do
     # HTTP/1 uses "Location:", HTTP/2 uses "location:", so do a
     # case-insensitive check.
@@ -12,17 +11,17 @@ check_single_rediect() {
         | grep -i -q "^location: ${expected_url}"; then
       return 0
     fi
-    sleep 30
+    sleep "${sleep_time}"
   done
   return 1
 }
 
 check_redirects() {
-  local expected_url="$1"
-  shift
+  local sleep_time="$1" expected_url="$2"
+  shift 2
   local failures=0 url
   for url in "$@"; do
-    if ! check_single_rediect "${expected_url}" "${url}"; then
+    if ! check_single_rediect "${expected_url}" "${url}" "${sleep_time}"; then
       failures=$((failures + 1))
       printf "Bad/missing redirect for %s, expected %s\\n" \
         "${url}" "${expected_url}"
@@ -35,9 +34,14 @@ check_redirects() {
 main() {
   if [[ ! -t 0 ]]; then
     sleep $((RANDOM % 600))
+    sleep_time=30
+  else
+    sleep_time=1
   fi
 
-  check_redirects "https://www.arianetobin.ie" \
+  check_redirects \
+    "${sleep_time}" \
+    "https://www.arianetobin.ie" \
     "http://ariane.ie" \
     "https://ariane.ie" \
     "http://www.ariane.ie" \
@@ -66,9 +70,14 @@ main() {
     "http://www.nakedmetalsmith.com" \
     "https://www.nakedmetalsmith.com" \
 
-  check_redirects "https://dev.arianetobin.ie" "http://dev.arianetobin.ie"
+  check_redirects \
+    "${sleep_time}" \
+    "https://dev.arianetobin.ie" \
+    "http://dev.arianetobin.ie"
 
-  check_redirects "https://www.johntobin.ie" \
+  check_redirects \
+    "${sleep_time}" \
+    "https://www.johntobin.ie" \
     "http://www.johntobin.ie" \
     "http://johntobin.ie" \
     "https://johntobin.ie"
