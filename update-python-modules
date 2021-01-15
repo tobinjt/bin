@@ -89,9 +89,18 @@ main() {
   pip3 install virtualenv
 
   # Flexget.  Only install and test on machines where I normally run flexget.
-  if [[ -d "${HOME}/.flexget/logs" ]]; then
-    virtualenv_install "${basedir}/flexget" "flexget" "transmissionrpc"
+  local logdir="${HOME}/.flexget/logs"
+  if [[ -d "${logdir}" ]]; then
+    virtualenv_install "${basedir}/flexget" "flexget" "transmission-rpc"
     flexget-wrapper execute
+    local logfile
+    # shellcheck disable=SC2012
+    logfile="$(ls -tr "${logdir}" | tail -1)"
+    # Flexget exits successfully despite critical errors, so check for those.
+    if grep CRITICAL "${logdir}/${logfile}"; then
+      printf "CRITICAL problem running flexget\\n" >&2
+      exit 1
+    fi
     printf "\\n\\n\\n\\n\\n"
   fi
 
