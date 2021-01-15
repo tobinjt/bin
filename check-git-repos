@@ -42,6 +42,9 @@ main() {
     if [[ ! -d "${repo}" ]]; then
       continue
     fi
+    if [[ -t 0 ]]; then
+      printf "%s\\n" "${repo}"
+    fi
     # Bizzare Posix sh behaviour :(  See
     # https://unix.stackexchange.com/questions/65532/why-does-set-e-not-work-inside-subshells-with-parenthesis-followed-by-an-or
     (cd "${repo}"; check_single_repo "${pull_and_push}") &
