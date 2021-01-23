@@ -93,14 +93,6 @@ main() {
   if [[ -d "${logdir}" ]]; then
     virtualenv_install "${basedir}/flexget" "flexget" "transmission-rpc"
     flexget-wrapper execute
-    local logfile
-    # shellcheck disable=SC2012
-    logfile="$(ls -tr "${logdir}" | tail -1)"
-    # Flexget exits successfully despite critical errors, so check for those.
-    if grep CRITICAL "${logdir}/${logfile}"; then
-      printf "CRITICAL problem running flexget\\n" >&2
-      exit 1
-    fi
     printf "\\n\\n\\n\\n\\n"
   fi
 
