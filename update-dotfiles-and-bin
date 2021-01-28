@@ -77,10 +77,11 @@ update_git_checkout_and_push() {
   # warnings.
   git config pull.rebase false
   # Always pull and update submodules.  Note that if we fail before submodules
-  # are completely updated there will be uncomitted changes that must be dealt
+  # are completely updated there will be uncommitted changes that must be dealt
   # with manually.
   git pull
   git submodule init
+  git submodule sync > /dev/null
   git submodule update
   # Removed submodules won't be deleted by git pull, so we need to clean up.
   # -d removes directories, -f makes removal happen for normal files (but I
