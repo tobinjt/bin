@@ -94,7 +94,7 @@ main() {
   # Update the live site with whatever has changed.
   printf "*** Diffing and pushing to production\\n"
   cd "${WEBSITE_DIR}"
-  make diff_content
+  make diff_content || true
   make push
 
   # Flush the mod_pagespeed cache to prevent mismatches and rejected content.
