@@ -12,7 +12,10 @@ check_single_host() {
 
 # Deal with the special cases first.
 # hugo-coder needs to be updated in the right order.
-retry 30 update-hugo-coder update-hugo-coder
+# Don't wrap with with retry: it's easier to fix the problems without the
+# tooling making changes in parallel, and restarting from scratch doesn't lose
+# any progress because this is the first action.
+update-hugo-coder
 # Ariane's website also needs to be updated in the right order.  Push any local
 # changes first.
 retry 30 initial-ariane-theme \
