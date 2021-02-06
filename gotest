@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# This makes "gotest" a wrapper for "go test", so that "igotest" can be simpler.
+go test "$@"
