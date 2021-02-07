@@ -26,9 +26,7 @@ main() {
   brew update 2>&1 > /dev/null \
     | grep -v -e 'Successfully rebased and updated' -e '^$' || true
   brew outdated
-  if [[ "$(date +%A)" == "Saturday" ]]; then
-    brew doctor | grep -v 'Your system is ready to brew.' || true
-  fi
+  brew doctor | grep -v 'Your system is ready to brew.' || true
 }
 
 PATH="/usr/local/bin:/usr/local/sbin:$PATH"
