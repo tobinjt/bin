@@ -7,8 +7,7 @@ main() {
   update-dotfiles-and-bin
   # Update every submodule.
   cd "${HOME}/src/dotfiles"
-  git submodule foreach \
-      'git fetch origin --tags && git checkout master && git pull'
+  git submodule update --recursive --remote
   # Commit the changes if any.
   git add -A .vim/bundle
   if ! git check-local-copy-is-clean 2>/dev/null; then
