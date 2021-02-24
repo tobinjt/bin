@@ -6,8 +6,10 @@ if type go >& /dev/null; then
   # Clean up old binaries so that GoInstallBinaries will install updated
   # binaries.
   bindir="${GOPATH}/bin"
-  printf "Clearing out old binaries from %s\\n" "${bindir}"
-  find "${bindir}" -type f -mtime +1d -delete
+  if [[ -d "${bindir}" ]]; then
+    printf "Clearing out old binaries from %s\\n" "${bindir}"
+    find "${bindir}" -type f -mtime +1 -delete
+  fi
   # Binaries needed by vim-go; use GoInstallBinaries because GoUpdateBinaries
   # would install second copies of homebrew binaries; all the existing binaries
   # have been deleted so fresh binaries will be built.
@@ -21,13 +23,14 @@ if type go >& /dev/null; then
   # so I don't need to install them a second time.
   go get -u golang.org/x/tools/cmd/gotype
 
-  # Debugger; installed by vim-go, manual instructions at
-  # https://github.com/go-delve/delve/blob/master/Documentation/installation/osx/install.md
-  # Needs to be signed to avoid repeated password prompts.
-  # I manually followed the steps to create the cert in
-  # https://sourceware.org/gdb/wiki/PermissionsDarwin
-  xml="$(mktemp /tmp/code-signing.XXXXXXXXXX)"
-  cat > "${xml}" <<SIGNING
+  if type codesign >& /dev/null; then
+    # Debugger; installed by vim-go, manual instructions at
+    # https://github.com/go-delve/delve/blob/master/Documentation/installation/osx/install.md
+    # Needs to be signed to avoid repeated password prompts.
+    # I manually followed the steps to create the cert in
+    # https://sourceware.org/gdb/wiki/PermissionsDarwin
+    xml="$(mktemp /tmp/code-signing.XXXXXXXXXX)"
+    cat > "${xml}" <<SIGNING
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -38,6 +41,7 @@ if type go >& /dev/null; then
 </plist>
 </pre>
 SIGNING
-  codesign --entitlements "${xml}" -fs gdb-cert "$(type -P dlv)"
-  rm "${xml}"
+    codesign --entitlements "${xml}" -fs gdb-cert "$(type -P dlv)"
+    rm "${xml}"
+  fi
 fi
