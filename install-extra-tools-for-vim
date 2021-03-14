@@ -8,7 +8,7 @@ if type go >& /dev/null; then
   bindir="${GOPATH}/bin"
   if [[ -d "${bindir}" ]]; then
     printf "Clearing out old binaries from %s\\n" "${bindir}"
-    find "${bindir}" -type f -mtime +1 -delete
+    find "${bindir}" -type f -mmin +60 -delete
   fi
   # Binaries needed by vim-go; use GoInstallBinaries because GoUpdateBinaries
   # would install second copies of homebrew binaries; all the existing binaries
