@@ -8,7 +8,7 @@ JSON_CONFIG_FILE must contain a single list of dicts, each dict containing:
 - url (required): the URL to check
 - resources (required): list of expected resources for the URL.
 - optional_resources (optional): list of optional resources for the URL.
-- optional_resources_regexes (optional): list of optional resources regexes for
+- optional_resource_regexes (optional): list of optional resources regexes for
   the URL.
 - cookies (optional): dict of cookie keys to cookie values to send when
   requesting the URL.
@@ -39,7 +39,7 @@ Example JSON_CONFIG_FILE:
       "optional_resources": [
         "https://www.example.com/foo.js",
       ],
-      "optional_resources_regexes": [
+      "optional_resource_regexes": [
         "https://www.example.com/bar.*.js",
       ]
     }
@@ -88,7 +88,7 @@ class SingleURLConfig:
     url: URL to check.
     resources: expected resources
     optional_resources: optional resources
-    optional_resources_regexes: optional resource regexes
+    optional_resource_regexes: optional resource regexes
     cookies: cookies to send with request
     comment: comment to help identify the config.
   """
@@ -97,7 +97,7 @@ class SingleURLConfig:
   comment: Text
   cookies: Dict[Text, Text]
   optional_resources: List[Text] = dataclasses.field(default_factory=list)
-  optional_resources_regexes: List[Text] = dataclasses.field(
+  optional_resource_regexes: List[Text] = dataclasses.field(
       default_factory=list)
 
 
@@ -243,7 +243,7 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
 
   extra_resources = set(actual_resources) - set(config.resources)
   extra_unmatched = []
-  regexes = [re.compile(x) for x in config.optional_resources_regexes]
+  regexes = [re.compile(x) for x in config.optional_resource_regexes]
   for extra_resource in extra_resources:
     if all(regex.match(extra_resource) is None for regex in regexes):
       extra_unmatched.append(extra_resource)
@@ -310,7 +310,8 @@ def validate_user_config(path: Text, configs: Any):
     if not isinstance(config, dict):
       raise ValueError('%s: All entries in the list must be dicts' % path)
     known_keys = set(
-        ['url', 'resources', 'cookies', 'comment', 'optional_resources'])
+        ['url', 'resources', 'cookies', 'comment', 'optional_resources',
+         'optional_resource_regexes'])
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
       bad_keys = list(actual_keys - known_keys)
@@ -327,6 +328,8 @@ def validate_user_config(path: Text, configs: Any):
       config['comment'] = config['url']
     if 'optional_resources' not in config:
       config['optional_resources'] = []
+    if 'optional_resource_regexes' not in config:
+      config['optional_resource_regexes'] = []
 
     if not isinstance(config['url'], str):
       raise ValueError('%s: url must be a string' % path)
@@ -337,6 +340,8 @@ def validate_user_config(path: Text, configs: Any):
     validate_list_of_strings(path, 'resources', config['resources'])
     validate_list_of_strings(path, 'optional_resources',
                              config['optional_resources'])
+    validate_list_of_strings(path, 'optional_resource_regexes',
+                             config['optional_resource_regexes'])
     validate_dict_of_strings(path, 'cookies', config['cookies'])
 
 

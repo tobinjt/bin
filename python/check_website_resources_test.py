@@ -379,7 +379,7 @@ class TestCheckSingleUrl(unittest.TestCase):
         resources=['resource_1'],
         cookies={},
         comment='comment',
-        optional_resources_regexes=['dark-mode.min.[a-z0-9]{32}.js'])
+        optional_resource_regexes=['dark-mode.min.[a-z0-9]{32}.js'])
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
