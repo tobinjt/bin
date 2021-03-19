@@ -17,7 +17,9 @@ if [[ -z "$(type -a vim)" ]]; then
 fi
 
 if [[ -n "$(type -a brew)" ]]; then
-  brew install python
+  if ! brew list | grep python; then
+    brew install python
+  fi
 fi
 
 # Older version of Python don't have dataclasses, install it if necessary.
@@ -27,7 +29,7 @@ fi
 
 DESTDIR="${HOME}/src/dotfiles"
 readonly DESTDIR
-if [ ! -d "${DESTDIR}" ]; then
+if [[ ! -d "${DESTDIR}" ]]; then
   mkdir -p "$(dirname "${DESTDIR}")"
   git clone https://github.com/tobinjt/dotfiles.git "${DESTDIR}"
 fi
@@ -42,10 +44,12 @@ rm -f "${HOME}/.bashrc"
 PATH="${PATH}:${HOME}/bin"
 export PATH
 dotfiles
-if [ "${USER}" == "johntobin" ]; then
+if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
   # I need to do this anyway, so might as well do it now.
   sed -i -e 's!https://github.com/!git@github.com:!' "${HOME}/bin/.git/config"
   ( cd "${HOME}/bin/.git/hooks"
-    ln -s ../../bin-git-precommit-hook pre-commit)
+    if [[ ! -L pre-commit ]]; then
+      ln -s ../../bin-git-precommit-hook pre-commit
+      fi)
 fi
