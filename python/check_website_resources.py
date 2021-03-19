@@ -7,11 +7,14 @@ to guard against bloating.  JSON_CONFIG_FILE specifies the URLs and resources.
 JSON_CONFIG_FILE must contain a single list of dicts, each dict containing:
 - url (required): the URL to check
 - resources (required): list of expected resources for the URL.
+- optional_resources (optional): list of optional resources for the URL.
+- optional_resources_regexes (optional): list of optional resources regexes for
+  the URL.
 - cookies (optional): dict of cookie keys to cookie values to send when
   requesting the URL.
 - comment (optional): a comment to display in messages to more easily identify
-  which URL diffs are being reported on (e.g. when a URL is listed multiple
-  times with different cookies).
+  which URL unexpected or missing resources are being reported for (e.g. when a
+  URL is listed multiple times with different cookies).
 
 Example JSON_CONFIG_FILE:
 
@@ -35,6 +38,9 @@ Example JSON_CONFIG_FILE:
       "comment": "something useful",
       "optional_resources": [
         "https://www.example.com/foo.js",
+      ],
+      "optional_resources_regexes": [
+        "https://www.example.com/bar.*.js",
       ]
     }
   ]
@@ -42,7 +48,6 @@ Example JSON_CONFIG_FILE:
 
 import argparse
 import dataclasses
-import difflib
 import json
 import logging
 import os
@@ -83,6 +88,7 @@ class SingleURLConfig:
     url: URL to check.
     resources: expected resources
     optional_resources: optional resources
+    optional_resources_regexes: optional resource regexes
     cookies: cookies to send with request
     comment: comment to help identify the config.
   """
@@ -91,6 +97,8 @@ class SingleURLConfig:
   comment: Text
   cookies: Dict[Text, Text]
   optional_resources: List[Text] = dataclasses.field(default_factory=list)
+  optional_resources_regexes: List[Text] = dataclasses.field(
+      default_factory=list)
 
 
 def read_wget_log() -> List[Text]:
@@ -219,27 +227,32 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
       config.url,
       config.comment,
       actual_resources)
-
   config.resources.sort()
   logging.info(
       'Expected resources for %s (%s): %s',  # pragma: no mutate
       config.url,
       config.resources,
       config.comment)
-  diff_generator = difflib.unified_diff(config.resources,
-                                        actual_resources,
-                                        fromfile='expected',
-                                        tofile='actual')
-  diffs = [
-      d.rstrip('\n')  # pragma: no mutate
-      for d in diff_generator
-  ]
-  if not diffs:
-    return []
-  errors = [
-      'Unexpected resource diffs for %s (%s):' % (config.url, config.comment)
-  ]
-  return errors + diffs
+
+  errors = []
+  missing_resources = set(config.resources) - set(actual_resources)
+  if missing_resources:
+    errors.append('Missing resources for %s (%s):' %
+                  (config.url, config.comment))
+    errors.extend(sorted(missing_resources))
+
+  extra_resources = set(actual_resources) - set(config.resources)
+  extra_unmatched = []
+  regexes = [re.compile(x) for x in config.optional_resources_regexes]
+  for extra_resource in extra_resources:
+    if all(regex.match(extra_resource) is None for regex in regexes):
+      extra_unmatched.append(extra_resource)
+  if extra_unmatched:
+    errors.append('Unmatched resources for %s (%s):' %
+                  (config.url, config.comment))
+    errors.extend(extra_unmatched)
+
+  return errors
 
 
 def validate_list_of_strings(path: Text, name: Text, data: List[Text]):

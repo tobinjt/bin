@@ -348,12 +348,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         comment='comment')
     actual = check_website_resources.check_single_url(config)
     expected = split_inline_string("""
-        Unexpected resource diffs for https://www.example.com/ (comment):
-        --- expected
-        +++ actual
-        @@ -1 +1,2 @@
-         resource_1
-        +resource_2
+        Unmatched resources for https://www.example.com/ (comment):
+        resource_2
         """)
     self.assertEqual(expected, actual)
 
@@ -369,6 +365,21 @@ class TestCheckSingleUrl(unittest.TestCase):
         cookies={},
         comment='comment',
         optional_resources=['resource_2'])
+    actual = check_website_resources.check_single_url(config)
+    self.assertEqual([], actual)
+
+  def test_optional_resource_regexes(self, mock_run_wget):
+    """Test for optional resource regexes being accepted."""
+    mock_run_wget.return_value = split_inline_string("""
+        -- resource_1
+        -- dark-mode.min.7039e2fd92710e0626d451d6725af137.js
+        """)
+    config = check_website_resources.SingleURLConfig(
+        url='https://www.example.com/',
+        resources=['resource_1'],
+        cookies={},
+        comment='comment',
+        optional_resources_regexes=['dark-mode.min.[a-z0-9]{32}.js'])
     actual = check_website_resources.check_single_url(config)
     self.assertEqual([], actual)
 
@@ -494,14 +505,10 @@ class TestMain(unittest.TestCase):
           self.assertEqual(1, status)
           warnings = mock_stderr.getvalue().rstrip('\n').split('\n')
           expected = split_inline_string("""
-              Unexpected resource diffs for www.example.com (www.example.com):
-              --- expected
-              +++ actual
-              @@ -1,3 +1,3 @@
-               resource_1
-              -resource_2
-              +resource_3
-               www.example.com
+              Missing resources for www.example.com (www.example.com):
+              resource_2
+              Unmatched resources for www.example.com (www.example.com):
+              resource_3
               """)
           self.assertEqual(expected, warnings)
 
