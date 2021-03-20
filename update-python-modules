@@ -92,6 +92,7 @@ main() {
   local logdir="${HOME}/.flexget/logs"
   if [[ -d "${logdir}" ]]; then
     virtualenv_install "${basedir}/flexget" "flexget" "transmission-rpc"
+    printf "\\n\\nTesting Flexget\\n"
     flexget-wrapper execute
     printf "\\n\\n\\n\\n\\n"
   fi
