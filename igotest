@@ -3,4 +3,5 @@
 set -e -f -u -o pipefail
 
 # Run go test when any inputs change.
+set +f
 inotify_wrapper ./*.go -- go test "$@"

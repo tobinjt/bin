@@ -3,4 +3,5 @@
 set -e -f -u -o pipefail
 
 # Run go cover when any inputs change.
+set +f
 inotify_wrapper ./*.go -- gocover "$@"
