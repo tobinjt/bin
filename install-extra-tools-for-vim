@@ -14,10 +14,6 @@ if type go >& /dev/null; then
   # would install second copies of homebrew binaries; all the existing binaries
   # have been deleted so fresh binaries will be built.
   vim -c 'execute ":GoInstallBinaries" | :quit'
-  # Clean up tmp directories left behind by vim-go.
-  set +f
-  rm -r -f "${HOME}/tmp/vim/tmp/vim-go"*
-  set -f
 
   # Tools used by Syntastic; some of the tools are installed by GoUpdateBinaries
   # so I don't need to install them a second time.
