@@ -24,7 +24,9 @@ if type go >& /dev/null; then
 
   if type codesign >& /dev/null; then
     # Debugger; installed by vim-go, manual instructions at
-    # https://github.com/go-delve/delve/blob/master/Documentation/installation/osx/install.md
+    # https://github.com/go-delve/delve/blob/master/Documentation/installation/README.md
+    # Enable developer mode to avoid repeated password prompts.
+    sudo /usr/sbin/DevToolsSecurity -enable
     # Needs to be signed to avoid repeated password prompts.
     # I manually followed the steps to create the cert in
     # https://sourceware.org/gdb/wiki/PermissionsDarwin
