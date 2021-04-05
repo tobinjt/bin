@@ -2,6 +2,9 @@
 
 set -e -f -u -o pipefail
 
+# If you run 'go get' from a directory containing go source code it will change
+# go.{mod,sum} in that directory, so change to a temporary directory.
+cd "${TMPDIR}"
 if type go >& /dev/null; then
   # Clean up old binaries so that GoInstallBinaries will install updated
   # binaries.
