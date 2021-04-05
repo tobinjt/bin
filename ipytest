@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Run pytest when the test file changes.
+if [[ "$#" -eq 0 ]]; then
+  echo "ipytest: expecting at least one filename." >&2
+  exit 1
+fi
+inotify_wrapper "$@" -- pytest "$@"

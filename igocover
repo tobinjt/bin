@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Run go cover when any inputs change.
+inotify_wrapper ./*.go -- gocover "$@"

@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+usage() {
+  cat <<END_OF_USAGE
+Watch the specified files and run the binary and when they change.
+Usage: $0 file1 [file2 ...] -- binary [args ...]
+Files will not be passed to the binary, the caller needs to do that if
+required.
+END_OF_USAGE
+}
+
+main() {
+  if [[ "$#" -gt 0 ]] && [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    usage
+    return 0
+  fi
+
+  local files_to_watch=()
+  while [[ "$#" -gt 0 && "$1" != "--" ]]; do
+    files_to_watch+=("$1")
+    shift
+  done
+  ## Discard "--"
+  if [[ "$#" -gt 0 ]]; then
+    shift
+  fi
+  local binary_and_args=("$@")
+
+  if [[ "${#files_to_watch[@]}" -eq 0 ]]; then
+    printf "%s: need at least one file to watch\\n\\n" "$0" >&2
+    usage >&2
+    return 1
+  fi
+  if [[ "${#binary_and_args[@]}" -eq 0 ]]; then
+    printf "%s: need a binary (and optionally args) to execute\\n\\n" "$0" >&2
+    usage >&2
+    return 1
+  fi
+
+  "${binary_and_args[@]}"
+  if is_mac_os; then
+    # Use -n2 rather than -n1 because saving a file in vim seems to cause two
+    # changes.
+    fswatch -o "${files_to_watch[@]}" | xargs -n1 -I{} "${binary_and_args[@]}"
+  else
+    while true; do
+      inotifywait --quiet "${files_to_watch[@]}"
+      "${binary_and_args[@]}"
+    done
+  fi
+}
+
+main "$@"

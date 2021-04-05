@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Run phpunit when any PHP files change.
+inotify_wrapper ./**/*.php -- phpunit "$@"
