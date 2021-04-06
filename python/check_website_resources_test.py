@@ -162,6 +162,16 @@ class TestValidateUserConfig(unittest.TestCase):
             'resources': [],
             'optional_resources': [1, 2]
         }],
+        '"optional_resource_regexes" must be a list of strings': [{
+            'url': 'x',
+            'resources': [],
+            'optional_resource_regexes': 1
+        }],
+        'all "optional_resource_regexes" must be strings: 1, 2': [{
+            'url': 'x',
+            'resources': [],
+            'optional_resource_regexes': [1, 2]
+        }],
         '"cookies" must be a dict': [{
             'url': 'x',
             'resources': ['x'],
