@@ -130,11 +130,13 @@ class TestCheckSentinels(unittest.TestCase):
         ' current time 43200/1970-01-01 12:00;'
         ' last backup 25200/1970-01-01 07:00;'
         ' max allowed delay: 7200/1970-01-01 02:00;'
+        ' delay allowed until: 32400/1970-01-01 09:00;'
         ' sleeping until: 0/1970-01-01 00:00',
         'Backup for "qwerty" too old:'
         ' current time 43200/1970-01-01 12:00;'
         ' last backup 28800/1970-01-01 08:00;'
         ' max allowed delay: 3600/1970-01-01 01:00;'
+        ' delay allowed until: 32400/1970-01-01 09:00;'
         ' sleeping until: 0/1970-01-01 00:00',
     ]
     expected_messages = [
@@ -178,6 +180,7 @@ class TestCheckSentinels(unittest.TestCase):
         ' current time 30600/1970-01-01 08:30;'
         ' last backup 14400/1970-01-01 04:00;'
         ' max allowed delay: 7200/1970-01-01 02:00;'
+        ' delay allowed until: 21600/1970-01-01 06:00;'
         ' sleeping until: 0/1970-01-01 00:00',
     ]
     # Do not truncate diffs.
@@ -312,6 +315,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                     ' current time 734400/1970-01-09 12:00;'
                     ' last backup 604800/1970-01-08 00:00;'
                     ' max allowed delay: 86400/1970-01-02 00:00;'
+                    ' delay allowed until: 691200/1970-01-09 00:00;'
                     ' sleeping until: 0/1970-01-01 00:00\n')
         self.assertEqual(expected, warnings)
         self.assertEqual('', messages)

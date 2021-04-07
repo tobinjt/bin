@@ -109,6 +109,7 @@ def check_sentinels(sentinels: ParsedSentinels,
              ' current time %(now)d/%(now_human)s;'
              ' last backup %(last_backup)d/%(last_backup_human)s;'
              ' max allowed delay: %(max_delay)d/%(max_delay_human)s;'
+             ' delay allowed until: %(delay_until)d/%(delay_until_human)s;'
              ' sleeping until: %(sleeping_until)d/%(sleeping_until_human)s')
   time_fmt = '%Y-%m-%d %H:%M'
 
@@ -137,6 +138,9 @@ def check_sentinels(sentinels: ParsedSentinels,
         'last_backup_human': time.strftime(time_fmt, time.gmtime(last_backup)),
         'max_delay': max_delay,
         'max_delay_human': time.strftime(time_fmt, time.gmtime(max_delay)),
+        'delay_until': last_backup + max_delay,
+        'delay_until_human': time.strftime(
+            time_fmt, time.gmtime(last_backup + max_delay)),
         'sleeping_until': sleeping_until,
         'sleeping_until_human': time.strftime(time_fmt,
                                               time.gmtime(sleeping_until)),

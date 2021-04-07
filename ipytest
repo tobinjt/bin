@@ -2,9 +2,11 @@
 
 set -e -f -u -o pipefail
 
-# Run pytest when the test file changes.
+# Run pytest when inputs change.
+set +f
 if [[ "$#" -eq 0 ]]; then
-  echo "ipytest: expecting at least one filename." >&2
-  exit 1
+  files=(*.py)
+else
+  files=("$@")
 fi
-inotify_wrapper "$@" -- pytest "$@"
+inotify_wrapper "${files[@]}" -- pytest "${files[@]}"
