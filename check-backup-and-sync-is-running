@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# shellcheck disable=SC2207
+processes=($(pgrep "Backup and Sync"))
+if [[ "${#processes[@]}" -lt 3 ]]; then
+  printf "%s: expecting >= 3 processes, found %s\\n" "$0" "${#processes[@]}"
+  ps -fp "${processes[@]}"
+fi
