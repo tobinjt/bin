@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+usage() {
+  printf "Usage: %s\\n" "$0"
+  printf "Updates the symlink pointing to the SSH socket and prints the\\n"
+  printf "path to the symlink\\n"
+}
+
+main() {
+  if [ "$#" -ne 0 ]; then
+    usage >&2
+    return 1
+  fi
+  if [ -z "${SSH_AUTH_SOCK:-}" ]; then
+    printf "Empty SSH_AUTH_SOCK!  ssh forwarding broken?" >&2
+    return 1
+  fi
+
+  local dir="${HOME}/tmp/ssh"
+  if [ ! -d "${dir}" ]; then
+    mkdir -p "${dir}"
+    chmod 700 "${dir}"
+  fi
+
+  if grep -q "${dir}" <<<"${SSH_AUTH_SOCK}"; then
+    # Already set up correctly.
+    printf "%s\\n" "${SSH_AUTH_SOCK}"
+    return 0
+  fi
+
+  local new_ssh_auth_sock="${dir}/ssh-auth-sock-${HOSTNAME}-${USER}"
+  ln -s -f -n "${SSH_AUTH_SOCK}" "${new_ssh_auth_sock}"
+  printf "%s\\n" "${new_ssh_auth_sock}"
+}
+
+main "$@"
