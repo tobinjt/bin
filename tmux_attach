@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+usage() {
+  printf "Usage: %s\\n" "$0"
+  printf "Attach to an existing tmux session or start a new one.\\n"
+}
+
+main() {
+  if [ "$#" -ne 0 ]; then
+    usage >&2
+    return 1
+  fi
+
+  # Mac OS greatly restricts access to several directories by default; I've
+  # given iTerm full disk access, so I need to start tmux from iTerm for it to
+  # be properly usable.  Check whether I can access ~/Downloads before starting
+  # the tmux server and fail if I can't.
+  if [ -d "${HOME}/Downloads" ]; then
+    if ! tmux ls > /dev/null 2>&1; then
+      if ! ls "${HOME}/Downloads" > /dev/null; then
+        printf "Start tmux from iTerm\\n" >&2
+        return 1
+      fi
+    fi
+  fi
+
+  SSH_AUTH_SOCK="$(update_ssh_auth_sock)"
+  export SSH_AUTH_SOCK
+  # -D -A only works with named sessions, so name the session $USER.
+  # Set the name of the first window to ''.
+  tmux new-session -D -A -s "${USER}" -n ''
+}
+
+main "$@"
