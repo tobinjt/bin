@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  # Arguments:
+  # -M: Disable autossh monitoring because I have ssh configured to monitor
+  #     connectivity.
+  # -t: Allocate a pseudo-tty.
+  autossh -M 0 -t "$@" tmux_attach
+}
+
+main "$@"
