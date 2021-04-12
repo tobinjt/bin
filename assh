@@ -7,7 +7,17 @@ main() {
   # -M: Disable autossh monitoring because I have ssh configured to monitor
   #     connectivity.
   # -t: Allocate a pseudo-tty.
-  autossh -M 0 -t "$@" tmux_attach
+  #
+  # zsh sources ~/.zshenv regardless of how you start it so you can set $PATH
+  # etc there.  For bash or zsh without .zshenv set up like that the rest of the
+  # arguments are necessary:
+  #
+  # '${SHELL}': Run the correct shell on the remote end, hence single quotes:
+  #   -l: As a login shell so it sources the correct files.
+  #   -c: Run the command/function 'tmux_attach'
+  #
+  # shellcheck disable=SC2016
+  autossh -M 0 -t "$@" '${SHELL}' -l -c tmux_attach
 }
 
 main "$@"
