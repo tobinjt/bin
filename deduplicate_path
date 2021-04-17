@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Remove duplicate elements from a $PATH-like variable while preserving order.
+# This cannot use gawk features because it needs to be portable to Mac OS X.
+awk -F : \
+    'BEGIN { output = ""; };
+     { for (i = 1; i <= NF; i++) {
+         if (!($i in seen)) {
+           seen[$i] = 1;
+           output = output ":" $i;
+         }
+       }
+     }
+     END { sub("^:", "", output); print output; }' <<< "$1"
