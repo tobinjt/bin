@@ -62,7 +62,7 @@ virtualenv_install() {
 }
 
 main() {
-  if [[ "$(uname -s)" != "Darwin" ]]; then
+  if ! is_mac_os; then
     printf "Only Mac OS is supported, sorry.\\n" >&2
     exit 1
   fi
