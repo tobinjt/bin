@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Strip the directory from one of more files.
+set -e -f -u -o pipefail
+
+filenames=()
+for file in "$@"; do
+  filenames+=("$(basename -- "${file}")")
+done
+
+vim "${filenames[@]}"

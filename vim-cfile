@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Load errors in vim quickfix format from $1.
+set -e -f -u -o pipefail
+
+vim -c ':cfile '"$1"' | :cwindow'
