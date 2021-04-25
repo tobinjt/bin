@@ -35,6 +35,12 @@ extract_single() {
     *.lzma)
       unlzma "${filename}"
       ;;
+    *.par)
+      "./${filename}" --unpack_par_and_exit
+      ;;
+    *.sar)
+      SAR_EXTRACT_ONLY=1 "./${filename}"
+      ;;
     *.rar)
       unrar x -ad "${filename}"
       ;;
