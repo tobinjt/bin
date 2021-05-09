@@ -2,7 +2,6 @@
 
 set -e -f -u -o pipefail
 
-# shellcheck disable=SC1091
 source ../path-parents
 
 DIR="$(mktemp -d /tmp/path-parents-XXXXXXXXXX)"

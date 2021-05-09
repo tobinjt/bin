@@ -2,7 +2,6 @@
 
 set -e -f -u -o pipefail
 
-# shellcheck disable=SC1090
 source "${HOME}/bin/backup-to-rsync-net-lib"
 
 readonly hostname="johntobin-laptop"

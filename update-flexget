@@ -41,7 +41,6 @@ fi
 
 # Dummy values needed by ${SCRIPT}.
 export PS1="dummy"
-# shellcheck source=/dev/null
 source "${SCRIPT}"
 if ! pip3 install -e .; then
   echo "pip failed, cleaning up and restarting to run pip again"

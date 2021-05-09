@@ -2,7 +2,6 @@
 
 set -e -f -u -o pipefail
 
-# shellcheck disable=SC1091
 source ../check-links
 
 wget() {

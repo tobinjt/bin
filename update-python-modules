@@ -55,7 +55,6 @@ virtualenv_install() {
   virtualenv --clear "${destdir}"
   # virtualenv sometimes deletes the destination directory so cd there again.
   cd "${destdir}"
-  # shellcheck disable=SC1091
   source bin/activate
   pip3 install "$@"
   deactivate

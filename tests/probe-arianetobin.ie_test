@@ -2,7 +2,6 @@
 
 set -e -f -u -o pipefail
 
-# shellcheck disable=SC1091
 source ../probe-arianetobin.ie
 
 SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=0
