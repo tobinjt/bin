@@ -8,9 +8,6 @@ usage() {
 }
 
 clean_python_install() {
-  # An automatic update will occur when installing python, so do a manual update
-  # first to reduce the time where python is not installed.
-  brew update
   set +f
   local dir dirs=(/usr/local/Cellar/python*)
   set -f
@@ -83,6 +80,10 @@ main() {
   local basedir="${HOME}/tmp/python"
   rm -rf "${basedir}"
   if [[ "${skip_clean_install}" -eq 0 ]]; then
+    # Updating Python often requires updating a dependency, so let's just update
+    # everything.  This means we'll update Python, then uninstall it, then
+    # install it again which is inefficient but that's the only downside.
+    bubc
     clean_python_install
   fi
   pip3 install virtualenv
