@@ -16,13 +16,10 @@ check_single_host() {
 # tooling making changes in parallel, and restarting from scratch doesn't lose
 # any progress because this is the first action.
 update-hugo-coder
-# Ariane's website also needs to be updated in the right order.  Push any local
-# changes first.
-retry 30 initial-ariane-theme \
-  check-git-repos --pull_and_push "${HOME}/src/ariane-theme"
-printf "\\n\\n\\nariane-theme\\n"
-retry 30 update-ariane-theme \
-  ssh -o ControlMaster=no -t johntobin@hosting update-ariane-theme
+
+# I used to update ariane-theme here but stopped because the changes are
+# infrequent, I will almost certainly manually push any changes I make. and the
+# checks take a long time.
 
 # dotfiles and bin are the next most likely source of diffs, and they can be
 # fixed mostly automatically.
