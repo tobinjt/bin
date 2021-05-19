@@ -77,6 +77,11 @@ main() {
 
   check_redirects \
     "${sleep_time}" \
+    "https://test.arianetobin.ie" \
+    "http://test.arianetobin.ie"
+
+  check_redirects \
+    "${sleep_time}" \
     "https://www.johntobin.ie" \
     "http://www.johntobin.ie" \
     "http://johntobin.ie" \
