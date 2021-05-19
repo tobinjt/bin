@@ -133,6 +133,7 @@ if [[ "$(basename "${BASH_SOURCE[0]}")" == "$(basename "${0}")" ]]; then
       "arianetobin.com" \
       "arianetobin.ie" \
       "dev.arianetobin.ie" \
+      "test.arianetobin.ie" \
       "johntobin.ie" \
       "metalatplay.com" \
       "metalatwork.com" \
