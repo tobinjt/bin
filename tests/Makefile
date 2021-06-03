@@ -1,8 +1,7 @@
 # If make fails with "make: *** No rule to make target ..." then one of the
 # input files is missing.
 
-# TEST_PROGRAMS = $(wildcard *_test)
-TEST_PROGRAMS = check-dns-for-hosting_test check-links_test probe-arianetobin.ie_test
+TEST_PROGRAMS = $(wildcard *_test)
 TEST_WRAPPER = ./test_wrapper
 TIMESTAMP_FILES = $(patsubst %_test, .%_timestamp, $(TEST_PROGRAMS))
 KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
@@ -15,12 +14,17 @@ tests: $(TIMESTAMP_FILES)
 clean:
 	rm -f $(TIMESTAMP_FILES)
 
+# Run the test programs without the wrapper because otherwise we get coverage of
+# the wrapper only.
+# Output is redirected because without the wrapper we get the full output which
+# is not useful.
 coverage: tests
 	rm -rf $(KCOVERAGE_DIR)
 	for test_program in $(TEST_PROGRAMS); do \
 		kcov --bash-method=DEBUG --limits=80,90 \
 			--exclude-pattern="$${HOME}/bin/tests" \
-			$(KCOVERAGE_DIR) "./$${test_program}"; \
+			$(KCOVERAGE_DIR) "./$${test_program}" \
+			>/dev/null 2>/dev/null; \
 	done
 
 # We always depend on %_test, %_test.std{out,err}, and ../%.
