@@ -1,4 +1,6 @@
-TEST_PROGRAMS = $(wildcard *_test)
+# TEST_PROGRAMS = $(wildcard *_test)
+TEST_PROGRAMS = probe-arianetobin.ie_test
+TEST_WRAPPER = test_wrapper
 TIMESTAMP_FILES = $(patsubst %_test, .%_timestamp, $(TEST_PROGRAMS))
 KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
 
@@ -24,7 +26,7 @@ coverage: tests
 # filename if it doesn't exist.  This means to changes to any file needed for
 # testing will cause tests to be rerun.
 .SECONDEXPANSION:
-.%_timestamp: %_test ../% $$(wildcard %_test.stdout) $$(wildcard %_test.stderr)
+.%_timestamp: %_test ../% $(TEST_WRAPPER) $$(wildcard %_test.stdout) $$(wildcard %_test.stderr)
 	rm -f $@
-	./$<
+	./$(TEST_WRAPPER) ./$<
 	test -f $@

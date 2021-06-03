@@ -7,27 +7,18 @@ source ../probe-arianetobin.ie
 SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=0
 export SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS
 
-stdout="$(mktemp -t stdout.XXXXXXXXXXXXXXXXX)"
-stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
-{
-  # Success on first attempt.
-  curl() {
-    printf "%s\\n" "${SENTINEL}"
-  }
-  main || print "Unexpected failure of test 1\\n"
+# Success on first attempt.
+curl() {
+  printf "%s\\n" "${SENTINEL}"
+}
+main || print "Unexpected failure of test 1\\n"
 
-  # Repeated failures.
-  curl() {
-    printf "No sentinel here\\n"
-    printf "curl was invoked for test 2\\n" >&2
-  }
-  main || printf "Test 2: main failed as expected\\n"
-  # TODO: write a test where the first attempt fails and the second succeeds,
-  # like in check-dns-for-hosting_test.  I've tried to do this without success,
-  # because curl() is not redefined like host is, and I don't understand why :(
-} > "${stdout}" 2> "${stderr}" || true
-
-diff -u "probe-arianetobin.ie_test.stdout" "${stdout}"
-diff -u "probe-arianetobin.ie_test.stderr" "${stderr}"
-rm -f "${stdout}" "${stderr}"
-touch .probe-arianetobin.ie_timestamp
+# Repeated failures.
+curl() {
+  printf "No sentinel here\\n"
+  printf "curl was invoked for test 2\\n" >&2
+}
+main || printf "Test 2: main failed as expected\\n"
+# TODO: write a test where the first attempt fails and the second succeeds,
+# like in check-dns-for-hosting_test.  I've tried to do this without success,
+# because curl() is not redefined like host is, and I don't understand why :(
