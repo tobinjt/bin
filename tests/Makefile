@@ -1,6 +1,9 @@
+# If make fails with "make: *** No rule to make target ..." then one of the
+# input files is missing.
+
 # TEST_PROGRAMS = $(wildcard *_test)
-TEST_PROGRAMS = probe-arianetobin.ie_test
-TEST_WRAPPER = test_wrapper
+TEST_PROGRAMS = check-dns-for-hosting_test check-links_test probe-arianetobin.ie_test
+TEST_WRAPPER = ./test_wrapper
 TIMESTAMP_FILES = $(patsubst %_test, .%_timestamp, $(TEST_PROGRAMS))
 KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
 
@@ -20,13 +23,14 @@ coverage: tests
 			$(KCOVERAGE_DIR) "./$${test_program}"; \
 	done
 
-# We always depend on %_test and ../%, but only depend on %_test.std{out,err} if
-# they exist.  We use secondary expansion so that % gets expanded in one pass,
+# We always depend on %_test, %_test.std{out,err}, and ../%.
+# We only depend on %_test.postprocess if it exists.
+# We use secondary expansion so that % gets expanded in one pass,
 # then wildcard gets expanded to a single filename if the file exists or no
 # filename if it doesn't exist.  This means to changes to any file needed for
 # testing will cause tests to be rerun.
 .SECONDEXPANSION:
-.%_timestamp: %_test ../% $(TEST_WRAPPER) $$(wildcard %_test.stdout) $$(wildcard %_test.stderr)
+.%_timestamp: %_test %_test.stdout %_test.stderr ../% $$(wildcard %_test.postprocess) $(TEST_WRAPPER)
 	rm -f $@
-	./$(TEST_WRAPPER) ./$<
+	$(TEST_WRAPPER) ./$<
 	test -f $@

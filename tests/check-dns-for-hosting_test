@@ -32,15 +32,12 @@ dev.domain2.ie has IPv6 address 2a01:4f8:c010:21a::1
 # domain3.ie will fail because there are no records.
 HOST_RECORDS
 
-stdout="$(mktemp -t stdout.XXXXXXXXXXXXXXXXX)"
-stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
-{ main "domain1.ie" || printf "Unexpected failure for domain1.ie\\n" >&2;
-  main "dev.domain2.ie" || printf "Unexpected failure for domain1.ie\\n" >&2;
-  main "domain3.ie" || exit_status="$?";
-  if [[ "${exit_status}" -eq 0 ]]; then
-    printf "Unexpected success for domain3.ie\\n" >&2;
-  fi;
-} > "${stdout}" 2> "${stderr}"
+main "domain1.ie" || printf "Unexpected failure for domain1.ie\\n" >&2;
+main "dev.domain2.ie" || printf "Unexpected failure for domain1.ie\\n" >&2;
+main "domain3.ie" || exit_status="$?";
+if [[ "${exit_status}" -eq 0 ]]; then
+  printf "Unexpected success for domain3.ie\\n" >&2;
+fi;
 
 # Test that retries work.
 # First time host is run output nothing, set up output for the second time.
@@ -66,12 +63,4 @@ HOST_RECORDS
   }
 }
 
-{ main "sub.domain4.ie" || printf "Unexpected failure for domain4.ie\\n" >&2;
-} >> "${stdout}" 2>> "${stderr}"
-
-# Clean up variable output.
-sed -i.bak -e 's/host output in.*/host output in tmpfile/' "${stderr}"
-diff -u "check-dns-for-hosting_test.stdout" "${stdout}"
-diff -u "check-dns-for-hosting_test.stderr" "${stderr}"
-rm -f "${stdout}" "${stderr}"
-touch .check-dns-for-hosting_timestamp
+main "sub.domain4.ie" || printf "Unexpected failure for domain4.ie\\n" >&2

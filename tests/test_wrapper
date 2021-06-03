@@ -10,7 +10,12 @@ stderr="$(mktemp -t stderr.XXXXXXXXXXXXXXXXX)"
 test_program="$1"
 if ! "${test_program}" > "${stdout}" 2> "${stderr}"; then
   printf "Test program %s failed\\n" "${test_program}"
-  return 1
+  exit 1
+fi
+
+# Some test programs need to postprocess the output files.
+if [[ -f "${test_program}.postprocess" ]]; then
+  "${test_program}.postprocess" "${stdout}" "${stderr}"
 fi
 
 diff -u "${test_program}.stdout" "${stdout}"

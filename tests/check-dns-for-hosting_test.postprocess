@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+stderr="$2"
+# Clean up variable output.
+sed -i.bak -e 's/host output in.*/host output in tmpfile/' "${stderr}"
+rm -f "${stderr}.bak"
