@@ -22,7 +22,7 @@ output_and_failure() {
 }
 
 this_should_not_be_run() {
-  printf "THIS SHOULD NOT BE RUN!!!\n" >&2
+  printf "THIS SHOULD NOT BE RUN!!!\\n" >&2
   false
 }
 

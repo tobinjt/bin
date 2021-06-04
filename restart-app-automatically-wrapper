@@ -38,9 +38,9 @@ leftover_pids() {
 
 main() {
   if [[ "$#" -ne 2 ]]; then
-    printf "Usage: %s --kill|TIMEOUT APP\n" "$0" >&2
-    printf "E.g. %s 60 /Applications/Pauses.app\n" "$0" >&2
-    printf "E.g. %s --kill /Applications/Pauses.app\n" "$0" >&2
+    printf "Usage: %s --kill|TIMEOUT APP\\n" "$0" >&2
+    printf "E.g. %s 60 /Applications/Pauses.app\\n" "$0" >&2
+    printf "E.g. %s --kill /Applications/Pauses.app\\n" "$0" >&2
     exit 1
   fi
   local exit_status=0 timeout="$1" app="$2"

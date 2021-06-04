@@ -18,7 +18,7 @@ retry() {
   local sleep_time="$1" message="$2"
   shift 2
   until "$@"; do
-    printf "Retrying %s\n" "${message}"
+    printf "Retrying %s\\n" "${message}"
     sleep "${sleep_time}"
   done
 }
