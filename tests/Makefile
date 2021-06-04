@@ -1,4 +1,8 @@
+# If make fails with "make: *** No rule to make target ..." then one of the
+# input files is missing.
+
 TEST_PROGRAMS = $(wildcard *_test)
+TEST_WRAPPER = ./test_wrapper
 TIMESTAMP_FILES = $(patsubst %_test, .%_timestamp, $(TEST_PROGRAMS))
 KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
 
@@ -10,21 +14,27 @@ tests: $(TIMESTAMP_FILES)
 clean:
 	rm -f $(TIMESTAMP_FILES)
 
+# Run the test programs without the wrapper because otherwise we get coverage of
+# the wrapper only.
+# Output is redirected because without the wrapper we get the full output which
+# is not useful.
 coverage: tests
 	rm -rf $(KCOVERAGE_DIR)
 	for test_program in $(TEST_PROGRAMS); do \
 		kcov --bash-method=DEBUG --limits=80,90 \
 			--exclude-pattern="$${HOME}/bin/tests" \
-			$(KCOVERAGE_DIR) "./$${test_program}"; \
+			$(KCOVERAGE_DIR) "./$${test_program}" \
+			>/dev/null 2>/dev/null; \
 	done
 
-# We always depend on %_test and ../%, but only depend on %_test.std{out,err} if
-# they exist.  We use secondary expansion so that % gets expanded in one pass,
+# We always depend on %_test, %_test.std{out,err}, and ../%.
+# We only depend on %_test.postprocess if it exists.
+# We use secondary expansion so that % gets expanded in one pass,
 # then wildcard gets expanded to a single filename if the file exists or no
 # filename if it doesn't exist.  This means to changes to any file needed for
 # testing will cause tests to be rerun.
 .SECONDEXPANSION:
-.%_timestamp: %_test ../% $$(wildcard %_test.stdout) $$(wildcard %_test.stderr)
+.%_timestamp: %_test %_test.stdout %_test.stderr ../% $$(wildcard %_test.postprocess) $(TEST_WRAPPER)
 	rm -f $@
-	./$<
+	$(TEST_WRAPPER) ./$<
 	test -f $@

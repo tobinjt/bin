@@ -25,6 +25,9 @@ update-hugo-coder
 # fixed mostly automatically.
 printf "\\n\\n\\ndotfiles\\n"
 update-dotfiles-and-bin-everywhere
+# Run a second time so that commits from later machines are pulled to earlier
+# machines.
+update-dotfiles-and-bin-everywhere
 
 # Now do the rest of the checks.
 for host in laptop home hosting; do

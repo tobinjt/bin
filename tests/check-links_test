@@ -5,14 +5,6 @@ set -e -f -u -o pipefail
 source ../check-links
 
 wget() {
-  # Ugly way to set ${url} to the last argument.
-  for url in "$@"; do
-    true
-  done
-  if [[ "${url}" != "https://www.johntobin.ie/" ]]; then
-    printf "Bad URL: %s\\n" "${url}" >&2
-    exit 1
-  fi
   cat > wget.log <<WGET
 # Successful request
 --2019-12-12 22:45:34--  https://www.johntobin.ie/
@@ -28,12 +20,6 @@ HTTP request sent, awaiting response... 200 OK
 WGET
 }
 
-output="$(main "https://www.johntobin.ie/" >&1 || true)"
-filtered="$(sed -e '/for further investigation/d' <<<"${output}")"
-expected="$(cat <<EXPECTED
-Problems found:
---2019-12-12 22:45:34--  https://www.johntobin.ie/unsuccessful HTTP request sent, awaiting response... 404 Not found
-EXPECTED
-)"
-diff -u <(echo "${expected}") <(echo "${filtered}")
-touch .check-links_timestamp
+# main() should fail because of the errors in the wget output.
+(main "https://www.johntobin.ie/" || printf "main failed as expected\\n" >&2) \
+  | sed -e '/for further investigation/d'
