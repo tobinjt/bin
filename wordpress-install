@@ -27,7 +27,7 @@ fi
 
 # VERSION is optional.
 if [[ "$#" -eq 3 ]]; then
-  if [[ "$2" == "wordpress" ]]; then
+  if [[ "$2" == "wordpress" && "$3" != "wordpress" ]]; then
     set -- "$1" "wordpress" "wordpress" "$3"
   else
     # Make $4 (version) empty but defined because of -u.
@@ -139,7 +139,7 @@ rm -rf "${NAME}"
 unzip -q -o "${DOWNLOAD_PATH}"
 if [[ "${TYPE}" == "wordpress" ]]; then
   # Wordpress extracts into a directory named wordpress, and unzip doesn't have
-  # an option to strip a leading directory, so copy it to the rigth directory
+  # an option to strip a leading directory, so copy it to the right directory
   # with tar, then delete it.
   tar cf - -C wordpress . | tar xf -
   rm -rf wordpress
