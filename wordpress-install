@@ -143,6 +143,11 @@ if [[ "${TYPE}" == "wordpress" ]]; then
   # with tar, then delete it.
   tar cf - -C wordpress . | tar xf -
   rm -rf wordpress
+  # Remove the "Hello, Dolly" plugin that wordpress ships but complains about.
+  rm -f wp-content/plugins/hello.php
+  # Remove the twenty* themes that wordpress ships but complains about.
+  # Don't remove twentytwentyone theme because it will complain about that too.
+  rm -rf wp-content/themes/twentynineteen wp-content/themes/twentytwenty
 fi
 if [[ "${EXCLUDED_FILE_NEEDED}" -eq 1 ]]; then
   printf "%s" "${EXCLUDED_FILE_CONTENTS}" > "${EXCLUDED_FILE_NAME}"
