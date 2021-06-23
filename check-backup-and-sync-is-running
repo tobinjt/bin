@@ -6,5 +6,7 @@ set -e -f -u -o pipefail
 processes=($(pgrep "Backup and Sync" || true))
 if [[ "${#processes[@]}" -lt 3 ]]; then
   printf "%s: expecting >= 3 processes, found %s\\n" "$0" "${#processes[@]}"
-  ps -fp "${processes[@]}"
+  if [[ "${#processes[@]}" -gt 0 ]]; then
+    ps -fp "${processes[@]}"
+  fi
 fi
