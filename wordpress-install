@@ -10,9 +10,17 @@ die() {
   exit 1
 }
 usage() {
-  warn "Usage: $0 WORDPRESS-DIRECTORY wordpress [VERSION]"
-  warn "Usage: $0 WORDPRESS-DIRECTORY theme[s]|plugin[s] NAME [VERSION]"
-  die "If VERSION is not supplied the latest version will be installed."
+  cat >&2 <<USAGE
+Usage: $0 WORDPRESS-DIRECTORY wordpress [VERSION]
+Usage: $0 WORDPRESS-DIRECTORY theme[s]|plugin[s] NAME [VERSION]
+If VERSION is not supplied the default (usually latest) version will be
+installed.
+
+To install a plugin that doesn't come from wordpress.com:
+- Download it to "\${HOME}/wordpress/\${plugin}.\${version}.zip"
+- $0 WORDPRESS-DIRECTORY plugin "\${plugin}" "\${version}"
+USAGE
+  die
 }
 
 # Don't require the user to pass "wordpress" "wordpress".
