@@ -25,10 +25,15 @@ main() {
   # -- marks the start of a request; replace the hold space with that line.
   # When the request status is seen, append the line to the hold space, swap the
   # hold and pattern spaces, replace newline with space to join the lines, then
-  # print the pattern space.
+  # print the pattern space.  Replace the hold space with the pattern space
+  # so we have the URL for when the request fails due to auth and succeeds on
+  # retry; we'll get an output line for the failure, then an output line for
+  # success with both messages, but that should be handled properly by the retry
+  # logic in check-links.awk.
+  # TODO: add a test for that behaviour.
   sed -n \
       -e '/^--/ h' \
-      -e '/HTTP request sent, awaiting response.../ { H; g; s/\n/ /; p; }' \
+      -e '/HTTP request sent, awaiting response.../ { H; g; s/\n/ /; p; h; }' \
       "${LOG}" > "${STATUS_FILE}"
   PROBLEMS="$(awk -f "${HOME}/bin/check-links.awk" "${STATUS_FILE}")"
   # Check for common error messages too.
