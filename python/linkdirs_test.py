@@ -207,6 +207,20 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                   ' same contents; deleting and linking\n')
       self.assertMultiLineEqual(expected, mock_stdout.getvalue())
 
+  def test_skip_symlinks(self):
+    """Symlinks are ignored when requested."""
+    src_dir = '/a/b/c'
+    dest_dir = '/z/y/x'
+    os.makedirs(src_dir)
+    os.makedirs(dest_dir)
+    os.symlink(os.path.join(src_dir, 'sym-source'),
+               os.path.join(src_dir, 'sym-dest'))
+
+    with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
+      linkdirs.real_main(['linkdirs', '--ignore_symlinks', src_dir, dest_dir])
+      actual = mock_stdout.getvalue()
+      self.assertFalse('Skipping symbolic link' in actual)
+
   def test_report_unexpected_files(self):
     """Report unexpected files."""
     src_dir = '/a/b/c'

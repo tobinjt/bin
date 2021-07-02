@@ -27,7 +27,7 @@ cat_ssh_known_hosts() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local flags=() return_early=0 opt
+  local flags=("--ignore_symlinks") return_early=0 opt
   while getopts ":dfhrX" opt "$@"; do
     case "${opt}" in
       d)

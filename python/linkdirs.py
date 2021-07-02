@@ -259,6 +259,15 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
 
     if os.path.islink(source_filename):
       # Skip source symlinks.
+      if options.ignore_symlinks:
+        # Work around coverage weirdness; this would be more natural:
+        #   if not options.ignore_symlinks:
+        #     append warning
+        #   continue
+        # But when I do that coverage reports that the if statement is never
+        # false, but it is because the test that requires the log line passes.
+        # Weird :(
+        continue
       results.errors.append("Skipping symbolic link %s" % source_filename)
       continue
 
@@ -509,6 +518,13 @@ def parse_arguments(
       default=False,
       help=textwrap.fill("""Delete unexpected files in DESTINATION_DIRECTORY
                          (default: %(default)s)"""))
+  argv_parser.add_argument(
+      "--ignore_symlinks",
+      action="store_true",
+      dest="ignore_symlinks",
+      default=False,
+      help=textwrap.fill("""Ignore symlinks rather than reporting an error and
+                         failing (default: %(default)s)"""))
   argv_parser.add_argument('args',
                            nargs='+',
                            metavar='DIRECTORIES',
