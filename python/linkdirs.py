@@ -136,18 +136,19 @@ def diff(old_filename: Path, new_filename: Path) -> Diffs:
 
   # pyfakefs doesn't seem to validate the mode, so stop mutating it.
   old_timestamp = time.ctime(os.stat(old_filename).st_mtime)
-  old_contents = open(old_filename, "r").readlines()  # pragma: no mutate
   new_timestamp = time.ctime(os.stat(new_filename).st_mtime)
-  new_contents = open(new_filename, "r").readlines()  # pragma: no mutate
-  diff_generator = difflib.unified_diff(new_contents, old_contents,
-                                        new_filename, old_filename,
-                                        new_timestamp, old_timestamp)
-  # Strip the newline here because one will be added later when printing the
-  # messages.
-  return [
-      d.rstrip('\n')  # pragma: no mutate
-      for d in diff_generator
-  ]
+  with open(old_filename, "r") as old_fh, open(new_filename, "r") as new_fh:
+    old_contents = old_fh.readlines()
+    new_contents = new_fh.readlines()
+    diff_generator = difflib.unified_diff(new_contents, old_contents,
+                                          new_filename, old_filename,
+                                          new_timestamp, old_timestamp)
+    # Strip the newline here because one will be added later when printing the
+    # messages.
+    return [
+        d.rstrip('\n')  # pragma: no mutate
+        for d in diff_generator
+    ]
 
 
 def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:

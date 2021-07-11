@@ -56,8 +56,8 @@ class TestArgumentParsing(unittest.TestCase):
     for (args, expected) in tests:
       with self.subTest('Parsing %s' % args):
         actual = colx.parse_arguments(args)
-        for key in expected:
-          self.assertEqual(getattr(actual, key), expected[key])
+        for (key, value) in expected.items():
+          self.assertEqual(value, getattr(actual, key))
 
   def test_error_checking(self):  # pylint: disable=no-self-use
     """Tests for error checking."""
