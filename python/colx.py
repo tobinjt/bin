@@ -38,9 +38,7 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
   Returns:
     argparse.Namespace, with attributes set based on the arguments.
   """
-  description = '\n'.join(__doc__.split('\n')[2:])
-  usage = __doc__.split('\n')[0]
-
+  (usage, description) = __doc__.split('\n', maxsplit=1)
   argv_parser = argparse.ArgumentParser(
       description=description,
       usage=usage,

@@ -446,8 +446,7 @@ def parse_arguments(
   """
   # __doc__ is written to pass pylint checks, so it must be changed before being
   # used as a usage message.
-  usage = __doc__.split('\n')[0]
-  description = '\n'.join(__doc__.split('\n')[2:])
+  (usage, description) = __doc__.split('\n', maxsplit=1)
   argv_parser = argparse.ArgumentParser(
       description=description,
       usage=usage,

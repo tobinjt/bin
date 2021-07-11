@@ -148,10 +148,10 @@ def nines(num_nines: float, days: float) -> str:
 
 
 def main(argv: List[str]) -> None:
-  description = '\n'.join(__doc__.split('\n')[2:]) % {
+  (usage, description) = __doc__.split('\n', maxsplit=1)
+  description = description % {
       'PT': PERCENT_THRESHOLD,
   }
-  usage = __doc__.split('\n')[0]
   argv_parser = argparse.ArgumentParser(description=description, usage=usage)
   argv_parser.add_argument('nines',
                            metavar='NUMBER_OF_NINES',
