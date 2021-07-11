@@ -39,7 +39,7 @@ main() {
     return 1
   fi
 
-  "${binary_and_args[@]}"
+  "${binary_and_args[@]}" || true
   if is_mac_os; then
     # Use -n2 rather than -n1 because saving a file in vim seems to cause two
     # changes.
@@ -47,7 +47,7 @@ main() {
   else
     while true; do
       inotifywait --quiet "${files_to_watch[@]}"
-      "${binary_and_args[@]}"
+      "${binary_and_args[@]}" || true
     done
   fi
 }
