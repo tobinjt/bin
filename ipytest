@@ -9,4 +9,4 @@ if [[ "$#" -eq 0 ]]; then
 else
   files=("$@")
 fi
-inotify_wrapper "${files[@]}" -- pytest "${files[@]}"
+inotify_wrapper "${files[@]}" -- pytest -- "${files[@]}"
