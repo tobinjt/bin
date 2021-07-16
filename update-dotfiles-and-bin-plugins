@@ -9,15 +9,10 @@ main() {
   # more in future if necessary.
   cd "${HOME}/src/dotfiles"
   git submodule update --recursive --remote
-  # Commit the changes if any.  Separate vim from everything else, because
-  # nearly every submodule is under vim.
+  # Commit the changes if any.
   git add -A .vim/bundle
   if ! git check-local-copy-is-clean 2>/dev/null; then
-    git commit -m 'Update vim plugins.'
-  fi
-  git add -A .
-  if ! git check-local-copy-is-clean 2>/dev/null; then
-    git commit -m 'Update other plugins.'
+    git commit -m 'Update all plugins.'
   fi
   # Force overwriting and deletion of removed files.
   dotfiles -f -X
