@@ -16,6 +16,6 @@ brew upgrade --force-bottle --formula || true
 sleep 2
 brew upgrade --formula
 sleep 2
-brew upgrade --cask
+brew upgrade --cask --greedy
 sleep 2
 brew cleanup
