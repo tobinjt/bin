@@ -2,8 +2,10 @@
 
 set -e -f -u -o pipefail
 
+echo "dev.arianetobin.ie"
 retry 30 dev.arianetobin.ie \
   update-wordpress-core-plugins-and-themes "${HOME}/src/dev.arianetobin.ie"
+echo "test.arianetobin.ie"
 retry 30 test.arianetobin.ie \
   update-wordpress-core-plugins-and-themes "${HOME}/src/test.arianetobin.ie"
 read -r -p 'Press enter to update arianetobin.ie'
