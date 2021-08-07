@@ -8,7 +8,7 @@ unmountdisk() {
   sync
   sleep 5
   disk="$(diskutil list \
-            | awk '$3 == "Backup" && $2 == "'"${type}"'" { print $6 }' \
+            | awk '/Backup/ && /'"${type}"'/ { print $6 }' \
             | sed -e 's/s[[:digit:]]$//')"
   retry 10 "unmounting ${type} which is ${disk}" diskutil unmountdisk "${disk}"
 }
