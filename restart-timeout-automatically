@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local APP="/Applications/Time Out.app"
+  local DEST="timeout.restart.plist"
+  local LABEL="TimeOut.restart"
+  local SLEEP_BETWEEN_ATTEMPTS="15"
+
+  if [[ "$#" -eq 0 ]]; then
+    main help
+  else
+    restart-app-automatically "${DEST}" "${APP}" "${LABEL}" \
+      "${SLEEP_BETWEEN_ATTEMPTS}" "$@"
+  fi
+}
+
+main "$@"
