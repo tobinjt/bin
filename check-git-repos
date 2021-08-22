@@ -5,6 +5,9 @@ set -e -f -u -o pipefail
 PATH="${HOME}/bin:${PATH}"
 
 git_pull_and_push_if_possible() {
+  # Explicitly enable the old default behaviour so that git doesn't spew
+  # warnings.
+  git config pull.rebase false
   if git config remote.origin.url >& /dev/null; then
     # Pull and push requires an origin.
     git pull
