@@ -39,7 +39,8 @@ class TestWriteCookiesFile(unittest.TestCase):
     with pyfakefs.fake_filesystem_unittest.Patcher():
       lines = ['asdf', '1234']
       check_website_resources.write_cookies_file(lines)
-      with open(check_website_resources.COOKIES_FILE) as filehandle:
+      with open(check_website_resources.COOKIES_FILE,
+                encoding='utf8') as filehandle:
         self.assertEqual('asdf\n1234\n', filehandle.read())
 
 
@@ -406,7 +407,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         comment='comment')
     with pyfakefs.fake_filesystem_unittest.Patcher():
       actual = check_website_resources.check_single_url(config)
-      with open(check_website_resources.COOKIES_FILE) as filehandle:
+      with open(check_website_resources.COOKIES_FILE,
+                encoding='utf8') as filehandle:
         lines = filehandle.readlines()
         self.assertEqual('# Netscape HTTP Cookie File\n', lines[0])
       self.assertEqual([], actual)

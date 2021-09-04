@@ -117,7 +117,7 @@ def read_wget_log() -> List[Text]:
   Returns:
     A list of log lines with newlines stripped.
   """
-  with open(WGET_LOG, 'r') as wget_log:
+  with open(WGET_LOG, 'r', encoding='utf8') as wget_log:
     return [
         line.rstrip('\n')  # pragma: no mutate
         for line in wget_log.readlines()
@@ -132,7 +132,7 @@ def write_cookies_file(lines: List[Text]):
   Args:
     A list of lines to write.
   """
-  with open(COOKIES_FILE, 'w') as cookies_txt:
+  with open(COOKIES_FILE, 'w', encoding='utf8') as cookies_txt:
     print('\n'.join(lines), file=cookies_txt)
 
 
@@ -353,7 +353,7 @@ def read_config(path: Text) -> List[SingleURLConfig]:
   Returns:
     List of SingleURLConfig.
   """
-  with open(path, 'r') as filehandle:
+  with open(path, 'r', encoding='utf8') as filehandle:
     data = json.loads(filehandle.read())
   validate_user_config(path, data)
   configs = []

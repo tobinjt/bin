@@ -116,7 +116,7 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
   def test_simple(self):
     """Test basic processing."""
     filename = 'input'
-    with open(filename, 'w') as tfh:
+    with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('one two three\n')
     output = colx.process_files([filename], [1, 3], ' ', ':')
     self.assertEqual(['one:three'], output)
@@ -129,7 +129,7 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
         ('  both \n', 'both'),
     ]:
       filename = 'input'
-      with open(filename, 'w') as tfh:
+      with open(filename, 'w', encoding='utf8') as tfh:
         tfh.write(test_input)
       output = colx.process_files([filename], [1, 2], ' ', ':')
       self.assertEqual([test_output], output)
@@ -137,7 +137,7 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
   def test_all_empty_columns(self):
     """Test behaviour when all columns are empty."""
     filename = 'input'
-    with open(filename, 'w') as tfh:
+    with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('!!!!\n')
     output = colx.process_files([filename], [2, 3], '!', ':')
     self.assertEqual([''], output)
@@ -145,7 +145,7 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
   def test_column_too_large(self):
     """Test columns larger than input."""
     filename = 'input'
-    with open(filename, 'w') as tfh:
+    with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('one two\n')
     output = colx.process_files([filename], [1, 2, 7], ' ', ':')
     self.assertEqual(['one:two'], output)
@@ -161,7 +161,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
   def test_main(self, mock_stdout):
     """Test main."""
     filename = 'input'
-    with open(filename, 'w') as tfh:
+    with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('one two three\n')
     colx.main(['argv0', '2', '1', filename])
     self.assertEqual('two one\n', mock_stdout.getvalue())

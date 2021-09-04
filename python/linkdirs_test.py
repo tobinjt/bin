@@ -247,7 +247,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     skip_contents = """
     ignore-some/should-be-ignored
     """
-    with open(skip_filename, 'w') as skip_fh:
+    with open(skip_filename, 'w', encoding='utf8') as skip_fh:
       skip_fh.write(skip_contents)
 
     actual = linkdirs.real_main([
@@ -403,7 +403,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # foo/bar should be ignored
     ignore/subdir
     """
-    with open(skip_filename, 'w') as skip_fh:
+    with open(skip_filename, 'w', encoding='utf8') as skip_fh:
       skip_fh.write(skip_contents)
 
     dest_dir = '/z/y/x'
