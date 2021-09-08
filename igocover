@@ -2,6 +2,6 @@
 
 set -e -f -u -o pipefail
 
-# Run go cover when any inputs change.
+# Run ~/bin/gocover (a wrapper over Golang coverage) when any inputs change.
 set +f
 inotify_wrapper ./*.go -- gocover "$@"
