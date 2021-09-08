@@ -40,15 +40,18 @@ main() {
   fi
 
   "${binary_and_args[@]}" || true
-  if is_mac_os; then
+  if type fswatch >& /dev/null; then
     # Use -n2 rather than -n1 because saving a file in vim seems to cause two
     # changes.
     fswatch -o "${files_to_watch[@]}" | xargs -n1 -I{} "${binary_and_args[@]}"
-  else
+  elif type inotifywait >& /dev/null; then
     while true; do
       inotifywait --quiet "${files_to_watch[@]}"
       "${binary_and_args[@]}" || true
     done
+  else
+    printf "%s: need one of fswatch(1) or inotifywait(1)\\n" "$0" >&2
+    return 1
   fi
 }
 
