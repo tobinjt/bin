@@ -4,7 +4,7 @@ set -e -f -u -o pipefail
 
 usage() {
   cat <<END_OF_USAGE
-Watch the specified files and run the binary and when they change.
+Watch the specified files and run the binary when they change.
 Usage: $0 file1 [file2 ...] -- binary [args ...]
 Files will not be passed to the binary, the caller needs to do that if
 required.
