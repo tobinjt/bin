@@ -3,9 +3,10 @@
 set -e -f -u -o pipefail
 
 # Run pytest when inputs change.
-set +f
 if [[ "$#" -eq 0 ]]; then
-  files=(*.py)
+  set +f
+  files=(./*.py)
+  set -f
 else
   files=("$@")
 fi
