@@ -10,7 +10,7 @@ main() {
   cd "${HOME}/src/dotfiles"
   git submodule update --recursive --remote
   # Commit the changes if any.
-  git add -A .vim/bundle
+  git add -A .
   if ! git check-local-copy-is-clean 2>/dev/null; then
     git commit -m 'Update all plugins.'
   fi
