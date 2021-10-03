@@ -306,8 +306,8 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
 
     # Check for diffs.
     if filecmp.cmp(source_filename, dest_filename, shallow=False):
-      print("%s and %s are different files but have the same contents; "
-            "deleting and linking" % (source_filename, dest_filename))
+      print(f"{source_filename} and {dest_filename} are different files but"
+            " have the same contents; deleting and linking")
       safe_unlink(dest_filename, options.dryrun)
       safe_link(source_filename, dest_filename, options.dryrun)
       continue
@@ -384,8 +384,8 @@ def delete_unexpected_files(unexpected_paths: UnexpectedPaths,
     return []
   if not options.force:
     return [
-        "Refusing to delete directories without --force/-f: %s" %
-        " ".join(unexpected_paths.directories)
+        "Refusing to delete directories without --force/-f: " +
+        ' '.join(unexpected_paths.directories)
     ]
   # Descending sort by length, so that child directories are removed before
   # parent directories.

@@ -285,8 +285,8 @@ def validate_dict_of_strings(path: str, name: str, data: List[str]):
   contents = list(data.keys()) + list(data.values())
   bad = [str(c) for c in contents if not isinstance(c, str)]
   if bad:
-    raise ValueError('%s: everything in "%s" must be strings: %s' %
-                     (path, name, ', '.join(bad)))
+    raise ValueError(f'{path}: everything in "{name}" must be strings: '
+                     + ', '.join(bad))
 
 
 def validate_user_config(path: str, configs: Any):
