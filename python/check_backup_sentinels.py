@@ -20,7 +20,7 @@ import sys
 import time
 from typing import Dict, List, Tuple
 
-__author__ = "johntobin@johntobin.ie (John Tobin)"
+__author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 # Type annotation aliases.
 # Mutating these doesn't cause tests to fail because they are just used for type

@@ -58,7 +58,7 @@ import tempfile
 from typing import Any, Dict, List
 import urllib.parse
 
-__author__ = "johntobin@johntobin.ie (John Tobin)"
+__author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 # These constants are used consistently so mutating them doesn't provide signal.
 COOKIES_FILE = 'cookies.txt'  # pragma: no mutate
