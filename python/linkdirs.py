@@ -416,12 +416,12 @@ def format_unexpected_files(unexpected_paths: UnexpectedPaths) -> Messages:
   unexpected_msgs.extend(
       [f'Unexpected file: {path}' for path in unexpected_paths.files])
   if unexpected_paths.files:
-    unexpected_msgs.append(f"rm {' '.join(unexpected_paths.files)}")
+    unexpected_msgs.append('rm ' + ' '.join(unexpected_paths.files))
   if unexpected_paths.directories:
     # Descending sort by length, so that child directories are removed before
     # parent directories.
     unexpected_paths.directories.sort(key=len, reverse=True)
-    unexpected_msgs.append(f"rmdir {' '.join(unexpected_paths.directories)}")
+    unexpected_msgs.append('rmdir ' + ' '.join(unexpected_paths.directories))
   return unexpected_msgs
 
 

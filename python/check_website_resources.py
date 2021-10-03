@@ -267,7 +267,7 @@ def validate_list_of_strings(path: str, name: str, data: List[str]):
   bad = [str(r) for r in data if not isinstance(r, str)]
   if bad:
     raise ValueError(
-        f'{path}: all "{name}" must be strings: {", ".join(bad)}')
+        f'{path}: all "{name}" must be strings: ' + ', '.join(bad))
 
 
 def validate_dict_of_strings(path: str, name: str, data: List[str]):
@@ -313,7 +313,7 @@ def validate_user_config(path: str, configs: Any):
     if not actual_keys.issubset(known_keys):
       bad_keys = list(actual_keys - known_keys)
       bad_keys.sort()
-      raise ValueError(f'{path}: Unsupported key(s): {", ".join(bad_keys)}')
+      raise ValueError(f'{path}: Unsupported key(s): ' + ', '.join(bad_keys))
     if 'url' not in config:
       raise ValueError(f'{path}: required config "url" not provided')
     if 'resources' not in config:

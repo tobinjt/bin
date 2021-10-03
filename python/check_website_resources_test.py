@@ -122,7 +122,8 @@ class TestValidateUserConfig(unittest.TestCase):
 
   def test_validation(self):
     """Tests for all the validations."""
-    # "assertion message": data structure.
+    # tests is a dict mapping 'assertion message' to the data structure that
+    # should generate that assertion message.
     tests = {
         'Top-level data structure': 1,
         'All entries in the list must be dicts': [1],
