@@ -252,7 +252,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
   results = LinkResults([], [], [])
   files = remove_skip_patterns(files, options.skip)
   files = [os.path.join(directory, filename) for filename in files]
-  skip = ["*%s%s" % (os.sep, pattern) for pattern in options.skip]
+  skip = ["*{}{}".format(os.sep, pattern) for pattern in options.skip]
   files = remove_skip_patterns(files, skip)
   files.sort()
   for source_filename in files:

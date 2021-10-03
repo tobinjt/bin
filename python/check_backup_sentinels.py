@@ -79,7 +79,8 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
       elif len(parts) == 2 and parts[1] == MAX_ALLOWED_DELAY:
         data.max_allowed_delay[parts[0]] = int(line)
       else:
-        raise Error('Bad format in %s: %s, parts: %s' % (filename, line, parts))
+        raise Error('Bad format in {}: {}, parts: {}'.format(
+            filename, line, parts))
 
   for hostname in data.timestamps:
     if hostname not in data.max_allowed_delay:
@@ -159,7 +160,7 @@ def check_sentinels(sentinels: ParsedSentinels,
     warnings.append(warning)
 
   messages = sorted(
-      [message.replace('too old', 'debug info') for message in messages])
+      message.replace('too old', 'debug info') for message in messages)
   return (warnings, messages)
 
 

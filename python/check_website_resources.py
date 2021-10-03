@@ -157,7 +157,7 @@ def run_wget(url: Text, load_cookies: bool) -> List[Text]:
     subprocess.run(args, check=True, capture_output=True)
     return read_wget_log()
   except subprocess.CalledProcessError as err:
-    message = 'wget for %s failed: %s; %s' % (url, err.stderr, str(err))
+    message = 'wget for {} failed: {}; {}'.format(url, err.stderr, str(err))
     logging.error(message)
     raise WgetFailedException(message) from err
 
@@ -266,7 +266,7 @@ def validate_list_of_strings(path: Text, name: Text, data: List[Text]):
     ValueError if any validation fails.
   """
   if not isinstance(data, list):
-    raise ValueError('%s: "%s" must be a list of strings' % (path, name))
+    raise ValueError('{}: "{}" must be a list of strings'.format(path, name))
   bad = [str(r) for r in data if not isinstance(r, str)]
   if bad:
     raise ValueError('%s: all "%s" must be strings: %s' %
@@ -284,7 +284,7 @@ def validate_dict_of_strings(path: Text, name: Text, data: List[Text]):
     ValueError if any validation fails.
   """
   if not isinstance(data, dict):
-    raise ValueError('%s: "%s" must be a dict' % (path, name))
+    raise ValueError('{}: "{}" must be a dict'.format(path, name))
   contents = list(data.keys()) + list(data.values())
   bad = [str(c) for c in contents if not isinstance(c, str)]
   if bad:
@@ -309,9 +309,9 @@ def validate_user_config(path: Text, configs: Any):
   for config in configs:
     if not isinstance(config, dict):
       raise ValueError('%s: All entries in the list must be dicts' % path)
-    known_keys = set(
-        ['url', 'resources', 'cookies', 'comment', 'optional_resources',
-         'optional_resource_regexes'])
+    known_keys = {
+        'url', 'resources', 'cookies', 'comment', 'optional_resources',
+         'optional_resource_regexes'}
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
       bad_keys = list(actual_keys - known_keys)
@@ -384,7 +384,7 @@ def generate_cookies_file_contents(url: Text,
     raise ValueError('Unable to extract hostname from URL %s' % url)
   for key, value in cookies.items():
     # www.arianetobin.ie	FALSE	/	FALSE	1617567351	viewed_cookie_policy	yes
-    lines.append('%s\tFALSE\t/\tFALSE\t0\t%s\t%s' % (host, key, value))
+    lines.append('{}\tFALSE\t/\tFALSE\t0\t{}\t{}'.format(host, key, value))
   return lines
 
 
