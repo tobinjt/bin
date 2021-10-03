@@ -121,11 +121,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Destination directory perms don't change unnecessarily."""
     src_dir = '/a/b/c/dir'
     dest_dir = '/z/y/x/dir'
-    files = """
+    files = f"""
     {src_dir}/
     {dest_dir}/
-    """.format(
-        src_dir=src_dir, dest_dir=dest_dir)
+    """
     self.create_files(files)
     mode = int('0755', base=8)
     os.chmod(src_dir, mode)
@@ -172,7 +171,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   def test_missing_file_is_created(self):
     """Missing file gets created."""
     src_file = '/a/b/c/file'
-    self.create_files('%s:qwerty' % src_file)
+    self.create_files(f'{src_file}:qwerty')
 
     dest_file = '/z/y/x/file'
     linkdirs.real_main(
@@ -184,7 +183,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   def test_source_dir_replaced_once(self):
     """/src/foo/src/bar => /dest/foo/src/bar, not /dest/foo/dest/bar."""
     src_file = '/a/b/foo/a/b/file'
-    self.create_files('%s:qwerty' % src_file)
+    self.create_files(f'{src_file}:qwerty')
 
     dest_file = '/z/y/foo/a/b/file'
     linkdirs.real_main(['linkdirs', '/a/b', '/z/y'])
@@ -194,8 +193,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """File with same contents is replaced with link."""
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
-    self.create_files('%s:qwerty' % src_file)
-    self.create_files('%s:qwerty' % dest_file)
+    self.create_files(f'{src_file}:qwerty')
+    self.create_files(f'{dest_file}:qwerty')
 
     with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
       linkdirs.real_main(
@@ -252,7 +251,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
     actual = linkdirs.real_main([
         'linkdirs', '--report_unexpected_files', '--ignore_unexpected_children',
-        '--ignore_file=%s' % skip_filename, src_dir, dest_dir
+        f'--ignore_file={skip_filename}', src_dir, dest_dir
     ])
     expected = [
         'Unexpected directory: /z/y/x/asdf/report_me',
@@ -409,7 +408,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     dest_dir = '/z/y/x'
     linkdirs.real_main([
         'linkdirs',
-        '--ignore_file=%s' % skip_filename,
+        f'--ignore_file={skip_filename}',
         # Report unexpected files because it exercises more code
         # paths.
         '--report_unexpected_files',
@@ -434,11 +433,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Report diffs."""
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
-    files = """
+    files = f"""
     {src_file}:qwerty
     {dest_file}:asdf
-    """.format(
-        src_file=src_file, dest_file=dest_file)
+    """
     self.create_files(files)
 
     # Test without --force to generate diffs.
@@ -449,8 +447,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Strip off timestamps.
     actual = [re.sub(r'\t.*$', '\t', x) for x in actual]
     expected = [
-        '--- %s\t' % dest_file,
-        '+++ %s\t' % src_file,
+        f'--- {dest_file}\t',
+        f'+++ {src_file}\t',
         '@@ -1 +1 @@',
         '-asdf',
         '+qwerty',
@@ -630,7 +628,7 @@ class TestUsage(unittest.TestCase):
         'pytest-3', 'pytest')
     stdout = re.sub(r'\s+', ' ', stdout)
     for substring in substrings:
-      with self.subTest('Testing -->>%s<<--' % substring):
+      with self.subTest(f'Testing -->>{substring}<<--'):
         self.assertIn(substring, stdout)
     # Check that the description is set up properly.
     self.assertRegex(
@@ -652,7 +650,7 @@ class TestMisc(fake_filesystem_unittest.TestCase):
     test_dir = '/a/b/c'
     os.makedirs(test_dir)
     linkdirs.safe_unlink(test_dir, True)
-    self.assertEqual('rm -r %s\n' % test_dir, mock_stdout.getvalue())
+    self.assertEqual(f'rm -r {test_dir}\n', mock_stdout.getvalue())
 
   def test_read_skip_patterns(self):
     """Test that patterns are read correctly."""

@@ -208,8 +208,7 @@ def check_single_url(config: SingleURLConfig) -> List[str]:
     log_lines = run_wget(config.url, bool(config.cookies))
   except WgetFailedException as err:
     return [
-        '%s (%s): running wget failed; %s' %
-        (config.url, config.comment, str(err))
+        f'{config.url} ({config.comment}): running wget failed; {str(err)}'
     ]
 
   fetched_resources = set()
@@ -237,8 +236,7 @@ def check_single_url(config: SingleURLConfig) -> List[str]:
   errors = []
   missing_resources = set(config.resources) - set(actual_resources)
   if missing_resources:
-    errors.append('Missing resources for %s (%s):' %
-                  (config.url, config.comment))
+    errors.append(f'Missing resources for {config.url} ({config.comment}):')
     errors.extend(sorted(missing_resources))
 
   extra_resources = set(actual_resources) - set(config.resources)
@@ -248,8 +246,7 @@ def check_single_url(config: SingleURLConfig) -> List[str]:
     if all(regex.match(extra_resource) is None for regex in regexes):
       extra_unmatched.append(extra_resource)
   if extra_unmatched:
-    errors.append('Unmatched resources for %s (%s):' %
-                  (config.url, config.comment))
+    errors.append(f'Unmatched resources for {config.url} ({config.comment}):')
     errors.extend(extra_unmatched)
 
   return errors
@@ -269,8 +266,8 @@ def validate_list_of_strings(path: str, name: str, data: List[str]):
     raise ValueError(f'{path}: "{name}" must be a list of strings')
   bad = [str(r) for r in data if not isinstance(r, str)]
   if bad:
-    raise ValueError('%s: all "%s" must be strings: %s' %
-                     (path, name, ', '.join(bad)))
+    raise ValueError(
+        f'{path}: all "{name}" must be strings: {", ".join(bad)}')
 
 
 def validate_dict_of_strings(path: str, name: str, data: List[str]):
@@ -305,10 +302,10 @@ def validate_user_config(path: str, configs: Any):
     ValueError if any validation fails.
   """
   if not isinstance(configs, list):
-    raise ValueError('%s: Top-level data structure must be a list' % path)
+    raise ValueError(f'{path}: Top-level data structure must be a list')
   for config in configs:
     if not isinstance(config, dict):
-      raise ValueError('%s: All entries in the list must be dicts' % path)
+      raise ValueError(f'{path}: All entries in the list must be dicts')
     known_keys = {
         'url', 'resources', 'cookies', 'comment', 'optional_resources',
          'optional_resource_regexes'}
@@ -316,12 +313,11 @@ def validate_user_config(path: str, configs: Any):
     if not actual_keys.issubset(known_keys):
       bad_keys = list(actual_keys - known_keys)
       bad_keys.sort()
-      raise ValueError('%s: Unsupported key(s): %s' %
-                       (path, ', '.join(bad_keys)))
+      raise ValueError(f'{path}: Unsupported key(s): {", ".join(bad_keys)}')
     if 'url' not in config:
-      raise ValueError('%s: required config "url" not provided' % path)
+      raise ValueError(f'{path}: required config "url" not provided')
     if 'resources' not in config:
-      raise ValueError('%s: required config "resources" not provided' % path)
+      raise ValueError(f'{path}: required config "resources" not provided')
     if 'cookies' not in config:
       config['cookies'] = {}
     if 'comment' not in config:
@@ -332,10 +328,10 @@ def validate_user_config(path: str, configs: Any):
       config['optional_resource_regexes'] = []
 
     if not isinstance(config['url'], str):
-      raise ValueError('%s: url must be a string' % path)
+      raise ValueError(f'{path}: url must be a string')
 
     if not isinstance(config['comment'], str):
-      raise ValueError('%s: comment must be a string' % path)
+      raise ValueError(f'{path}: comment must be a string')
 
     validate_list_of_strings(path, 'resources', config['resources'])
     validate_list_of_strings(path, 'optional_resources',
@@ -381,7 +377,7 @@ def generate_cookies_file_contents(url: str,
   lines = ['# Netscape HTTP Cookie File']
   host = urllib.parse.urlparse(url).hostname
   if host is None:
-    raise ValueError('Unable to extract hostname from URL %s' % url)
+    raise ValueError(f'Unable to extract hostname from URL {url}')
   for key, value in cookies.items():
     # www.arianetobin.ie	FALSE	/	FALSE	1617567351	viewed_cookie_policy	yes
     lines.append(f'{host}\tFALSE\t/\tFALSE\t0\t{key}\t{value}')

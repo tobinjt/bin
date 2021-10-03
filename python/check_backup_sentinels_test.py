@@ -58,7 +58,7 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     testdir = '/test/test_simple'
     hostname = 'a-hostname'
     files = {
-        '{}.{}'.format(os.path.join(testdir, hostname), 'qwerty'): '5432\n',
+        f'{os.path.join(testdir, hostname)}.qwerty': '5432\n',
     }
     self.create_files_for_test(files)
     self.assertRaisesRegex(cbs.Error, '^Bad format.*qwerty',
@@ -259,7 +259,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
     with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
       cbs.main(['argv0', self._testdir])
       warnings = mock_stderr.getvalue()
-      self.assertEqual('%s\n' % expected[0], warnings)
+      self.assertEqual(f'{expected[0]}\n', warnings)
     mock_exit.assert_called_with(1)
 
   @mock.patch('sys.exit')

@@ -79,8 +79,7 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
       elif len(parts) == 2 and parts[1] == MAX_ALLOWED_DELAY:
         data.max_allowed_delay[parts[0]] = int(line)
       else:
-        raise Error('Bad format in {}: {}, parts: {}'.format(
-            filename, line, parts))
+        raise Error(f'Bad format in {filename}: {line}, parts: {parts}')
 
   for hostname in data.timestamps:
     if hostname not in data.max_allowed_delay:
@@ -166,7 +165,7 @@ def check_sentinels(sentinels: ParsedSentinels,
 
 def main(argv):
   if len(argv) != 2 or not os.path.isdir(argv[1]):
-    raise Error('Usage: %s DIRECTORY' % argv[0])
+    raise Error(f'Usage: {argv[0]} DIRECTORY')
   # There's no benefit to mutating this constant.
   day = 24 * 60 * 60  # pragma: no mutate
   sentinels = parse_sentinels(argv[1], day)

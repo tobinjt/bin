@@ -554,7 +554,7 @@ class TestMain(unittest.TestCase):
     ]
     stdout = mock_stdout.getvalue().replace('pytest-3', 'pytest')
     for substring in substrings:
-      with self.subTest('Testing -->>%s<<--' % substring):
+      with self.subTest(f'Testing -->>{substring}<<--'):
         self.assertIn(substring, stdout)
 
 

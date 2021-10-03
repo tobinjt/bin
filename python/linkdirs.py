@@ -91,12 +91,12 @@ def safe_unlink(unlink_me: Path, dryrun: bool) -> None:
 
   if os.path.islink(unlink_me) or not os.path.isdir(unlink_me):
     if dryrun:
-      print("rm %s" % pipes.quote(unlink_me))
+      print(f"rm {pipes.quote(unlink_me)}")
     else:
       os.unlink(unlink_me)
   else:
     if dryrun:
-      print("rm -r %s" % pipes.quote(unlink_me))
+      print(f"rm -r {pipes.quote(unlink_me)}")
     else:
       shutil.rmtree(unlink_me)
 
@@ -114,8 +114,7 @@ def safe_link(source_filename: Path, dest_filename: Path, dryrun: bool) -> None:
   """
 
   if dryrun:
-    print("ln %s %s" %
-          (pipes.quote(source_filename), pipes.quote(dest_filename)))
+    print(f"ln {pipes.quote(source_filename)} {pipes.quote(dest_filename)}")
   else:
     os.link(source_filename, dest_filename)
 
@@ -211,8 +210,8 @@ def link_dir(source: Path, dest: Path,
         if not options.dryrun:
           os.chmod(dest_dir, source_mode)
         else:
-          print("chmod %s %s" %
-                (oct(source_mode).replace('o', ''), pipes.quote(dest_dir)))
+          mode = oct(source_mode).replace('o', '')
+          print(f"chmod {mode} {pipes.quote(dest_dir)}")
         continue
 
       if os.path.exists(dest_dir):
@@ -220,11 +219,11 @@ def link_dir(source: Path, dest: Path,
         if options.force:
           safe_unlink(dest_dir, options.dryrun)
         else:
-          results.errors.append("%s is not a directory" % dest_dir)
+          results.errors.append(f"{dest_dir} is not a directory")
           continue
 
       if options.dryrun:
-        print("mkdir %s" % pipes.quote(dest_dir))
+        print(f"mkdir {pipes.quote(dest_dir)}")
       else:
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
@@ -270,7 +269,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
         # false, but it is because the test that requires the log line passes.
         # Weird :(
         continue
-      results.errors.append("Skipping symbolic link %s" % source_filename)
+      results.errors.append(f"Skipping symbolic link {source_filename}")
       continue
 
     if not os.path.exists(dest_filename) and not os.path.islink(dest_filename):
@@ -285,7 +284,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
         safe_unlink(dest_filename, options.dryrun)
         safe_link(source_filename, dest_filename, options.dryrun)
       else:
-        results.errors.append("%s: is not a file" % dest_filename)
+        results.errors.append(f"{dest_filename}: is not a file")
       continue
 
     if os.path.samefile(source_filename, dest_filename):
@@ -412,17 +411,17 @@ def format_unexpected_files(unexpected_paths: UnexpectedPaths) -> Messages:
   unexpected_paths.files.sort()
   unexpected_msgs = []
   unexpected_msgs.extend([
-      "Unexpected directory: %s" % path for path in unexpected_paths.directories
+      f"Unexpected directory: {path}" for path in unexpected_paths.directories
   ])
   unexpected_msgs.extend(
-      ["Unexpected file: %s" % path for path in unexpected_paths.files])
+      [f"Unexpected file: {path}" for path in unexpected_paths.files])
   if unexpected_paths.files:
-    unexpected_msgs.append("rm %s" % " ".join(unexpected_paths.files))
+    unexpected_msgs.append(f"rm {' '.join(unexpected_paths.files)}")
   if unexpected_paths.directories:
     # Descending sort by length, so that child directories are removed before
     # parent directories.
     unexpected_paths.directories.sort(key=len, reverse=True)
-    unexpected_msgs.append("rmdir %s" % " ".join(unexpected_paths.directories))
+    unexpected_msgs.append(f"rmdir {' '.join(unexpected_paths.directories)}")
   return unexpected_msgs
 
 

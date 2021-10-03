@@ -54,7 +54,7 @@ class TestArgumentParsing(unittest.TestCase):
         }),
     ]
     for (args, expected) in tests:
-      with self.subTest('Parsing %s' % args):
+      with self.subTest(f'Parsing {args}'):
         actual = colx.parse_arguments(args)
         for (key, value) in expected.items():
           self.assertEqual(value, getattr(actual, key))
@@ -103,7 +103,7 @@ class TestArgumentParsing(unittest.TestCase):
     ]
     stdout = mock_stdout.getvalue().replace('pytest-3', 'pytest')
     for substring in substrings:
-      with self.subTest('Testing -->>%s<<--' % substring):
+      with self.subTest(f'Testing -->>{substring}<<--'):
         self.assertIn(substring, stdout)
 
 

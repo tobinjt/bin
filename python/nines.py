@@ -89,11 +89,11 @@ def parse_nines_arg(num_nines: str) -> float:
   try:
     parsed_num_nines = float(num_nines)
   except ValueError as err:
-    raise ValueError('Argument is not a number: %s' % num_nines) from err
+    raise ValueError(f'Argument is not a number: {num_nines}') from err
   if parsed_num_nines < 0:
-    raise ValueError('You cannot have a negative uptime: %s' % num_nines)
+    raise ValueError(f'You cannot have a negative uptime: {num_nines}')
   if parsed_num_nines > 100:
-    raise ValueError('You cannot have more than 100%% uptime: %s' % num_nines)
+    raise ValueError(f'You cannot have more than 100% uptime: {num_nines}')
   if parsed_num_nines >= PERCENT_THRESHOLD:
     return parsed_num_nines
   return nines_into_percent(parsed_num_nines)
