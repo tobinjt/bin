@@ -123,8 +123,8 @@ def check_sentinels(sentinels: ParsedSentinels,
       if now - sentinels.timestamps[host] > max_global_delay
   ]
   if len(globally_delayed) == len(sentinels.timestamps):
-    warnings.append('All backups are delayed by at least %d seconds' %
-                    max_global_delay)
+    warnings.append('All backups are delayed by at least '
+                    f'{max_global_delay} seconds')
     messages.append(warnings[-1])
 
   for (host, last_backup) in sentinels.timestamps.items():

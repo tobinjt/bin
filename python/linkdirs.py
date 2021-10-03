@@ -301,7 +301,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
     # mypy doesn't understand this line.
     num_links = os.stat(dest_filename)[stat.ST_NLINK]  # type: ignore
     if num_links != 1:
-      results.errors.append("%s: link count is %d" % (dest_filename, num_links))
+      results.errors.append(f"{dest_filename}: link count is {num_links}")
       continue
 
     # Check for diffs.

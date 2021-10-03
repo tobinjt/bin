@@ -71,8 +71,7 @@ def format_duration(seconds: float) -> str:
       if num_time_units > 1:
         plural = 's'
       durations.append(
-          '%d %s%s' %
-          (num_time_units, time_units[seconds_per_time_unit], plural))
+          f'{int(num_time_units)} {time_units[seconds_per_time_unit]}{plural}')
   return ', '.join(durations)
 
 
