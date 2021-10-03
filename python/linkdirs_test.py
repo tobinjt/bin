@@ -224,7 +224,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Report unexpected files."""
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    files = """
+    files = f"""
     {src_dir}/file
     # 'asdf' subdir exists here, so it will be checked in dest_dir.
     {src_dir}/asdf/file
@@ -238,8 +238,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {dest_dir}/asdf/report_me/
     # Ignore this file and directory.
     {dest_dir}/asdf/ignore-some/should-be-ignored/a-file
-    """.format(
-        src_dir=src_dir, dest_dir=dest_dir)
+    """
     self.create_files(files)
 
     skip_filename = 'skip-me'
@@ -268,7 +267,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Delete unexpected files."""
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    files = """
+    files = f"""
     {src_dir}/file
     # 'asdf' subdir exists here, so it will be checked in dest_dir.
     {src_dir}/asdf/file
@@ -276,8 +275,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
     {dest_dir}/subdir/
-    """.format(
-        src_dir=src_dir, dest_dir=dest_dir)
+    """
     self.create_files(files)
 
     actual = linkdirs.real_main([
@@ -293,7 +291,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Delete unexpected files but not directories."""
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    files = """
+    files = f"""
     {src_dir}/file
     # 'asdf' subdir exists here, so it will be checked in dest_dir.
     {src_dir}/asdf/file
@@ -304,8 +302,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # And also subdirs that will be reported.
     {dest_dir}/asdf/report_me/
     {dest_dir}/asdf/report_me_too/
-    """.format(
-        src_dir=src_dir, dest_dir=dest_dir)
+    """
     self.create_files(files)
 
     actual = linkdirs.real_main([
@@ -330,7 +327,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Delete unexpected files and directories with --force."""
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    files = """
+    files = f"""
     {src_dir}/file
     # 'asdf' subdir exists here, so it will be checked in dest_dir.
     {src_dir}/asdf/file
@@ -344,8 +341,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # subdirs are handled correctly, i.e. we don't delete the parent and then
     # fail to delete the child.
     {dest_dir}/asdf/delete_me/delete_me_too/
-    """.format(
-        src_dir=src_dir, dest_dir=dest_dir)
+    """
     self.create_files(files)
 
     actual = linkdirs.real_main([
@@ -362,7 +358,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
   def test_exclusions_are_skipped(self):
     """Excluded files/dirs are skipped."""
     src_dir = '/a/b/c'
-    files = """
+    files = f"""
     {src_dir}/harry/link_me
     {src_dir}/harry/me_too
     {src_dir}/murphy/link_me
@@ -386,7 +382,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {src_dir}/murphy/the_brain
     {src_dir}/ignore/subdir/test1
     {src_dir}/ignore/subdir/test2
-    """.format(src_dir=src_dir)
+    """
     self.create_files(files)
 
     skip_filename = 'skip-me'
@@ -481,7 +477,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Force deletes existing files and directories."""
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    files = """
+    files = f"""
     {src_dir}/file1:qwerty
     {src_dir}/file2:asdf
     {src_dir}/file3:pinky
@@ -491,8 +487,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {dest_dir}/file3:pinky
     # Subdir in src, file in dest.
     {dest_dir}/dir1:pinky
-    """.format(
-        src_dir=src_dir, dest_dir=dest_dir)
+    """
     self.create_files(files)
 
     with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
@@ -507,7 +502,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Dry-run."""
     src_dir = '/a/b/c'
     dest_dir = '/z/y/x'
-    files = """
+    files = f"""
     {src_dir}/file1:qwerty
     {src_dir}/file2:asdf
     {src_dir}/file3:pinky
@@ -535,8 +530,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Test handling a destination that isn't a subdir.
     {dest_dir}/dir3
     {dest_dir}/dir4
-    """.format(
-        src_dir=src_dir, dest_dir=dest_dir)
+    """
     self.create_files(files)
     # Test handling of source symlinks - not supported by create_files().
     os.symlink(os.path.join(src_dir, 'file5'), os.path.join(src_dir, 'file6'))

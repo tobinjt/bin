@@ -134,16 +134,11 @@ def nines(num_nines: float, days: float) -> str:
     result to print.
   """
   downtime_fraction = (100 - num_nines) / 100
-  seconds = 60 * 60 * 24 * days
-  downtime_seconds = downtime_fraction * seconds
-
-  data = {
-      'nines': strip_trailing_zeros(num_nines),
-      'seconds': strip_trailing_zeros(downtime_seconds),
-      'human': format_duration(downtime_seconds),
-      'days': days,
-  }
-  return '{nines}%: {seconds} seconds ({human}) per {days} days'.format(**data)
+  downtime_seconds = downtime_fraction * 60 * 60 * 24 * days
+  nines_no_zeroes = strip_trailing_zeros(num_nines)
+  seconds = strip_trailing_zeros(downtime_seconds)
+  human = format_duration(downtime_seconds)
+  return f'{nines_no_zeroes}%: {seconds} seconds ({human}) per {days} days'
 
 
 def main(argv: List[str]) -> None:
