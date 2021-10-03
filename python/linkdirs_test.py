@@ -108,7 +108,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     """Nothing needs to be done."""
     src_file = '/a/b/c/file'
     dest_file = '/z/y/x/file'
-    self.create_files('{}={}'.format(src_file, dest_file))
+    self.create_files(f'{src_file}={dest_file}')
     self.assert_files_are_linked(src_file, dest_file)
 
     linkdirs.real_main(

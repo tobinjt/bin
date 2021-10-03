@@ -137,8 +137,8 @@ def diff(old_filename: Path, new_filename: Path) -> Diffs:
   # pyfakefs doesn't seem to validate the mode, so stop mutating it.
   old_timestamp = time.ctime(os.stat(old_filename).st_mtime)
   new_timestamp = time.ctime(os.stat(new_filename).st_mtime)
-  with open(old_filename, 'r', encoding='utf8') as old_fh:
-    with open(new_filename, 'r', encoding='utf8') as new_fh:
+  with open(old_filename, encoding='utf8') as old_fh:
+    with open(new_filename, encoding='utf8') as new_fh:
       old_contents = old_fh.readlines()
       new_contents = new_fh.readlines()
       diff_generator = difflib.unified_diff(new_contents, old_contents,
@@ -252,7 +252,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
   results = LinkResults([], [], [])
   files = remove_skip_patterns(files, options.skip)
   files = [os.path.join(directory, filename) for filename in files]
-  skip = ["*{}{}".format(os.sep, pattern) for pattern in options.skip]
+  skip = [f"*{os.sep}{pattern}" for pattern in options.skip]
   files = remove_skip_patterns(files, skip)
   files.sort()
   for source_filename in files:
@@ -429,7 +429,7 @@ def format_unexpected_files(unexpected_paths: UnexpectedPaths) -> Messages:
 def read_skip_patterns_from_file(filename: Path) -> SkipPatterns:
   """Read skip patterns from filename, ignoring comments and empty lines."""
   patterns = []
-  with open(filename, 'r', encoding='utf8') as pfh:
+  with open(filename, encoding='utf8') as pfh:
     for line in pfh.readlines():
       line = line.strip()
       if line and not line.startswith("#"):

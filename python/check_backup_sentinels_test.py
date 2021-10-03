@@ -31,8 +31,8 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     base = os.path.join(testdir, hostname)
     files = {
         base: '1234\n',
-        '{}.{}'.format(base, cbs.SLEEPING_UNTIL): '5432\n',
-        '{}.{}'.format(base, cbs.MAX_ALLOWED_DELAY): '98\n',
+        f'{base}.{cbs.SLEEPING_UNTIL}': '5432\n',
+        f'{base}.{cbs.MAX_ALLOWED_DELAY}': '98\n',
     }
     self.create_files_for_test(files)
     parsed = cbs.parse_sentinels(testdir, 7)
@@ -301,8 +301,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     files = {
         host1: str(7 * day),
         host2: str(8 * day),
-        '{}.{}'.format(host1, cbs.MAX_ALLOWED_DELAY): str(day),
-        '{}.{}'.format(host2, cbs.MAX_ALLOWED_DELAY): str(2 * day),
+        f'{host1}.{cbs.MAX_ALLOWED_DELAY}': str(day),
+        f'{host2}.{cbs.MAX_ALLOWED_DELAY}': str(2 * day),
     }
     self.create_files_for_test(files)
     mock_time.return_value = 8.5 * day

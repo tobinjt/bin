@@ -55,7 +55,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, List, Text
+from typing import Any, Dict, List
 import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -92,16 +92,16 @@ class SingleURLConfig:
     cookies: cookies to send with request
     comment: comment to help identify the config.
   """
-  url: Text
-  resources: List[Text]
-  comment: Text
-  cookies: Dict[Text, Text]
-  optional_resources: List[Text] = dataclasses.field(default_factory=list)
-  optional_resource_regexes: List[Text] = dataclasses.field(
+  url: str
+  resources: List[str]
+  comment: str
+  cookies: Dict[str, str]
+  optional_resources: List[str] = dataclasses.field(default_factory=list)
+  optional_resource_regexes: List[str] = dataclasses.field(
       default_factory=list)
 
 
-def read_wget_log() -> List[Text]:
+def read_wget_log() -> List[str]:
   """Read and return wget.log.
 
   Inlining this code and using pyfakefs breaks pytest, it fails with:
@@ -117,14 +117,14 @@ def read_wget_log() -> List[Text]:
   Returns:
     A list of log lines with newlines stripped.
   """
-  with open(WGET_LOG, 'r', encoding='utf8') as wget_log:
+  with open(WGET_LOG, encoding='utf8') as wget_log:
     return [
         line.rstrip('\n')  # pragma: no mutate
         for line in wget_log.readlines()
     ]
 
 
-def write_cookies_file(lines: List[Text]):
+def write_cookies_file(lines: List[str]):
   """Write cookies.txt.
 
   See read_wget_log() for why this function exists.
@@ -136,7 +136,7 @@ def write_cookies_file(lines: List[Text]):
     print('\n'.join(lines), file=cookies_txt)
 
 
-def run_wget(url: Text, load_cookies: bool) -> List[Text]:
+def run_wget(url: str, load_cookies: bool) -> List[str]:
   """Run wget to fetch the specified URL, returning the contents of wget.log.
 
   Args:
@@ -157,12 +157,12 @@ def run_wget(url: Text, load_cookies: bool) -> List[Text]:
     subprocess.run(args, check=True, capture_output=True)
     return read_wget_log()
   except subprocess.CalledProcessError as err:
-    message = 'wget for {} failed: {}; {}'.format(url, err.stderr, str(err))
+    message = f'wget for {url} failed: {err.stderr}; {str(err)}'
     logging.error(message)
     raise WgetFailedException(message) from err
 
 
-def reverse_pagespeed_mangling(paths: List[Text]) -> List[Text]:
+def reverse_pagespeed_mangling(paths: List[str]) -> List[str]:
   """Reverse the changes made to paths by mod_pagespeed.
 
   This is based on reverse engineering the paths returned on Ariane's website,
@@ -192,7 +192,7 @@ def reverse_pagespeed_mangling(paths: List[Text]) -> List[Text]:
   return new_paths
 
 
-def check_single_url(config: SingleURLConfig) -> List[Text]:
+def check_single_url(config: SingleURLConfig) -> List[str]:
   """Check a single URL requires only the expected resources.
 
   Args:
@@ -255,7 +255,7 @@ def check_single_url(config: SingleURLConfig) -> List[Text]:
   return errors
 
 
-def validate_list_of_strings(path: Text, name: Text, data: List[Text]):
+def validate_list_of_strings(path: str, name: str, data: List[str]):
   """Validate a data structure is a list of strings.
 
   Args:
@@ -266,14 +266,14 @@ def validate_list_of_strings(path: Text, name: Text, data: List[Text]):
     ValueError if any validation fails.
   """
   if not isinstance(data, list):
-    raise ValueError('{}: "{}" must be a list of strings'.format(path, name))
+    raise ValueError(f'{path}: "{name}" must be a list of strings')
   bad = [str(r) for r in data if not isinstance(r, str)]
   if bad:
     raise ValueError('%s: all "%s" must be strings: %s' %
                      (path, name, ', '.join(bad)))
 
 
-def validate_dict_of_strings(path: Text, name: Text, data: List[Text]):
+def validate_dict_of_strings(path: str, name: str, data: List[str]):
   """Validate a data structure is a dict of string -> string.
 
   Args:
@@ -284,7 +284,7 @@ def validate_dict_of_strings(path: Text, name: Text, data: List[Text]):
     ValueError if any validation fails.
   """
   if not isinstance(data, dict):
-    raise ValueError('{}: "{}" must be a dict'.format(path, name))
+    raise ValueError(f'{path}: "{name}" must be a dict')
   contents = list(data.keys()) + list(data.values())
   bad = [str(c) for c in contents if not isinstance(c, str)]
   if bad:
@@ -292,7 +292,7 @@ def validate_dict_of_strings(path: Text, name: Text, data: List[Text]):
                      (path, name, ', '.join(bad)))
 
 
-def validate_user_config(path: Text, configs: Any):
+def validate_user_config(path: str, configs: Any):
   """Validate the configs supplied by the user.
 
   NOTE: the configs will be modified in-place to fill missing fields with
@@ -345,7 +345,7 @@ def validate_user_config(path: Text, configs: Any):
     validate_dict_of_strings(path, 'cookies', config['cookies'])
 
 
-def read_config(path: Text) -> List[SingleURLConfig]:
+def read_config(path: str) -> List[SingleURLConfig]:
   """Read the specified config and parse it as JSON.
 
   Args:
@@ -353,7 +353,7 @@ def read_config(path: Text) -> List[SingleURLConfig]:
   Returns:
     List of SingleURLConfig.
   """
-  with open(path, 'r', encoding='utf8') as filehandle:
+  with open(path, encoding='utf8') as filehandle:
     data = json.loads(filehandle.read())
   validate_user_config(path, data)
   configs = []
@@ -365,8 +365,8 @@ def read_config(path: Text) -> List[SingleURLConfig]:
   return configs
 
 
-def generate_cookies_file_contents(url: Text,
-                                   cookies: Dict[Text, Text]) -> List[Text]:
+def generate_cookies_file_contents(url: str,
+                                   cookies: Dict[str, str]) -> List[str]:
   """Generate the contents of a cookies file.
 
   It would be much cleaner to use http.cookiejar for this, but after spending
@@ -384,11 +384,11 @@ def generate_cookies_file_contents(url: Text,
     raise ValueError('Unable to extract hostname from URL %s' % url)
   for key, value in cookies.items():
     # www.arianetobin.ie	FALSE	/	FALSE	1617567351	viewed_cookie_policy	yes
-    lines.append('{}\tFALSE\t/\tFALSE\t0\t{}\t{}'.format(host, key, value))
+    lines.append(f'{host}\tFALSE\t/\tFALSE\t0\t{key}\t{value}')
   return lines
 
 
-def parse_arguments(argv: List[Text]) -> argparse.Namespace:
+def parse_arguments(argv: List[str]) -> argparse.Namespace:
   """Parse command line arguments.
 
   Args:
@@ -411,7 +411,7 @@ def parse_arguments(argv: List[Text]) -> argparse.Namespace:
   return argv_parser.parse_args(argv)
 
 
-def main(argv: List[Text]) -> int:
+def main(argv: List[str]) -> int:
   """Main."""
   options = parse_arguments(argv[1:])
   # On MacOS wget is in /usr/local/bin which is not in the default PATH cron
