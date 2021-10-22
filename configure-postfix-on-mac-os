@@ -10,10 +10,19 @@ main() {
   fi
 
   local sasl_file="/etc/postfix/sasl_passwd"
+  local answer
+  read -r -p "Delete ${sasl_file}? yes/no (default no): " answer
+  if [[ "${answer}" == "yes" ]]; then
+    printf "Deleting %s\n" "${sasl_file}"
+    rm -f "${sasl_file}"
+  else
+    printf "NOT deleting %s\n" "${sasl_file}"
+  fi
+
   if [[ ! -f "${sasl_file}" ]]; then
     local email password
     read -r -p "Enter gmail address: " email
-    read -r -p "Enter SASL password (check ${sasl_file}): " password
+    read -r -p "Enter SASL password: " password
     touch "${sasl_file}"
     chmod 600 "${sasl_file}"
     cat > "${sasl_file}" <<END_OF_SASL
@@ -21,6 +30,7 @@ main() {
 END_OF_SASL
     postmap hash:"${sasl_file}"
   fi
+
   cat > /etc/postfix/virtual <<END_OF_VIRTUAL
 root johntobin@johntobin.ie
 ariane johntobin@johntobin.ie
@@ -39,7 +49,7 @@ END_OF_VIRTUAL
   postconf smtp_tls_security_level="encrypt"
   postconf smtp_use_tls="yes"
   postconf virtual_alias_maps="hash:/etc/postfix/virtual"
-  postfix reload
+  postfix reload || true
 }
 
 main "$@"
