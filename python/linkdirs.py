@@ -28,7 +28,7 @@ Path = NewType('Path', str)  # pragma: no mutate
 # A list of directories, filenames, or paths.
 Paths = NewType('Paths', List[Path])  # pragma: no mutate
 # Diffs between files.
-Diffs = List[str]  # pragma: no mutate
+Diffs = NewType('Diffs', List[str])  # pragma: no mutate
 # Messages to print.
 Messages = List[str]  # pragma: no mutate
 # Shell patterns to skip.
@@ -145,10 +145,10 @@ def diff(old_filename: Path, new_filename: Path) -> Diffs:
                                             new_timestamp, old_timestamp)
       # Strip the newline here because one will be added later when printing the
       # messages.
-      return [
+      return Diffs([
           d.rstrip('\n')  # pragma: no mutate
           for d in diff_generator
-      ]
+      ])
 
 
 def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:
@@ -191,7 +191,7 @@ def link_dir(source: Path, dest: Path,
     OSError: a filesystem operation failed.
   """
 
-  results = LinkResults(Paths([]), [], [])
+  results = LinkResults(Paths([]), Diffs([]), [])
   for directory, subdirs, files in os.walk(source):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
@@ -251,7 +251,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
     LinkResults.  expected_files will not include files that are skipped.
   """
 
-  results = LinkResults(Paths([]), [], [])
+  results = LinkResults(Paths([]), Diffs([]), [])
   files = remove_skip_patterns(files, options.skip)
   # Pylint doesn't understand that Paths is actually a list, so disable those
   # warnings :(
@@ -559,7 +559,7 @@ def real_main(argv: CommandLineArgs) -> Messages:
   for filename in options.ignore_file:
     ignore_patterns.extend(read_skip_patterns_from_file(filename))
 
-  all_results = LinkResults(Paths([]), [], [])
+  all_results = LinkResults(Paths([]), Diffs([]), [])
   unexpected_msgs = []
   # When mutmut mutates these lines the tests take long enough for mutmut to
   # report them as suspicious, so disable mutations.
