@@ -26,7 +26,7 @@ __author__ = 'johntobin@johntobin.ie (John Tobin)'
 # A single path.
 Path = NewType('Path', str)  # pragma: no mutate
 # A list of directories, filenames, or paths.
-Paths = List[Path]  # pragma: no mutate
+Paths = NewType('Paths', List[Path])  # pragma: no mutate
 # Diffs between files.
 Diffs = List[str]  # pragma: no mutate
 # Messages to print.
@@ -172,7 +172,7 @@ def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:
         break
     else:
       unmatched.append(Path(filename))
-  return unmatched
+  return Paths(unmatched)
 
 
 def link_dir(source: Path, dest: Path,
@@ -191,11 +191,12 @@ def link_dir(source: Path, dest: Path,
     OSError: a filesystem operation failed.
   """
 
-  results = LinkResults([], [], [])
+  results = LinkResults(Paths([]), [], [])
   for directory, subdirs, files in os.walk(source):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
-    subdirs[:] = remove_skip_patterns([Path(s) for s in subdirs], options.skip)
+    subdirs[:] = remove_skip_patterns(Paths([Path(s) for s in subdirs]),
+                                      options.skip)
     subdirs.sort()
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
@@ -228,8 +229,9 @@ def link_dir(source: Path, dest: Path,
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
 
-    results.extend(link_files(source, dest, Path(directory),
-                              [Path(f) for f in files], options))
+    results.extend(
+        link_files(source, dest, Path(directory),
+                   Paths([Path(f) for f in files]), options))
 
   return results
 
@@ -249,13 +251,15 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
     LinkResults.  expected_files will not include files that are skipped.
   """
 
-  results = LinkResults([], [], [])
+  results = LinkResults(Paths([]), [], [])
   files = remove_skip_patterns(files, options.skip)
-  files = [Path(os.path.join(directory, filename)) for filename in files]
+  # Pylint doesn't understand that Paths is actually a list, so disable those
+  # warnings :(
+  files = Paths([Path(os.path.join(directory, filename)) for filename in files])  # pylint: disable=not-an-iterable
   skip = [f'*{os.sep}{pattern}' for pattern in options.skip]
   files = remove_skip_patterns(files, skip)
-  files.sort()
-  for source_filename in files:
+  files.sort()  # pylint: disable=no-member
+  for source_filename in files:  # pylint: disable=not-an-iterable
     dest_filename = Path(source_filename.replace(source, dest, 1))
     results.expected_files.append(dest_filename)
 
@@ -334,11 +338,13 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
   expected_files = set(expected_files_list)
   expected_files.add(dest_dir)
 
-  unexpected_paths = UnexpectedPaths([], [])
+  unexpected_paths = UnexpectedPaths(Paths([]), Paths([]))
   for directory, subdirs, files in os.walk(dest_dir):
-    subdirs[:] = remove_skip_patterns([Path(s) for s in subdirs], options.skip)
+    subdirs[:] = remove_skip_patterns(Paths([Path(s) for s in subdirs]),
+                                      options.skip)
     subdirs.sort()
-    files = list(remove_skip_patterns([Path(f) for f in files], options.skip))
+    files = list(
+        remove_skip_patterns(Paths([Path(f) for f in files]), options.skip))
     files.sort()
 
     if directory == dest_dir and options.ignore_unexpected_children:
@@ -349,14 +355,15 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
       for subdir in unexpected:
         subdirs.remove(subdir)
 
-    full_subdirs = [Path(os.path.join(directory, entry)) for entry in subdirs]
-    full_files = [Path(os.path.join(directory, entry)) for entry in files]
+    full_subdirs = Paths(
+        [Path(os.path.join(directory, entry)) for entry in subdirs])
+    full_files = Paths(
+        [Path(os.path.join(directory, entry)) for entry in files])
     full_subdirs = remove_skip_patterns(full_subdirs, options.skip)
     full_files = remove_skip_patterns(full_files, options.skip)
     unexpected_paths.directories.extend(
-        [path for path in full_subdirs if path not in expected_files])
-    unexpected_paths.files.extend(
-        [path for path in full_files if path not in expected_files])
+        list(set(full_subdirs) - set(expected_files)))
+    unexpected_paths.files.extend(list(set(full_files) - set(expected_files)))
 
   msgs = []
   if options.delete_unexpected_files:
@@ -552,7 +559,7 @@ def real_main(argv: CommandLineArgs) -> Messages:
   for filename in options.ignore_file:
     ignore_patterns.extend(read_skip_patterns_from_file(filename))
 
-  all_results = LinkResults([], [], [])
+  all_results = LinkResults(Paths([]), [], [])
   unexpected_msgs = []
   # When mutmut mutates these lines the tests take long enough for mutmut to
   # report them as suspicious, so disable mutations.
