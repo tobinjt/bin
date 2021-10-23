@@ -18,15 +18,15 @@ import stat
 import sys
 import textwrap
 import time
-from typing import List, Tuple
+from typing import List, NewType, Tuple
 
 __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 # Type definitions.
 # A single path.
-Path = str  # pragma: no mutate
+Path = NewType('Path', str)  # pragma: no mutate
 # A list of directories, filenames, or paths.
-Paths = List[str]  # pragma: no mutate
+Paths = List[Path]  # pragma: no mutate
 # Diffs between files.
 Diffs = List[str]  # pragma: no mutate
 # Messages to print.
@@ -171,7 +171,7 @@ def remove_skip_patterns(files: Paths, skip: SkipPatterns) -> Paths:
       if fnmatch.fnmatch(filename, pattern):
         break
     else:
-      unmatched.append(filename)
+      unmatched.append(Path(filename))
   return unmatched
 
 
@@ -195,11 +195,11 @@ def link_dir(source: Path, dest: Path,
   for directory, subdirs, files in os.walk(source):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
-    subdirs[:] = remove_skip_patterns(subdirs, options.skip)
+    subdirs[:] = remove_skip_patterns([Path(s) for s in subdirs], options.skip)
     subdirs.sort()
     for subdir in subdirs:
       source_dir = os.path.join(directory, subdir)
-      dest_dir = source_dir.replace(source, dest, 1)
+      dest_dir = Path(source_dir.replace(source, dest, 1))
       results.expected_files.append(dest_dir)
       source_mode = stat.S_IMODE(os.stat(source_dir).st_mode)
 
@@ -228,7 +228,8 @@ def link_dir(source: Path, dest: Path,
         os.mkdir(dest_dir, source_mode)
         os.chmod(dest_dir, source_mode)
 
-    results.extend(link_files(source, dest, directory, files, options))
+    results.extend(link_files(source, dest, Path(directory),
+                              [Path(f) for f in files], options))
 
   return results
 
@@ -250,12 +251,12 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
 
   results = LinkResults([], [], [])
   files = remove_skip_patterns(files, options.skip)
-  files = [os.path.join(directory, filename) for filename in files]
+  files = [Path(os.path.join(directory, filename)) for filename in files]
   skip = [f'*{os.sep}{pattern}' for pattern in options.skip]
   files = remove_skip_patterns(files, skip)
   files.sort()
   for source_filename in files:
-    dest_filename = source_filename.replace(source, dest, 1)
+    dest_filename = Path(source_filename.replace(source, dest, 1))
     results.expected_files.append(dest_filename)
 
     if os.path.islink(source_filename):
@@ -335,9 +336,9 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
 
   unexpected_paths = UnexpectedPaths([], [])
   for directory, subdirs, files in os.walk(dest_dir):
-    subdirs[:] = remove_skip_patterns(subdirs, options.skip)
+    subdirs[:] = remove_skip_patterns([Path(s) for s in subdirs], options.skip)
     subdirs.sort()
-    files = remove_skip_patterns(files, options.skip)
+    files = list(remove_skip_patterns([Path(f) for f in files], options.skip))
     files.sort()
 
     if directory == dest_dir and options.ignore_unexpected_children:
@@ -348,8 +349,8 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
       for subdir in unexpected:
         subdirs.remove(subdir)
 
-    full_subdirs = [os.path.join(directory, entry) for entry in subdirs]
-    full_files = [os.path.join(directory, entry) for entry in files]
+    full_subdirs = [Path(os.path.join(directory, entry)) for entry in subdirs]
+    full_files = [Path(os.path.join(directory, entry)) for entry in files]
     full_subdirs = remove_skip_patterns(full_subdirs, options.skip)
     full_files = remove_skip_patterns(full_files, options.skip)
     unexpected_paths.directories.extend(
