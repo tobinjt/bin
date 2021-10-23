@@ -32,7 +32,7 @@ Diffs = NewType('Diffs', List[str])  # pragma: no mutate
 # Messages to print.
 Messages = NewType('Messages', List[str])  # pragma: no mutate
 # Shell patterns to skip.
-SkipPatterns = List[str]  # pragma: no mutate
+SkipPatterns = NewType('SkipPatterns', List[str])  # pragma: no mutate
 # Command line args.
 CommandLineArgs = List[str]  # pragma: no mutate
 
@@ -256,7 +256,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
   # Pylint doesn't understand that Paths is actually a list, so disable those
   # warnings :(
   files = Paths([Path(os.path.join(directory, filename)) for filename in files])  # pylint: disable=not-an-iterable
-  skip = [f'*{os.sep}{pattern}' for pattern in options.skip]
+  skip = SkipPatterns([f'*{os.sep}{pattern}' for pattern in options.skip])
   files = remove_skip_patterns(files, skip)
   files.sort()  # pylint: disable=no-member
   for source_filename in files:  # pylint: disable=not-an-iterable
@@ -445,7 +445,7 @@ def read_skip_patterns_from_file(filename: Path) -> SkipPatterns:
       line = line.strip()
       if line and not line.startswith('#'):
         patterns.append(line)
-  return patterns
+  return SkipPatterns(patterns)
 
 
 def parse_arguments(
