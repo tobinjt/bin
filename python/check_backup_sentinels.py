@@ -18,14 +18,14 @@ import os
 import re
 import sys
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, NewType, Tuple
 
 __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 # Type annotation aliases.
 # Mutating these doesn't cause tests to fail because they are just used for type
 # checking.
-SentinelMap = Dict[str, int]  # pragma: no mutate
+SentinelMap = NewType('SentinelMap', Dict[str, int])  # pragma: no mutate
 Messages = List[str]  # pragma: no mutate
 Warnings = List[str]  # pragma: no mutate
 
@@ -65,7 +65,7 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
     Error, if any of the file names or contents are invalid.
   """
 
-  data = ParsedSentinels({}, {}, {})
+  data = ParsedSentinels(SentinelMap({}), SentinelMap({}), SentinelMap({}))
   files = glob.glob(os.path.join(directory, '*'))
   with fileinput.FileInput(files) as finput:
     for line in finput:
