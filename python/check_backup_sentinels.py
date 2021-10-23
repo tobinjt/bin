@@ -26,7 +26,7 @@ __author__ = 'johntobin@johntobin.ie (John Tobin)'
 # Mutating these doesn't cause tests to fail because they are just used for type
 # checking.
 SentinelMap = NewType('SentinelMap', Dict[str, int])  # pragma: no mutate
-Messages = List[str]  # pragma: no mutate
+Messages = NewType('Messages', List[str])  # pragma: no mutate
 Warnings = List[str]  # pragma: no mutate
 
 # Filename constants.
@@ -103,7 +103,7 @@ def check_sentinels(sentinels: ParsedSentinels,
     debugging purposes.
   """
   warnings = []
-  messages = []  # type: List[str]
+  messages = Messages([])
   now = int(time.time())
   message = ('Backup for "%(host)s" too old:'
              ' current time %(now)d/%(now_human)s;'
@@ -115,7 +115,7 @@ def check_sentinels(sentinels: ParsedSentinels,
 
   if not sentinels.timestamps:
     warnings.append('Zero sentinels passed, something is wrong.')
-    messages.append(warnings[-1])
+    messages.append(warnings[-1])  # pylint: disable=no-member
     return (warnings, messages)
 
   globally_delayed = [
@@ -125,7 +125,7 @@ def check_sentinels(sentinels: ParsedSentinels,
   if len(globally_delayed) == len(sentinels.timestamps):
     warnings.append('All backups are delayed by at least '
                     f'{max_global_delay} seconds')
-    messages.append(warnings[-1])
+    messages.append(warnings[-1])  # pylint: disable=no-member
 
   for (host, last_backup) in sentinels.timestamps.items():
     max_delay = sentinels.max_allowed_delay[host]
@@ -145,7 +145,7 @@ def check_sentinels(sentinels: ParsedSentinels,
         'sleeping_until_human': time.strftime(time_fmt,
                                               time.gmtime(sleeping_until)),
     }
-    messages.append(warning)
+    messages.append(warning)  # pylint: disable=no-member
 
     # Disable mutations because changing '<' to '<=' is not meaningful.
     if now - last_backup < max_delay:  # pragma: no mutate
@@ -158,8 +158,10 @@ def check_sentinels(sentinels: ParsedSentinels,
     # Something is wrong :(
     warnings.append(warning)
 
-  messages = sorted(
-      message.replace('too old', 'debug info') for message in messages)
+  # pylint: disable=not-an-iterable
+  messages = Messages(sorted(
+      message.replace('too old', 'debug info') for message in messages))
+  # pylint: enable=not-an-iterable
   return (warnings, messages)
 
 
@@ -171,8 +173,10 @@ def main(argv):
   sentinels = parse_sentinels(argv[1], day)
   (warnings, messages) = check_sentinels(sentinels, day)
   if sys.stdin.isatty():
+    # pylint: disable=not-an-iterable
     for line in messages:
       print(line)
+    # pylint: enable=not-an-iterable
   for line in warnings:
     print(line, file=sys.stderr)
   if warnings:
