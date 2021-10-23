@@ -34,7 +34,7 @@ Messages = NewType('Messages', List[str])  # pragma: no mutate
 # Shell patterns to skip.
 SkipPatterns = NewType('SkipPatterns', List[str])  # pragma: no mutate
 # Command line args.
-CommandLineArgs = List[str]  # pragma: no mutate
+CommandLineArgs = NewType('CommandLineArgs', List[str])  # pragma: no mutate
 
 
 class Error(Exception):
@@ -596,4 +596,4 @@ def main(argv: CommandLineArgs):
 
 
 if __name__ == '__main__':  # pragma: no mutate
-  main(sys.argv)
+  main(CommandLineArgs(sys.argv))
