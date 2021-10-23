@@ -27,7 +27,7 @@ __author__ = 'johntobin@johntobin.ie (John Tobin)'
 # checking.
 SentinelMap = NewType('SentinelMap', Dict[str, int])  # pragma: no mutate
 Messages = NewType('Messages', List[str])  # pragma: no mutate
-Warnings = List[str]  # pragma: no mutate
+Warnings = NewType('Warnings', List[str])  # pragma: no mutate
 
 # Filename constants.
 # These constants are used consistently so mutating them doesn't provide signal.
@@ -102,7 +102,7 @@ def check_sentinels(sentinels: ParsedSentinels,
     A tuple containing 1) warnings to output and 2) all generated messages for
     debugging purposes.
   """
-  warnings = []
+  warnings = Warnings([])
   messages = Messages([])
   now = int(time.time())
   message = ('Backup for "%(host)s" too old:'
@@ -114,8 +114,10 @@ def check_sentinels(sentinels: ParsedSentinels,
   time_fmt = '%Y-%m-%d %H:%M'
 
   if not sentinels.timestamps:
+    # pylint: disable=no-member,unsubscriptable-object
     warnings.append('Zero sentinels passed, something is wrong.')
-    messages.append(warnings[-1])  # pylint: disable=no-member
+    messages.append(warnings[-1])
+    # pylint: enable=no-member,unsubscriptable-object
     return (warnings, messages)
 
   globally_delayed = [
@@ -123,9 +125,11 @@ def check_sentinels(sentinels: ParsedSentinels,
       if now - sentinels.timestamps[host] > max_global_delay
   ]
   if len(globally_delayed) == len(sentinels.timestamps):
+    # pylint: disable=no-member,unsubscriptable-object
     warnings.append('All backups are delayed by at least '
                     f'{max_global_delay} seconds')
-    messages.append(warnings[-1])  # pylint: disable=no-member
+    messages.append(warnings[-1])
+    # pylint: enable=no-member,unsubscriptable-object
 
   for (host, last_backup) in sentinels.timestamps.items():
     max_delay = sentinels.max_allowed_delay[host]
@@ -156,7 +160,7 @@ def check_sentinels(sentinels: ParsedSentinels,
       continue
 
     # Something is wrong :(
-    warnings.append(warning)
+    warnings.append(warning)  # pylint: disable=no-member
 
   # pylint: disable=not-an-iterable
   messages = Messages(sorted(
@@ -172,13 +176,13 @@ def main(argv):
   day = 24 * 60 * 60  # pragma: no mutate
   sentinels = parse_sentinels(argv[1], day)
   (warnings, messages) = check_sentinels(sentinels, day)
+  # pylint: disable=not-an-iterable
   if sys.stdin.isatty():
-    # pylint: disable=not-an-iterable
     for line in messages:
       print(line)
-    # pylint: enable=not-an-iterable
   for line in warnings:
     print(line, file=sys.stderr)
+  # pylint: enable=not-an-iterable
   if warnings:
     sys.exit(1)
   else:
