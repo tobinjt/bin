@@ -441,8 +441,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
          os.path.dirname(src_file),
          os.path.dirname(dest_file)])
     # Strip off timestamps.
-    actual = [re.sub(r'\t.*$', '\t', x)
-              for x in actual]  # pylint: disable=not-an-iterable
+    actual = [re.sub(r'\t.*$', '\t', x) for x in actual]  # pylint: disable=not-an-iterable
     expected = [
         f'--- {dest_file}\t',
         f'+++ {src_file}\t',
@@ -496,8 +495,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       self.assertEqual([], messages)
       self.assertEqual('', mock_stdout.getvalue())
       for filename in ['file1', 'file2', 'file3', 'dir1/file4']:
-        self.assert_files_are_linked(
-            os.path.join(src_dir, filename), os.path.join(dest_dir, filename))
+        self.assert_files_are_linked(os.path.join(src_dir, filename),
+                                     os.path.join(dest_dir, filename))
 
   def test_dryrun(self):
     """Dry-run."""
@@ -540,8 +539,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--dryrun', src_dir, dest_dir])
       # Strip off timestamps.
-      messages = [re.sub(r'\t.*$', '\t', x)
-                  for x in messages]  # pylint: disable=not-an-iterable
+      messages = [re.sub(r'\t.*$', '\t', x) for x in messages]  # pylint: disable=not-an-iterable
       expected = [
           '--- /z/y/x/file1\t',
           '+++ /a/b/c/file1\t',
@@ -557,8 +555,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       ]
       self.assertEqual(expected, messages)
       self.assertFalse(
-          os.path.samefile(
-              os.path.join(src_dir, 'file1'), os.path.join(dest_dir, 'file1')))
+          os.path.samefile(os.path.join(src_dir, 'file1'),
+                           os.path.join(dest_dir, 'file1')))
       self.assertTrue(os.path.exists(os.path.join(dest_dir, 'file1')))
       self.assertFalse(os.path.exists(os.path.join(dest_dir, 'file2')))
       self.assertTrue(os.path.exists(os.path.join(dest_dir, 'file3')))
@@ -620,8 +618,8 @@ class TestUsage(unittest.TestCase):
     ]
     # The position of newlines depends on the width of the terminal, so remove
     # them for consistency.  Likewise spaces.
-    stdout = mock_stdout.getvalue().replace('\n', ' ').replace(
-        'pytest-3', 'pytest')
+    stdout = mock_stdout.getvalue().replace('\n',
+                                            ' ').replace('pytest-3', 'pytest')
     stdout = re.sub(r'\s+', ' ', stdout)
     for substring in substrings:
       with self.subTest(f'Testing -->>{substring}<<--'):
