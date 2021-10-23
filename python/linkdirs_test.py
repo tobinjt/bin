@@ -441,7 +441,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
          os.path.dirname(src_file),
          os.path.dirname(dest_file)])
     # Strip off timestamps.
-    actual = [re.sub(r'\t.*$', '\t', x) for x in actual]
+    actual = [re.sub(r'\t.*$', '\t', x)
+              for x in actual]  # pylint: disable=not-an-iterable
     expected = [
         f'--- {dest_file}\t',
         f'+++ {src_file}\t',
@@ -539,7 +540,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     with mock.patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
       messages = linkdirs.real_main(['linkdirs', '--dryrun', src_dir, dest_dir])
       # Strip off timestamps.
-      messages = [re.sub(r'\t.*$', '\t', x) for x in messages]
+      messages = [re.sub(r'\t.*$', '\t', x)
+                  for x in messages]  # pylint: disable=not-an-iterable
       expected = [
           '--- /z/y/x/file1\t',
           '+++ /a/b/c/file1\t',

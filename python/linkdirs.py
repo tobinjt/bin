@@ -30,7 +30,7 @@ Paths = NewType('Paths', List[Path])  # pragma: no mutate
 # Diffs between files.
 Diffs = NewType('Diffs', List[str])  # pragma: no mutate
 # Messages to print.
-Messages = List[str]  # pragma: no mutate
+Messages = NewType('Messages', List[str])  # pragma: no mutate
 # Shell patterns to skip.
 SkipPatterns = List[str]  # pragma: no mutate
 # Command line args.
@@ -191,7 +191,7 @@ def link_dir(source: Path, dest: Path,
     OSError: a filesystem operation failed.
   """
 
-  results = LinkResults(Paths([]), Diffs([]), [])
+  results = LinkResults(Paths([]), Diffs([]), Messages([]))
   for directory, subdirs, files in os.walk(source):
     # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
     # from descending into the skipped subdirs.
@@ -251,7 +251,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
     LinkResults.  expected_files will not include files that are skipped.
   """
 
-  results = LinkResults(Paths([]), Diffs([]), [])
+  results = LinkResults(Paths([]), Diffs([]), Messages([]))
   files = remove_skip_patterns(files, options.skip)
   # Pylint doesn't understand that Paths is actually a list, so disable those
   # warnings :(
@@ -362,13 +362,15 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
     full_subdirs = remove_skip_patterns(full_subdirs, options.skip)
     full_files = remove_skip_patterns(full_files, options.skip)
     unexpected_paths.directories.extend(
-        list(set(full_subdirs) - set(expected_files)))
-    unexpected_paths.files.extend(list(set(full_files) - set(expected_files)))
+        sorted(set(full_subdirs) - set(expected_files)))
+    unexpected_paths.files.extend(sorted(set(full_files) - set(expected_files)))
 
-  msgs = []
+  msgs = Messages([])
   if options.delete_unexpected_files:
-    msgs.extend(delete_unexpected_files(unexpected_paths, options))
-  msgs.extend(format_unexpected_files(unexpected_paths))
+    msgs.extend(  # pylint: disable=no-member
+        delete_unexpected_files(unexpected_paths, options))
+  msgs.extend(  # pylint: disable=no-member
+      format_unexpected_files(unexpected_paths))
   return msgs
 
 
@@ -389,12 +391,12 @@ def delete_unexpected_files(unexpected_paths: UnexpectedPaths,
   # Don't report files that have been deleted.
   unexpected_paths.files[:] = []
   if not unexpected_paths.directories:
-    return []
+    return Messages([])
   if not options.force:
-    return [
+    return Messages([
         'Refusing to delete directories without --force/-f: ' +
         ' '.join(unexpected_paths.directories)
-    ]
+    ])
   # Descending sort by length, so that child directories are removed before
   # parent directories.
   unexpected_paths.directories.sort(key=len, reverse=True)
@@ -402,7 +404,7 @@ def delete_unexpected_files(unexpected_paths: UnexpectedPaths,
     safe_unlink(entry, options.dryrun)
   # Don't report directories that have been deleted.
   unexpected_paths.directories[:] = []
-  return []
+  return Messages([])
 
 
 def format_unexpected_files(unexpected_paths: UnexpectedPaths) -> Messages:
@@ -417,19 +419,21 @@ def format_unexpected_files(unexpected_paths: UnexpectedPaths) -> Messages:
 
   unexpected_paths.directories.sort()
   unexpected_paths.files.sort()
-  unexpected_msgs = []
-  unexpected_msgs.extend([
+  unexpected_msgs = Messages([])
+  unexpected_msgs.extend([  # pylint: disable=no-member
       f'Unexpected directory: {path}' for path in unexpected_paths.directories
   ])
-  unexpected_msgs.extend(
+  unexpected_msgs.extend(  # pylint: disable=no-member
       [f'Unexpected file: {path}' for path in unexpected_paths.files])
   if unexpected_paths.files:
-    unexpected_msgs.append('rm ' + ' '.join(unexpected_paths.files))
+    unexpected_msgs.append(  # pylint: disable=no-member
+        'rm ' + ' '.join(unexpected_paths.files))
   if unexpected_paths.directories:
     # Descending sort by length, so that child directories are removed before
     # parent directories.
     unexpected_paths.directories.sort(key=len, reverse=True)
-    unexpected_msgs.append('rmdir ' + ' '.join(unexpected_paths.directories))
+    unexpected_msgs.append(  # pylint: disable=no-member
+        'rmdir ' + ' '.join(unexpected_paths.directories))
   return unexpected_msgs
 
 
@@ -540,12 +544,13 @@ def parse_arguments(
                            help='See usage for details')
 
   options = argv_parser.parse_args(argv[1:])
-  messages = []
+  messages = Messages([])
   if len(options.args) < 2:
-    messages.append(usage % {'prog': argv[0]})
+    messages.append(usage % {'prog': argv[0]})  # pylint: disable=no-member
   if options.delete_unexpected_files and not options.ignore_unexpected_children:
-    messages.append('Cannot enable --delete_unexpected_files without '
-                    '--ignore_unexpected_children')
+    messages.append(  # pylint: disable=no-member
+        'Cannot enable --delete_unexpected_files without '
+        '--ignore_unexpected_children')
   return (options, messages)
 
 
@@ -559,8 +564,8 @@ def real_main(argv: CommandLineArgs) -> Messages:
   for filename in options.ignore_file:
     ignore_patterns.extend(read_skip_patterns_from_file(filename))
 
-  all_results = LinkResults(Paths([]), Diffs([]), [])
-  unexpected_msgs = []
+  all_results = LinkResults(Paths([]), Diffs([]), Messages([]))
+  unexpected_msgs = Messages([])
   # When mutmut mutates these lines the tests take long enough for mutmut to
   # report them as suspicious, so disable mutations.
   dest = options.args.pop().rstrip(os.sep)  # pragma: no mutate
@@ -572,15 +577,15 @@ def real_main(argv: CommandLineArgs) -> Messages:
     source = source.rstrip(os.sep)
     all_results.extend(link_dir(source, dest, options))
   if options.report_unexpected_files or options.delete_unexpected_files:
-    unexpected_msgs.extend(
+    unexpected_msgs.extend(  # pylint: disable=no-member
         report_unexpected_files(dest, all_results.expected_files, options))
 
-  return all_results.diffs + all_results.errors + unexpected_msgs
+  return Messages(all_results.diffs + all_results.errors + unexpected_msgs)
 
 
 def main(argv: CommandLineArgs):
   messages = real_main(argv)
-  for line in messages:
+  for line in messages:  # pylint: disable=not-an-iterable
     print(line)
   if messages:
     sys.exit(1)
