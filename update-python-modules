@@ -103,7 +103,7 @@ main() {
   # is broken when something goes wrong.
   # Removed packages: mutmut depends on pony which doesn't support Python 3.9.
   local package packages=(lxml mypy pudb pyfakefs pylint pytest)
-  packages+=(pytest-cov pyyaml yapf)
+  packages+=(pytest-cov pytest-flakefinder pyyaml yapf)
   for package in "${packages[@]}"; do
     printf "\n\npip3 install %s\\n" "${package}"
     pip3 install "${package}"
