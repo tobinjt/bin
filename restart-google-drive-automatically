@@ -3,9 +3,9 @@
 set -e -f -u -o pipefail
 
 main() {
-  local APP="/Applications/Backup and Sync.app"
-  local DEST="backup-and-sync.restart.plist"
-  local LABEL="BackupAndSync.restart"
+  local APP="/Applications/Google Drive.app"
+  local DEST="google-drive.restart.plist"
+  local LABEL="GoogleDrive.restart"
   local SLEEP_BETWEEN_ATTEMPTS="15"
 
   if [[ "$#" -eq 0 ]]; then
