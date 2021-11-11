@@ -30,7 +30,7 @@ main() {
   export SSH_AUTH_SOCK
   # -D -A only works with named sessions, so name the session $USER.
   # Set the name of the first window to ''.
-  tmux new-session -D -A -s "${USER}" -n ''
+  exec tmux new-session -D -A -s "${USER}" -n ''
 }
 
 main "$@"
