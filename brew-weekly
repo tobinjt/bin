@@ -22,9 +22,8 @@ main() {
     disable_git_auto_gc_and_manually_gc "${git_dir}"
   done
 
-  # Try to filter spam output by git and homebrew's update messages.
-  brew update 2>&1 > /dev/null \
-    | grep -v -e 'Successfully rebased and updated' -e '^$' || true
+  # This is very spammy now so just discard the output entirely.
+  brew update >& /dev/null
   brew outdated
   brew doctor | grep -v 'Your system is ready to brew.' || true
 }
