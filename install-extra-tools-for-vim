@@ -20,7 +20,7 @@ if type go >& /dev/null; then
 
   # Tools used by Syntastic; some of the tools are installed by GoUpdateBinaries
   # so I don't need to install them a second time.
-  go get -u golang.org/x/tools/cmd/gotype
+  go install golang.org/x/tools/cmd/gotype@latest
 
   if type codesign >& /dev/null; then
     # Debugger; installed by vim-go, manual instructions at
