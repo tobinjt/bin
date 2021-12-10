@@ -89,7 +89,7 @@ main() {
   pip3 install virtualenv
 
   # Flexget.  Only install and test on machines where I normally run flexget.
-  local logdir="${HOME}/.flexget/logs"
+  local logdir="${HOME}/tmp/logs/flexget"
   if [[ -d "${logdir}" ]]; then
     virtualenv_install "${basedir}/flexget" "flexget" "transmission-rpc"
     printf "\\n\\nTesting Flexget\\n"
