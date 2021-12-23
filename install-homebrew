@@ -45,7 +45,7 @@ main() {
         ;;
     esac
   done
-  readonly clean_install=0 imac=0 laptop=0
+  readonly clean_install imac laptop
 
   if [[ "${imac}" -eq "${laptop}" ]]; then
     usage >&2
@@ -59,12 +59,13 @@ main() {
       curl_pipe_shell "${uninstall_url}"
       # Clean up stuff that uninstall leaves behind :(
       set +f
-      rm -rf "${homebrew_dir}/Homebrew/"*
-      rm -rf "${homebrew_dir}/Homebrew/".??*
-      rm -rf "${homebrew_dir}/bin/"*
-      rm -rf "${homebrew_dir}/lib/"*
-      rm -rf "${homebrew_dir}/share/"*
-      rm -rf "${homebrew_dir}/var/"*
+      rm -rf /usr/local/Homebrew/*
+      rm -rf /usr/local/Homebrew/.??*
+      rm -rf /usr/local/bin/*
+      rm -rf /usr/local/etc/*
+      rm -rf /usr/local/lib/*
+      rm -rf /usr/local/share/*
+      rm -rf /usr/local/var/*
       set -f
     else
       printf "%s: %s exists; if necessary use --clean_install\\n" \
