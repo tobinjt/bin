@@ -34,16 +34,11 @@ main() {
     printf "Only Mac OS is supported, sorry.\\n" >&2
     exit 1
   fi
-  while :; do
-    case "${1:-}" in
-      ?*)
+  while [[ "$#" -gt 0 ]]; do
+    case "${1}" in
+      *)
         usage >&2
         return 1
-        ;;
-      '')
-        # Empty string when $1 doesn't expand to anything, argument processing
-        # finished successfully.
-        break
         ;;
     esac
   done
