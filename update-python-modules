@@ -6,51 +6,6 @@ usage() {
   printf "Usage: %s [--skip_clean_install]\\n" "$0"
 }
 
-packages_to_relink() {
-  find /usr/local/Cellar -name site-packages \
-    | cut -d / -f 5 \
-    | grep -v ^python \
-    | sort \
-    | uniq
-}
-
-clean_python_install() {
-  set +f
-  local dir dirs=(/usr/local/Cellar/python*)
-  set -f
-  # Deleting site-packages will break pip.  The postinstall needs to run to
-  # setup pip => fully delete all Python versions and reinstall them.  `brew
-  # reinstall` would be an option but would leave unnecessary versions around.
-  for dir in "${dirs[@]}"; do
-    brew remove --ignore-dependencies "$(basename "${dir}")"
-  done
-  # BEWARE: this will nuke any other locally installed packages, so those
-  # packages need to be included in the list for reinstallation.
-  set +f
-  rm -rf /usr/local/lib/python*/site-packages
-  set -f
-
-  # Frequently there are installed package depending on 2 Python versions, but
-  # installing "python" will only install the latest Python, so figure out all
-  # required versions.
-  local version uses
-  # `brew search python@` returns all kinds of packages, so list all packages
-  # and grep instead.  Sort by version so we install the newest version last.
-  for version in $(brew formulae | grep python@ | sort -t . -k2n); do
-    uses="$(brew uses --installed "${version}")"
-    if [[ -z "${uses}" ]]; then
-      printf "Skipping unnecessary version %s\\n" "${version}"
-      continue
-    fi
-    printf "Installing version %s required by %s\\n" "${version}" "${uses}"
-    brew install "${version}"
-  done
-
-  # Relink packages that would have been damaged by deleting site-packages.
-  packages_to_relink | xargs brew unlink
-  packages_to_relink | xargs brew link
-}
-
 virtualenv_install() {
   local destdir="$1"
   shift
@@ -79,13 +34,8 @@ main() {
     printf "Only Mac OS is supported, sorry.\\n" >&2
     exit 1
   fi
-  local skip_clean_install=0
   while :; do
     case "${1:-}" in
-      --skip_clean_install)
-        skip_clean_install=1
-        shift
-        ;;
       ?*)
         usage >&2
         return 1
@@ -102,17 +52,12 @@ main() {
   export PS1="dummy"
   # Let Python write bytecode.
   unset PYTHONDONTWRITEBYTECODE
+  # Install Python, just in case.
+  brew install python
 
   # Clean up existing install.
   local virtualenv_dir="${HOME}/tmp/virtualenv"
   rm -rf "${virtualenv_dir}"
-  if [[ "${skip_clean_install}" -eq 0 ]]; then
-    # Updating Python often requires updating a dependency, so let's just update
-    # everything.  This means we'll update Python, then uninstall it, then
-    # install it again which is inefficient but that's the only downside.
-    bubc
-    clean_python_install
-  fi
 
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ -d "${HOME}/tmp/logs/flexget" ]]; then
