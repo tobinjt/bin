@@ -1,0 +1,117 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+usage() {
+  printf "%s: --imac|--laptop [--clean_install]\\n" "$0"
+}
+
+curl_pipe_shell() {
+  local url="$1"
+  /bin/bash -c "$(curl -fsSL "${url}")"
+}
+
+cask_install() {
+  local app_dir="$1" app_name="$2"
+  if [[ ! -d "${app_dir}" ]]; then
+    brew install --cask "${app_name}"
+  fi
+}
+
+main() {
+  local url_base="https://raw.githubusercontent.com/Homebrew/install/HEAD"
+  local install_url="${url_base}/install.sh"
+  local uninstall_url="${url_base}/uninstall.sh"
+  readonly url_base install_url uninstall_url
+
+  local clean_install=0 imac=0 laptop=0
+  while [[ "$#" -gt 0 ]]; do
+    case "${1}" in
+      --clean_install)
+        clean_install=1
+        shift
+        ;;
+      --imac)
+        imac=1
+        shift
+        ;;
+      --laptop)
+        laptop=1
+        shift
+        ;;
+      *)
+        usage >&2
+        return 1
+        ;;
+    esac
+  done
+  readonly clean_install=0 imac=0 laptop=0
+
+  if [[ "${imac}" -eq "${laptop}" ]]; then
+    usage >&2
+    return 1
+  fi
+
+  local homebrew_dir="/usr/local/Cellar"
+  if [[ -d "${homebrew_dir}" ]]; then
+    if [[ "${clean_install}" -eq 1 ]]; then
+      # Uninstall Homebrew.
+      curl_pipe_shell "${uninstall_url}"
+      # Clean up stuff that uninstall leaves behind :(
+      set +f
+      rm -rf "${homebrew_dir}/Homebrew/"*
+      rm -rf "${homebrew_dir}/Homebrew/".??*
+      rm -rf "${homebrew_dir}/bin/"*
+      rm -rf "${homebrew_dir}/lib/"*
+      rm -rf "${homebrew_dir}/share/"*
+      rm -rf "${homebrew_dir}/var/"*
+      set -f
+    else
+      printf "%s: %s exists; if necessary use --clean_install\\n" \
+        "$0" "${homebrew_dir}" >&2
+    fi
+  fi
+  if [[ ! -d "${homebrew_dir}" ]]; then
+    # Install Homebrew.
+    curl_pipe_shell "${install_url}"
+  fi
+
+  # Ensure that brew is in $PATH.
+  PATH="/usr/local/bin:${PATH}"
+  export PATH
+  hash -r
+
+  # Install packages I need.
+  # Link completions so the shell can use them.
+  brew completions link
+  # Everything needed for backups.
+  brew install coreutils lockrun rsync
+  # Basics.
+  brew install autossh less ripgrep shellcheck tmux vim
+  cask_install "/Applications/Time Out.app" time-out
+
+  if [[ "${laptop}" -eq 1 ]]; then
+    # Most development.
+    brew install closure-compiler fswatch hugo kcov markdown phpunit \
+      pre-commit prettier wget
+    # Lint for CSS.
+    npm install -g csslint
+    # Golang.
+    brew install go golangci-lint gopls gotags graphviz staticcheck
+    # Rust.
+    # brew install rustup-init
+    # rustup-init --no-modify-path
+    cask_install "/Applications/calibre.app" calibre
+  fi
+  if [[ "${imac}" -eq 1 ]]; then
+    # Various tools for downloads.
+    brew install ffmpeg prettier tmpreaper transmission youtube-dl
+    cask_install "/Applications/FileBot.app" filebot
+  fi
+  # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
+  install-extra-tools-for-vim
+  # All the Python modules I need for development.
+  update-python-modules
+}
+
+main "$@"
