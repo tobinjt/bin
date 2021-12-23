@@ -7,6 +7,14 @@ usage() {
   exit 1
 }
 
+packages_to_relink() {
+  find /usr/local/Cellar -name site-packages \
+    | cut -d / -f 5 \
+    | grep -v ^python \
+    | sort \
+    | uniq
+}
+
 clean_python_install() {
   set +f
   local dir dirs=(/usr/local/Cellar/python*)
@@ -28,8 +36,8 @@ clean_python_install() {
   # required versions.
   local version uses
   # `brew search python@` returns all kinds of packages, so list all packages
-  # and grep instead.
-  for version in $(brew formulae | grep python@); do
+  # and grep instead.  Sort by version so we install the newest version last.
+  for version in $(brew formulae | grep python@ | sort -t . -k2n); do
     uses="$(brew uses --installed "${version}")"
     if [[ -z "${uses}" ]]; then
       printf "Skipping unnecessary version %s\\n" "${version}"
@@ -38,14 +46,17 @@ clean_python_install() {
     printf "Installing version %s required by %s\\n" "${version}" "${uses}"
     brew install "${version}"
   done
-  # This seems to be unnecessary but not harmful so leave it in.
-  brew install python
+
+  # Relink packages that would have been damaged by deleting site-packages.
+  packages_to_relink | xargs brew unlink
+  packages_to_relink | xargs brew link
 }
 
 virtualenv_install() {
   local destdir="$1"
   shift
 
+  brew install virtualenv
   mkdir -p "${destdir}"
   # Run virtualenv from the destination directory just in case.
   cd "${destdir}"
@@ -86,7 +97,6 @@ main() {
     bubc
     clean_python_install
   fi
-  pip3 install virtualenv
 
   # Flexget.  Only install and test on machines where I normally run flexget.
   local logdir="${HOME}/tmp/logs/flexget"
@@ -98,10 +108,15 @@ main() {
   fi
 
   # Python development is installed globally so it's easier to use.
-  # mypy needs lxml but doesn't depend on it.
+  # TODO(johntobin): would it be better to use virtualenv for everything?
+  # I tried using homebrew packages for some tools, but that lead to a terrible
+  # mix of Python versions and tools not finding modules so I reverted to using
+  # Pip for everything.
+
   # Install packages one by one so that it's easier to figure out which package
   # is broken when something goes wrong.
   # Removed packages: mutmut depends on pony which doesn't support Python 3.9.
+  # mypy needs lxml but doesn't depend on it.
   local package packages=(lxml mypy pudb pyfakefs pylint pytest)
   packages+=(pytest-cov pytest-flakefinder pyyaml yapf)
   for package in "${packages[@]}"; do
