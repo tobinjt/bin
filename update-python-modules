@@ -3,8 +3,7 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "Usage: %s [--skip_clean_install]\\n" "$0" >&2
-  exit 1
+  printf "Usage: %s [--skip_clean_install]\\n" "$0"
 }
 
 packages_to_relink() {
@@ -74,13 +73,18 @@ main() {
     exit 1
   fi
   local skip_clean_install=0
-  if [[ "$#" -eq 1 && "$1" == "--skip_clean_install" ]]; then
-    skip_clean_install=1
-    shift
-  fi
-  if [[ "$#" -ne 0 ]]; then
-    usage
-  fi
+  while :; do
+    case "${1:-}" in
+      --skip_clean_install)
+        skip_clean_install=1
+        shift
+        ;;
+      *)
+        usage >&2
+        return 1
+        ;;
+    esac
+  done
 
   # Dummy values needed by activate scripts.
   export PS1="dummy"
