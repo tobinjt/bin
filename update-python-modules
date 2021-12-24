@@ -3,18 +3,17 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "Usage: %s [--skip_clean_install]\\n" "$0"
+  printf "Usage: %s\\n" "$0"
 }
 
 virtualenv_install() {
   local destdir="$1"
   shift
 
-  brew install virtualenv
   mkdir -p "${destdir}"
   # Run virtualenv from the destination directory just in case.
   cd "${destdir}"
-  virtualenv --clear "${destdir}"
+  virtualenv --no-periodic-update "${destdir}"
   # virtualenv sometimes deletes the destination directory so cd there again.
   cd "${destdir}"
   source bin/activate
@@ -47,8 +46,8 @@ main() {
   export PS1="dummy"
   # Let Python write bytecode.
   unset PYTHONDONTWRITEBYTECODE
-  # Install Python, just in case.
-  brew install python
+  # Install Python and virtualenv, just in case.
+  brew install python virtualenv
 
   # Clean up existing install.
   local virtualenv_dir="${HOME}/tmp/virtualenv"
