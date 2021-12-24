@@ -88,7 +88,7 @@ main() {
   # Everything needed for backups.
   brew install coreutils lockrun rsync
   # Basics.
-  brew install autossh less ripgrep shellcheck tmux vim
+  brew install autossh less ripgrep shellcheck tmpreaper tmux vim
   cask_install "/Applications/Time Out.app" time-out
 
   if [[ "${laptop}" -eq 1 ]]; then
@@ -106,7 +106,7 @@ main() {
   fi
   if [[ "${imac}" -eq 1 ]]; then
     # Various tools for downloads.
-    brew install ffmpeg prettier tmpreaper transmission youtube-dl
+    brew install ffmpeg transmission-cli wget youtube-dl
     cask_install "/Applications/FileBot.app" filebot
   fi
   # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
