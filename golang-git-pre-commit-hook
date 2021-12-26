@@ -2,28 +2,6 @@
 
 set -e -u -o pipefail
 
-if grep '^func Test[[:lower:]]' ./*_test.go; then
-  echo "Bad test name, it won't be run" >&2
-  exit 1
-fi
-
-files="$(gofmt -l ./*.go)"
-if [[ -n "${files}" ]]; then
-  echo "Badly-formatted files: ${files}" >&2
-  echo "Fix with:" >&2
-  echo "$ gofmt -w ${files}" >&2
-  exit 1
-fi
-
-# Check for missing error handling.
-if ! errcheck -asserts -blank; then
-  echo "Missing error handling :(" >&2
-  echo "errcheck -asserts -blank"
-  exit 1
-fi
-
-staticcheck
-
 # Coverage runs tests, so there's no need to run them separately.
 filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
 # I want ${filename} to be expanded now, because when we exit
