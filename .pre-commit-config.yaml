@@ -5,17 +5,17 @@ repos:
   rev: v4.1.0
   hooks:
   - id: check-builtin-literals
-    files: python/.*.py
+    files: python/.*\.py$
   - id: check-case-conflict
   - id: check-docstring-first
-    files: python/.*.py
+    files: python/.*\.py$
   - id: check-executables-have-shebangs
   - id: check-merge-conflict
   - id: check-shebang-scripts-are-executable
   - id: check-symlinks
   - id: check-vcs-permalinks
   - id: debug-statements
-    files: python/.*.py
+    files: python/.*\.py$
   - id: end-of-file-fixer
   - id: trailing-whitespace
 - repo: local
@@ -29,11 +29,18 @@ repos:
     pass_filenames: false
     files: .*
     entry: make -C tests
+  # Using this instead of a packaged pylint check because the packaged one
+  # doesn't find modules in virtualenv.
+  - id: pylint
+    name: Run `pylint`
+    language: system
+    types: [python]
+    entry: pylint
   - id: pytest
     name: Run `pytest`
     language: system
     pass_filenames: false
-    files: .*.py
+    types: [python]
     entry: pytest
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v0.930
@@ -52,8 +59,3 @@ repos:
     - id: python-no-eval
     - id: python-no-log-warn
     - id: python-use-type-annotations
-# Cannot import modules in virtualenv :(
-# - repo: https://github.com/PyCQA/pylint
-  # rev: v2.12.2
-  # hooks:
-    # - id: pylint

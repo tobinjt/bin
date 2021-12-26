@@ -1,9 +1,0 @@
-#!/bin/bash
-
-set -e -f -u -o pipefail
-
-files_changed_in_dir() {
-  local dir="$1"
-  git diff --cached --name-only --diff-filter=ACM \
-    | grep "^${dir}/"
-}
