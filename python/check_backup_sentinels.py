@@ -163,8 +163,8 @@ def check_sentinels(sentinels: ParsedSentinels,
     warnings.append(warning)  # pylint: disable=no-member
 
   # pylint: disable=not-an-iterable
-  messages = Messages(sorted(
-      message.replace('too old', 'debug info') for message in messages))
+  messages = Messages(
+      sorted(message.replace('too old', 'debug info') for message in messages))
   # pylint: enable=not-an-iterable
   return (warnings, messages)
 

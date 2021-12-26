@@ -256,8 +256,10 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
   # Pylint doesn't understand that Paths is actually a list, so disable those
   # warnings :(
   # pylint: disable=not-an-iterable
-  files = Paths([Path(os.path.join(directory, filename))
-                 for filename in remove_skip_patterns(files, options.skip)])
+  files = Paths([
+      Path(os.path.join(directory, filename))
+      for filename in remove_skip_patterns(files, options.skip)
+  ])
   # pylint: enable=not-an-iterable
   skip = SkipPatterns([f'*{os.sep}{pattern}' for pattern in options.skip])
   files = remove_skip_patterns(files, skip)

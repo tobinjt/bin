@@ -97,8 +97,7 @@ class SingleURLConfig:
   comment: str
   cookies: Dict[str, str]
   optional_resources: List[str] = dataclasses.field(default_factory=list)
-  optional_resource_regexes: List[str] = dataclasses.field(
-      default_factory=list)
+  optional_resource_regexes: List[str] = dataclasses.field(default_factory=list)
 
 
 def read_wget_log() -> List[str]:
@@ -207,9 +206,7 @@ def check_single_url(config: SingleURLConfig) -> List[str]:
   try:
     log_lines = run_wget(config.url, bool(config.cookies))
   except WgetFailedException as err:
-    return [
-        f'{config.url} ({config.comment}): running wget failed; {str(err)}'
-    ]
+    return [f'{config.url} ({config.comment}): running wget failed; {str(err)}']
 
   fetched_resources = set()
   for line in log_lines:
@@ -266,8 +263,7 @@ def validate_list_of_strings(path: str, name: str, data: List[str]):
     raise ValueError(f'{path}: "{name}" must be a list of strings')
   bad = [str(r) for r in data if not isinstance(r, str)]
   if bad:
-    raise ValueError(
-        f'{path}: all "{name}" must be strings: ' + ', '.join(bad))
+    raise ValueError(f'{path}: all "{name}" must be strings: ' + ', '.join(bad))
 
 
 def validate_dict_of_strings(path: str, name: str, data: List[str]):
@@ -285,8 +281,8 @@ def validate_dict_of_strings(path: str, name: str, data: List[str]):
   contents = list(data.keys()) + list(data.values())
   bad = [str(c) for c in contents if not isinstance(c, str)]
   if bad:
-    raise ValueError(f'{path}: everything in "{name}" must be strings: '
-                     + ', '.join(bad))
+    raise ValueError(f'{path}: everything in "{name}" must be strings: ' +
+                     ', '.join(bad))
 
 
 def validate_user_config(path: str, configs: Any):
@@ -308,7 +304,8 @@ def validate_user_config(path: str, configs: Any):
       raise ValueError(f'{path}: All entries in the list must be dicts')
     known_keys = {
         'url', 'resources', 'cookies', 'comment', 'optional_resources',
-         'optional_resource_regexes'}
+        'optional_resource_regexes'
+    }
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
       bad_keys = list(actual_keys - known_keys)
@@ -361,8 +358,8 @@ def read_config(path: str) -> List[SingleURLConfig]:
   return configs
 
 
-def generate_cookies_file_contents(url: str,
-                                   cookies: Dict[str, str]) -> List[str]:
+def generate_cookies_file_contents(url: str, cookies: Dict[str,
+                                                           str]) -> List[str]:
   """Generate the contents of a cookies file.
 
   It would be much cleaner to use http.cookiejar for this, but after spending

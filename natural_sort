@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """Sort inputs naturally."""
 
 import fileinput
@@ -25,6 +24,7 @@ def make_natural_sort_key(something: str) -> List[Union[str, float]]:
 def main(argv):
   for entry in sorted(fileinput.input(argv), key=make_natural_sort_key):
     print(entry, end='')
+
 
 if __name__ == '__main__':
   main(sys.argv[1:])
