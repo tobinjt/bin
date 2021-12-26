@@ -308,8 +308,7 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
       continue
 
     # If the destination is already linked don't change it without --force.
-    # mypy doesn't understand this line.
-    num_links = os.stat(dest_filename)[stat.ST_NLINK]  # type: ignore
+    num_links = os.stat(dest_filename)[stat.ST_NLINK]
     if num_links != 1:
       results.errors.append(f'{dest_filename}: link count is {num_links}')
       continue

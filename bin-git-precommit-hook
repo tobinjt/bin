@@ -7,12 +7,3 @@ files_changed_in_dir() {
   git diff --cached --name-only --diff-filter=ACM \
     | grep "^${dir}/"
 }
-
-if files_changed_in_dir python; then
-  ( cd python
-    pytest
-    set +f
-    pylint -- *.py
-    mypy -- *.py
-    set -f)
-fi
