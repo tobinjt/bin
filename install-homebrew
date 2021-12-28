@@ -93,8 +93,10 @@ main() {
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Most development.
-    brew install closure-compiler fswatch hugo kcov markdown phpunit \
-      pre-commit prettier wget
+    # PHP is installed because MacOS PHP is too old to understand type
+    # annotations in classes.
+    brew install closure-compiler fswatch hugo kcov markdown php phpstan \
+      phpunit pre-commit prettier wget
     # Lint for CSS.
     npm install -g csslint
     # Golang.
