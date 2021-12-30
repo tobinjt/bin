@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 # Debian packages the yapf binary as yapf3, so wrap that.
-binaries=(/usr/local/bin/yapf /usr/bin/yapf3)
+binaries=("${HOME}/tmp/virtualenv/python/bin/yapf" /usr/bin/yapf3)
 for binary in "${binaries[@]}"; do
   if [[ -x "${binary}" ]]; then
     exec "${binary}" "$@"
