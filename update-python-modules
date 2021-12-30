@@ -70,7 +70,8 @@ main() {
   # Removed packages: mutmut depends on pony which doesn't support Python 3.9.
   # mypy needs lxml but doesn't depend on it.
   virtualenv_install "${virtualenv_dir}/python" identify lxml mypy pudb \
-    pyfakefs pylint pytest pytest-cov pytest-flakefinder pyyaml yapf
+    pyfakefs pylint pytest pytest-cov pytest-flakefinder pyyaml types-PyYAML \
+    yapf
   # Normally $PATH will contain this directory; add it so that initial
   # installation works when $PATH does not contain it.
   PATH="${PATH}:${virtualenv_dir}/python/bin"
