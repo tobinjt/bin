@@ -19,13 +19,13 @@ main() {
   fi
 
   # Pull upstream changes into my local copy and push to my fork on Github.
-  printf "*** Updating master in %s\\n" "${STANDALONE_THEME_DIR}"
-  git checkout master
-  git pull upstream master
+  printf "*** Updating main in %s\\n" "${STANDALONE_THEME_DIR}"
+  git checkout main
+  git pull upstream main
   git push
 
   # Pull any changes made through review on github, merge upstream changes from
-  # master branch, and push to my fork on Github.
+  # main branch, and push to my fork on Github.
   # If necessary: create the branch and push it to Github.
   printf "*** Updating changes-for-upstream in %s\\n" "${STANDALONE_THEME_DIR}"
   if ! git checkout changes-for-upstream; then
@@ -39,15 +39,15 @@ main() {
       changes-for-upstream
   fi
   git pull
-  git merge master
+  git merge main
   git push
 
-  # Pull any changes I have made, merge upstream changes from both master and my
+  # Pull any changes I have made, merge upstream changes from both main and my
   # changes-for-upstream branchs, and push to Github.
   printf "*** Updating my-changes in %s\\n" "${STANDALONE_THEME_DIR}"
   git checkout my-changes
   git pull
-  git merge master
+  git merge main
   git merge changes-for-upstream
   git push
 
