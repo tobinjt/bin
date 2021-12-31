@@ -310,7 +310,9 @@ def link_files(source: Path, dest: Path, directory: Path, files: Paths,
     # If the destination is already linked don't change it without --force.
     num_links = os.stat(dest_filename)[stat.ST_NLINK]
     if num_links != 1:
-      results.errors.append(f'{dest_filename}: link count is {num_links}')
+      results.errors.append(
+          f'{dest_filename}: link count is {num_links}; is this file present '
+          'in multiple source directories?')
       continue
 
     # Check for diffs.

@@ -553,7 +553,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
           '/z/y/x/dir3 is not a directory',
           '/z/y/x/dir4 is not a directory',
           '/z/y/x/file4: is not a file',
-          '/z/y/x/file5: link count is 2',
+          '/z/y/x/file5: link count is 2; is this file present in multiple '
+          'source directories?',
           'Skipping symbolic link /a/b/c/file6',
           'Skipping symbolic link /a/b/c/file8',
       ]
