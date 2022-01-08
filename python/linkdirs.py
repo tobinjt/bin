@@ -93,7 +93,11 @@ def safe_unlink(unlink_me: Path, dryrun: bool) -> None:
     if dryrun:
       print(f'rm {pipes.quote(unlink_me)}')
     else:
-      os.unlink(unlink_me)
+      try:
+        os.unlink(unlink_me)
+      except FileNotFoundError:
+        #  Something else deleted the file, don't die.
+        pass
   else:
     if dryrun:
       print(f'rm -r {pipes.quote(unlink_me)}')
