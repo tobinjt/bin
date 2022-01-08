@@ -5,7 +5,13 @@ set -e -f -u -o pipefail
 # grep for something and output in vim quickfix format.
 search() {
   if type rg >& /dev/null; then
-    rg --sort=path --with-filename --line-number --hidden --glob '!.git/**' "$@"
+    # - Output filename and line number even with a single file.  Sort by path
+    #   because that's easier to understand.
+    # - Search hidden files but ignore git directory and things ignored by
+    #   .gitignore.
+    rg --sort=path --with-filename --line-number \
+      --hidden --glob '!.git' --ignore \
+      "$@"
   else
     if is_mac_os; then
       # MacOS grep doesn't automatically add the current directory like GNU
