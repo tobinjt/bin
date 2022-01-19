@@ -4,6 +4,10 @@ set -e -f -u -o pipefail
 
 PATH="${HOME}/bin:${PATH}"
 
+usage() {
+  printf "%s: [--pull_and_push] DIRECTORY [DIRECTORY...]\\n" "$0"
+}
+
 git_pull_and_push_if_possible() {
   # Explicitly enable the old default behaviour so that git doesn't spew
   # warnings.
@@ -35,10 +39,23 @@ check_single_repo() {
 
 main() {
   local pull_and_push=0
-  if [[ "$#" -gt 0 && "$1" == "--pull_and_push" ]]; then
-    pull_and_push=1
-    shift
-  fi
+  while [[ "$#" -gt 0 ]]; do
+    case "${1}" in
+      --pull_and_push)
+        pull_and_push=1
+        shift
+        ;;
+      -*)
+        usage >&2
+        return 1
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  readonly pull_and_push
+
   local repo result=0
   for repo in "$@"; do
     # Make it easy to run "check-git-repos ~/src/*".
