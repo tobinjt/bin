@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Exit successfully if the network is unavailable; this is meant to wrap
+# commands that are guaranteed to fail if the network is unavailable, so don't
+# even try to run the command in that case, and exit successfully so that
+# callers think everything worked.
+"${HOME}/bin/check-network-is-working" || exit 0
+"$@"
