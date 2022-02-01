@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local dest="/home/johntobin/etc-backups"
+  readonly dest
+  if [ ! -d "${dest}" ]; then
+    mkdir -p "${dest}"
+    chmod 0700 "${dest}"
+  fi
+
+  local date backup
+  date="$(date +%Y-%m-%d-%H-%M)"
+  backup="${dest}/${date}.tar.gz"
+  cd /
+  tar zcf "${backup}" etc/
+  chown johntobin:johntobin "${backup}"
+  tmpreaper --mtime 15d "${dest}"
+}
+
+main "$@"
