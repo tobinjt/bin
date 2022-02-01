@@ -16,7 +16,7 @@ main() {
   cd /
   tar zcf "${backup}" etc/
   chown johntobin:johntobin "${backup}"
-  tmpreaper --mtime 15d "${dest}"
+  /sbin/tmpreaper --mtime 15d "${dest}"
 }
 
 main "$@"
