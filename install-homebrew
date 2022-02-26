@@ -93,7 +93,7 @@ main() {
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
-    brew install fswatch kcov pre-commit wget
+    brew install fswatch kcov pre-commit universal-ctags wget
     # My website.
     brew install closure-compiler hugo markdown prettier
     # PHP.  PHP is installed because MacOS PHP is too old to understand type
