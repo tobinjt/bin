@@ -11,6 +11,11 @@ main() {
   git checkout master
   git pull upstream master
   git push
+  # Now merge them into my branch.
+  git checkout my-changes
+  git pull
+  git merge master
+  git push
 
   # Update every submodule; only processing ~/src/dotfiles for now, will add
   # more in future if necessary.
