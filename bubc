@@ -10,9 +10,10 @@ if [[ -n "$(find "${file}" -mtime +3h)" ]]; then
 fi
 brew outdated
 # Removing old versions of vim breaks running vim sessions, and sometimes the
-# autocmds break badly enough that modified files can't be saved.  Hopefully
-# this will disable removal of old versions of vim.
-export HOMEBREW_NO_CLEANUP_FORMULAE=vim
+# autocmds break badly enough that modified files can't be saved.  Disable
+# removal of old versions of vim.
+# Similarly for tmux.
+export HOMEBREW_NO_CLEANUP_FORMULAE=tmux,vim
 # Separately upgrade formula and casks so I can force bottles.
 # Sometimes a formula doesn't have a bottle and upgrading will fail, so we
 # survive the failure and try again without forcing bottle.
