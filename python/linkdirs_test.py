@@ -228,8 +228,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {src_dir}/file
     # 'asdf' subdir exists here, so it will be checked in dest_dir.
     {src_dir}/asdf/file
-    {src_dir}/asdf/ignore-some/expected
-    {dest_dir}/asdf/ignore-some/expected
+    {src_dir}/asdf/ignore-some/dont-ignore
+    {dest_dir}/asdf/ignore-some/dont-ignore
     {dest_dir}/pinky
     {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
@@ -238,6 +238,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {dest_dir}/asdf/report_me/
     # Ignore this file and directory.
     {dest_dir}/asdf/ignore-some/should-be-ignored/a-file
+    {dest_dir}/asdf/delete dir with spaces/delete file with spaces
     """
     self.create_files(files)
 
@@ -252,12 +253,17 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         'linkdirs', '--report_unexpected_files', '--ignore_unexpected_children',
         f'--ignore_file={skip_filename}', src_dir, dest_dir
     ])
+    # TODO: change this to a multi-line string?
     expected = [
+        'Unexpected directory: /z/y/x/asdf/delete dir with spaces',
         'Unexpected directory: /z/y/x/asdf/report_me',
+        'Unexpected file: /z/y/x/asdf/delete dir with spaces/delete '
+        'file with spaces',
         'Unexpected file: /z/y/x/pinky',
         'Unexpected file: /z/y/x/the_brain',
-        'rm /z/y/x/pinky /z/y/x/the_brain',
-        'rmdir /z/y/x/asdf/report_me',
+        "rm '/z/y/x/asdf/delete dir with spaces/delete file with spaces' "
+        "/z/y/x/pinky /z/y/x/the_brain",
+        "rmdir '/z/y/x/asdf/delete dir with spaces' /z/y/x/asdf/report_me",
     ]
     self.assertEqual(expected, actual)
     # Unexpected files should not be deleted.
