@@ -57,6 +57,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     self.assertTrue(os.path.samefile(file1, file2))
 
   def setUp(self):
+    # Do not truncate diffs.
+    self.maxDiff = None  # pylint: disable=invalid-name
     self.setUpPyfakefs()
 
   def create_files(self, string):
@@ -65,6 +67,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     Format:
     - # Comments and empty lines are skipped.
     - file1=file2 => make file2 a hard link to file1.
+    - file1->file2 => make file1 a symbolic link to file2.
     - file1 => create file1 with no contents.
     - file1:foo bar baz => create file1 containing "foo bar baz".
     - directory/ => filenames ending in a / create directories.
@@ -82,6 +85,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         continue
 
       if '=' in line:
+        # Hard link.
         (src, dest) = line.split('=')
         # This allows creating a file with specific contents and then linking it
         # later.
@@ -91,6 +95,15 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         if not os.path.exists(directory):
           os.makedirs(directory)
         os.link(src, dest)
+        continue
+
+      if '->' in line:
+        # Symbolic link.
+        (link, target) = line.split('->')
+        directory = os.path.dirname(link)
+        if not os.path.exists(directory):
+          os.makedirs(directory)
+        os.symlink(target, link)
         continue
 
       if ':' in line:
@@ -239,6 +252,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Ignore this file and directory.
     {dest_dir}/asdf/ignore-some/should-be-ignored/a-file
     {dest_dir}/asdf/delete dir with spaces/delete file with spaces
+    # Symlink that should be skipped
+    {dest_dir}/symlink-to-skip -> /tmp/foo
+    # Symlink that should be reported
+    {dest_dir}/asdf/symlink-to-report->/tmp/foo
     """
     self.create_files(files)
 
@@ -259,10 +276,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         'Unexpected directory: /z/y/x/asdf/report_me',
         'Unexpected file: /z/y/x/asdf/delete dir with spaces/delete '
         'file with spaces',
+        'Unexpected file: /z/y/x/asdf/symlink-to-report',
         'Unexpected file: /z/y/x/pinky',
         'Unexpected file: /z/y/x/the_brain',
         "rm '/z/y/x/asdf/delete dir with spaces/delete file with spaces' "
-        "/z/y/x/pinky /z/y/x/the_brain",
+        "/z/y/x/asdf/symlink-to-report /z/y/x/pinky /z/y/x/the_brain",
         "rmdir '/z/y/x/asdf/delete dir with spaces' /z/y/x/asdf/report_me",
     ]
     self.assertEqual(expected, actual)
@@ -281,6 +299,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     {dest_dir}/the_brain
     # Ensure there is a subdir that should not be reported.
     {dest_dir}/subdir/
+    # Symlink that should be skipped
+    {dest_dir}/symlink-to-skip->/tmp/foo
+    # Symlink that should be deleted
+    {dest_dir}/asdf/symlink-to-delete->/tmp/foo
     """
     self.create_files(files)
 
@@ -292,6 +314,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     # Unexpected files should be deleted.
     self.assertFalse(os.path.exists('/z/y/x/the_brain'))
     self.assertFalse(os.path.exists('/z/y/x/pinky'))
+    self.assertTrue(os.path.lexists('/z/y/x/symlink-to-skip'))
+    self.assertFalse(os.path.lexists('/z/y/x/asdf/symlink-to-delete'))
 
   def test_delete_unexp_keeps_dirs(self):
     """Delete unexpected files but not directories."""

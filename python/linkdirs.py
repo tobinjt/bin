@@ -358,6 +358,7 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
     files.sort()
 
     if directory == dest_dir and options.ignore_unexpected_children:
+      # Remove unexpected top-level directories.
       unexpected = [
           subdir for subdir in subdirs
           if os.path.join(directory, subdir) not in expected_files
@@ -371,6 +372,13 @@ def report_unexpected_files(dest_dir: Path, expected_files_list: Paths,
         [Path(os.path.join(directory, entry)) for entry in files])
     full_subdirs = remove_skip_patterns(full_subdirs, options.skip)
     full_files = remove_skip_patterns(full_files, options.skip)
+
+    if directory == dest_dir and options.ignore_unexpected_children:
+      # Remove unexpected top-level symlinks.
+      symlinks = Paths(
+          [Path(file) for file in list(full_files) if os.path.islink(file)])
+      full_files = Paths(list(set(full_files) - set(symlinks)))
+
     unexpected_paths.directories.extend(
         sorted(set(full_subdirs) - set(expected_files)))
     unexpected_paths.files.extend(sorted(set(full_files) - set(expected_files)))
@@ -523,7 +531,7 @@ def parse_arguments(
       dest='ignore_unexpected_children',
       default=False,
       help=textwrap.fill("""When checking for unexpected files or directories,
-                         ignore unexpected child directories in
+                         ignore unexpected child directories and symlinks in
                          DESTINATION_DIRECTORY; unexpected grandchild
                          directories of DESTINATION_DIRECTORY will not be
                          ignored (default: %(default)s)"""))
