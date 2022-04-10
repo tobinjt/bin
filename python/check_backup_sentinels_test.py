@@ -241,19 +241,20 @@ class TestMain(fake_filesystem_unittest.TestCase):
   @mock.patch('sys.exit')
   @mock.patch('check_backup_sentinels.check_sentinels')
   @mock.patch('check_backup_sentinels.parse_sentinels')
-  # pylint: disable=no-self-use
   def test_no_warnings(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
     mock_check.return_value = ([], [])
-    cbs.main(['argv0', self._testdir])
+    with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+      cbs.main(['argv0', self._testdir])
+      warnings = mock_stderr.getvalue()
+      self.assertEqual('', warnings)
     mock_exit.assert_called_with(0)
 
   @mock.patch('sys.exit')
   @mock.patch('check_backup_sentinels.check_sentinels')
   @mock.patch('check_backup_sentinels.parse_sentinels')
-  # pylint: disable=no-self-use
   def test_warnings_are_printed(self, unused_mock_parse, mock_check, mock_exit):
-    """Check that good args are accepted."""
+    """Check that warnings are printed out."""
     expected = ['warning warning']
     mock_check.return_value = (expected, [])
     with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
@@ -265,7 +266,6 @@ class TestMain(fake_filesystem_unittest.TestCase):
   @mock.patch('sys.exit')
   @mock.patch('check_backup_sentinels.check_sentinels')
   @mock.patch('check_backup_sentinels.parse_sentinels')
-  # pylint: disable=no-self-use
   def test_messages_are_printed(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
     mock_check.return_value = (['warning warning'], ['message message'])

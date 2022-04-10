@@ -18,10 +18,12 @@ class TestMain(unittest.TestCase):
 
   @mock.patch('linkdirs.real_main', return_value=[])
   @mock.patch('sys.exit')
-  # pylint: disable=no-self-use
   def test_success(self, mock_sys_exit, unused_mock_real_main):
     """Successful run."""
-    linkdirs.main([])
+    with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
+      linkdirs.main([])
+      warnings = mock_stderr.getvalue()
+      self.assertEqual('', warnings)
     mock_sys_exit.assert_called_once_with(0)
 
   @mock.patch('sys.stdout', new_callable=io.StringIO)
