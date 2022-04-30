@@ -90,10 +90,12 @@ main() {
   # Basics.
   brew install autossh less ripgrep shellcheck tmpreaper tmux vim
   cask_install "/Applications/Time Out.app" time-out
+  # Basic development.
+  brew install fswatch pre-commit universal-ctags wget
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
-    brew install fswatch kcov pre-commit universal-ctags wget
+    # brew install kcov
     # My website.
     brew install closure-compiler hugo markdown prettier
     # PHP.  PHP is installed because MacOS PHP is too old to understand type
