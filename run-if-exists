@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Run a command if it exists, exit successfully if it doesn't.
+# Initially implemented so I can add `vint` to my dotfiles pre-commit config.
+
+if type "$1" >& /dev/null; then
+  "$@"
+fi
