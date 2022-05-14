@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+dirs_to_update() {
+  set +f
+  echo "${HOME}/src/"*
+  set -f
+}
+
+for dir in $(dirs_to_update); do
+  if [[ -d "${dir}" ]]; then
+    (cd "${dir}" && update-pre-commit-hooks)
+    printf "\n\n\n"
+  fi
+done

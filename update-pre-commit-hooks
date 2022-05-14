@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+update_one_dir() {
+  if [[ ! -f ".pre-commit-config.yaml" ]]; then
+    return
+  fi
+  pre-commit autoupdate
+  if ! git check-local-copy-is-clean; then
+    pre-commit run --all-files
+    git commit -a -m 'Update hooks version.'
+    git push
+  fi
+}
+
+check-git-repos --pull_and_push "$(pwd)"
+update_one_dir
