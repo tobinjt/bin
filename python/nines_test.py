@@ -22,7 +22,7 @@ class TestParsing(unittest.TestCase):
         (3, 99.9),
         (4, 99.99),
     ]:
-      self.assertEqual(percent, nines.nines_into_percent(nine))
+      self.assertEqual(percent, nines.nines_into_percent(num_nines=nine))
 
   def test_parse_nines_arg(self):
     """Test general parsing."""
@@ -35,14 +35,17 @@ class TestParsing(unittest.TestCase):
         ('80', 80),
         ('100', 100),
     ]:
-      self.assertAlmostEqual(result, nines.parse_nines_arg(nine), places=10)
+      self.assertAlmostEqual(result,
+                             nines.parse_nines_arg(num_nines=nine),
+                             places=10)
 
     for nine, message in [
         ('as', '^Argument is not a number'),
         ('-5', '^You cannot have a negative uptime'),
         ('101', '^You cannot have more than 100% uptime'),
     ]:
-      self.assertRaisesRegex(ValueError, message, nines.parse_nines_arg, nine)
+      with self.assertRaisesRegex(ValueError, message):
+        nines.parse_nines_arg(num_nines=nine)
 
 
 class TestFormatting(unittest.TestCase):
@@ -50,17 +53,18 @@ class TestFormatting(unittest.TestCase):
 
   def test_strip_trailing_zeros(self):
     """Tests for strip_trailing_zeros."""
-    self.assertEqual('123', nines.strip_trailing_zeros('123'))
-    self.assertEqual('123', nines.strip_trailing_zeros('123.0'))
-    self.assertEqual('10', nines.strip_trailing_zeros('10'))
-    self.assertEqual('10.1', nines.strip_trailing_zeros('10.1'))
-    self.assertEqual('.1', nines.strip_trailing_zeros('.1'))
+    self.assertEqual('123', nines.strip_trailing_zeros(number='123'))
+    self.assertEqual('123', nines.strip_trailing_zeros(number='123.0'))
+    self.assertEqual('10', nines.strip_trailing_zeros(number='10'))
+    self.assertEqual('10.1', nines.strip_trailing_zeros(number='10.1'))
+    self.assertEqual('.1', nines.strip_trailing_zeros(number='.1'))
 
   def test_format_duration(self):
     """Tests for format_duration."""
-    self.assertEqual('1 minute', nines.format_duration(60))
-    self.assertEqual('2 minutes, 37 seconds', nines.format_duration(157))
-    self.assertEqual('2 hours, 1 second', nines.format_duration(7201))
+    self.assertEqual('1 minute', nines.format_duration(seconds=60))
+    self.assertEqual('2 minutes, 37 seconds',
+                     nines.format_duration(seconds=157))
+    self.assertEqual('2 hours, 1 second', nines.format_duration(seconds=7201))
 
 
 class TestMain(unittest.TestCase):
@@ -70,7 +74,7 @@ class TestMain(unittest.TestCase):
   def test_main(self, mock_stdout):
     """Test main."""
     for arg in ['2', '7']:
-      nines.main(['argv0', arg])
+      nines.main(argv=['argv0', arg])
     expected = [
         '99%: 315360 seconds (3 days, 15 hours, 36 minutes) per 365 days',
         '99.99999000000001%: 3.1535999965194605 seconds (3 seconds) per 365 '
@@ -85,7 +89,7 @@ class TestMain(unittest.TestCase):
   @mock.patch('sys.stderr', new_callable=StringIO)
   def test_no_args(self, mock_stderr, _, mock_exit, __):
     """Test no args."""
-    nines.main(['argv0'])
+    nines.main(argv=['argv0'])
     # The name of the program is pytest when running tests.
     expected = ('usage: pytest NUMBER_OF_NINES [NUMBER_OF_DAYS]\n'
                 'pytest: error: the following arguments are required: '
@@ -99,7 +103,7 @@ class TestMain(unittest.TestCase):
   @mock.patch('sys.stdout', new_callable=StringIO)
   def test_help(self, mock_stdout, mock_exit, __):
     """Test --help to ensure that the description is correctly set up."""
-    nines.main(['argv0', '--help'])
+    nines.main(argv=['argv0', '--help'])
     # The name of the program is pytest when running tests.
     substrings = [
         'usage: pytest NUMBER_OF_NINES [NUMBER_OF_DAYS]',

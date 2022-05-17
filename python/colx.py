@@ -30,7 +30,7 @@ from typing import List
 __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 
-def parse_arguments(argv: List[str]) -> argparse.Namespace:
+def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
   """Parse the arguments provided by the user.
 
   Args:
@@ -102,7 +102,7 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
   return options
 
 
-def process_files(filenames: List[str], columns: List[int], delimiter: str,
+def process_files(*, filenames: List[str], columns: List[int], delimiter: str,
                   separator: str) -> List[str]:
   """Process files and return specified columns.
 
@@ -144,13 +144,15 @@ def process_files(filenames: List[str], columns: List[int], delimiter: str,
   return output
 
 
-def main(argv: List[str]) -> None:
-  options = parse_arguments(argv[1:])
-  output = process_files(options.filenames, options.columns, options.delimiter,
-                         options.separator)
+def main(*, argv: List[str]) -> None:
+  options = parse_arguments(argv=argv[1:])
+  output = process_files(filenames=options.filenames,
+                         columns=options.columns,
+                         delimiter=options.delimiter,
+                         separator=options.separator)
   for line in output:
     print(line)
 
 
 if __name__ == '__main__':  # pragma: no mutate
-  main(sys.argv)
+  main(argv=sys.argv)

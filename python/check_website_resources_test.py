@@ -14,7 +14,7 @@ import pyfakefs
 import check_website_resources
 
 
-def split_inline_string(string: str) -> List[str]:
+def split_inline_string(*, string: str) -> List[str]:
   """Split a multi-line inline string, stripping empty start and end lines."""
   return textwrap.dedent(string).strip().split('\n')
 
@@ -38,7 +38,7 @@ class TestWriteCookiesFile(unittest.TestCase):
     """A very simple test."""
     with pyfakefs.fake_filesystem_unittest.Patcher():
       lines = ['asdf', '1234']
-      check_website_resources.write_cookies_file(lines)
+      check_website_resources.write_cookies_file(lines=lines)
       with open(check_website_resources.COOKIES_FILE,
                 encoding='utf8') as filehandle:
         self.assertEqual('asdf\n1234\n', filehandle.read())
@@ -87,7 +87,7 @@ class TestReadConfig(unittest.TestCase):
       ]
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=contents)
-      actual = check_website_resources.read_config(filename)
+      actual = check_website_resources.read_config(path=filename)
       self.assertEqual(expected, actual)
 
   def test_url_is_not_included(self):
@@ -113,7 +113,7 @@ class TestReadConfig(unittest.TestCase):
       ]
       filename = 'test.json'
       patcher.fs.create_file(filename, contents=contents)
-      actual = check_website_resources.read_config(filename)
+      actual = check_website_resources.read_config(path=filename)
       self.assertEqual(expected, actual)
 
 
@@ -191,7 +191,8 @@ class TestValidateUserConfig(unittest.TestCase):
     for message, data in tests.items():
       with self.subTest(message):
         with self.assertRaisesRegex(ValueError, '^config.json:.*' + message):
-          check_website_resources.validate_user_config('config.json', data)
+          check_website_resources.validate_user_config(path='config.json',
+                                                       configs=data)
 
   def test_valid_config(self):  # pylint: disable=no-self-use
     """Test that a valid config does not trigger any exceptions."""
@@ -208,7 +209,8 @@ class TestValidateUserConfig(unittest.TestCase):
             'resources': ['http://example.com/style.css'],
         },
     ]
-    check_website_resources.validate_user_config('config.json', data)
+    check_website_resources.validate_user_config(path='config.json',
+                                                 configs=data)
 
 
 @mock.patch('subprocess.run')
@@ -219,7 +221,8 @@ class TestRunWget(unittest.TestCase):
   def test_called_correctly(self, mock_read, mock_subprocess):
     """Test that subprocess.run is called correctly."""
     mock_read.return_value = ['foo bar baz\n']
-    actual = check_website_resources.run_wget('https://www.example.com/', False)
+    actual = check_website_resources.run_wget(url='https://www.example.com/',
+                                              load_cookies=False)
     self.assertEqual(mock_read.return_value, actual)
     mock_subprocess.assert_called_once_with(check_website_resources.WGET_ARGS +
                                             ['https://www.example.com/'],
@@ -229,7 +232,8 @@ class TestRunWget(unittest.TestCase):
   def test_cookies(self, mock_read, mock_subprocess):
     """Test that cookies are used."""
     mock_read.return_value = ['foo bar baz\n']
-    actual = check_website_resources.run_wget('https://www.example.com/', True)
+    actual = check_website_resources.run_wget(url='https://www.example.com/',
+                                              load_cookies=True)
     self.assertEqual(mock_read.return_value, actual)
     mock_subprocess.assert_called_once_with(
         (check_website_resources.WGET_ARGS +
@@ -244,7 +248,8 @@ class TestRunWget(unittest.TestCase):
     with self.assertLogs(level=logging.ERROR):
       with self.assertRaisesRegex(check_website_resources.WgetFailedException,
                                   r'^wget for https://www.example.com/ failed'):
-        check_website_resources.run_wget('https://www.example.com/', False)
+        check_website_resources.run_wget(url='https://www.example.com/',
+                                         load_cookies=False)
 
 
 class TestReversePageSpeedMangling(unittest.TestCase):
@@ -252,7 +257,7 @@ class TestReversePageSpeedMangling(unittest.TestCase):
 
   def test_simple(self):
     """A simple test."""
-    inputs = split_inline_string("""
+    inputs = split_inline_string(string="""
         /ariane-theme/images/new-logo-optimised.jpg.pagespeed.ce.yvq_6R_CGM.jpg
         /cart66/A.cart66_enhanced.css.pagespeed.cf.BLPYiFTVpx.css
         /css/dist/block-library/A.style.min.css.pagespeed.cf._93gOJAMuK.css
@@ -266,8 +271,8 @@ class TestReversePageSpeedMangling(unittest.TestCase):
         /themes/ariane-theme/images/favicons/favicon.ico
         /themes/ariane-theme/slider.js.pagespeed.jm.g0mntm2Nxd.js
         """)
-    actual = check_website_resources.reverse_pagespeed_mangling(inputs)
-    expected = split_inline_string("""
+    actual = check_website_resources.reverse_pagespeed_mangling(paths=inputs)
+    expected = split_inline_string(string="""
         /ariane-theme/images/new-logo-optimised.jpg
         /cart66/cart66_enhanced.css
         /css/dist/block-library/style.min.css
@@ -296,7 +301,7 @@ class TestCheckSingleUrl(unittest.TestCase):
         resources=['resource_1'],
         cookies={},
         comment='comment')
-    actual = check_website_resources.check_single_url(config)
+    actual = check_website_resources.check_single_url(config=config)
     self.assertEqual([], actual)
 
   def test_wget_fails(self, mock_run_wget):
@@ -308,7 +313,7 @@ class TestCheckSingleUrl(unittest.TestCase):
         resources=[],
         cookies={},
         comment='comment')
-    actual = check_website_resources.check_single_url(config)
+    actual = check_website_resources.check_single_url(config=config)
     self.assertEqual([
         'https://www.example.com/ (comment): running wget ' +
         'failed; forced failure'
@@ -316,7 +321,7 @@ class TestCheckSingleUrl(unittest.TestCase):
 
   def test_parsing(self, mock_run_wget):
     """Test parsing."""
-    mock_run_wget.return_value = split_inline_string("""
+    mock_run_wget.return_value = split_inline_string(string="""
         -- resource_1
         -x- ignore_this
         -- resource_2
@@ -330,12 +335,12 @@ class TestCheckSingleUrl(unittest.TestCase):
         resources=['resource_1', 'resource_2', 'return_baz'],
         cookies={},
         comment='comment')
-    actual = check_website_resources.check_single_url(config)
+    actual = check_website_resources.check_single_url(config=config)
     self.assertEqual([], actual)
 
   def test_demangling(self, mock_run_wget):
     """Test that resources are demangled."""
-    mock_run_wget.return_value = split_inline_string("""
+    mock_run_wget.return_value = split_inline_string(string="""
         -- /images/new-logo-optimised.jpg.pagespeed.ce.yvq_6R_CGM.jpg
         -- resource_2
         """)
@@ -344,12 +349,12 @@ class TestCheckSingleUrl(unittest.TestCase):
         resources=['/images/new-logo-optimised.jpg', 'resource_2'],
         cookies={},
         comment='comment')
-    actual = check_website_resources.check_single_url(config)
+    actual = check_website_resources.check_single_url(config=config)
     self.assertEqual([], actual)
 
   def test_extra_resource(self, mock_run_wget):
     """Test for there being an unexpected resource."""
-    mock_run_wget.return_value = split_inline_string("""
+    mock_run_wget.return_value = split_inline_string(string="""
         -- resource_1
         -- resource_2
         """)
@@ -358,8 +363,8 @@ class TestCheckSingleUrl(unittest.TestCase):
         resources=['resource_1'],
         cookies={},
         comment='comment')
-    actual = check_website_resources.check_single_url(config)
-    expected = split_inline_string("""
+    actual = check_website_resources.check_single_url(config=config)
+    expected = split_inline_string(string="""
         Unmatched resources for https://www.example.com/ (comment):
         resource_2
         """)
@@ -367,7 +372,7 @@ class TestCheckSingleUrl(unittest.TestCase):
 
   def test_optional_resource(self, mock_run_wget):
     """Test for optional resource being accepted."""
-    mock_run_wget.return_value = split_inline_string("""
+    mock_run_wget.return_value = split_inline_string(string="""
         -- resource_1
         -- resource_2
         """)
@@ -377,12 +382,12 @@ class TestCheckSingleUrl(unittest.TestCase):
         cookies={},
         comment='comment',
         optional_resources=['resource_2'])
-    actual = check_website_resources.check_single_url(config)
+    actual = check_website_resources.check_single_url(config=config)
     self.assertEqual([], actual)
 
   def test_optional_resource_regexes(self, mock_run_wget):
     """Test for optional resource regexes being accepted."""
-    mock_run_wget.return_value = split_inline_string("""
+    mock_run_wget.return_value = split_inline_string(string="""
         -- resource_1
         -- dark-mode.min.7039e2fd92710e0626d451d6725af137.js
         """)
@@ -392,12 +397,12 @@ class TestCheckSingleUrl(unittest.TestCase):
         cookies={},
         comment='comment',
         optional_resource_regexes=['dark-mode.min.[a-z0-9]{32}.js'])
-    actual = check_website_resources.check_single_url(config)
+    actual = check_website_resources.check_single_url(config=config)
     self.assertEqual([], actual)
 
   def test_cookies(self, mock_run_wget):
     """Test that cookies are handled properly."""
-    mock_run_wget.return_value = split_inline_string("""
+    mock_run_wget.return_value = split_inline_string(string="""
         -- resource_1
         -- resource_2
         """)
@@ -407,7 +412,7 @@ class TestCheckSingleUrl(unittest.TestCase):
         cookies={'foo': 'bar'},
         comment='comment')
     with pyfakefs.fake_filesystem_unittest.Patcher():
-      actual = check_website_resources.check_single_url(config)
+      actual = check_website_resources.check_single_url(config=config)
       with open(check_website_resources.COOKIES_FILE,
                 encoding='utf8') as filehandle:
         lines = filehandle.readlines()
@@ -420,13 +425,14 @@ class TestGenerateCookiesFileContents(unittest.TestCase):
 
   def test_simple(self):
     """A simple test."""
-    expected = split_inline_string("""
+    expected = split_inline_string(string="""
         # Netscape HTTP Cookie File
         www.example.com\tFALSE\t/\tFALSE\t0\tcookie_1\tyes
         www.example.com\tFALSE\t/\tFALSE\t0\tcookie_2\tno
         """)
     actual = check_website_resources.generate_cookies_file_contents(
-        'https://www.example.com/', {
+        url='https://www.example.com/',
+        cookies={
             'cookie_1': 'yes',
             'cookie_2': 'no'
         })
@@ -436,7 +442,7 @@ class TestGenerateCookiesFileContents(unittest.TestCase):
     """Crash when a hostname cannot be extracted."""
     with self.assertRaisesRegex(ValueError, '^Unable to extract hostname'):
       check_website_resources.generate_cookies_file_contents(
-          'not_a_url', {
+          url='not_a_url', cookies={
               'cookie_1': 'yes',
               'cookie_2': 'no'
           })
@@ -447,7 +453,7 @@ class TestParseArguments(unittest.TestCase):
 
   def test_simple(self):
     """A simple test."""
-    options = check_website_resources.parse_arguments(['foo.json'])
+    options = check_website_resources.parse_arguments(argv=['foo.json'])
     self.assertEqual(['foo.json'], options.config_files)
 
 
@@ -470,7 +476,7 @@ class TestMain(unittest.TestCase):
     with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
       filename = 'test.json'
       patcher.fs.create_file(filename, contents='[]')
-      status = check_website_resources.main(['unused', filename])
+      status = check_website_resources.main(argv=['unused', filename])
       self.assertEqual(0, status)
 
   def test_wget_fails(self):
@@ -482,7 +488,7 @@ class TestMain(unittest.TestCase):
         mock_wget.side_effect = check_website_resources.WgetFailedException(
             'forced failure')
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
-          status = check_website_resources.main(['unused', filename])
+          status = check_website_resources.main(argv=['unused', filename])
           self.assertEqual(1, status)
           warnings = mock_stderr.getvalue()
           self.assertEqual(
@@ -499,7 +505,7 @@ class TestMain(unittest.TestCase):
             '-- www.example.com', '-- resource_1', '-- resource_2'
         ]
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
-          status = check_website_resources.main(['unused', filename])
+          status = check_website_resources.main(argv=['unused', filename])
           self.assertEqual(0, status)
           warnings = mock_stderr.getvalue()
           self.assertEqual('', warnings)
@@ -514,10 +520,10 @@ class TestMain(unittest.TestCase):
             '-- www.example.com', '-- resource_1', '-- resource_3'
         ]
         with mock.patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
-          status = check_website_resources.main(['unused', filename])
+          status = check_website_resources.main(argv=['unused', filename])
           self.assertEqual(1, status)
           warnings = mock_stderr.getvalue().rstrip('\n').split('\n')
-          expected = split_inline_string("""
+          expected = split_inline_string(string="""
               Missing resources for www.example.com (www.example.com):
               resource_2
               Unmatched resources for www.example.com (www.example.com):
@@ -530,7 +536,7 @@ class TestMain(unittest.TestCase):
   @mock.patch('sys.stderr', new_callable=io.StringIO)
   def test_no_args(self, mock_stderr, mock_stdout, _):
     """Test no args."""
-    check_website_resources.main(['argv0'])
+    check_website_resources.main(argv=['argv0'])
     self.assertEqual('', mock_stdout.getvalue())
     # The name of the program is pytest when running tests.  Except when it's
     # pytest-3, so handle that too.
@@ -544,7 +550,7 @@ class TestMain(unittest.TestCase):
   @mock.patch('sys.stdout', new_callable=io.StringIO)
   def test_help(self, mock_stdout, _):
     """Test --help to ensure that the description is correctly set up."""
-    check_website_resources.main(['argv0', '--help'])
+    check_website_resources.main(argv=['argv0', '--help'])
     # The name of the program is pytest when running tests.
     substrings = [
         'usage: pytest JSON_CONFIG_FILE [JSON_CONFIG_FILE2...]',

@@ -53,7 +53,7 @@ class ParsedSentinels:
   max_allowed_delay: SentinelMap
 
 
-def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
+def parse_sentinels(*, directory: str, default_delay: int) -> ParsedSentinels:
   """Parse a directory of sentinels.
 
   Args:
@@ -90,7 +90,7 @@ def parse_sentinels(directory: str, default_delay: int) -> ParsedSentinels:
   return data
 
 
-def check_sentinels(sentinels: ParsedSentinels,
+def check_sentinels(*, sentinels: ParsedSentinels,
                     max_global_delay: int) -> Tuple[Warnings, Messages]:
   """Check sentinels for backups that are too old and return warnings.
 
@@ -169,13 +169,14 @@ def check_sentinels(sentinels: ParsedSentinels,
   return (warnings, messages)
 
 
-def main(argv):
+def main(*, argv: List[str]):
   if len(argv) != 2 or not os.path.isdir(argv[1]):
     raise Error(f'Usage: {argv[0]} DIRECTORY')
   # There's no benefit to mutating this constant.
   day = 24 * 60 * 60  # pragma: no mutate
-  sentinels = parse_sentinels(argv[1], day)
-  (warnings, messages) = check_sentinels(sentinels, day)
+  sentinels = parse_sentinels(directory=argv[1], default_delay=day)
+  (warnings, messages) = check_sentinels(sentinels=sentinels,
+                                         max_global_delay=day)
   # pylint: disable=not-an-iterable
   if sys.stdin.isatty():
     for line in messages:
@@ -190,4 +191,4 @@ def main(argv):
 
 
 if __name__ == '__main__':  # pragma: no mutate
-  main(sys.argv)
+  main(argv=sys.argv)

@@ -123,7 +123,7 @@ def read_wget_log() -> List[str]:
     ]
 
 
-def write_cookies_file(lines: List[str]):
+def write_cookies_file(*, lines: List[str]):
   """Write cookies.txt.
 
   See read_wget_log() for why this function exists.
@@ -135,7 +135,7 @@ def write_cookies_file(lines: List[str]):
     print('\n'.join(lines), file=cookies_txt)
 
 
-def run_wget(url: str, load_cookies: bool) -> List[str]:
+def run_wget(*, url: str, load_cookies: bool) -> List[str]:
   """Run wget to fetch the specified URL, returning the contents of wget.log.
 
   Args:
@@ -161,7 +161,7 @@ def run_wget(url: str, load_cookies: bool) -> List[str]:
     raise WgetFailedException(message) from err
 
 
-def reverse_pagespeed_mangling(paths: List[str]) -> List[str]:
+def reverse_pagespeed_mangling(*, paths: List[str]) -> List[str]:
   """Reverse the changes made to paths by mod_pagespeed.
 
   This is based on reverse engineering the paths returned on Ariane's website,
@@ -191,7 +191,7 @@ def reverse_pagespeed_mangling(paths: List[str]) -> List[str]:
   return new_paths
 
 
-def check_single_url(config: SingleURLConfig) -> List[str]:
+def check_single_url(*, config: SingleURLConfig) -> List[str]:
   """Check a single URL requires only the expected resources.
 
   Args:
@@ -201,10 +201,11 @@ def check_single_url(config: SingleURLConfig) -> List[str]:
     A list of error messages.
   """
   if config.cookies:
-    lines = generate_cookies_file_contents(config.url, config.cookies)
-    write_cookies_file(lines)
+    lines = generate_cookies_file_contents(url=config.url,
+                                           cookies=config.cookies)
+    write_cookies_file(lines=lines)
   try:
-    log_lines = run_wget(config.url, bool(config.cookies))
+    log_lines = run_wget(url=config.url, load_cookies=bool(config.cookies))
   except WgetFailedException as err:
     return [f'{config.url} ({config.comment}): running wget failed; {str(err)}']
 
@@ -212,7 +213,7 @@ def check_single_url(config: SingleURLConfig) -> List[str]:
   for line in log_lines:
     if line.startswith('--'):
       fetched_resources.add(line.split(' ')[-1])
-  actual_resources = reverse_pagespeed_mangling(list(fetched_resources))
+  actual_resources = reverse_pagespeed_mangling(paths=list(fetched_resources))
   # Strip out any optional_resources.
   actual_resources = list(
       set(actual_resources) - set(config.optional_resources))
@@ -249,7 +250,7 @@ def check_single_url(config: SingleURLConfig) -> List[str]:
   return errors
 
 
-def validate_list_of_strings(path: str, name: str, data: List[str]):
+def validate_list_of_strings(*, path: str, name: str, data: List[str]):
   """Validate a data structure is a list of strings.
 
   Args:
@@ -266,7 +267,7 @@ def validate_list_of_strings(path: str, name: str, data: List[str]):
     raise ValueError(f'{path}: all "{name}" must be strings: ' + ', '.join(bad))
 
 
-def validate_dict_of_strings(path: str, name: str, data: List[str]):
+def validate_dict_of_strings(*, path: str, name: str, data: List[str]):
   """Validate a data structure is a dict of string -> string.
 
   Args:
@@ -285,7 +286,7 @@ def validate_dict_of_strings(path: str, name: str, data: List[str]):
                      ', '.join(bad))
 
 
-def validate_user_config(path: str, configs: Any):
+def validate_user_config(*, path: str, configs: Any):
   """Validate the configs supplied by the user.
 
   NOTE: the configs will be modified in-place to fill missing fields with
@@ -330,15 +331,19 @@ def validate_user_config(path: str, configs: Any):
     if not isinstance(config['comment'], str):
       raise ValueError(f'{path}: comment must be a string')
 
-    validate_list_of_strings(path, 'resources', config['resources'])
-    validate_list_of_strings(path, 'optional_resources',
-                             config['optional_resources'])
-    validate_list_of_strings(path, 'optional_resource_regexes',
-                             config['optional_resource_regexes'])
-    validate_dict_of_strings(path, 'cookies', config['cookies'])
+    validate_list_of_strings(path=path,
+                             name='resources',
+                             data=config['resources'])
+    validate_list_of_strings(path=path,
+                             name='optional_resources',
+                             data=config['optional_resources'])
+    validate_list_of_strings(path=path,
+                             name='optional_resource_regexes',
+                             data=config['optional_resource_regexes'])
+    validate_dict_of_strings(path=path, name='cookies', data=config['cookies'])
 
 
-def read_config(path: str) -> List[SingleURLConfig]:
+def read_config(*, path: str) -> List[SingleURLConfig]:
   """Read the specified config and parse it as JSON.
 
   Args:
@@ -348,7 +353,7 @@ def read_config(path: str) -> List[SingleURLConfig]:
   """
   with open(path, encoding='utf8') as filehandle:
     data = json.loads(filehandle.read())
-  validate_user_config(path, data)
+  validate_user_config(path=path, configs=data)
   configs = []
   for config in data:
     if config['url'] not in config['resources']:
@@ -358,8 +363,8 @@ def read_config(path: str) -> List[SingleURLConfig]:
   return configs
 
 
-def generate_cookies_file_contents(url: str, cookies: Dict[str,
-                                                           str]) -> List[str]:
+def generate_cookies_file_contents(*, url: str,
+                                   cookies: Dict[str, str]) -> List[str]:
   """Generate the contents of a cookies file.
 
   It would be much cleaner to use http.cookiejar for this, but after spending
@@ -381,7 +386,7 @@ def generate_cookies_file_contents(url: str, cookies: Dict[str,
   return lines
 
 
-def parse_arguments(argv: List[str]) -> argparse.Namespace:
+def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
   """Parse command line arguments.
 
   Args:
@@ -404,22 +409,22 @@ def parse_arguments(argv: List[str]) -> argparse.Namespace:
   return argv_parser.parse_args(argv)
 
 
-def main(argv: List[str]) -> int:
+def main(*, argv: List[str]) -> int:
   """Main."""
-  options = parse_arguments(argv[1:])
+  options = parse_arguments(argv=argv[1:])
   # On MacOS wget is in /usr/local/bin which is not in the default PATH cron
   # passes to child processes.
   os.environ['PATH'] += ':/usr/local/bin'  # pragma: no mutate
   messages = []
   host_configs = []
   for filename in options.config_files:
-    host_configs.extend(read_config(filename))
+    host_configs.extend(read_config(path=filename))
 
   # This will create temporary directories during tests but that's OK.
   with tempfile.TemporaryDirectory() as tmp_dir_name:
     os.chdir(tmp_dir_name)
-    for host in host_configs:
-      messages.extend(check_single_url(host))
+    for host_config in host_configs:
+      messages.extend(check_single_url(config=host_config))
   if messages:
     print('\n'.join(messages), file=sys.stderr)
     return 1
@@ -427,4 +432,4 @@ def main(argv: List[str]) -> int:
 
 
 if __name__ == '__main__':  # pragma: no mutate
-  sys.exit(main(sys.argv))
+  sys.exit(main(argv=sys.argv))

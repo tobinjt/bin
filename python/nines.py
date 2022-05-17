@@ -23,7 +23,7 @@ from typing import List
 PERCENT_THRESHOLD = 20
 
 
-def strip_trailing_zeros(number: float) -> str:
+def strip_trailing_zeros(*, number: float) -> str:
   """Strip unnecessary trailing zeros from a number.
 
   %d formats integers only.  %f formats floats, but has way too many digits.
@@ -48,7 +48,7 @@ def strip_trailing_zeros(number: float) -> str:
   return string
 
 
-def format_duration(seconds: float) -> str:
+def format_duration(*, seconds: float) -> str:
   """Format a number of seconds as "x hours, y minutes, z seconds".
 
   Args:
@@ -75,7 +75,7 @@ def format_duration(seconds: float) -> str:
   return ', '.join(durations)
 
 
-def parse_nines_arg(num_nines: str) -> float:
+def parse_nines_arg(*, num_nines: str) -> float:
   """Parse an CLI argument, converting it into a percentage.
 
   Args:
@@ -95,10 +95,10 @@ def parse_nines_arg(num_nines: str) -> float:
     raise ValueError(f'You cannot have more than 100% uptime: {num_nines}')
   if parsed_num_nines >= PERCENT_THRESHOLD:
     return parsed_num_nines
-  return nines_into_percent(parsed_num_nines)
+  return nines_into_percent(num_nines=parsed_num_nines)
 
 
-def nines_into_percent(num_nines: float) -> float:
+def nines_into_percent(*, num_nines: float) -> float:
   """Turn 3.5 into 99.95.
 
   1 -> 90
@@ -124,7 +124,7 @@ def nines_into_percent(num_nines: float) -> float:
   return result
 
 
-def nines(num_nines: float, days: float) -> str:
+def nines(*, num_nines: float, days: float) -> str:
   """Calculate nines for a number
 
   Args:
@@ -135,13 +135,13 @@ def nines(num_nines: float, days: float) -> str:
   """
   downtime_fraction = (100 - num_nines) / 100
   downtime_seconds = downtime_fraction * 60 * 60 * 24 * days
-  nines_no_zeroes = strip_trailing_zeros(num_nines)
-  seconds = strip_trailing_zeros(downtime_seconds)
-  human = format_duration(downtime_seconds)
+  nines_no_zeroes = strip_trailing_zeros(number=num_nines)
+  seconds = strip_trailing_zeros(number=downtime_seconds)
+  human = format_duration(seconds=downtime_seconds)
   return f'{nines_no_zeroes}%: {seconds} seconds ({human}) per {days} days'
 
 
-def main(argv: List[str]) -> None:
+def main(*, argv: List[str]) -> None:
   (usage, description) = __doc__.split('\n', maxsplit=1)
   description = description % {
       'PT': PERCENT_THRESHOLD,
@@ -159,8 +159,10 @@ def main(argv: List[str]) -> None:
                            help='See usage for details')
   options = argv_parser.parse_args(argv[1:])
 
-  print(nines(parse_nines_arg(options.nines), options.days))
+  print(
+      nines(num_nines=parse_nines_arg(num_nines=options.nines),
+            days=options.days))
 
 
 if __name__ == '__main__':  # pragma: no mutate
-  main(sys.argv)
+  main(argv=sys.argv)

@@ -55,7 +55,7 @@ class TestArgumentParsing(unittest.TestCase):
     ]
     for (args, expected) in tests:
       with self.subTest(f'Parsing {args}'):
-        actual = colx.parse_arguments(args)
+        actual = colx.parse_arguments(argv=args)
         for (key, value) in expected.items():
           self.assertEqual(value, getattr(actual, key))
 
@@ -63,7 +63,7 @@ class TestArgumentParsing(unittest.TestCase):
     """Tests for error checking."""
     # At least one column is required.
     with mock.patch('argparse.ArgumentParser.error') as mock_error:
-      colx.parse_arguments(['asdf'])
+      colx.parse_arguments(argv=['asdf'])
       mock_error.assert_called_once_with(
           'At least one COLUMN argument is required.')
 
@@ -72,7 +72,7 @@ class TestArgumentParsing(unittest.TestCase):
   @mock.patch('sys.stderr', new_callable=io.StringIO)
   def test_no_args(self, mock_stderr, mock_stdout, _):
     """Test no args."""
-    colx.parse_arguments(['argv0'])
+    colx.parse_arguments(argv=['argv0'])
     self.assertEqual('', mock_stdout.getvalue())
     # The name of the program is pytest when running tests.
     expected = ('usage: pytest [OPTIONS] COLUMN [COLUMNS] [FILES]\n'
@@ -84,7 +84,7 @@ class TestArgumentParsing(unittest.TestCase):
   @mock.patch('sys.stdout', new_callable=io.StringIO)
   def test_help(self, mock_stdout, _):
     """Test --help to ensure that the description is correctly set up."""
-    colx.parse_arguments(['argv0', '--help'])
+    colx.parse_arguments(argv=['argv0', '--help'])
     # The name of the program is pytest when running tests.
     substrings = [
         'usage: pytest [OPTIONS] COLUMN [COLUMNS] [FILES]\n',
@@ -118,7 +118,10 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
     filename = 'input'
     with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('one two three\n')
-    output = colx.process_files([filename], [1, 3], ' ', ':')
+    output = colx.process_files(filenames=[filename],
+                                columns=[1, 3],
+                                delimiter=' ',
+                                separator=':')
     self.assertEqual(['one:three'], output)
 
   def test_strip_empty_columns(self):
@@ -131,7 +134,10 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
       filename = 'input'
       with open(filename, 'w', encoding='utf8') as tfh:
         tfh.write(test_input)
-      output = colx.process_files([filename], [1, 2], ' ', ':')
+      output = colx.process_files(filenames=[filename],
+                                  columns=[1, 2],
+                                  delimiter=' ',
+                                  separator=':')
       self.assertEqual([test_output], output)
 
   def test_all_empty_columns(self):
@@ -139,7 +145,10 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
     filename = 'input'
     with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('!!!!\n')
-    output = colx.process_files([filename], [2, 3], '!', ':')
+    output = colx.process_files(filenames=[filename],
+                                columns=[2, 3],
+                                delimiter='!',
+                                separator=':')
     self.assertEqual([''], output)
 
   def test_column_too_large(self):
@@ -147,7 +156,10 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
     filename = 'input'
     with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('one two\n')
-    output = colx.process_files([filename], [1, 2, 7], ' ', ':')
+    output = colx.process_files(filenames=[filename],
+                                columns=[1, 2, 7],
+                                delimiter=' ',
+                                separator=':')
     self.assertEqual(['one:two'], output)
 
 
@@ -163,7 +175,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
     filename = 'input'
     with open(filename, 'w', encoding='utf8') as tfh:
       tfh.write('one two three\n')
-    colx.main(['argv0', '2', '1', filename])
+    colx.main(argv=['argv0', '2', '1', filename])
     self.assertEqual('two one\n', mock_stdout.getvalue())
 
 
