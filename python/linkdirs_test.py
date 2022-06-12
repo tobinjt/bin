@@ -692,7 +692,7 @@ class TestMisc(fake_filesystem_unittest.TestCase):
     self.assertEqual(f'rm -r {test_dir}\n', mock_stdout.getvalue())
 
   @mock.patch('os.path.islink')
-  def test_safe_unlink_race_condition(self, mock_islink):  # pylint: disable=no-self-use
+  def test_safe_unlink_race_condition(self, mock_islink):
     """Pretend a file exists to test deletion race condition handling."""
     mock_islink.return_value = True
     # An exception will be raised if the code doesn't handle the missing file

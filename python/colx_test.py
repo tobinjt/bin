@@ -59,7 +59,7 @@ class TestArgumentParsing(unittest.TestCase):
         for (key, value) in expected.items():
           self.assertEqual(value, getattr(actual, key))
 
-  def test_error_checking(self):  # pylint: disable=no-self-use
+  def test_error_checking(self):
     """Tests for error checking."""
     # At least one column is required.
     with mock.patch('argparse.ArgumentParser.error') as mock_error:

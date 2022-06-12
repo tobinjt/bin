@@ -194,7 +194,7 @@ class TestValidateUserConfig(unittest.TestCase):
           check_website_resources.validate_user_config(path='config.json',
                                                        configs=data)
 
-  def test_valid_config(self):  # pylint: disable=no-self-use
+  def test_valid_config(self):
     """Test that a valid config does not trigger any exceptions."""
     data = [
         {
