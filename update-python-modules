@@ -81,7 +81,7 @@ main() {
   cd "${HOME}/bin/python"
   pytest
   set +f
-  pylint -- *.py
+  pylint ./*.py
   mypy -- *.py
   set -f
 }
