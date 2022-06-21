@@ -41,12 +41,17 @@ main() {
 
   "${binary_and_args[@]}" || true
   if type fswatch >& /dev/null; then
-    # Use -n2 rather than -n1 because saving a file in vim seems to cause two
+    # Use -L 2 rather than -L 1 because saving a file in vim triggers two
     # changes.
-    fswatch -o "${files_to_watch[@]}" | xargs -n1 -I{} "${binary_and_args[@]}"
+    while true; do
+      fswatch --one-event "${files_to_watch[@]}" > /dev/null
+      printf "\n\n\n\n"
+      "${binary_and_args[@]}" || true
+    done
   elif type inotifywait >& /dev/null; then
     while true; do
       inotifywait --quiet "${files_to_watch[@]}"
+      printf "\n\n\n\n"
       "${binary_and_args[@]}" || true
     done
   else
