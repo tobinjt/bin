@@ -1,8 +1,10 @@
 #!/bin/bash
 
+# To get coverage for a single test function use `-v -run TestFOO`.
+
 set -e -f -u -o pipefail
 
 filename="$(mktemp -t gocov.XXXXXXXXXXXX)"
-go test --coverprofile="${filename}" --covermode=set
+go test --coverprofile="${filename}" --covermode=set "$@"
 go tool cover --html="${filename}"
 rm -f "${filename}"
