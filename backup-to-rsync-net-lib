@@ -146,6 +146,7 @@ run_rsync() {
       2> >( grep -v \
               -e '^Connection closed by' \
               -e '^Connection reset by' \
+              -e '^Connection timed out during banner exchange' \
               -e '^Connection to .* timed out' \
               -e '^Timeout, server .* not responding' \
               -e '^Warning: Permanently added the .* host key .* known hosts' \
