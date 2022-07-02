@@ -91,7 +91,7 @@ main() {
   brew install autossh less ripgrep shellcheck tmpreaper tmux vim
   cask_install "/Applications/Time Out.app" time-out
   # Basic development.
-  brew install fswatch pre-commit universal-ctags vint wget
+  brew install fswatch pre-commit vint wget
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
