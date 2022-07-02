@@ -72,6 +72,9 @@ main() {
   virtualenv_install "${virtualenv_dir}/python" identify lxml mypy pudb \
     pyfakefs pylint pytest pytest-cov pytest-flakefinder pyyaml types-PyYAML \
     yapf
+  # Homebrew warns that *-config can cause problems, and AFAIK I don't need
+  # this, so delete it.
+  rm -f "${virtualenv_dir}/python/bin/pylint-config"
   # Normally $PATH will contain this directory; add it so that initial
   # installation works when $PATH does not contain it.
   PATH="${PATH}:${virtualenv_dir}/python/bin"
