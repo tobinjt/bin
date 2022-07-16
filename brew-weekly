@@ -4,24 +4,7 @@ set -e -f -u -o pipefail
 
 # Update homebrew and list packages that are out of date.
 
-disable_git_auto_gc_and_manually_gc() {
-  local dir="$1"
-  git -C "${dir}" config --local gc.auto 0
-  git -C "${dir}" config --local gc.autoDetach false
-  git -C "${dir}" gc --quiet
-}
-
 main() {
-  # Disable automatic git gc and run it manually to prevent output about
-  # automatically running it.
-  set +f
-  local git_dir git_dirs
-  git_dirs=(/usr/local/Homebrew /usr/local/Homebrew/Library/Taps/homebrew/*)
-  set -f
-  for git_dir in "${git_dirs[@]}"; do
-    disable_git_auto_gc_and_manually_gc "${git_dir}"
-  done
-
   # This is very spammy now so just discard the output entirely.
   brew update >& /dev/null
   brew outdated
