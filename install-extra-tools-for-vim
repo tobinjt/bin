@@ -6,12 +6,11 @@ set -e -f -u -o pipefail
 # go.{mod,sum} in that directory, so change to a temporary directory.
 cd "${TMPDIR}"
 if type go >& /dev/null; then
-  # Clean up old binaries so that GoInstallBinaries will install updated
-  # binaries.
+  # Clean up binaries so that GoInstallBinaries will install updated binaries.
   bindir="${GOPATH}/bin"
   if [[ -d "${bindir}" ]]; then
-    printf "Clearing out old binaries from %s\\n" "${bindir}"
-    find "${bindir}" -type f -mmin +60 -delete
+    printf "Clearing out binaries from %s\\n" "${bindir}"
+    find "${bindir}" -type f -delete
   fi
   # Binaries needed by vim-go; use GoInstallBinaries because GoUpdateBinaries
   # would install second copies of homebrew binaries; all the existing binaries
