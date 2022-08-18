@@ -1,5 +1,3 @@
-#!/bin/bash
-
 set -e -f -u -o pipefail
 
 setup() {
