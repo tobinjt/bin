@@ -87,9 +87,9 @@ update_git_checkout_and_push() {
   # -d removes directories, -f makes removal happen for normal files (but I
   # don't think that's necessary for tracked deletions), and the second -f makes
   # submodules be deleted.
-  # Note that if 1) a submodue was deleted and 2) this program crashes after the
-  # pull but before the clean happens, this program can't recover on a future
-  # run: manual cleanup is necessary.
+  # Note that if 1) a submodule was deleted and 2) this program crashes after
+  # the pull but before the clean happens, this program can't recover on a
+  # future run: manual cleanup is necessary.
   git clean -f -f -d
 
   # We can't push to https:// URLs.
