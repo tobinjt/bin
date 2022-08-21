@@ -30,6 +30,7 @@ main() {
         return 0
         ;;
       --*)
+        printf "Unrecognised option: %s\\n" "$1" >&2
         usage >&2
         return 1
         ;;
