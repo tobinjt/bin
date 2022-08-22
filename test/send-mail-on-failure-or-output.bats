@@ -2,16 +2,14 @@ setup() {
   bats_require_minimum_version 1.5.0
   load 'test_helper/bats-support/load' # This is required by bats-assert.
   load 'test_helper/bats-assert/load'
-  load 'test_helper/bats-file/load'
 
   # Ensure consistent subject line.
   SUBJECT_PREFIX="test@testing"
   export SUBJECT_PREFIX
 
-  TEMP_DIR="$(temp_make)"
-  # mail(1) will be replaced by a mock in $TEMP_DIR.
-  PATH="${TEMP_DIR}:${PATH}"
-  cat > "${TEMP_DIR}/mail" <<'FAKE_MAIL'
+  # mail(1) will be replaced by a mock in $BATS_TEST_TMPDIR.
+  PATH="${BATS_TEST_TMPDIR}:${PATH}"
+  cat > "${BATS_TEST_TMPDIR}/mail" <<'FAKE_MAIL'
 #!/bin/bash
 
 i=0
@@ -22,7 +20,7 @@ done
 echo "stdin:"
 cat
 FAKE_MAIL
-  chmod 755 "${TEMP_DIR}/mail"
+  chmod 755 "${BATS_TEST_TMPDIR}/mail"
 }
 
 test_mail_should_not_be_sent() { # @test
@@ -69,12 +67,12 @@ test_mail_should_be_sent() { # @test
   assert_failure
   assert_line --partial "ls: /non-existent: No such file or directory"
 
-  cat > "${TEMP_DIR}/output-to-stderr" <<'OUTPUT_TO_STDERR'
+  cat > "${BATS_TEST_TMPDIR}/output-to-stderr" <<'OUTPUT_TO_STDERR'
 #!/bin/bash
 
 echo "this goes to stderr" >&2
 OUTPUT_TO_STDERR
-  chmod 755 "${TEMP_DIR}/output-to-stderr"
+  chmod 755 "${BATS_TEST_TMPDIR}/output-to-stderr"
   run send-mail-on-failure-or-output success@stderr-output output-to-stderr
   assert_success
   assert_line --partial "this goes to stderr"
