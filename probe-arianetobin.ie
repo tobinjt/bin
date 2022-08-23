@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 NUMBER_OF_ATTEMPTS=5
-SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=600
+SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS="${SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS:-600}"
 SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
 WEBSITE='https://www.arianetobin.ie/'
 
