@@ -66,7 +66,7 @@ if [[ "$(basename "${BASH_SOURCE[0]}")" == "$(basename "${0}")" ]]; then
     exit 1
   fi
 
-  if [[ ! -t 0 ]]; then
+  if [[ ! -t 0 && -z "${SKIP_STARTUP_SLEEP:-}" ]]; then
     sleep $((RANDOM % 600))
   fi
 
