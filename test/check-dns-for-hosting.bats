@@ -1,4 +1,4 @@
-setup() {
+function setup() {
   bats_require_minimum_version 1.5.0
   load 'test_helper/bats-support/load' # This is required by bats-assert.
   load 'test_helper/bats-assert/load'
@@ -11,7 +11,7 @@ setup() {
   PATH="${BATS_TEST_TMPDIR}:${PATH}"
 }
 
-test_success() { # @test
+function test_success() { # @test
   # Set up fake host records.
   local host_records
   host_records="${BATS_TEST_TMPDIR}/host_records"
@@ -46,7 +46,7 @@ HOST_RECORDS
   done
 }
 
-test_failure() { # @test
+function test_failure() { # @test
   # Why does this work but a symlink from host to /bin/true fails?
   cat > "${BATS_TEST_TMPDIR}/host" <<HOST
 #!/bin/bash
@@ -73,7 +73,7 @@ HOST
   done
 }
 
-test_retries() { # @test
+function test_retries() { # @test
   # Set up fake host records.
   # Each run of host() will output and delete the first input file it finds.  We
   # retry the A record check 3 times and the AAAA record check twice.

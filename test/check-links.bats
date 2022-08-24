@@ -1,4 +1,4 @@
-setup() {
+function setup() {
   bats_require_minimum_version 1.5.0
   load 'test_helper/bats-support/load' # This is required by bats-assert.
   load 'test_helper/bats-assert/load'
@@ -9,7 +9,7 @@ setup() {
   export SKIP_STARTUP_SLEEP
 }
 
-test_success() { # @test
+function test_success() { # @test
   cat > "${BATS_TEST_TMPDIR}/wget" <<'FAKE_WGET'
 #!/bin/bash
 
@@ -25,7 +25,7 @@ FAKE_WGET
   assert_output ""
 }
 
-test_failure() { # @test
+function test_failure() { # @test
   cat > "${BATS_TEST_TMPDIR}/wget" <<'FAKE_WGET'
 #!/bin/bash
 
@@ -46,7 +46,7 @@ FAKE_WGET
   assert_equal "${stderr}" ""
 }
 
-test_retries() { # @test
+function test_retries() { # @test
   cat > "${BATS_TEST_TMPDIR}/wget" <<'FAKE_WGET'
 #!/bin/bash
 

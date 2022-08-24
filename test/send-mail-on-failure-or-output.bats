@@ -1,4 +1,4 @@
-setup() {
+function setup() {
   bats_require_minimum_version 1.5.0
   load 'test_helper/bats-support/load' # This is required by bats-assert.
   load 'test_helper/bats-assert/load'
@@ -23,7 +23,7 @@ FAKE_MAIL
   chmod 755 "${BATS_TEST_TMPDIR}/mail"
 }
 
-test_mail_should_not_be_sent() { # @test
+function test_mail_should_not_be_sent() { # @test
   # If mail is run the arguments will be output and cause test failure.
   run send-mail-on-failure-or-output success@no-output true
   assert_success
@@ -40,7 +40,7 @@ test_mail_should_not_be_sent() { # @test
   assert_output ""
 }
 
-test_mail_should_be_sent() { # @test
+function test_mail_should_be_sent() { # @test
   # Ensure mail is run by checking the output.
   run send-mail-on-failure-or-output failure@no-output false
   assert_failure
@@ -78,7 +78,7 @@ OUTPUT_TO_STDERR
   assert_line --partial "this goes to stderr"
 }
 
-test_argument_handling() { # @test
+function test_argument_handling() { # @test
   run send-mail-on-failure-or-output --ignore_exit_status --only_on_failure \
     incompatible-arguments@mail echo this-should-not-be-output
   assert_failure

@@ -1,4 +1,4 @@
-setup() {
+function setup() {
   bats_require_minimum_version 1.5.0
   load 'test_helper/bats-support/load' # This is required by bats-assert.
   load 'test_helper/bats-assert/load'
@@ -10,7 +10,7 @@ setup() {
   SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
 }
 
-function test_success { # @test
+function test_success() { # @test
   cat > "${BATS_TEST_TMPDIR}/curl" <<FAKE_CURL
 #!/bin/bash
 
@@ -23,7 +23,7 @@ FAKE_CURL
   assert_output ""
 }
 
-function test_failure { # @test
+function test_failure() { # @test
   cat > "${BATS_TEST_TMPDIR}/curl" <<FAKE_CURL
 #!/bin/bash
 
@@ -40,7 +40,7 @@ FAKE_CURL
     "Did not find sentinel '${SENTINEL}' in https://www.arianetobin.ie/"
 }
 
-function test_retries { # @test
+function test_retries() { # @test
   # Use a temp file to save state between invocations.  Because curl is invoked
   # in a subshell any changes we make to variables don't affect the parent
   # shell.
