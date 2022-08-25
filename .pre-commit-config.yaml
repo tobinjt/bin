@@ -20,21 +20,15 @@ repos:
   - id: trailing-whitespace
 - repo: local
   hooks:
+  # Unconditionally run these tests because properly checking whether running
+  # them is necessary would duplicate the Makefile.  If nothing has changed this
+  # is a no-op, if something has changed the tests are fast and need to be run.
   - id: bats
     name: Run bats tests
     language: system
     pass_filenames: false
     files: .*
     entry: make bats_tests
-  # Unconditionally run these tests because properly checking whether running
-  # them is necessary would duplicate the Makefile.  If nothing has changed this
-  # is a no-op, if something has changed the tests are fast and need to be run.
-  - id: make_tests
-    name: Run `make -C tests`
-    language: system
-    pass_filenames: false
-    files: .*
-    entry: make -C tests
   # Using this instead of a packaged mypy check because the packaged one
   # doesn't find modules in virtualenv.
   - id: mypy
