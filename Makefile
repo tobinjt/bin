@@ -3,11 +3,12 @@
 
 TEST_PROGRAMS = $(wildcard test/*.bats)
 TIMESTAMP_FILES = $(patsubst test/%.bats, test/.%.timestamp, $(TEST_PROGRAMS))
+KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
 
 .PHONY: all clean coverage tests
-all: tests
+all: bats_tests
 
-tests: $(TIMESTAMP_FILES)
+bats_tests: $(TIMESTAMP_FILES)
 
 clean:
 	rm -f $(TIMESTAMP_FILES)
@@ -17,4 +18,6 @@ test/.%.timestamp: test/%.bats %
 	./test/bats/bin/bats ./$<
 	touch $@
 
-# TODO: figure out code coverage.
+bats_coverage:
+	rm -rf $(KCOVERAGE_DIR)
+	KCOVERAGE_DIR=$(KCOVERAGE_DIR) make bats_tests
