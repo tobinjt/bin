@@ -65,7 +65,7 @@ function test_argument_handling() { # @test
   assert_output ""
 }
 
-function test_path_variants() {
+function test_path_variants() { # @test
   # Leading slashes.
   run path-parents /etc/passwd
   assert_success
