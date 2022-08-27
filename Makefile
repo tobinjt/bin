@@ -18,6 +18,6 @@ test/.%.timestamp: test/%.bats %
 	./test/bats/bin/bats ./$<
 	touch $@
 
-bats_coverage:
+bats_coverage: clean
 	rm -rf $(KCOVERAGE_DIR)
 	KCOVERAGE_DIR=$(KCOVERAGE_DIR) make bats_tests

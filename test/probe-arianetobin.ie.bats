@@ -2,11 +2,14 @@ function setup() {
   bats_require_minimum_version 1.5.0
   load 'test_helper/bats-support/load' # This is required by bats-assert.
   load 'test_helper/bats-assert/load'
+  source 'test/gather_coverage.sh'
+
   # curl(1) will be replaced by a mock in $BATS_TEST_TMPDIR.
   PATH="${BATS_TEST_TMPDIR}:${PATH}"
   # Make the tests fast by not sleeping.
   SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=0
   export SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS
+  # Copied from probe-arianetobin.ie for easy reuse.
   SENTINEL='<title>Ariane Tobin Jewellery - Ariane Tobin Jewellery</title>'
 }
 
