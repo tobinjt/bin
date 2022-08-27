@@ -1,6 +1,3 @@
-[submodule "test/bats"]
-	path = test/bats
-	url = https://github.com/bats-core/bats-core.git
 [submodule "test/test_helper/bats-support"]
 	path = test/test_helper/bats-support
 	url = https://github.com/bats-core/bats-support.git
@@ -10,3 +7,7 @@
 [submodule "test/test_helper/bats-file"]
 	path = test/test_helper/bats-file
 	url = https://github.com/bats-core/bats-file.git
+[submodule "test/bats"]
+	path = test/bats
+	url = https://github.com/tobinjt/bats-core.git
+	branch = coverage-support
