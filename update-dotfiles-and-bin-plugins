@@ -2,30 +2,41 @@
 
 set -e -f -u -o pipefail
 
-main() {
-  # Check there aren't any diffs.
-  update-dotfiles-and-bin
-
-  # I have forked vim-markdown, so pull any changes from upstream.
-  cd "${HOME}/src/vim-markdown"
-  git checkout master
-  git pull upstream master
-  git push
-  # Now merge them into my branch.
-  git checkout my-changes
-  git pull
-  git merge master
-  git push
-
-  # Update every submodule; only processing ~/src/dotfiles for now, will add
-  # more in future if necessary.
-  cd "${HOME}/src/dotfiles"
+update-all-submodules() {
+  local directory="$1"
+  cd "${directory}"
   git submodule update --recursive --remote
   # Commit the changes if any.
   git add -A .
   if ! git check-local-copy-is-clean 2>/dev/null; then
     git commit -m 'Update all plugins.'
   fi
+}
+
+merge-upstream-changes() {
+  local directory="$1" branch_name="$2"
+  cd "${directory}"
+  git checkout master
+  git pull upstream master
+  git push
+  # Now merge them into my branch.
+  git checkout "${branch_name}"
+  git pull
+  git merge master
+  git push
+}
+
+main() {
+  # Check there aren't any diffs.
+  update-dotfiles-and-bin
+
+  # I have forked vim-markdown, so pull any changes from upstream.
+  merge-upstream-changes "${HOME}/src/vim-markdown" "my-changes"
+  # Same for bats-core.
+  merge-upstream-changes "${HOME}/src/bats-core" "coverage-support"
+
+  update-all-submodules "${HOME}/bin"
+  update-all-submodules "${HOME}/src/dotfiles"
 
   # Force overwriting and deletion of removed files.
   dotfiles -f -X
