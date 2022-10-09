@@ -2,7 +2,9 @@
 
 set -e -f -u -o pipefail
 
-PATH="${HOME}/bin:${PATH}"
+# ${HOME}/bin is needed for `git transport-is-ssh`.
+# /usr/local/bin is needed for `pre-commit`.
+PATH="${HOME}/bin:/usr/local/bin:${PATH}"
 
 usage() {
   printf "%s: [--pull_and_push] DIRECTORY [DIRECTORY...]\\n" "$0"
