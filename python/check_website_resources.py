@@ -58,17 +58,17 @@ import tempfile
 from typing import Any, Dict, List
 import urllib.parse
 
-__author__ = 'johntobin@johntobin.ie (John Tobin)'
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # These constants are used consistently so mutating them doesn't provide signal.
-COOKIES_FILE = 'cookies.txt'  # pragma: no mutate
-WGET_LOG = 'wget.log'  # pragma: no mutate
+COOKIES_FILE = "cookies.txt"  # pragma: no mutate
+WGET_LOG = "wget.log"  # pragma: no mutate
 WGET_ARGS = [  # pragma: no mutate
-    'wget',  # pragma: no mutate
-    '--output-file=' + WGET_LOG,  # pragma: no mutate
-    '--execute=robots=off',  # pragma: no mutate
-    '--content-on-error',  # pragma: no mutate
-    '--page-requisites',  # pragma: no mutate
+    "wget",  # pragma: no mutate
+    "--output-file=" + WGET_LOG,  # pragma: no mutate
+    "--execute=robots=off",  # pragma: no mutate
+    "--content-on-error",  # pragma: no mutate
+    "--page-requisites",  # pragma: no mutate
 ]
 
 
@@ -116,9 +116,9 @@ def read_wget_log() -> List[str]:
   Returns:
     A list of log lines with newlines stripped.
   """
-  with open(WGET_LOG, encoding='utf8') as wget_log:
+  with open(WGET_LOG, encoding="utf8") as wget_log:
     return [
-        line.rstrip('\n')  # pragma: no mutate
+        line.rstrip("\n")  # pragma: no mutate
         for line in wget_log.readlines()
     ]
 
@@ -131,8 +131,8 @@ def write_cookies_file(*, lines: List[str]):
   Args:
     A list of lines to write.
   """
-  with open(COOKIES_FILE, 'w', encoding='utf8') as cookies_txt:
-    print('\n'.join(lines), file=cookies_txt)
+  with open(COOKIES_FILE, "w", encoding="utf8") as cookies_txt:
+    print("\n".join(lines), file=cookies_txt)
 
 
 def run_wget(*, url: str, load_cookies: bool) -> List[str]:
@@ -150,13 +150,13 @@ def run_wget(*, url: str, load_cookies: bool) -> List[str]:
   """
   args = WGET_ARGS.copy()
   if load_cookies:
-    args.append('--load-cookies=cookies.txt')
+    args.append("--load-cookies=cookies.txt")
   args.append(url)
   try:
     subprocess.run(args, check=True, capture_output=True)
     return read_wget_log()
   except subprocess.CalledProcessError as err:
-    message = f'wget for {url} failed: {err.stderr}; {str(err)}'
+    message = f"wget for {url} failed: {err.stderr}; {str(err)}"
     logging.error(message)
     raise WgetFailedException(message) from err
 
@@ -176,16 +176,16 @@ def reverse_pagespeed_mangling(*, paths: List[str]) -> List[str]:
   new_paths = []
   replacements = {
       # foo/bar.css is rewritten to foo/A.bar.css.pagespeed...
-      '.css': r'^A\.',
+      ".css": r"^A\.",
       # foo/bar.png is rewritten to foo/xbar.png.pagespeed...
-      '.png': r'^x',
+      ".png": r"^x",
   }
   for path in paths:
-    path = re.sub(r'(css|jpg|js|png)\.pagespeed\...\..*\.\1$', r'\1', path)
+    path = re.sub(r"(css|jpg|js|png)\.pagespeed\...\..*\.\1$", r"\1", path)
     for extension, regex in replacements.items():
       if path.endswith(extension):
         directory, filename = os.path.split(path)
-        filename = re.sub(regex, '', filename)
+        filename = re.sub(regex, "", filename)
         path = os.path.join(directory, filename)
     new_paths.append(path)
   return new_paths
@@ -207,12 +207,12 @@ def check_single_url(*, config: SingleURLConfig) -> List[str]:
   try:
     log_lines = run_wget(url=config.url, load_cookies=bool(config.cookies))
   except WgetFailedException as err:
-    return [f'{config.url} ({config.comment}): running wget failed; {str(err)}']
+    return [f"{config.url} ({config.comment}): running wget failed; {str(err)}"]
 
   fetched_resources = set()
   for line in log_lines:
-    if line.startswith('--'):
-      fetched_resources.add(line.split(' ')[-1])
+    if line.startswith("--"):
+      fetched_resources.add(line.split(" ")[-1])
   actual_resources = reverse_pagespeed_mangling(paths=list(fetched_resources))
   # Strip out any optional_resources.
   actual_resources = list(
@@ -220,13 +220,13 @@ def check_single_url(*, config: SingleURLConfig) -> List[str]:
   actual_resources.sort()
   # No tests for logging, perhaps I should add some?
   logging.info(
-      'Actual resources for %s (%s): %s',  # pragma: no mutate
+      "Actual resources for %s (%s): %s",  # pragma: no mutate
       config.url,
       config.comment,
       actual_resources)
   config.resources.sort()
   logging.info(
-      'Expected resources for %s (%s): %s',  # pragma: no mutate
+      "Expected resources for %s (%s): %s",  # pragma: no mutate
       config.url,
       config.resources,
       config.comment)
@@ -234,7 +234,7 @@ def check_single_url(*, config: SingleURLConfig) -> List[str]:
   errors = []
   missing_resources = set(config.resources) - set(actual_resources)
   if missing_resources:
-    errors.append(f'Missing resources for {config.url} ({config.comment}):')
+    errors.append(f"Missing resources for {config.url} ({config.comment}):")
     errors.extend(sorted(missing_resources))
 
   extra_resources = set(actual_resources) - set(config.resources)
@@ -244,7 +244,7 @@ def check_single_url(*, config: SingleURLConfig) -> List[str]:
     if all(regex.match(extra_resource) is None for regex in regexes):
       extra_unmatched.append(extra_resource)
   if extra_unmatched:
-    errors.append(f'Unmatched resources for {config.url} ({config.comment}):')
+    errors.append(f"Unmatched resources for {config.url} ({config.comment}):")
     errors.extend(extra_unmatched)
 
   return errors
@@ -264,7 +264,7 @@ def validate_list_of_strings(*, path: str, name: str, data: List[str]):
     raise ValueError(f'{path}: "{name}" must be a list of strings')
   bad = [str(r) for r in data if not isinstance(r, str)]
   if bad:
-    raise ValueError(f'{path}: all "{name}" must be strings: ' + ', '.join(bad))
+    raise ValueError(f'{path}: all "{name}" must be strings: ' + ", ".join(bad))
 
 
 def validate_dict_of_strings(*, path: str, name: str, data: List[str]):
@@ -283,7 +283,7 @@ def validate_dict_of_strings(*, path: str, name: str, data: List[str]):
   bad = [str(c) for c in contents if not isinstance(c, str)]
   if bad:
     raise ValueError(f'{path}: everything in "{name}" must be strings: ' +
-                     ', '.join(bad))
+                     ", ".join(bad))
 
 
 def validate_user_config(*, path: str, configs: Any):
@@ -299,48 +299,48 @@ def validate_user_config(*, path: str, configs: Any):
     ValueError if any validation fails.
   """
   if not isinstance(configs, list):
-    raise ValueError(f'{path}: Top-level data structure must be a list')
+    raise ValueError(f"{path}: Top-level data structure must be a list")
   for config in configs:
     if not isinstance(config, dict):
-      raise ValueError(f'{path}: All entries in the list must be dicts')
+      raise ValueError(f"{path}: All entries in the list must be dicts")
     known_keys = {
-        'url', 'resources', 'cookies', 'comment', 'optional_resources',
-        'optional_resource_regexes'
+        "url", "resources", "cookies", "comment", "optional_resources",
+        "optional_resource_regexes"
     }
     actual_keys = set(config.keys())
     if not actual_keys.issubset(known_keys):
       bad_keys = list(actual_keys - known_keys)
       bad_keys.sort()
-      raise ValueError(f'{path}: Unsupported key(s): ' + ', '.join(bad_keys))
-    if 'url' not in config:
+      raise ValueError(f"{path}: Unsupported key(s): " + ", ".join(bad_keys))
+    if "url" not in config:
       raise ValueError(f'{path}: required config "url" not provided')
-    if 'resources' not in config:
+    if "resources" not in config:
       raise ValueError(f'{path}: required config "resources" not provided')
-    if 'cookies' not in config:
-      config['cookies'] = {}
-    if 'comment' not in config:
-      config['comment'] = config['url']
-    if 'optional_resources' not in config:
-      config['optional_resources'] = []
-    if 'optional_resource_regexes' not in config:
-      config['optional_resource_regexes'] = []
+    if "cookies" not in config:
+      config["cookies"] = {}
+    if "comment" not in config:
+      config["comment"] = config["url"]
+    if "optional_resources" not in config:
+      config["optional_resources"] = []
+    if "optional_resource_regexes" not in config:
+      config["optional_resource_regexes"] = []
 
-    if not isinstance(config['url'], str):
-      raise ValueError(f'{path}: url must be a string')
+    if not isinstance(config["url"], str):
+      raise ValueError(f"{path}: url must be a string")
 
-    if not isinstance(config['comment'], str):
-      raise ValueError(f'{path}: comment must be a string')
+    if not isinstance(config["comment"], str):
+      raise ValueError(f"{path}: comment must be a string")
 
     validate_list_of_strings(path=path,
-                             name='resources',
-                             data=config['resources'])
+                             name="resources",
+                             data=config["resources"])
     validate_list_of_strings(path=path,
-                             name='optional_resources',
-                             data=config['optional_resources'])
+                             name="optional_resources",
+                             data=config["optional_resources"])
     validate_list_of_strings(path=path,
-                             name='optional_resource_regexes',
-                             data=config['optional_resource_regexes'])
-    validate_dict_of_strings(path=path, name='cookies', data=config['cookies'])
+                             name="optional_resource_regexes",
+                             data=config["optional_resource_regexes"])
+    validate_dict_of_strings(path=path, name="cookies", data=config["cookies"])
 
 
 def read_config(*, path: str) -> List[SingleURLConfig]:
@@ -351,14 +351,14 @@ def read_config(*, path: str) -> List[SingleURLConfig]:
   Returns:
     List of SingleURLConfig.
   """
-  with open(path, encoding='utf8') as filehandle:
+  with open(path, encoding="utf8") as filehandle:
     data = json.loads(filehandle.read())
   validate_user_config(path=path, configs=data)
   configs = []
   for config in data:
-    if config['url'] not in config['resources']:
+    if config["url"] not in config["resources"]:
       # The URL needs to be included, but do that automatically for the user.
-      config['resources'].insert(0, config['url'])
+      config["resources"].insert(0, config["url"])
     configs.append(SingleURLConfig(**config))
   return configs
 
@@ -376,13 +376,13 @@ def generate_cookies_file_contents(*, url: str,
   Returns:
     A list of lines for the file.
   """
-  lines = ['# Netscape HTTP Cookie File']
+  lines = ["# Netscape HTTP Cookie File"]
   host = urllib.parse.urlparse(url).hostname
   if host is None:
-    raise ValueError(f'Unable to extract hostname from URL {url}')
+    raise ValueError(f"Unable to extract hostname from URL {url}")
   for key, value in cookies.items():
     # www.arianetobin.ie	FALSE	/	FALSE	1617567351	viewed_cookie_policy	yes
-    lines.append(f'{host}\tFALSE\t/\tFALSE\t0\t{key}\t{value}')
+    lines.append(f"{host}\tFALSE\t/\tFALSE\t0\t{key}\t{value}")
   return lines
 
 
@@ -394,18 +394,18 @@ def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
   Returns:
     argparse.Namespace, with attributes set based on the arguments.
   """
-  (usage, description) = __doc__.split('\n', maxsplit=1)  # pragma: no mutate
+  (usage, description) = __doc__.split("\n", maxsplit=1)  # pragma: no mutate
   argv_parser = argparse.ArgumentParser(
       description=description,
       usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      'config_files',
-      nargs='+',
-      metavar='JSON_CONFIG_FILE',
+      "config_files",
+      nargs="+",
+      metavar="JSON_CONFIG_FILE",
       default=[],
-      help=('Config file specifying URLs and expected resources (multiple'
-            ' files are supported but are completely independent)'))
+      help=("Config file specifying URLs and expected resources (multiple"
+            " files are supported but are completely independent)"))
   return argv_parser.parse_args(argv)
 
 
@@ -414,7 +414,7 @@ def main(*, argv: List[str]) -> int:
   options = parse_arguments(argv=argv[1:])
   # On MacOS wget is in /usr/local/bin which is not in the default PATH cron
   # passes to child processes.
-  os.environ['PATH'] += ':/usr/local/bin'  # pragma: no mutate
+  os.environ["PATH"] += ":/usr/local/bin"  # pragma: no mutate
   messages = []
   host_configs = []
   for filename in options.config_files:
@@ -426,10 +426,10 @@ def main(*, argv: List[str]) -> int:
     for host_config in host_configs:
       messages.extend(check_single_url(config=host_config))
   if messages:
-    print('\n'.join(messages), file=sys.stderr)
+    print("\n".join(messages), file=sys.stderr)
     return 1
   return 0
 
 
-if __name__ == '__main__':  # pragma: no mutate
+if __name__ == "__main__":  # pragma: no mutate
   sys.exit(main(argv=sys.argv))

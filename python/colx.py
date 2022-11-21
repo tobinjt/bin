@@ -27,7 +27,7 @@ import re
 import sys
 from typing import List
 
-__author__ = 'johntobin@johntobin.ie (John Tobin)'
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
 def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
@@ -38,30 +38,30 @@ def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
   Returns:
     argparse.Namespace, with attributes set based on the arguments.
   """
-  (usage, description) = __doc__.split('\n', maxsplit=1)
+  (usage, description) = __doc__.split("\n", maxsplit=1)
   argv_parser = argparse.ArgumentParser(
       description=description,
       usage=usage,
       formatter_class=argparse.RawDescriptionHelpFormatter)
   argv_parser.add_argument(
-      '-d',
-      '--delimiter',
-      default=r'\s+',
-      help='Regex delimiting input columns; defaults to whitespace')
+      "-d",
+      "--delimiter",
+      default=r"\s+",
+      help="Regex delimiting input columns; defaults to whitespace")
   argv_parser.add_argument(
-      '-s',
-      '--separator',
-      default=' ',
-      help='Separator between output columns; defaults to a single space; '
-      'backslash escape sequences will be expanded')
-  argv_parser.add_argument('args',
-                           nargs='*',
-                           metavar='COLUMNS_THEN_FILES',
-                           help='Any argument that looks like a column '
-                           'specifier is used as one, then remaining arguments'
-                           ' are used as filenames')
+      "-s",
+      "--separator",
+      default=" ",
+      help="Separator between output columns; defaults to a single space; "
+      "backslash escape sequences will be expanded")
+  argv_parser.add_argument("args",
+                           nargs="*",
+                           metavar="COLUMNS_THEN_FILES",
+                           help="Any argument that looks like a column "
+                           "specifier is used as one, then remaining arguments"
+                           " are used as filenames")
   options = argv_parser.parse_args(argv)
-  options.separator = bytes(options.separator, 'utf-8').decode('unicode_escape')
+  options.separator = bytes(options.separator, "utf-8").decode("unicode_escape")
 
   options.columns = []
   options.filenames = []
@@ -74,7 +74,7 @@ def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
       continue
 
     # Support 3:8 style columns.
-    column_range = re.search(r'^(-?\d+):(-?\d+)$', arg)
+    column_range = re.search(r"^(-?\d+):(-?\d+)$", arg)
     if column_range:
       first, last = int(column_range.group(1)), int(column_range.group(2))
       # mutmut mutates this to 'first >= last', which isn't useful, because if
@@ -97,7 +97,7 @@ def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
       options.filenames.append(arg)
 
   if not options.columns:
-    argv_parser.error('At least one COLUMN argument is required.')
+    argv_parser.error("At least one COLUMN argument is required.")
 
   return options
 
@@ -116,7 +116,7 @@ def process_files(*, filenames: List[str], columns: List[int], delimiter: str,
   """
   output = []
   for line in fileinput.input(filenames):
-    line = line.rstrip('\n')  # pragma: no mutate
+    line = line.rstrip("\n")  # pragma: no mutate
     input_columns = [line]
     split_columns = re.split(delimiter, line)
 
@@ -154,5 +154,5 @@ def main(*, argv: List[str]) -> None:
     print(line)
 
 
-if __name__ == '__main__':  # pragma: no mutate
+if __name__ == "__main__":  # pragma: no mutate
   main(argv=sys.argv)

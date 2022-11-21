@@ -20,19 +20,19 @@ import sys
 import time
 from typing import Dict, List, NewType, Tuple
 
-__author__ = 'johntobin@johntobin.ie (John Tobin)'
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # Type annotation aliases.
 # Mutating these doesn't cause tests to fail because they are just used for type
 # checking.
-SentinelMap = NewType('SentinelMap', Dict[str, int])  # pragma: no mutate
-Messages = NewType('Messages', List[str])  # pragma: no mutate
-Warnings = NewType('Warnings', List[str])  # pragma: no mutate
+SentinelMap = NewType("SentinelMap", Dict[str, int])  # pragma: no mutate
+Messages = NewType("Messages", List[str])  # pragma: no mutate
+Warnings = NewType("Warnings", List[str])  # pragma: no mutate
 
 # Filename constants.
 # These constants are used consistently so mutating them doesn't provide signal.
-SLEEPING_UNTIL = 'sleeping_until'  # pragma: no mutate
-MAX_ALLOWED_DELAY = 'max_allowed_delay'  # pragma: no mutate
+SLEEPING_UNTIL = "sleeping_until"  # pragma: no mutate
+MAX_ALLOWED_DELAY = "max_allowed_delay"  # pragma: no mutate
 
 
 class Error(Exception):
@@ -66,12 +66,12 @@ def parse_sentinels(*, directory: str, default_delay: int) -> ParsedSentinels:
   """
 
   data = ParsedSentinels(SentinelMap({}), SentinelMap({}), SentinelMap({}))
-  files = glob.glob(os.path.join(directory, '*'))
+  files = glob.glob(os.path.join(directory, "*"))
   with fileinput.FileInput(files) as finput:
     for line in finput:
       line = line.strip()
       filename = os.path.basename(finput.filename())
-      parts = re.split(r'\.', filename)
+      parts = re.split(r"\.", filename)
       if len(parts) == 1:
         data.timestamps[parts[0]] = int(line)
       elif len(parts) == 2 and parts[1] == SLEEPING_UNTIL:
@@ -79,7 +79,7 @@ def parse_sentinels(*, directory: str, default_delay: int) -> ParsedSentinels:
       elif len(parts) == 2 and parts[1] == MAX_ALLOWED_DELAY:
         data.max_allowed_delay[parts[0]] = int(line)
       else:
-        raise Error(f'Bad format in {filename}: {line}, parts: {parts}')
+        raise Error(f"Bad format in {filename}: {line}, parts: {parts}")
 
   for hostname in data.timestamps:
     if hostname not in data.max_allowed_delay:
@@ -106,16 +106,16 @@ def check_sentinels(*, sentinels: ParsedSentinels,
   messages = Messages([])
   now = int(time.time())
   message = ('Backup for "%(host)s" too old:'
-             ' current time %(now)d/%(now_human)s;'
-             ' last backup %(last_backup)d/%(last_backup_human)s;'
-             ' max allowed delay: %(max_delay)d/%(max_delay_human)s;'
-             ' delay allowed until: %(delay_until)d/%(delay_until_human)s;'
-             ' sleeping until: %(sleeping_until)d/%(sleeping_until_human)s')
-  time_fmt = '%Y-%m-%d %H:%M'
+             " current time %(now)d/%(now_human)s;"
+             " last backup %(last_backup)d/%(last_backup_human)s;"
+             " max allowed delay: %(max_delay)d/%(max_delay_human)s;"
+             " delay allowed until: %(delay_until)d/%(delay_until_human)s;"
+             " sleeping until: %(sleeping_until)d/%(sleeping_until_human)s")
+  time_fmt = "%Y-%m-%d %H:%M"
 
   if not sentinels.timestamps:
     # pylint: disable=no-member,unsubscriptable-object
-    warnings.append('Zero sentinels passed, something is wrong.')
+    warnings.append("Zero sentinels passed, something is wrong.")
     messages.append(warnings[-1])
     # pylint: enable=no-member,unsubscriptable-object
     return (warnings, messages)
@@ -126,8 +126,8 @@ def check_sentinels(*, sentinels: ParsedSentinels,
   ]
   if len(globally_delayed) == len(sentinels.timestamps):
     # pylint: disable=no-member,unsubscriptable-object
-    warnings.append('All backups are delayed by at least '
-                    f'{max_global_delay} seconds')
+    warnings.append("All backups are delayed by at least "
+                    f"{max_global_delay} seconds")
     messages.append(warnings[-1])
     # pylint: enable=no-member,unsubscriptable-object
 
@@ -135,18 +135,18 @@ def check_sentinels(*, sentinels: ParsedSentinels,
     max_delay = sentinels.max_allowed_delay[host]
     sleeping_until = sentinels.sleeping_until[host]
     warning = message % {
-        'host': host,
-        'now': now,
-        'now_human': time.strftime(time_fmt, time.gmtime(now)),
-        'last_backup': last_backup,
-        'last_backup_human': time.strftime(time_fmt, time.gmtime(last_backup)),
-        'max_delay': max_delay,
-        'max_delay_human': time.strftime(time_fmt, time.gmtime(max_delay)),
-        'delay_until': last_backup + max_delay,
-        'delay_until_human': time.strftime(
+        "host": host,
+        "now": now,
+        "now_human": time.strftime(time_fmt, time.gmtime(now)),
+        "last_backup": last_backup,
+        "last_backup_human": time.strftime(time_fmt, time.gmtime(last_backup)),
+        "max_delay": max_delay,
+        "max_delay_human": time.strftime(time_fmt, time.gmtime(max_delay)),
+        "delay_until": last_backup + max_delay,
+        "delay_until_human": time.strftime(
             time_fmt, time.gmtime(last_backup + max_delay)),
-        'sleeping_until': sleeping_until,
-        'sleeping_until_human': time.strftime(time_fmt,
+        "sleeping_until": sleeping_until,
+        "sleeping_until_human": time.strftime(time_fmt,
                                               time.gmtime(sleeping_until)),
     }
     messages.append(warning)  # pylint: disable=no-member
@@ -164,14 +164,14 @@ def check_sentinels(*, sentinels: ParsedSentinels,
 
   # pylint: disable=not-an-iterable
   messages = Messages(
-      sorted(message.replace('too old', 'debug info') for message in messages))
+      sorted(message.replace("too old", "debug info") for message in messages))
   # pylint: enable=not-an-iterable
   return (warnings, messages)
 
 
 def main(*, argv: List[str]):
   if len(argv) != 2 or not os.path.isdir(argv[1]):
-    raise Error(f'Usage: {argv[0]} DIRECTORY')
+    raise Error(f"Usage: {argv[0]} DIRECTORY")
   # There's no benefit to mutating this constant.
   day = 24 * 60 * 60  # pragma: no mutate
   sentinels = parse_sentinels(directory=argv[1], default_delay=day)
@@ -190,5 +190,5 @@ def main(*, argv: List[str]):
     sys.exit(0)
 
 
-if __name__ == '__main__':  # pragma: no mutate
+if __name__ == "__main__":  # pragma: no mutate
   main(argv=sys.argv)

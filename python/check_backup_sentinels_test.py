@@ -26,13 +26,13 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
 
   def test_simple(self):
     """Test basic processing."""
-    testdir = '/test/test_simple'
-    hostname = 'a-hostname'
+    testdir = "/test/test_simple"
+    hostname = "a-hostname"
     base = os.path.join(testdir, hostname)
     files = {
-        base: '1234\n',
-        f'{base}.{cbs.SLEEPING_UNTIL}': '5432\n',
-        f'{base}.{cbs.MAX_ALLOWED_DELAY}': '98\n',
+        base: "1234\n",
+        f"{base}.{cbs.SLEEPING_UNTIL}": "5432\n",
+        f"{base}.{cbs.MAX_ALLOWED_DELAY}": "98\n",
     }
     self.create_files_for_test(files)
     parsed = cbs.parse_sentinels(directory=testdir, default_delay=7)
@@ -42,10 +42,10 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
 
   def test_default_delay(self):
     """Test default delay is used."""
-    testdir = '/test/test_simple'
-    hostname = 'a-hostname'
+    testdir = "/test/test_simple"
+    hostname = "a-hostname"
     files = {
-        os.path.join(testdir, hostname): '31313\n',
+        os.path.join(testdir, hostname): "31313\n",
     }
     self.create_files_for_test(files)
     parsed = cbs.parse_sentinels(directory=testdir, default_delay=7)
@@ -55,13 +55,13 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
 
   def test_bad_filename(self):
     """Test handling of bad filenames."""
-    testdir = '/test/test_simple'
-    hostname = 'a-hostname'
+    testdir = "/test/test_simple"
+    hostname = "a-hostname"
     files = {
-        f'{os.path.join(testdir, hostname)}.qwerty': '5432\n',
+        f"{os.path.join(testdir, hostname)}.qwerty": "5432\n",
     }
     self.create_files_for_test(files)
-    with self.assertRaisesRegex(cbs.Error, '^Bad format.*qwerty'):
+    with self.assertRaisesRegex(cbs.Error, "^Bad format.*qwerty"):
       cbs.parse_sentinels(directory=testdir, default_delay=7)
 
 
@@ -73,15 +73,15 @@ class TestCheckSentinels(unittest.TestCase):
     sentinels = cbs.ParsedSentinels({}, {}, {})
     (warnings, messages) = cbs.check_sentinels(sentinels=sentinels,
                                                max_global_delay=11)
-    expected = ['Zero sentinels passed, something is wrong.']
+    expected = ["Zero sentinels passed, something is wrong."]
     self.assertEqual(expected, warnings)
     self.assertEqual(expected, messages)
 
-  @mock.patch('time.time')
+  @mock.patch("time.time")
   def test_all_backups_are_recent(self, mock_time):
     """All backups are recent, no warnings."""
-    host1 = 'asdf'
-    host2 = 'qwerty'
+    host1 = "asdf"
+    host2 = "qwerty"
     hour = 60 * 60
     timestamps = {
         host1: 7 * hour,
@@ -103,11 +103,11 @@ class TestCheckSentinels(unittest.TestCase):
                                         max_global_delay=hour)
     self.assertEqual([], warnings)
 
-  @mock.patch('time.time')
+  @mock.patch("time.time")
   def test_all_backups_are_old(self, mock_time):
     """All backups are old :("""
-    host1 = 'asdf'
-    host2 = 'qwerty'
+    host1 = "asdf"
+    host2 = "qwerty"
     hour = 60 * 60
     timestamps = {
         host1: 7 * hour,
@@ -128,22 +128,22 @@ class TestCheckSentinels(unittest.TestCase):
     (warnings, messages) = cbs.check_sentinels(sentinels=sentinels,
                                                max_global_delay=hour)
     expected_warnings = [
-        'All backups are delayed by at least 3600 seconds',
+        "All backups are delayed by at least 3600 seconds",
         'Backup for "asdf" too old:'
-        ' current time 43200/1970-01-01 12:00;'
-        ' last backup 25200/1970-01-01 07:00;'
-        ' max allowed delay: 7200/1970-01-01 02:00;'
-        ' delay allowed until: 32400/1970-01-01 09:00;'
-        ' sleeping until: 0/1970-01-01 00:00',
+        " current time 43200/1970-01-01 12:00;"
+        " last backup 25200/1970-01-01 07:00;"
+        " max allowed delay: 7200/1970-01-01 02:00;"
+        " delay allowed until: 32400/1970-01-01 09:00;"
+        " sleeping until: 0/1970-01-01 00:00",
         'Backup for "qwerty" too old:'
-        ' current time 43200/1970-01-01 12:00;'
-        ' last backup 28800/1970-01-01 08:00;'
-        ' max allowed delay: 3600/1970-01-01 01:00;'
-        ' delay allowed until: 32400/1970-01-01 09:00;'
-        ' sleeping until: 0/1970-01-01 00:00',
+        " current time 43200/1970-01-01 12:00;"
+        " last backup 28800/1970-01-01 08:00;"
+        " max allowed delay: 3600/1970-01-01 01:00;"
+        " delay allowed until: 32400/1970-01-01 09:00;"
+        " sleeping until: 0/1970-01-01 00:00",
     ]
     expected_messages = [
-        warning.replace('too old', 'debug info')
+        warning.replace("too old", "debug info")
         for warning in expected_warnings
     ]
     # Do not truncate diffs.
@@ -151,12 +151,12 @@ class TestCheckSentinels(unittest.TestCase):
     self.assertEqual(expected_messages, messages)
     self.assertEqual(expected_warnings, warnings)
 
-  @mock.patch('time.time')
+  @mock.patch("time.time")
   def test_one_backup_is_old(self, mock_time):
     """One backup (asdf) is old"""
-    host1 = 'asdf'
-    host2 = 'qwerty'
-    host3 = 'foobar'
+    host1 = "asdf"
+    host2 = "qwerty"
+    host3 = "foobar"
     hour = 60 * 60
     timestamps = {
         host1: 4 * hour,
@@ -181,22 +181,22 @@ class TestCheckSentinels(unittest.TestCase):
                                                max_global_delay=hour)
     expected_warnings = [
         'Backup for "asdf" too old:'
-        ' current time 30600/1970-01-01 08:30;'
-        ' last backup 14400/1970-01-01 04:00;'
-        ' max allowed delay: 7200/1970-01-01 02:00;'
-        ' delay allowed until: 21600/1970-01-01 06:00;'
-        ' sleeping until: 0/1970-01-01 00:00',
+        " current time 30600/1970-01-01 08:30;"
+        " last backup 14400/1970-01-01 04:00;"
+        " max allowed delay: 7200/1970-01-01 02:00;"
+        " delay allowed until: 21600/1970-01-01 06:00;"
+        " sleeping until: 0/1970-01-01 00:00",
     ]
     # Do not truncate diffs.
     self.maxDiff = None  # pylint: disable=invalid-name
     self.assertEqual(expected_warnings, warnings)
     self.assertEqual(3, len(messages))
 
-  @mock.patch('time.time')
+  @mock.patch("time.time")
   def test_one_host_is_sleeping(self, mock_time):
     """One host is sleeping, no warnings"""
-    host1 = 'asdf'
-    host2 = 'qwerty'
+    host1 = "asdf"
+    host2 = "qwerty"
     hour = 60 * 60
     timestamps = {
         host1: 4 * hour,
@@ -228,57 +228,57 @@ class TestMain(fake_filesystem_unittest.TestCase):
 
   def setUp(self):
     self.setUpPyfakefs()
-    self._testdir = '/test/dir'
+    self._testdir = "/test/dir"
     # pylint: disable=no-member
     # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
-    self.fs.create_file(os.path.join(self._testdir, 'qwerty'),
-                        contents='test test')
+    self.fs.create_file(os.path.join(self._testdir, "qwerty"),
+                        contents="test test")
 
   def test_bad_args(self):
     """Check that bad args are rejected."""
-    with self.assertRaisesRegex(cbs.Error, '^Usage:.*'):
-      cbs.main(argv=['argv0'])
-    with self.assertRaisesRegex(cbs.Error, '^Usage:.*'):
-      cbs.main(argv=['argv0', 'expected', 'not expected'])
-    with self.assertRaisesRegex(cbs.Error, '^Usage:.*'):
-      cbs.main(argv=['argv0', 'not a directory'])
+    with self.assertRaisesRegex(cbs.Error, "^Usage:.*"):
+      cbs.main(argv=["argv0"])
+    with self.assertRaisesRegex(cbs.Error, "^Usage:.*"):
+      cbs.main(argv=["argv0", "expected", "not expected"])
+    with self.assertRaisesRegex(cbs.Error, "^Usage:.*"):
+      cbs.main(argv=["argv0", "not a directory"])
 
-  @mock.patch('sys.exit')
-  @mock.patch('check_backup_sentinels.check_sentinels')
-  @mock.patch('check_backup_sentinels.parse_sentinels')
+  @mock.patch("sys.exit")
+  @mock.patch("check_backup_sentinels.check_sentinels")
+  @mock.patch("check_backup_sentinels.parse_sentinels")
   def test_no_warnings(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
     mock_check.return_value = ([], [])
-    with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
-      cbs.main(argv=['argv0', self._testdir])
+    with mock.patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+      cbs.main(argv=["argv0", self._testdir])
       warnings = mock_stderr.getvalue()
-      self.assertEqual('', warnings)
+      self.assertEqual("", warnings)
     mock_exit.assert_called_with(0)
 
-  @mock.patch('sys.exit')
-  @mock.patch('check_backup_sentinels.check_sentinels')
-  @mock.patch('check_backup_sentinels.parse_sentinels')
+  @mock.patch("sys.exit")
+  @mock.patch("check_backup_sentinels.check_sentinels")
+  @mock.patch("check_backup_sentinels.parse_sentinels")
   def test_warnings_are_printed(self, unused_mock_parse, mock_check, mock_exit):
     """Check that warnings are printed out."""
-    expected = ['warning warning']
+    expected = ["warning warning"]
     mock_check.return_value = (expected, [])
-    with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
-      cbs.main(argv=['argv0', self._testdir])
+    with mock.patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+      cbs.main(argv=["argv0", self._testdir])
       warnings = mock_stderr.getvalue()
-      self.assertEqual(f'{expected[0]}\n', warnings)
+      self.assertEqual(f"{expected[0]}\n", warnings)
     mock_exit.assert_called_with(1)
 
-  @mock.patch('sys.exit')
-  @mock.patch('check_backup_sentinels.check_sentinels')
-  @mock.patch('check_backup_sentinels.parse_sentinels')
+  @mock.patch("sys.exit")
+  @mock.patch("check_backup_sentinels.check_sentinels")
+  @mock.patch("check_backup_sentinels.parse_sentinels")
   def test_messages_are_printed(self, unused_mock_parse, mock_check, mock_exit):
     """Check that good args are accepted."""
-    mock_check.return_value = (['warning warning'], ['message message'])
-    with mock.patch('sys.stdin.isatty', return_value=True):
-      with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-        cbs.main(argv=['argv0', self._testdir])
+    mock_check.return_value = (["warning warning"], ["message message"])
+    with mock.patch("sys.stdin.isatty", return_value=True):
+      with mock.patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+        cbs.main(argv=["argv0", self._testdir])
         output = mock_stdout.getvalue()
-        self.assertEqual('message message\n', output)
+        self.assertEqual("message message\n", output)
     mock_exit.assert_called_with(1)
 
 
@@ -295,37 +295,37 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
       # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
       self.fs.create_file(filename, contents=contents)
 
-  @mock.patch('sys.exit')
-  @mock.patch('time.time')
+  @mock.patch("sys.exit")
+  @mock.patch("time.time")
   def test_integration(self, mock_time, mock_exit):
     """Integration test that produces warnings."""
-    testdir = '/test/check_sentinels'
-    host1 = os.path.join(testdir, 'asdf')
-    host2 = os.path.join(testdir, 'qwerty')
+    testdir = "/test/check_sentinels"
+    host1 = os.path.join(testdir, "asdf")
+    host2 = os.path.join(testdir, "qwerty")
     day = 24 * 60 * 60
     files = {
         host1: str(7 * day),
         host2: str(8 * day),
-        f'{host1}.{cbs.MAX_ALLOWED_DELAY}': str(day),
-        f'{host2}.{cbs.MAX_ALLOWED_DELAY}': str(2 * day),
+        f"{host1}.{cbs.MAX_ALLOWED_DELAY}": str(day),
+        f"{host2}.{cbs.MAX_ALLOWED_DELAY}": str(2 * day),
     }
     self.create_files_for_test(files)
     mock_time.return_value = 8.5 * day
-    with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-      with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
-        cbs.main(argv=['argv0', testdir])
+    with mock.patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+      with mock.patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+        cbs.main(argv=["argv0", testdir])
         messages = mock_stdout.getvalue()
         warnings = mock_stderr.getvalue()
         expected = ('Backup for "asdf" too old:'
-                    ' current time 734400/1970-01-09 12:00;'
-                    ' last backup 604800/1970-01-08 00:00;'
-                    ' max allowed delay: 86400/1970-01-02 00:00;'
-                    ' delay allowed until: 691200/1970-01-09 00:00;'
-                    ' sleeping until: 0/1970-01-01 00:00\n')
+                    " current time 734400/1970-01-09 12:00;"
+                    " last backup 604800/1970-01-08 00:00;"
+                    " max allowed delay: 86400/1970-01-02 00:00;"
+                    " delay allowed until: 691200/1970-01-09 00:00;"
+                    " sleeping until: 0/1970-01-01 00:00\n")
         self.assertEqual(expected, warnings)
-        self.assertEqual('', messages)
+        self.assertEqual("", messages)
     mock_exit.assert_called_with(1)
 
 
-if __name__ == '__main__':  # pragma: no mutate
+if __name__ == "__main__":  # pragma: no mutate
   unittest.main()

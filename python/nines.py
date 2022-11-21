@@ -11,7 +11,7 @@ Arguments >= %(PT)s (e.g. 75) are interpreted as percentages, arguments < %(PT)s
 are interpreted as a number of nines.
 """
 
-__author__ = 'johntobin@johntobin.ie (John Tobin)'
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 import argparse
 import itertools
@@ -39,12 +39,12 @@ def strip_trailing_zeros(*, number: float) -> str:
   # Don't mutate because '> 0' and '>= 0' aren't different in a meaningful way
   # here.
   string = str(number)
-  if string.find('.') > 0:  # pragma: no mutate
+  if string.find(".") > 0:  # pragma: no mutate
     # Strip 0, then ., so we don't strip '10.0' to '1'.
     # Mutating the rstrip() argument by adding 'XX' doesn't add any signal
     # because that just adds more characters to strip, and those characters can
     # never occur.
-    string = string.rstrip('0').rstrip('.')  # pragma: no mutate
+    string = string.rstrip("0").rstrip(".")  # pragma: no mutate
   return string
 
 
@@ -58,7 +58,7 @@ def format_duration(*, seconds: float) -> str:
   """
   time_units = {}
   seconds_so_far = 1
-  units = ((1, 'second'), (60, 'minute'), (60, 'hour'), (24, 'day'))
+  units = ((1, "second"), (60, "minute"), (60, "hour"), (24, "day"))
   for (number, label) in units:
     seconds_so_far *= number
     time_units[seconds_so_far] = label
@@ -67,12 +67,12 @@ def format_duration(*, seconds: float) -> str:
   for seconds_per_time_unit in sorted(time_units, reverse=True):
     if seconds_per_time_unit <= seconds:
       num_time_units, seconds = divmod(seconds, seconds_per_time_unit)
-      plural = ''
+      plural = ""
       if num_time_units > 1:
-        plural = 's'
+        plural = "s"
       durations.append(
-          f'{int(num_time_units)} {time_units[seconds_per_time_unit]}{plural}')
-  return ', '.join(durations)
+          f"{int(num_time_units)} {time_units[seconds_per_time_unit]}{plural}")
+  return ", ".join(durations)
 
 
 def parse_nines_arg(*, num_nines: str) -> float:
@@ -88,11 +88,11 @@ def parse_nines_arg(*, num_nines: str) -> float:
   try:
     parsed_num_nines = float(num_nines)
   except ValueError as err:
-    raise ValueError(f'Argument is not a number: {num_nines}') from err
+    raise ValueError(f"Argument is not a number: {num_nines}") from err
   if parsed_num_nines < 0:
-    raise ValueError(f'You cannot have a negative uptime: {num_nines}')
+    raise ValueError(f"You cannot have a negative uptime: {num_nines}")
   if parsed_num_nines > 100:
-    raise ValueError(f'You cannot have more than 100% uptime: {num_nines}')
+    raise ValueError(f"You cannot have more than 100% uptime: {num_nines}")
   if parsed_num_nines >= PERCENT_THRESHOLD:
     return parsed_num_nines
   return nines_into_percent(num_nines=parsed_num_nines)
@@ -113,14 +113,14 @@ def nines_into_percent(*, num_nines: float) -> float:
     parsed nines value.
   """
   num, remainder = divmod(num_nines, 1)
-  digits = ['0.']
-  digits.extend(list(itertools.repeat('9', int(num))))
+  digits = ["0."]
+  digits.extend(list(itertools.repeat("9", int(num))))
   # 0 -> '', 0.5 -> 5
   # Mutating the rstrip() argument by adding 'XX' doesn't add any signal because
   # that just adds more characters to strip, and those characters can never
   # occur.
-  digits.append(str(remainder).lstrip('0').lstrip('.'))  # pragma: no mutate
-  result = 100 * float(''.join(digits))
+  digits.append(str(remainder).lstrip("0").lstrip("."))  # pragma: no mutate
+  result = 100 * float("".join(digits))
   return result
 
 
@@ -138,25 +138,25 @@ def nines(*, num_nines: float, days: float) -> str:
   nines_no_zeroes = strip_trailing_zeros(number=num_nines)
   seconds = strip_trailing_zeros(number=downtime_seconds)
   human = format_duration(seconds=downtime_seconds)
-  return f'{nines_no_zeroes}%: {seconds} seconds ({human}) per {days} days'
+  return f"{nines_no_zeroes}%: {seconds} seconds ({human}) per {days} days"
 
 
 def main(*, argv: List[str]) -> None:
-  (usage, description) = __doc__.split('\n', maxsplit=1)
+  (usage, description) = __doc__.split("\n", maxsplit=1)
   description = description % {
-      'PT': PERCENT_THRESHOLD,
+      "PT": PERCENT_THRESHOLD,
   }
   argv_parser = argparse.ArgumentParser(description=description, usage=usage)
-  argv_parser.add_argument('nines',
-                           metavar='NUMBER_OF_NINES',
+  argv_parser.add_argument("nines",
+                           metavar="NUMBER_OF_NINES",
                            type=float,
-                           help='See usage for details')
-  argv_parser.add_argument('days',
-                           nargs='?',
-                           metavar='NUMBER_OF_DAYS',
+                           help="See usage for details")
+  argv_parser.add_argument("days",
+                           nargs="?",
+                           metavar="NUMBER_OF_DAYS",
                            default=365,
                            type=float,
-                           help='See usage for details')
+                           help="See usage for details")
   options = argv_parser.parse_args(argv[1:])
 
   print(
@@ -164,5 +164,5 @@ def main(*, argv: List[str]) -> None:
             days=options.days))
 
 
-if __name__ == '__main__':  # pragma: no mutate
+if __name__ == "__main__":  # pragma: no mutate
   main(argv=sys.argv)
