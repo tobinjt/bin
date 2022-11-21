@@ -10,21 +10,21 @@ __author__ = 'johntobin@johntobin.ie (John Tobin)'
 
 
 def make_natural_sort_key(something: str) -> List[Union[str, float]]:
-  """Create a list of keys to use when sorting."""
-  fields = re.split(r'(\d+(?:.\d+)?)', something)
-  converted_fields: List[Union[str, float]] = []
-  for field in fields:
-    try:
-      converted_fields.append(float(field))
-    except ValueError:
-      converted_fields.append(field)
-  return converted_fields
+    """Create a list of keys to use when sorting."""
+    fields = re.split(r'(\d+(?:.\d+)?)', something)
+    converted_fields: List[Union[str, float]] = []
+    for field in fields:
+        try:
+            converted_fields.append(float(field))
+        except ValueError:
+            converted_fields.append(field)
+    return converted_fields
 
 
 def main(argv):
-  for entry in sorted(fileinput.input(argv), key=make_natural_sort_key):
-    print(entry, end='')
+    for entry in sorted(fileinput.input(argv), key=make_natural_sort_key):
+        print(entry, end='')
 
 
 if __name__ == '__main__':
-  main(sys.argv[1:])
+    main(sys.argv[1:])
