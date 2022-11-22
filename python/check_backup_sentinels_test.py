@@ -71,8 +71,9 @@ class TestCheckSentinels(unittest.TestCase):
     def test_no_sentinels(self):
         """Test that zero sentinels causes a warning."""
         sentinels = cbs.ParsedSentinels({}, {}, {})
-        (warnings, messages) = cbs.check_sentinels(sentinels=sentinels,
-                                                   max_global_delay=11)
+        (warnings, messages) = cbs.check_sentinels(
+            sentinels=sentinels, max_global_delay=11
+        )
         expected = ["Zero sentinels passed, something is wrong."]
         self.assertEqual(expected, warnings)
         self.assertEqual(expected, messages)
@@ -95,12 +96,13 @@ class TestCheckSentinels(unittest.TestCase):
             host1: 0,
             host2: 0,
         }
-        sentinels = cbs.ParsedSentinels(timestamps=timestamps,
-                                        max_allowed_delay=max_allowed_delay,
-                                        sleeping_until=sleeping_until)
+        sentinels = cbs.ParsedSentinels(
+            timestamps=timestamps,
+            max_allowed_delay=max_allowed_delay,
+            sleeping_until=sleeping_until,
+        )
         mock_time.return_value = 8.5 * hour
-        (warnings, _) = cbs.check_sentinels(sentinels=sentinels,
-                                            max_global_delay=hour)
+        (warnings, _) = cbs.check_sentinels(sentinels=sentinels, max_global_delay=hour)
         self.assertEqual([], warnings)
 
     @mock.patch("time.time")
@@ -121,12 +123,15 @@ class TestCheckSentinels(unittest.TestCase):
             host1: 0,
             host2: 0,
         }
-        sentinels = cbs.ParsedSentinels(timestamps=timestamps,
-                                        max_allowed_delay=max_allowed_delay,
-                                        sleeping_until=sleeping_until)
+        sentinels = cbs.ParsedSentinels(
+            timestamps=timestamps,
+            max_allowed_delay=max_allowed_delay,
+            sleeping_until=sleeping_until,
+        )
         mock_time.return_value = 12 * hour
-        (warnings, messages) = cbs.check_sentinels(sentinels=sentinels,
-                                                   max_global_delay=hour)
+        (warnings, messages) = cbs.check_sentinels(
+            sentinels=sentinels, max_global_delay=hour
+        )
         expected_warnings = [
             "All backups are delayed by at least 3600 seconds",
             'Backup for "asdf" too old:'
@@ -143,8 +148,7 @@ class TestCheckSentinels(unittest.TestCase):
             " sleeping until: 0/1970-01-01 00:00",
         ]
         expected_messages = [
-            warning.replace("too old", "debug info")
-            for warning in expected_warnings
+            warning.replace("too old", "debug info") for warning in expected_warnings
         ]
         # Do not truncate diffs.
         self.maxDiff = None  # pylint: disable=invalid-name
@@ -173,12 +177,15 @@ class TestCheckSentinels(unittest.TestCase):
             host2: 0,
             host3: 0,
         }
-        sentinels = cbs.ParsedSentinels(timestamps=timestamps,
-                                        max_allowed_delay=max_allowed_delay,
-                                        sleeping_until=sleeping_until)
+        sentinels = cbs.ParsedSentinels(
+            timestamps=timestamps,
+            max_allowed_delay=max_allowed_delay,
+            sleeping_until=sleeping_until,
+        )
         mock_time.return_value = 8.5 * hour
-        (warnings, messages) = cbs.check_sentinels(sentinels=sentinels,
-                                                   max_global_delay=hour)
+        (warnings, messages) = cbs.check_sentinels(
+            sentinels=sentinels, max_global_delay=hour
+        )
         expected_warnings = [
             'Backup for "asdf" too old:'
             " current time 30600/1970-01-01 08:30;"
@@ -210,13 +217,16 @@ class TestCheckSentinels(unittest.TestCase):
             host1: 8 * hour,
             host2: 0,
         }
-        sentinels = cbs.ParsedSentinels(timestamps=timestamps,
-                                        max_allowed_delay=max_allowed_delay,
-                                        sleeping_until=sleeping_until)
+        sentinels = cbs.ParsedSentinels(
+            timestamps=timestamps,
+            max_allowed_delay=max_allowed_delay,
+            sleeping_until=sleeping_until,
+        )
         # 8 hours sleeping + 2 hours max delay > 9 hours current time.
         mock_time.return_value = 9 * hour
-        (warnings, messages) = cbs.check_sentinels(sentinels=sentinels,
-                                                   max_global_delay=hour)
+        (warnings, messages) = cbs.check_sentinels(
+            sentinels=sentinels, max_global_delay=hour
+        )
         # Do not truncate diffs.
         self.maxDiff = None  # pylint: disable=invalid-name
         self.assertEqual([], warnings)
@@ -231,8 +241,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
         self._testdir = "/test/dir"
         # pylint: disable=no-member
         # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
-        self.fs.create_file(os.path.join(self._testdir, "qwerty"),
-                            contents="test test")
+        self.fs.create_file(os.path.join(self._testdir, "qwerty"), contents="test test")
 
     def test_bad_args(self):
         """Check that bad args are rejected."""
@@ -316,12 +325,14 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 cbs.main(argv=["argv0", testdir])
                 messages = mock_stdout.getvalue()
                 warnings = mock_stderr.getvalue()
-                expected = ('Backup for "asdf" too old:'
-                            " current time 734400/1970-01-09 12:00;"
-                            " last backup 604800/1970-01-08 00:00;"
-                            " max allowed delay: 86400/1970-01-02 00:00;"
-                            " delay allowed until: 691200/1970-01-09 00:00;"
-                            " sleeping until: 0/1970-01-01 00:00\n")
+                expected = (
+                    'Backup for "asdf" too old:'
+                    " current time 734400/1970-01-09 12:00;"
+                    " last backup 604800/1970-01-08 00:00;"
+                    " max allowed delay: 86400/1970-01-02 00:00;"
+                    " delay allowed until: 691200/1970-01-09 00:00;"
+                    " sleeping until: 0/1970-01-01 00:00\n"
+                )
                 self.assertEqual(expected, warnings)
                 self.assertEqual("", messages)
         mock_exit.assert_called_with(1)

@@ -148,21 +148,20 @@ def main(*, argv: List[str]) -> None:
         "PT": PERCENT_THRESHOLD,
     }
     argv_parser = argparse.ArgumentParser(description=description, usage=usage)
-    argv_parser.add_argument("nines",
-                             metavar="NUMBER_OF_NINES",
-                             type=float,
-                             help="See usage for details")
-    argv_parser.add_argument("days",
-                             nargs="?",
-                             metavar="NUMBER_OF_DAYS",
-                             default=365,
-                             type=float,
-                             help="See usage for details")
+    argv_parser.add_argument(
+        "nines", metavar="NUMBER_OF_NINES", type=float, help="See usage for details"
+    )
+    argv_parser.add_argument(
+        "days",
+        nargs="?",
+        metavar="NUMBER_OF_DAYS",
+        default=365,
+        type=float,
+        help="See usage for details",
+    )
     options = argv_parser.parse_args(argv[1:])
 
-    print(
-        nines(num_nines=parse_nines_arg(num_nines=options.nines),
-              days=options.days))
+    print(nines(num_nines=parse_nines_arg(num_nines=options.nines), days=options.days))
 
 
 if __name__ == "__main__":  # pragma: no mutate

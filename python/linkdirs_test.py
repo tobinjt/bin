@@ -126,11 +126,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.create_files(f"{src_file}={dest_file}")
         self.assert_files_are_linked(src_file, dest_file)
 
-        linkdirs.real_main(argv=[
-            "linkdirs",
-            os.path.dirname(src_file),
-            os.path.dirname(dest_file)
-        ])
+        linkdirs.real_main(
+            argv=["linkdirs", os.path.dirname(src_file), os.path.dirname(dest_file)]
+        )
         self.assert_files_are_linked(src_file, dest_file)
 
     def test_dest_perms_unchanged(self):
@@ -147,11 +145,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         os.chmod(dest_dir, mode)
 
         with mock.patch("os.chmod") as fake_chmod:
-            linkdirs.real_main(argv=[
-                "linkdirs",
-                os.path.dirname(src_dir),
-                os.path.dirname(dest_dir)
-            ])
+            linkdirs.real_main(
+                argv=["linkdirs", os.path.dirname(src_dir), os.path.dirname(dest_dir)]
+            )
             fake_chmod.assert_not_called()
 
     def test_dest_perms_are_changed(self):
@@ -176,11 +172,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             else:
                 os.chmod(d_dir, src_mode)
 
-        linkdirs.real_main(argv=[
-            "linkdirs",
-            os.path.dirname(src_dir),
-            os.path.dirname(dest_dir)
-        ])
+        linkdirs.real_main(
+            argv=["linkdirs", os.path.dirname(src_dir), os.path.dirname(dest_dir)]
+        )
         self.assertEqual(src_mode, stat.S_IMODE(os.stat(dest_dir).st_mode))
         for subdir in subdirs:
             d_dir = os.path.join(dest_dir, subdir)
@@ -192,11 +186,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.create_files(f"{src_file}:qwerty")
 
         dest_file = "/z/y/x/file"
-        linkdirs.real_main(argv=[
-            "linkdirs",
-            os.path.dirname(src_file),
-            os.path.dirname(dest_file)
-        ])
+        linkdirs.real_main(
+            argv=["linkdirs", os.path.dirname(src_file), os.path.dirname(dest_file)]
+        )
         self.assert_files_are_linked(src_file, dest_file)
 
     def test_source_dir_replaced_once(self):
@@ -216,15 +208,14 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.create_files(f"{dest_file}:qwerty")
 
         with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
-            linkdirs.real_main(argv=[
-                "linkdirs",
-                os.path.dirname(src_file),
-                os.path.dirname(dest_file)
-            ])
+            linkdirs.real_main(
+                argv=["linkdirs", os.path.dirname(src_file), os.path.dirname(dest_file)]
+            )
             self.assert_files_are_linked(src_file, dest_file)
             expected = (
                 "/a/b/c/file and /z/y/x/file are different files but have the"
-                " same contents; deleting and linking\n")
+                " same contents; deleting and linking\n"
+            )
             self.assertMultiLineEqual(expected, mock_stdout.getvalue())
 
     def test_skip_symlinks(self):
@@ -233,12 +224,14 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         dest_dir = "/z/y/x"
         os.makedirs(src_dir)
         os.makedirs(dest_dir)
-        os.symlink(os.path.join(src_dir, "sym-source"),
-                   os.path.join(src_dir, "sym-dest"))
+        os.symlink(
+            os.path.join(src_dir, "sym-source"), os.path.join(src_dir, "sym-dest")
+        )
 
         with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             linkdirs.real_main(
-                argv=["linkdirs", "--ignore_symlinks", src_dir, dest_dir])
+                argv=["linkdirs", "--ignore_symlinks", src_dir, dest_dir]
+            )
             actual = mock_stdout.getvalue()
             self.assertFalse("Skipping symbolic link" in actual)
 
@@ -275,11 +268,16 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         with open(skip_filename, "w", encoding="utf8") as skip_fh:
             skip_fh.write(skip_contents)
 
-        actual = linkdirs.real_main(argv=[
-            "linkdirs", "--report_unexpected_files",
-            "--ignore_unexpected_children", f"--ignore_file={skip_filename}",
-            src_dir, dest_dir
-        ])
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                "--report_unexpected_files",
+                "--ignore_unexpected_children",
+                f"--ignore_file={skip_filename}",
+                src_dir,
+                dest_dir,
+            ]
+        )
         # TODO: change this to a multi-line string?
         expected = [
             "Unexpected directory: /z/y/x/asdf/delete dir with spaces",
@@ -316,10 +314,15 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """
         self.create_files(files)
 
-        actual = linkdirs.real_main(argv=[
-            "linkdirs", "--delete_unexpected_files",
-            "--ignore_unexpected_children", src_dir, dest_dir
-        ])
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                "--delete_unexpected_files",
+                "--ignore_unexpected_children",
+                src_dir,
+                dest_dir,
+            ]
+        )
         self.assertEqual([], actual)
         # Unexpected files should be deleted.
         self.assertFalse(os.path.exists("/z/y/x/the_brain"))
@@ -345,10 +348,15 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """
         self.create_files(files)
 
-        actual = linkdirs.real_main(argv=[
-            "linkdirs", "--delete_unexpected_files",
-            "--ignore_unexpected_children", src_dir, dest_dir
-        ])
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                "--delete_unexpected_files",
+                "--ignore_unexpected_children",
+                src_dir,
+                dest_dir,
+            ]
+        )
         expected = [
             "Refusing to delete directories without --force/-f:"
             " /z/y/x/asdf/report_me /z/y/x/asdf/report_me_too",
@@ -384,10 +392,16 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """
         self.create_files(files)
 
-        actual = linkdirs.real_main(argv=[
-            "linkdirs", "--delete_unexpected_files",
-            "--ignore_unexpected_children", "--force", src_dir, dest_dir
-        ])
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                "--delete_unexpected_files",
+                "--ignore_unexpected_children",
+                "--force",
+                src_dir,
+                dest_dir,
+            ]
+        )
         self.assertEqual([], actual)
         # Unexpected files should be deleted.
         self.assertFalse(os.path.exists("/z/y/x/the_brain"))
@@ -442,16 +456,18 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             skip_fh.write(skip_contents)
 
         dest_dir = "/z/y/x"
-        linkdirs.real_main(argv=[
-            "linkdirs",
-            f"--ignore_file={skip_filename}",
-            # Report unexpected files because it exercises more code
-            # paths.
-            "--report_unexpected_files",
-            "--ignore_unexpected_children",
-            src_dir,
-            dest_dir
-        ])
+        linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                f"--ignore_file={skip_filename}",
+                # Report unexpected files because it exercises more code
+                # paths.
+                "--report_unexpected_files",
+                "--ignore_unexpected_children",
+                src_dir,
+                dest_dir,
+            ]
+        )
 
         files = []
         for dirpath, unused_x, filenames in os.walk(dest_dir):
@@ -459,8 +475,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 files.append(os.path.join(dirpath, filename))
         files.sort()
         expected = [
-            "harry/link_me", "harry/me_too", "ignore/subdir-link/test3",
-            "murphy/link_me", "murphy/me_too"
+            "harry/link_me",
+            "harry/me_too",
+            "ignore/subdir-link/test3",
+            "murphy/link_me",
+            "murphy/me_too",
         ]
         expected = [os.path.join(dest_dir, x) for x in expected]
         self.assertEqual(expected, files)
@@ -476,11 +495,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.create_files(files)
 
         # Test without --force to generate diffs.
-        actual = linkdirs.real_main(argv=[
-            "linkdirs",
-            os.path.dirname(src_file),
-            os.path.dirname(dest_file)
-        ])
+        actual = linkdirs.real_main(
+            argv=["linkdirs", os.path.dirname(src_file), os.path.dirname(dest_file)]
+        )
         # Strip off timestamps.
         # pylint: disable=not-an-iterable
         actual = [re.sub(r"\t.*$", "\t", x) for x in actual]
@@ -495,25 +512,30 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.assertEqual(expected, actual)
 
         # Test with --force to overwrite.
-        actual = linkdirs.real_main(argv=[
-            "linkdirs", "--force",
-            os.path.dirname(src_file),
-            os.path.dirname(dest_file)
-        ])
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                "--force",
+                os.path.dirname(src_file),
+                os.path.dirname(dest_file),
+            ]
+        )
         self.assertEqual([], actual)
         self.assert_files_are_linked(src_file, dest_file)
 
     def test_argument_handling(self):
         """Bad arguments are caught."""
-        self.assertEqual([
-            "linkdirs [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY"
-        ], linkdirs.real_main(argv=["linkdirs", "--force", "/asdf"]))
+        self.assertEqual(
+            ["linkdirs [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY"],
+            linkdirs.real_main(argv=["linkdirs", "--force", "/asdf"]),
+        )
         expected = [
             "Cannot enable --delete_unexpected_files without "
             "--ignore_unexpected_children"
         ]
         actual = linkdirs.real_main(
-            argv=["linkdirs", "--delete_unexpected_files", "/asdf", "/qwerty"])
+            argv=["linkdirs", "--delete_unexpected_files", "/asdf", "/qwerty"]
+        )
         self.assertEqual(expected, actual)
 
     def test_force_deletes_dest(self):
@@ -535,12 +557,14 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
         with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             messages = linkdirs.real_main(
-                argv=["linkdirs", "--force", src_dir, dest_dir])
+                argv=["linkdirs", "--force", src_dir, dest_dir]
+            )
             self.assertEqual([], messages)
             self.assertEqual("", mock_stdout.getvalue())
             for filename in ["file1", "file2", "file3", "dir1/file4"]:
-                self.assert_files_are_linked(os.path.join(src_dir, filename),
-                                             os.path.join(dest_dir, filename))
+                self.assert_files_are_linked(
+                    os.path.join(src_dir, filename), os.path.join(dest_dir, filename)
+                )
 
     def test_dryrun(self):
         """Dry-run."""
@@ -577,14 +601,13 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """
         self.create_files(files)
         # Test handling of source symlinks - not supported by create_files().
-        os.symlink(os.path.join(src_dir, "file5"),
-                   os.path.join(src_dir, "file6"))
-        os.symlink(os.path.join(src_dir, "file7"),
-                   os.path.join(src_dir, "file8"))
+        os.symlink(os.path.join(src_dir, "file5"), os.path.join(src_dir, "file6"))
+        os.symlink(os.path.join(src_dir, "file7"), os.path.join(src_dir, "file8"))
 
         with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             messages = linkdirs.real_main(
-                argv=["linkdirs", "--dryrun", src_dir, dest_dir])
+                argv=["linkdirs", "--dryrun", src_dir, dest_dir]
+            )
             # Strip off timestamps.
             # pylint: disable=not-an-iterable
             messages = [re.sub(r"\t.*$", "\t", x) for x in messages]
@@ -605,26 +628,30 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             ]
             self.assertEqual(expected, messages)
             self.assertFalse(
-                os.path.samefile(os.path.join(src_dir, "file1"),
-                                 os.path.join(dest_dir, "file1")))
+                os.path.samefile(
+                    os.path.join(src_dir, "file1"), os.path.join(dest_dir, "file1")
+                )
+            )
             self.assertTrue(os.path.exists(os.path.join(dest_dir, "file1")))
             self.assertFalse(os.path.exists(os.path.join(dest_dir, "file2")))
             self.assertTrue(os.path.exists(os.path.join(dest_dir, "file3")))
             self.assertFalse(os.path.isdir(os.path.join(dest_dir, "dir2")))
-            stdout = "\n".join([
-                "chmod 0777 /z/y/x/dir1",
-                "mkdir /z/y/x/dir2",
-                "ln /a/b/c/file2 /z/y/x/file2",
-                "/a/b/c/file3 and /z/y/x/file3 are different files but have the same"
-                " contents; deleting and linking",
-                "rm /z/y/x/file3",
-                "ln /a/b/c/file3 /z/y/x/file3",
-                "ln /a/b/c/dir1/file1 /z/y/x/dir1/file1",
-                "ln /a/b/c/dir2/file1 /z/y/x/dir2/file1",
-                "ln /a/b/c/dir3/file1 /z/y/x/dir3/file1",
-                "ln /a/b/c/dir4/file1 /z/y/x/dir4/file1",
-                "",
-            ])
+            stdout = "\n".join(
+                [
+                    "chmod 0777 /z/y/x/dir1",
+                    "mkdir /z/y/x/dir2",
+                    "ln /a/b/c/file2 /z/y/x/file2",
+                    "/a/b/c/file3 and /z/y/x/file3 are different files but have the"
+                    " same contents; deleting and linking",
+                    "rm /z/y/x/file3",
+                    "ln /a/b/c/file3 /z/y/x/file3",
+                    "ln /a/b/c/dir1/file1 /z/y/x/dir1/file1",
+                    "ln /a/b/c/dir2/file1 /z/y/x/dir2/file1",
+                    "ln /a/b/c/dir3/file1 /z/y/x/dir3/file1",
+                    "ln /a/b/c/dir4/file1 /z/y/x/dir4/file1",
+                    "",
+                ]
+            )
             self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
 
 
@@ -643,8 +670,7 @@ class TestUsage(unittest.TestCase):
             "usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY\n"
             "pytest: error: the following arguments are required: DIRECTORIES\n"
         )
-        self.assertEqual(expected,
-                         mock_stderr.getvalue().replace("pytest-3", "pytest"))
+        self.assertEqual(expected, mock_stderr.getvalue().replace("pytest-3", "pytest"))
 
     @mock.patch("sys.exit")
     @mock.patch("sys.stdout", new_callable=io.StringIO)
@@ -669,18 +695,19 @@ class TestUsage(unittest.TestCase):
         ]
         # The position of newlines depends on the width of the terminal, so remove
         # them for consistency.  Likewise spaces.
-        stdout = mock_stdout.getvalue().replace("\n", " ").replace(
-            "pytest-3", "pytest")
+        stdout = mock_stdout.getvalue().replace("\n", " ").replace("pytest-3", "pytest")
         stdout = re.sub(r"\s+", " ", stdout)
         for substring in substrings:
             with self.subTest(f"Testing -->>{substring}<<--"):
                 self.assertIn(substring, stdout)
         # Check that the description is set up properly.
         self.assertRegex(
-            stdout, r"^usage: pytest .OPTIONS. SOURCE_DIRECTORY ....."
+            stdout,
+            r"^usage: pytest .OPTIONS. SOURCE_DIRECTORY ....."
             r" DESTINATION_DIRECTORY Link all files in SOURCE_DIRECTORY"
             r" .SOURCE_DIRECTORY.... to DESTINATION_DIRECTORY, creating the"
-            r" destination directory hierarchy where")
+            r" destination directory hierarchy where",
+        )
 
 
 class TestMisc(fake_filesystem_unittest.TestCase):
@@ -708,13 +735,18 @@ class TestMisc(fake_filesystem_unittest.TestCase):
     def test_read_skip_patterns(self):
         """Test that patterns are read correctly."""
         filename = "ignore-file"
-        contents = textwrap.dedent("""
+        contents = (
+            textwrap.dedent(
+                """
         # Comments should be skipped.
         foo
         bar*baz
         dir/subdir
         # Empty lines should be skipped
-        """).strip() + "\n\n"
+        """
+            ).strip()
+            + "\n\n"
+        )
         self.fs.create_file(filename, contents=contents)
         expected = ["foo", "bar*baz", "dir/subdir"]
         actual = linkdirs.read_skip_patterns_from_file(filename=filename)

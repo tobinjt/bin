@@ -48,6 +48,7 @@ class ParsedSentinels:
         sleeping_until: timestamps for when sleeping machines are due back.
         max_allowed_delay: max delay, in seconds, for backups from a machine.
     """
+
     timestamps: SentinelMap
     sleeping_until: SentinelMap
     max_allowed_delay: SentinelMap
@@ -90,8 +91,9 @@ def parse_sentinels(*, directory: str, default_delay: int) -> ParsedSentinels:
     return data
 
 
-def check_sentinels(*, sentinels: ParsedSentinels,
-                    max_global_delay: int) -> Tuple[Warnings, Messages]:
+def check_sentinels(
+    *, sentinels: ParsedSentinels, max_global_delay: int
+) -> Tuple[Warnings, Messages]:
     """Check sentinels for backups that are too old and return warnings.
 
     Args:
@@ -105,12 +107,14 @@ def check_sentinels(*, sentinels: ParsedSentinels,
     warnings = Warnings([])
     messages = Messages([])
     now = int(time.time())
-    message = ('Backup for "%(host)s" too old:'
-               " current time %(now)d/%(now_human)s;"
-               " last backup %(last_backup)d/%(last_backup_human)s;"
-               " max allowed delay: %(max_delay)d/%(max_delay_human)s;"
-               " delay allowed until: %(delay_until)d/%(delay_until_human)s;"
-               " sleeping until: %(sleeping_until)d/%(sleeping_until_human)s")
+    message = (
+        'Backup for "%(host)s" too old:'
+        " current time %(now)d/%(now_human)s;"
+        " last backup %(last_backup)d/%(last_backup_human)s;"
+        " max allowed delay: %(max_delay)d/%(max_delay_human)s;"
+        " delay allowed until: %(delay_until)d/%(delay_until_human)s;"
+        " sleeping until: %(sleeping_until)d/%(sleeping_until_human)s"
+    )
     time_fmt = "%Y-%m-%d %H:%M"
 
     if not sentinels.timestamps:
@@ -121,13 +125,15 @@ def check_sentinels(*, sentinels: ParsedSentinels,
         return (warnings, messages)
 
     globally_delayed = [
-        host for host in sentinels.timestamps
+        host
+        for host in sentinels.timestamps
         if now - sentinels.timestamps[host] > max_global_delay
     ]
     if len(globally_delayed) == len(sentinels.timestamps):
         # pylint: disable=no-member,unsubscriptable-object
-        warnings.append("All backups are delayed by at least "
-                        f"{max_global_delay} seconds")
+        warnings.append(
+            "All backups are delayed by at least " f"{max_global_delay} seconds"
+        )
         messages.append(warnings[-1])
         # pylint: enable=no-member,unsubscriptable-object
 
@@ -144,10 +150,12 @@ def check_sentinels(*, sentinels: ParsedSentinels,
             "max_delay_human": time.strftime(time_fmt, time.gmtime(max_delay)),
             "delay_until": last_backup + max_delay,
             "delay_until_human": time.strftime(
-                time_fmt, time.gmtime(last_backup + max_delay)),
+                time_fmt, time.gmtime(last_backup + max_delay)
+            ),
             "sleeping_until": sleeping_until,
             "sleeping_until_human": time.strftime(
-                time_fmt, time.gmtime(sleeping_until)),
+                time_fmt, time.gmtime(sleeping_until)
+            ),
         }
         messages.append(warning)  # pylint: disable=no-member
 
@@ -164,7 +172,8 @@ def check_sentinels(*, sentinels: ParsedSentinels,
 
     # pylint: disable=not-an-iterable
     messages = Messages(
-        sorted(message.replace("too old", "debug info") for message in messages))
+        sorted(message.replace("too old", "debug info") for message in messages)
+    )
     # pylint: enable=not-an-iterable
     return (warnings, messages)
 
@@ -175,8 +184,7 @@ def main(*, argv: List[str]):
     # There's no benefit to mutating this constant.
     day = 24 * 60 * 60  # pragma: no mutate
     sentinels = parse_sentinels(directory=argv[1], default_delay=day)
-    (warnings, messages) = check_sentinels(sentinels=sentinels,
-                                           max_global_delay=day)
+    (warnings, messages) = check_sentinels(sentinels=sentinels, max_global_delay=day)
     # pylint: disable=not-an-iterable
     if sys.stdin.isatty():
         for line in messages:

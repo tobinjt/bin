@@ -17,41 +17,62 @@ class TestArgumentParsing(unittest.TestCase):
 
         tests = [
             # Very simple test.
-            (["1", "asdf"], {
-                "columns": [1],
-                "filenames": ["asdf"],
-            }),
+            (
+                ["1", "asdf"],
+                {
+                    "columns": [1],
+                    "filenames": ["asdf"],
+                },
+            ),
             # Negative index.
-            (["--", "-1", "asdf"], {
-                "columns": [-1],
-                "filenames": ["asdf"],
-            }),
+            (
+                ["--", "-1", "asdf"],
+                {
+                    "columns": [-1],
+                    "filenames": ["asdf"],
+                },
+            ),
             # The second digit should be a filename.
             # The second non-digit argument should be accepted.
-            (["1", "asdf", "2", "qwerty"], {
-                "columns": [1],
-                "filenames": ["asdf", "2", "qwerty"],
-            }),
+            (
+                ["1", "asdf", "2", "qwerty"],
+                {
+                    "columns": [1],
+                    "filenames": ["asdf", "2", "qwerty"],
+                },
+            ),
             # Support ranges.
-            (["1:4", "asdf", "2"], {
-                "columns": [1, 2, 3, 4],
-                "filenames": ["asdf", "2"],
-            }),
+            (
+                ["1:4", "asdf", "2"],
+                {
+                    "columns": [1, 2, 3, 4],
+                    "filenames": ["asdf", "2"],
+                },
+            ),
             # Reversed ranges.
-            (["8:4", "asdf", "2"], {
-                "columns": [8, 7, 6, 5, 4],
-                "filenames": ["asdf", "2"],
-            }),
+            (
+                ["8:4", "asdf", "2"],
+                {
+                    "columns": [8, 7, 6, 5, 4],
+                    "filenames": ["asdf", "2"],
+                },
+            ),
             # Negative ranges.
-            (["--", "-4:-1", "asdf", "2"], {
-                "columns": [-4, -3, -2, -1],
-                "filenames": ["asdf", "2"],
-            }),
+            (
+                ["--", "-4:-1", "asdf", "2"],
+                {
+                    "columns": [-4, -3, -2, -1],
+                    "filenames": ["asdf", "2"],
+                },
+            ),
             # Ranges with same start and end.
-            (["4:4", "asdf", "2"], {
-                "columns": [4],
-                "filenames": ["asdf", "2"],
-            }),
+            (
+                ["4:4", "asdf", "2"],
+                {
+                    "columns": [4],
+                    "filenames": ["asdf", "2"],
+                },
+            ),
         ]
         for (args, expected) in tests:
             with self.subTest(f"Parsing {args}"):
@@ -65,7 +86,8 @@ class TestArgumentParsing(unittest.TestCase):
         with mock.patch("argparse.ArgumentParser.error") as mock_error:
             colx.parse_arguments(argv=["asdf"])
             mock_error.assert_called_once_with(
-                "At least one COLUMN argument is required.")
+                "At least one COLUMN argument is required."
+            )
 
     @mock.patch("sys.exit")
     @mock.patch("sys.stdout", new_callable=io.StringIO)
@@ -77,9 +99,9 @@ class TestArgumentParsing(unittest.TestCase):
         # The name of the program is pytest when running tests.
         expected = (
             "usage: pytest [OPTIONS] COLUMN [COLUMNS] [FILES]\n"
-            "pytest: error: At least one COLUMN argument is required.\n")
-        self.assertEqual(expected,
-                         mock_stderr.getvalue().replace("pytest-3", "pytest"))
+            "pytest: error: At least one COLUMN argument is required.\n"
+        )
+        self.assertEqual(expected, mock_stderr.getvalue().replace("pytest-3", "pytest"))
 
     @mock.patch("sys.exit")
     @mock.patch("sys.stdout", new_callable=io.StringIO)
@@ -119,10 +141,9 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
         filename = "input"
         with open(filename, "w", encoding="utf8") as tfh:
             tfh.write("one two three\n")
-        output = colx.process_files(filenames=[filename],
-                                    columns=[1, 3],
-                                    delimiter=" ",
-                                    separator=":")
+        output = colx.process_files(
+            filenames=[filename], columns=[1, 3], delimiter=" ", separator=":"
+        )
         self.assertEqual(["one:three"], output)
 
     def test_strip_empty_columns(self):
@@ -135,10 +156,9 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
             filename = "input"
             with open(filename, "w", encoding="utf8") as tfh:
                 tfh.write(test_input)
-            output = colx.process_files(filenames=[filename],
-                                        columns=[1, 2],
-                                        delimiter=" ",
-                                        separator=":")
+            output = colx.process_files(
+                filenames=[filename], columns=[1, 2], delimiter=" ", separator=":"
+            )
             self.assertEqual([test_output], output)
 
     def test_all_empty_columns(self):
@@ -146,10 +166,9 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
         filename = "input"
         with open(filename, "w", encoding="utf8") as tfh:
             tfh.write("!!!!\n")
-        output = colx.process_files(filenames=[filename],
-                                    columns=[2, 3],
-                                    delimiter="!",
-                                    separator=":")
+        output = colx.process_files(
+            filenames=[filename], columns=[2, 3], delimiter="!", separator=":"
+        )
         self.assertEqual([""], output)
 
     def test_column_too_large(self):
@@ -157,10 +176,9 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
         filename = "input"
         with open(filename, "w", encoding="utf8") as tfh:
             tfh.write("one two\n")
-        output = colx.process_files(filenames=[filename],
-                                    columns=[1, 2, 7],
-                                    delimiter=" ",
-                                    separator=":")
+        output = colx.process_files(
+            filenames=[filename], columns=[1, 2, 7], delimiter=" ", separator=":"
+        )
         self.assertEqual(["one:two"], output)
 
 

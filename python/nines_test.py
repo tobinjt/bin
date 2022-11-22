@@ -35,9 +35,9 @@ class TestParsing(unittest.TestCase):
             ("80", 80),
             ("100", 100),
         ]:
-            self.assertAlmostEqual(result,
-                                   nines.parse_nines_arg(num_nines=nine),
-                                   places=10)
+            self.assertAlmostEqual(
+                result, nines.parse_nines_arg(num_nines=nine), places=10
+            )
 
         for nine, message in [
             ("as", "^Argument is not a number"),
@@ -76,7 +76,7 @@ class TestMain(unittest.TestCase):
             nines.main(argv=["argv0", arg])
         expected = [
             "99%: 315360 seconds (3 days, 15 hours, 36 minutes) per 365 days",
-            "99.99999000000001%: 3.1535999965194605 seconds (3 seconds) per 365 "
+            "99.99999000000001%: 3.1535999965194605 seconds (3 seconds) per 365 ",
         ]
         output = mock_stdout.getvalue()
         for exp in expected:
@@ -90,11 +90,12 @@ class TestMain(unittest.TestCase):
         """Test no args."""
         nines.main(argv=["argv0"])
         # The name of the program is pytest when running tests.
-        expected = ("usage: pytest NUMBER_OF_NINES [NUMBER_OF_DAYS]\n"
-                    "pytest: error: the following arguments are required: "
-                    "NUMBER_OF_NINES\n")
-        self.assertEqual(expected,
-                         mock_stderr.getvalue().replace("pytest-3", "pytest"))
+        expected = (
+            "usage: pytest NUMBER_OF_NINES [NUMBER_OF_DAYS]\n"
+            "pytest: error: the following arguments are required: "
+            "NUMBER_OF_NINES\n"
+        )
+        self.assertEqual(expected, mock_stderr.getvalue().replace("pytest-3", "pytest"))
         mock_exit.assert_called()
 
     @mock.patch("nines.parse_nines_arg", return_value=99)
@@ -113,8 +114,7 @@ class TestMain(unittest.TestCase):
         ]
         # The position of newlines depends on the width of the terminal, so remove
         # them for consistency.
-        stdout = mock_stdout.getvalue().replace("\n", " ").replace(
-            "pytest-3", "pytest")
+        stdout = mock_stdout.getvalue().replace("\n", " ").replace("pytest-3", "pytest")
         for substring in substrings:
             with self.subTest(f"Testing -->>{substring}<<--"):
                 self.assertIn(substring, stdout)
