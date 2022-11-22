@@ -491,9 +491,7 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
     unexpected_paths.files.sort()
     unexpected_msgs = Messages([])
     unexpected_msgs.extend(  # pylint: disable=no-member
-        [
-            f"Unexpected directory: {path}" for path in unexpected_paths.directories
-        ]
+        [f"Unexpected directory: {path}" for path in unexpected_paths.directories]
     )
     unexpected_msgs.extend(  # pylint: disable=no-member
         [f"Unexpected file: {path}" for path in unexpected_paths.files]

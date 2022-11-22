@@ -29,6 +29,12 @@ repos:
     pass_filenames: false
     files: .*
     entry: make bats_tests
+  # Using this instead of a packaged yapf check because it's trivial.
+  - id: black
+    name: Run `black`
+    language: system
+    types: [python]
+    entry: black --diff --check
   # Using this instead of a packaged mypy check because the packaged one
   # doesn't find modules in virtualenv.
   - id: mypy
@@ -54,12 +60,6 @@ repos:
     language: system
     types: [shell]
     entry: shellcheck
-  # Using this instead of a packaged yapf check because it's trivial.
-  - id: yapf
-    name: Run `yapf`
-    language: system
-    types: [python]
-    entry: true yapf -i
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.9.0
   hooks:
