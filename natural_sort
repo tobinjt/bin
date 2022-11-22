@@ -6,12 +6,12 @@ import re
 import sys
 from typing import List, Union
 
-__author__ = 'johntobin@johntobin.ie (John Tobin)'
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
 def make_natural_sort_key(something: str) -> List[Union[str, float]]:
     """Create a list of keys to use when sorting."""
-    fields = re.split(r'(\d+(?:.\d+)?)', something)
+    fields = re.split(r"(\d+(?:.\d+)?)", something)
     converted_fields: List[Union[str, float]] = []
     for field in fields:
         try:
@@ -23,8 +23,8 @@ def make_natural_sort_key(something: str) -> List[Union[str, float]]:
 
 def main(argv):
     for entry in sorted(fileinput.input(argv), key=make_natural_sort_key):
-        print(entry, end='')
+        print(entry, end="")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])
