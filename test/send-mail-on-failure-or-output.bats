@@ -61,12 +61,12 @@ function test_mail_should_be_sent() { # @test
 
   run send-mail-on-failure-or-output failure@stderr-output ls /non-existent
   assert_failure
-  assert_line --partial "ls: /non-existent: No such file or directory"
+  assert_line --partial "No such file or directory"
 
   run send-mail-on-failure-or-output --only_on_failure \
     failure@stderr-output ls /non-existent
   assert_failure
-  assert_line --partial "ls: /non-existent: No such file or directory"
+  assert_line --partial "No such file or directory"
 
   cat > "${BATS_TEST_TMPDIR}/output-to-stderr" <<'OUTPUT_TO_STDERR'
 #!/bin/bash

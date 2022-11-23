@@ -61,7 +61,7 @@ INPUT
 # Print the first line.
 sed -n -e '1p' "${tmpfile}"
 # Delete the first line.
-sed -i '' -e '1d' "${tmpfile}"
+sed -i.unused-backup -e '1d' "${tmpfile}"
 FAKE_CURL
   chmod 755 "${BATS_TEST_TMPDIR}/curl"
 
