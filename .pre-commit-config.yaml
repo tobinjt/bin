@@ -29,7 +29,7 @@ repos:
         pass_filenames: false
         files: .*
         entry: make bats_tests
-      # Using this instead of a packaged yapf check because it's trivial.
+      # Using this instead of a packaged black check because it's trivial.
       - id: black
         name: Run `black`
         language: system
