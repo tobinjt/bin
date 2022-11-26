@@ -5,6 +5,7 @@ set -e -f -u -o pipefail
 dirs_to_update() {
   set +f
   echo "${HOME}/src/"*
+  echo "${HOME}/bin"
   set -f
 }
 
