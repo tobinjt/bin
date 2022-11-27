@@ -12,7 +12,7 @@ import difflib
 import filecmp
 import fnmatch
 import os
-import pipes
+import shlex
 import shutil
 import stat
 import sys
@@ -93,7 +93,7 @@ def safe_unlink(*, unlink_me: Path, dryrun: bool) -> None:
 
     if os.path.islink(unlink_me) or not os.path.isdir(unlink_me):
         if dryrun:
-            print(f"rm {pipes.quote(unlink_me)}")
+            print(f"rm {shlex.quote(unlink_me)}")
         else:
             try:
                 os.unlink(unlink_me)
@@ -102,7 +102,7 @@ def safe_unlink(*, unlink_me: Path, dryrun: bool) -> None:
                 pass
     else:
         if dryrun:
-            print(f"rm -r {pipes.quote(unlink_me)}")
+            print(f"rm -r {shlex.quote(unlink_me)}")
         else:
             shutil.rmtree(unlink_me)
 
@@ -120,7 +120,7 @@ def safe_link(*, source_filename: Path, dest_filename: Path, dryrun: bool) -> No
     """
 
     if dryrun:
-        print(f"ln {pipes.quote(source_filename)} {pipes.quote(dest_filename)}")
+        print(f"ln {shlex.quote(source_filename)} {shlex.quote(dest_filename)}")
     else:
         os.link(source_filename, dest_filename)
 
@@ -220,7 +220,7 @@ def link_dir(*, source: Path, dest: Path, options: argparse.Namespace) -> LinkRe
                     os.chmod(dest_dir, source_mode)
                 else:
                     mode = oct(source_mode).replace("o", "")
-                    print(f"chmod {mode} {pipes.quote(dest_dir)}")
+                    print(f"chmod {mode} {shlex.quote(dest_dir)}")
                 continue
 
             if os.path.exists(dest_dir):
@@ -232,7 +232,7 @@ def link_dir(*, source: Path, dest: Path, options: argparse.Namespace) -> LinkRe
                     continue
 
             if options.dryrun:
-                print(f"mkdir {pipes.quote(dest_dir)}")
+                print(f"mkdir {shlex.quote(dest_dir)}")
             else:
                 os.mkdir(dest_dir, source_mode)
                 os.chmod(dest_dir, source_mode)
@@ -498,14 +498,14 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
     )
     if unexpected_paths.files:
         unexpected_msgs.append(  # pylint: disable=no-member
-            "rm " + " ".join([pipes.quote(f) for f in unexpected_paths.files])
+            "rm " + " ".join([shlex.quote(f) for f in unexpected_paths.files])
         )
     if unexpected_paths.directories:
         # Descending sort by length, so that child directories are removed before
         # parent directories.
         unexpected_paths.directories.sort(key=len, reverse=True)
         unexpected_msgs.append(  # pylint: disable=no-member
-            "rmdir " + " ".join([pipes.quote(d) for d in unexpected_paths.directories])
+            "rmdir " + " ".join([shlex.quote(d) for d in unexpected_paths.directories])
         )
     return unexpected_msgs
 
