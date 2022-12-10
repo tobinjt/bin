@@ -16,12 +16,6 @@ if [[ -z "$(type -a vim)" ]]; then
   exit 1
 fi
 
-if [[ -n "$(type -a brew)" ]]; then
-  if ! brew list | grep python; then
-    brew install python
-  fi
-fi
-
 DESTDIR="${HOME}/src/dotfiles"
 readonly DESTDIR
 if [[ ! -d "${DESTDIR}" ]]; then
