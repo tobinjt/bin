@@ -22,11 +22,6 @@ if [[ -n "$(type -a brew)" ]]; then
   fi
 fi
 
-# Older version of Python don't have dataclasses, install it if necessary.
-if ! python3 -c 'import dataclasses'; then
-  pip3 install dataclasses
-fi
-
 DESTDIR="${HOME}/src/dotfiles"
 readonly DESTDIR
 if [[ ! -d "${DESTDIR}" ]]; then
