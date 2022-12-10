@@ -112,9 +112,6 @@ main() {
     npm install -g csslint
     # Golang.
     brew install go golangci-lint gopls gotags graphviz staticcheck
-    # Rust.
-    # brew install rustup-init
-    # rustup-init --no-modify-path
     cask_install "/Applications/calibre.app" calibre
   fi
   if [[ "${imac}" -eq 1 ]]; then
@@ -122,7 +119,7 @@ main() {
     brew install ffmpeg transmission-cli wget youtube-dl
     cask_install "/Applications/FileBot.app" filebot
   fi
-  # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
+  # Tools needed by vim; mostly Golang.
   install-extra-tools-for-vim
   # All the Python modules I need for development.
   update-python-modules

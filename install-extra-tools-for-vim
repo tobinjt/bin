@@ -45,8 +45,3 @@ SIGNING
     rm "${xml}"
   fi
 fi
-
-if type rustup >& /dev/null; then
-  rustup update
-  # TODO: I might need to sign binaries so I can debug.
-fi
