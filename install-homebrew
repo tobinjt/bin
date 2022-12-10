@@ -52,20 +52,27 @@ main() {
     return 1
   fi
 
-  local homebrew_dir="/usr/local/Cellar"
+  local uname_machine homebrew_base homebrew_dir
+  uname_machine="$(uname -m)"
+  if [[ "${uname_machine}" == "arm64" ]]; then
+    homebrew_base="/opt/homebrew"
+  else
+    homebrew_base="/opt/homebrew"
+  fi
+  homebrew_dir="${homebrew_base}/Cellar"
   if [[ -d "${homebrew_dir}" ]]; then
     if [[ "${clean_install}" -eq 1 ]]; then
       # Uninstall Homebrew.
       curl_pipe_shell "${uninstall_url}"
       # Clean up stuff that uninstall leaves behind :(
       set +f
-      rm -rf /usr/local/Homebrew/*
-      rm -rf /usr/local/Homebrew/.??*
-      rm -rf /usr/local/bin/*
-      rm -rf /usr/local/etc/*
-      rm -rf /usr/local/lib/*
-      rm -rf /usr/local/share/*
-      rm -rf /usr/local/var/*
+      rm -rf "${homebrew_base}"/Homebrew/*
+      rm -rf "${homebrew_base}"/Homebrew/.??*
+      rm -rf "${homebrew_base}"/bin/*
+      rm -rf "${homebrew_base}"/etc/*
+      rm -rf "${homebrew_base}"/lib/*
+      rm -rf "${homebrew_base}"/share/*
+      rm -rf "${homebrew_base}"/var/*
       set -f
     else
       printf "%s: %s exists; if necessary use --clean_install\\n" \
@@ -78,7 +85,7 @@ main() {
   fi
 
   # Ensure that brew is in $PATH.
-  PATH="/usr/local/bin:${PATH}"
+  PATH="${homebrew_base}/bin:${PATH}"
   export PATH
   hash -r
 
