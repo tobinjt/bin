@@ -96,6 +96,8 @@ main() {
   brew install coreutils lockrun rsync
   # Basics.
   brew install autossh less ripgrep shellcheck tmpreaper tmux vim
+  brew install --cask witch
+  cask_install "/Applications/Moom.app" moom
   cask_install "/Applications/Time Out.app" time-out
   # Basic development.
   brew install fswatch pre-commit vint wget
