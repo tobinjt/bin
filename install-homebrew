@@ -66,13 +66,13 @@ main() {
       curl_pipe_shell "${uninstall_url}"
       # Clean up stuff that uninstall leaves behind :(
       set +f
-      rm -rf "${homebrew_base}"/Homebrew/*
-      rm -rf "${homebrew_base}"/Homebrew/.??*
-      rm -rf "${homebrew_base}"/bin/*
-      rm -rf "${homebrew_base}"/etc/*
-      rm -rf "${homebrew_base}"/lib/*
-      rm -rf "${homebrew_base}"/share/*
-      rm -rf "${homebrew_base}"/var/*
+      rm -rf "${homebrew_base:?}"/Homebrew/*
+      rm -rf "${homebrew_base:?}"/Homebrew/.??*
+      rm -rf "${homebrew_base:?}"/bin/*
+      rm -rf "${homebrew_base:?}"/etc/*
+      rm -rf "${homebrew_base:?}"/lib/*
+      rm -rf "${homebrew_base:?}"/share/*
+      rm -rf "${homebrew_base:?}"/var/*
       set -f
     else
       printf "%s: %s exists; if necessary use --clean_install\\n" \
