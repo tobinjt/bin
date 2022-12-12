@@ -3,7 +3,7 @@
 set -e -u -f -o pipefail
 
 # Initial setup won't have the right environment, so extend $PATH.
-PATH="/usr/local/bin:${PATH}"
+PATH="${HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
 export PATH
 
 # Stop git looking for a commit message when 'git pull' is run.
@@ -30,8 +30,6 @@ git submodule init
 git submodule update
 # Remove .bashrc that linkdirs will not overwrite.
 rm -f "${HOME}/.bashrc"
-PATH="${PATH}:${HOME}/bin"
-export PATH
 dotfiles
 if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config

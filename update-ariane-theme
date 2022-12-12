@@ -2,7 +2,10 @@
 
 set -e -f -u -o pipefail
 
+# Make sure $HOME/bin is in $PATH to support running
+#   "ssh foo@bar update-ariane-theme"
 PATH="${HOME}/bin:${PATH}"
+export PATH
 
 commit_all() {
   local dir="$1"
