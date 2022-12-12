@@ -11,6 +11,4 @@ main() {
   brew doctor | grep -v 'Your system is ready to brew.' || true
 }
 
-PATH="/usr/local/bin:/usr/local/sbin:$PATH"
-export PATH
 main "$@"

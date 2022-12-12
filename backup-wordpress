@@ -2,8 +2,6 @@
 
 set -e -f -u -o pipefail
 
-PATH="${PATH}:/usr/sbin"
-
 wp_option() {
   local option="$1" config="$2"
   readonly option config

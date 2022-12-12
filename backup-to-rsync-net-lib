@@ -2,10 +2,6 @@
 
 set -e -f -u -o pipefail
 
-# Set up PATH properly.  I need binaries from ~/bin, and rsync from homebrew on
-# MacOS.
-PATH="${HOME}/bin:/usr/local/bin:${PATH}"
-
 # If the top-level code was called with -x, then enable it in child processes
 # too.
 export SHELLOPTS

@@ -2,8 +2,6 @@
 
 set -e -f -u -o pipefail
 
-PATH="${HOME}/bin:${PATH}"
-
 cd /etc
 git check-local-copy-is-clean
 
