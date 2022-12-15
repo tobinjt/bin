@@ -35,5 +35,5 @@ if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
   # I need to do this anyway, so might as well do it now.
   sed -i -e 's!https://github.com/!git@github.com:!' "${HOME}/bin/.git/config"
-  (cd "${HOME}/bin" && pre-commit install)
+  (cd "${HOME}/bin" && pre-commit install --install-hooks)
 fi
