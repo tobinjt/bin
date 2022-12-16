@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
+readonly hostname="johntobin-laptop-2022"
+backup "$@" "${hostname}" CalibreLibrary "${HOME}/Calibre Library"
+backup "$@" "${hostname}" Documents "${HOME}/Documents"
+backup "$@" "${hostname}" Pictures "${HOME}/Pictures"
+backup "$@" "${hostname}" src "${HOME}/src"
+if all_backups_succeeded; then
+  backup-update-rsync-net-sentinel "$@" "${hostname}"
+fi
