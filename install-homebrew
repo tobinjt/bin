@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "%s: --imac|--laptop [--clean_install]\\n" "$0"
+  printf "%s: --ariane|--imac|--laptop [--clean_install]\\n" "$0"
 }
 
 curl_pipe_shell() {
@@ -24,9 +24,13 @@ main() {
   local uninstall_url="${url_base}/uninstall.sh"
   readonly url_base install_url uninstall_url
 
-  local clean_install=0 imac=0 laptop=0
+  local ariane=0 clean_install=0 imac=0 laptop=0
   while [[ "$#" -gt 0 ]]; do
     case "${1}" in
+      --ariane)
+        ariane=1
+        shift
+        ;;
       --clean_install)
         clean_install=1
         shift
@@ -47,7 +51,8 @@ main() {
   done
   readonly clean_install imac laptop
 
-  if [[ "${imac}" -eq "${laptop}" ]]; then
+  local sum=$((ariane + imac + laptop))
+  if [[ "${sum}" != 1 ]]; then
     usage >&2
     return 1
   fi
@@ -95,7 +100,12 @@ main() {
   # Everything needed for backups.
   brew install coreutils lockrun rsync
   # Basics.
-  brew install autossh less ripgrep shellcheck tmpreaper tmux vim
+  brew install less ripgrep tmux vim
+  if [[ "${ariane}" -eq 1 ]]; then
+    return 0
+  fi
+
+  brew install autossh shellcheck tmpreaper
   brew install --cask witch
   cask_install "/Applications/Moom.app" moom
   cask_install "/Applications/Time Out.app" time-out
