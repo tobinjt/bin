@@ -2,12 +2,7 @@
 
 set -e -f -u -o pipefail
 
-# Only update if we haven't updated recently.
-file="/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/.git/FETCH_HEAD"
-if [[ -n "$(find "${file}" -mtime +3h)" ]]; then
-  brew update
-  sleep 2
-fi
+brew update
 brew outdated
 # Separately upgrade formula and casks so I can force bottles.
 # Sometimes a formula doesn't have a bottle and upgrading will fail, so we
