@@ -61,6 +61,9 @@ main() {
   cd "${WEBSITE_DIR}"
   printf "*** Checking %s is clean\\n" "${WEBSITE_DIR}"
   git check-local-copy-is-clean --ignore-unpushed-commits
+  printf "*** Updating submodules in %s\\n" "${WEBSITE_DIR}"
+  git submodule init
+  git submodule update
 
   # Update the copy of hugo-coder that Hugo uses.
   cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
