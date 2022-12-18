@@ -137,7 +137,7 @@ run_rsync() {
   local exit_status=0
   ( rsync --archive --bwlimit=500K \
         --partial-dir=.rsync-partial --partial \
-        --rsh="ssh -i ${ssh_key_path}" \
+        --rsh="ssh -i ${ssh_key_path} -o PasswordAuthentication=no" \
         "${flags[@]:+${flags[@]}}" \
       2> >( grep -v \
               -e '^Connection closed by' \
