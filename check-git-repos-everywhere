@@ -10,6 +10,12 @@ check_single_host() {
     'check-git-repos --pull_and_push "${HOME}/bin" "${HOME}/src/"*'
 }
 
+if [[ -z "${CAFFEINATED:-}" ]]; then
+  CAFFEINATED="do not sleep"
+  export CAFFEINATED
+  exec caffeinate -i "$0"
+fi
+
 # Deal with the special cases first.
 # hugo-coder needs to be updated in the right order.
 # Don't wrap with with retry: it's easier to fix the problems without the
