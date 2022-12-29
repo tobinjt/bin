@@ -69,3 +69,7 @@ repos:
       - id: python-no-eval
       - id: python-no-log-warn
       - id: python-use-type-annotations
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
