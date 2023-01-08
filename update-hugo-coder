@@ -18,15 +18,15 @@ main() {
     git remote add upstream https://github.com/luizdepra/hugo-coder
   fi
 
-  # Pull upstream changes into my local copy and push to my fork on Github.
+  # Pull upstream changes into my local copy and push to my fork on GitHub.
   printf "*** Updating main in %s\\n" "${STANDALONE_THEME_DIR}"
   git checkout main
   git pull upstream main
   git push
 
-  # Pull any changes made through review on github, merge upstream changes from
-  # main branch, and push to my fork on Github.
-  # If necessary: create the branch and push it to Github.
+  # Pull any changes made through review on GitHub, merge upstream changes from
+  # main branch, and push to my fork on GitHub.
+  # If necessary: create the branch and push it to GitHub.
   printf "*** Updating changes-for-upstream in %s\\n" "${STANDALONE_THEME_DIR}"
   if ! git checkout changes-for-upstream; then
     git checkout -b changes-for-upstream
@@ -43,13 +43,21 @@ main() {
   git push
 
   # Pull any changes I have made, merge upstream changes from both main and my
-  # changes-for-upstream branchs, and push to Github.
+  # changes-for-upstream branches, and push to GitHub.
   printf "*** Updating my-changes in %s\\n" "${STANDALONE_THEME_DIR}"
   git checkout my-changes
   git pull
   git merge main
   git merge changes-for-upstream
   git push
+
+  # Check for diffs in template files that need to be copied over.
+  printf "*** Checking for diffs that need to be copied over in %s\\n" \
+    "${STANDALONE_THEME_DIR}/${THEME_SUBDIR}"
+  set -x
+  cd "${STANDALONE_THEME_DIR}/${THEME_SUBDIR}"
+  diff -Naur layouts/posts layouts/blog
+  set +x
 
   # Update the checkout I use when building the website.
   # Check that the website repo is clean.  This protects against this sequence:
@@ -85,14 +93,6 @@ main() {
   git pull
   git push
   git check-local-copy-is-clean
-
-  # Check for diffs in template files that need to be copied over.
-  printf "*** Checking for diffs that need to be copied over in %s\\n" \
-    "${WEBSITE_DIR}/${THEME_SUBDIR}"
-  set -x
-  cd "${WEBSITE_DIR}/${THEME_SUBDIR}"
-  diff -Naur layouts/posts layouts/blog
-  set +x
 
   # Update the live site with whatever has changed.
   printf "*** Diffing and pushing to production\\n"
