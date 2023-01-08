@@ -53,9 +53,9 @@ main() {
 
   # Check for diffs in template files that need to be copied over.
   printf "*** Checking for diffs that need to be copied over in %s\\n" \
-    "${STANDALONE_THEME_DIR}/${THEME_SUBDIR}"
+    "${STANDALONE_THEME_DIR}"
   set -x
-  cd "${STANDALONE_THEME_DIR}/${THEME_SUBDIR}"
+  cd "${STANDALONE_THEME_DIR}"
   diff -Naur layouts/posts layouts/blog
   set +x
 
