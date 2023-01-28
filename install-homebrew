@@ -117,8 +117,7 @@ main() {
     # brew install kcov
     # My website.
     brew install closure-compiler hugo markdown markdownlint-cli prettier
-    # PHP.  PHP is installed because MacOS PHP is too old to understand type
-    # annotations in classes.
+    # PHP.
     brew install php phpstan phpunit
     # Lint for CSS.
     npm install -g csslint
