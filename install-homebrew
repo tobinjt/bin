@@ -114,7 +114,7 @@ main() {
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
-    # brew install kcov
+    brew install kcov
     # My website.
     brew install closure-compiler hugo markdown markdownlint-cli prettier
     # PHP.
