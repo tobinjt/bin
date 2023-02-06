@@ -119,6 +119,14 @@ main() {
     brew install closure-compiler hugo markdown markdownlint-cli prettier
     # PHP.
     brew install php phpstan phpunit
+    mkdir -p /opt/homebrew/lib/php/pecl
+    pecl install xdebug
+    set +f
+    cat > /opt/homebrew/etc/php/*/conf.d/99-xdebug.ini <<CONFIG
+zend_extension = xdebug
+xdebug.mode = coverage
+CONFIG
+set -f
     # Lint for CSS.
     npm install -g csslint
     # Golang.
