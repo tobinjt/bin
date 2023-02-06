@@ -118,7 +118,7 @@ main() {
     # My website.
     brew install closure-compiler hugo markdown markdownlint-cli prettier
     # PHP.
-    brew install php phpstan phpunit
+    brew install composer php phpstan phpunit
     mkdir -p /opt/homebrew/lib/php/pecl
     pecl install xdebug
     set +f
