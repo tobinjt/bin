@@ -41,26 +41,19 @@ main() {
 
   "${binary_and_args[@]}" || true
   date +"%Y-%m-%d %H:%M:%S"
-  if type fswatch >& /dev/null; then
-    # Use -L 2 rather than -L 1 because saving a file in vim triggers two
-    # changes.
-    while true; do
+  while true; do
+    if type fswatch >& /dev/null; then
       fswatch --one-event "${files_to_watch[@]}" > /dev/null
-      printf "\n\n\n\n"
-      "${binary_and_args[@]}" || true
-      date +"%Y-%m-%d %H:%M:%S"
-    done
-  elif type inotifywait >& /dev/null; then
-    while true; do
+    elif type inotifywait >& /dev/null; then
       inotifywait --quiet "${files_to_watch[@]}"
-      printf "\n\n\n\n"
-      "${binary_and_args[@]}" || true
-      date +"%Y-%m-%d %H:%M:%S"
-    done
-  else
-    printf "%s: need one of fswatch(1) or inotifywait(1)\\n" "$0" >&2
-    return 1
-  fi
+    else
+      printf "%s: need one of fswatch(1) or inotifywait(1)\\n" "$0" >&2
+      return 1
+    fi
+    printf "\n\n\n\n"
+    "${binary_and_args[@]}" || true
+    date +"%Y-%m-%d %H:%M:%S"
+  done
 }
 
 main "$@"
