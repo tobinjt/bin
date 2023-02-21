@@ -39,16 +39,23 @@ main() {
     return 1
   fi
 
+  local use_fswatch=0
+  if type fswatch >& /dev/null; then
+    use_fswatch=1
+  else
+    if ! type inotifywait >& /dev/null; then
+      printf "%s: need one of fswatch(1) or inotifywait(1)\\n" "$0" >&2
+      return 1
+    fi
+  fi
+
   "${binary_and_args[@]}" || true
   date +"%Y-%m-%d %H:%M:%S"
   while true; do
-    if type fswatch >& /dev/null; then
+    if [[ "${use_fswatch}" -eq 1 ]]; then
       fswatch --one-event "${files_to_watch[@]}" > /dev/null
-    elif type inotifywait >& /dev/null; then
-      inotifywait --quiet "${files_to_watch[@]}"
     else
-      printf "%s: need one of fswatch(1) or inotifywait(1)\\n" "$0" >&2
-      return 1
+      inotifywait --quiet "${files_to_watch[@]}"
     fi
     printf "\n\n\n\n"
     "${binary_and_args[@]}" || true
