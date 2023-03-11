@@ -9,6 +9,7 @@ dirs_to_update() {
   set -f
 }
 
+update-dotfiles-and-bin
 for dir in $(dirs_to_update); do
   if [[ -d "${dir}" ]]; then
     (cd "${dir}" && update-pre-commit-hooks)
