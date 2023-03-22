@@ -49,7 +49,7 @@ main() {
         ;;
     esac
   done
-  readonly clean_install imac laptop
+  readonly clean_install ariane imac laptop
 
   local sum=$((ariane + imac + laptop))
   if [[ "${sum}" != 1 ]]; then
@@ -62,7 +62,7 @@ main() {
   if [[ "${uname_machine}" == "arm64" ]]; then
     homebrew_base="/opt/homebrew"
   else
-    homebrew_base="/opt/homebrew"
+    homebrew_base="/usr/local"
   fi
   homebrew_dir="${homebrew_base}/Cellar"
   if [[ -d "${homebrew_dir}" ]]; then
