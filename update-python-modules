@@ -61,7 +61,8 @@ main() {
   # modules are easily available at the same time.
   # Removed packages: mutmut depends on pony which doesn't support Python 3.9.
   # mypy needs lxml but doesn't depend on it.
-  virtualenv_install "${virtualenv_dir}/python" \
+  local python_dir="${virtualenv_dir}/python"
+  virtualenv_install "${python_dir}" \
     black \
     identify \
     lxml \
@@ -76,10 +77,10 @@ main() {
     types-PyYAML
   # Homebrew warns that *-config can cause problems, and AFAIK I don't need
   # this, so delete it.
-  rm -f "${virtualenv_dir}/python/bin/pylint-config"
+  rm -f "${python_dir}/bin/pylint-config"
   # Normally $PATH will contain this directory; add it so that initial
   # installation works when $PATH does not contain it.
-  PATH="${PATH}:${virtualenv_dir}/python/bin"
+  PATH="${PATH}:${python_dir}/bin"
   hash -r
 
   # Check that tools work properly.
