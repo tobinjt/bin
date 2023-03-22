@@ -53,14 +53,6 @@ main() {
   local virtualenv_dir="${HOME}/tmp/virtualenv"
   rm -rf "${virtualenv_dir}"
 
-  # Flexget.  Only install and test on machines where I normally run flexget.
-  if [[ -d "${HOME}/tmp/logs/flexget" ]]; then
-    virtualenv_install "${virtualenv_dir}/flexget" "flexget" "transmission-rpc"
-    printf "\\n\\nTesting Flexget\\n"
-    flexget-wrapper execute
-    printf "\\n\\n\\n\\n\\n"
-  fi
-
   # I tried using homebrew packages for some tools, but that lead to a terrible
   # mix of Python versions and tools not finding modules so I reverted to using
   # Pip for everything.
@@ -97,6 +89,14 @@ main() {
   pylint ./*.py
   mypy -- *.py
   set -f
+
+  # Flexget.  Only install and test on machines where I normally run flexget.
+  if [[ -d "${HOME}/tmp/logs/flexget" ]]; then
+    virtualenv_install "${virtualenv_dir}/flexget" "flexget" "transmission-rpc"
+    printf "\\n\\nTesting Flexget\\n"
+    flexget-wrapper execute
+    printf "\\n\\n\\n\\n\\n"
+  fi
 }
 
 main "$@"
