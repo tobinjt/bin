@@ -3,12 +3,14 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "Usage: %s\\n" "$0"
+  printf \
+    "Usage: %s [--install_individually] [--skip_flexget] [--skip_python]\\n" \
+    "$0"
 }
 
 virtualenv_install() {
-  local destdir="$1"
-  shift
+  local destdir="$1" install_individually="$2"
+  shift 2
 
   mkdir -p "${destdir}"
   # Run virtualenv from the destination directory just in case.
@@ -18,13 +20,19 @@ virtualenv_install() {
   cd "${destdir}"
   source bin/activate
 
-  # Install packages one by one so that it's easier to figure out which package
-  # is broken when something goes wrong.
-  local package
-  for package in "$@"; do
-    printf "\n\npip3 install %s\\n" "${package}"
-    pip3 install "${package}"
-  done
+  if [[ "${install_individually}" -eq 0 ]]; then
+    # Install everything at once so that dependencies get resolved properly
+    # across packages.
+    pip3 install "$@"
+  else
+    # Install packages one by one so that it's easier to figure out which
+    # package is broken when something goes wrong.
+    local package
+    for package in "$@"; do
+      printf "\n\npip3 install %s\\n" "${package}"
+      pip3 install "${package}"
+    done
+  fi
   deactivate
 }
 
@@ -33,8 +41,21 @@ main() {
     printf "Only Mac OS is supported, sorry.\\n" >&2
     exit 1
   fi
+  local skip_flexget=0 skip_python=0 install_individually=0
   while [[ "$#" -gt 0 ]]; do
     case "${1}" in
+      --install_individually)
+        install_individually=1
+        shift
+        ;;
+      --skip_flexget)
+        skip_flexget=1
+        shift
+        ;;
+      --skip_python)
+        skip_python=1
+        shift
+        ;;
       *)
         usage >&2
         return 1
@@ -48,10 +69,8 @@ main() {
   unset PYTHONDONTWRITEBYTECODE
   # Install Python and virtualenv, just in case.
   brew install python virtualenv
-
-  # Clean up existing install.
   local virtualenv_dir="${HOME}/tmp/virtualenv"
-  rm -rf "${virtualenv_dir}"
+  readonly virtualenv_dir
 
   # I tried using homebrew packages for some tools, but that lead to a terrible
   # mix of Python versions and tools not finding modules so I reverted to using
@@ -61,39 +80,48 @@ main() {
   # modules are easily available at the same time.
   # Removed packages: mutmut depends on pony which doesn't support Python 3.9.
   # mypy needs lxml but doesn't depend on it.
-  local python_dir="${virtualenv_dir}/python"
-  virtualenv_install "${python_dir}" \
-    black \
-    identify \
-    lxml \
-    mypy \
-    pudb \
-    pyfakefs \
-    pylint \
-    pytest \
-    pytest-cov \
-    pytest-flakefinder \
-    pyyaml \
-    types-PyYAML
-  # Homebrew warns that *-config can cause problems, and AFAIK I don't need
-  # this, so delete it.
-  rm -f "${python_dir}/bin/pylint-config"
-  # Normally $PATH will contain this directory; add it so that initial
-  # installation works when $PATH does not contain it.
-  PATH="${PATH}:${python_dir}/bin"
-  hash -r
+  if [[ "${skip_python}" -eq 0 ]]; then
+    local python_dir="${virtualenv_dir}/python"
+    rm -rf "${python_dir}"
+    # Run in a subshell because it changes directory.
+    (virtualenv_install "${python_dir}" "${install_individually}" \
+      black \
+      identify \
+      lxml \
+      mypy \
+      pudb \
+      pyfakefs \
+      pylint \
+      pytest \
+      pytest-cov \
+      pytest-flakefinder \
+      pyyaml \
+      types-PyYAML)
+    # Homebrew warns that *-config can cause problems, and AFAIK I don't need
+    # this, so delete it.
+    rm -f "${python_dir}/bin/pylint-config"
+    # Normally $PATH will contain this directory; add it so that initial
+    # installation works when $PATH does not contain it.
+    PATH="${PATH}:${python_dir}/bin"
+    hash -r
 
-  # Check that tools work properly.
-  cd "${HOME}/bin/python"
-  pytest
-  set +f
-  pylint ./*.py
-  mypy -- *.py
-  set -f
+    # Check that tools work properly.
+    cd "${HOME}/bin/python"
+    pytest
+    set +f
+    pylint ./*.py
+    mypy -- *.py
+    set -f
+  fi
 
   # Flexget.  Only install and test on machines where I normally run flexget.
-  if [[ -d "${HOME}/tmp/logs/flexget" ]]; then
-    virtualenv_install "${virtualenv_dir}/flexget" "flexget" "transmission-rpc"
+  if [[ "${skip_flexget}" -eq 0 && -d "${HOME}/tmp/logs/flexget" ]]; then
+    local flexget_dir="${virtualenv_dir}/flexget"
+    rm -rf "${flexget_dir}"
+    # Run in a subshell because it changes directory.
+    (virtualenv_install "${flexget_dir}" "${install_individually}" \
+      "flexget" \
+      "transmission-rpc==3.4.2")
     printf "\\n\\nTesting Flexget\\n"
     flexget-wrapper execute
     printf "\\n\\n\\n\\n\\n"
