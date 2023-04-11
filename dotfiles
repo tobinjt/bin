@@ -76,14 +76,12 @@ END_OF_HELP
     return
   fi
 
-  local config_snippets_dir="${HOME}/.dotfiles.d"
-  # TODO: remove after migration.
-  mkdir -p "${config_snippets_dir}"
-
   local snippet
-  for snippet in $(list_config_snippets "${config_snippets_dir}"); do
-    printf "Running %s\n" "${snippet}"
-    "${snippet}"
+  for snippet in $(list_config_snippets "${HOME}/.dotfiles.d"); do
+    if ! "${snippet}"; then
+      printf "Failed running %s\n" "${snippet}" >&2
+      exit 1
+    fi
   done
 }
 
