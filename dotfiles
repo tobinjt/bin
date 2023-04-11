@@ -89,7 +89,7 @@ END_OF_HELP
   fi
 
   # Lock down some sensitive directories.
-  chmod -R a=-rwx,u=rwX "${HOME}"/.ssh
+  find "${HOME}"/.ssh -type f -print0 | xargs -0 chmod 600
   local dir
   for dir in "${HOME}" $(dotfiles_sources); do
     if [[ -d "${dir}/.ssh" ]]; then
