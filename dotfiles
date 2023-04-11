@@ -6,6 +6,11 @@ dotfiles_sources() {
   find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
 }
 
+list_config_snippets() {
+  local config_snippets_dir="$1"
+  find "${config_snippets_dir}" -type f -perm -0100 -print | sort
+}
+
 cat_some_files() {
   local dir="$1" pattern="$2"
   find "${dir}" \
@@ -13,7 +18,7 @@ cat_some_files() {
       -a \( -not -name '*-os-*' -o -name '*-os-'"$(uname -s)"'-*' \) \
       -print0 \
     | sort --zero-terminated \
-    | xargs -0 cat
+    | xargs -0 cat --
 }
 
 cat_ssh_configs() {
@@ -87,6 +92,16 @@ END_OF_HELP
   if [[ "${return_early}" -eq 1 ]]; then
     return
   fi
+
+  local config_snippets_dir="${HOME}/.dotfiles.d"
+  # TODO: remove after migration.
+  mkdir -p "${config_snippets_dir}"
+
+  local snippet
+  for snippet in $(list_config_snippets "${config_snippets_dir}"); do
+    printf "Running %s\n" "${snippet}"
+    "${snippet}"
+  done
 
   # Lock down some sensitive directories.
   find "${HOME}"/.ssh -type f -print0 | xargs -0 chmod 600
