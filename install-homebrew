@@ -131,6 +131,9 @@ set -f
     npm install -g csslint
     # Golang.
     brew install go golangci-lint gopls gotags graphviz staticcheck
+    # Google Apps Script.  https://github.com/google/clasp
+    npm install -g @google/clasp
+    # Calibre.
     cask_install "/Applications/calibre.app" calibre
   fi
   if [[ "${imac}" -eq 1 ]]; then
