@@ -133,6 +133,8 @@ set -f
     brew install go golangci-lint gopls gotags graphviz staticcheck
     # Google Apps Script.  https://github.com/google/clasp
     npm install -g @google/clasp
+    npm install -g typescript
+    brew install eslint
     # Calibre.
     cask_install "/Applications/calibre.app" calibre
   fi
