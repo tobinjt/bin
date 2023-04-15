@@ -21,6 +21,9 @@ if type go >& /dev/null; then
   # so I don't need to install them a second time.
   go install golang.org/x/tools/cmd/gotype@latest
 
+  # Vulnerability checking.
+  go install golang.org/x/vuln/cmd/govulncheck@latest
+
   if type codesign >& /dev/null; then
     # Debugger; installed by vim-go, manual instructions at
     # https://github.com/go-delve/delve/blob/master/Documentation/installation/README.md
