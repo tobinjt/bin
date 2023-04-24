@@ -2,4 +2,6 @@
 
 set -e -f -u -o pipefail
 
-npx eslint "$@"
+if [[ -n "$(type -a npx)" ]]; then
+  npx eslint "$@"
+fi
