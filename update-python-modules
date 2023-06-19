@@ -67,6 +67,9 @@ main() {
   export PS1="dummy"
   # Let Python write bytecode.
   unset PYTHONDONTWRITEBYTECODE
+  # Update all existing Homebrew packages rather than partially upgrading when
+  # installing python and virtualenv.
+  bubc
   # Install Python and virtualenv, just in case.
   brew install python virtualenv
   local virtualenv_dir="${HOME}/tmp/virtualenv"
