@@ -87,6 +87,9 @@ CERT_CONFIG
 </pre>
 SIGNING
 
-    codesign --entitlements "${xml}" -fs "${signing_cert}" "$(type -P dlv)"
+    # Can't run this over SSH :(
+    if [[ -z "${SSH_CONNECTION:-}" ]]; then
+      codesign --entitlements "${xml}" -fs "${signing_cert}" "$(type -P dlv)"
+    fi
   fi
 fi
