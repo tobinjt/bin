@@ -110,13 +110,13 @@ main() {
   cask_install "/Applications/Moom.app" moom
   cask_install "/Applications/Time Out.app" time-out
   # Basic development.
-  brew install fswatch pre-commit vint wget
+  brew install fswatch markdownlint-cli pre-commit vint wget
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
     brew install kcov
     # My website.
-    brew install closure-compiler hugo markdown markdownlint-cli prettier
+    brew install closure-compiler hugo markdown prettier
     # PHP.
     brew install composer php phpstan phpunit
     mkdir -p /opt/homebrew/lib/php/pecl
