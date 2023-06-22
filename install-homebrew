@@ -106,9 +106,6 @@ main() {
   fi
 
   brew install autossh shellcheck tmpreaper
-  brew install --cask witch
-  cask_install "/Applications/Moom.app" moom
-  cask_install "/Applications/Time Out.app" time-out
   # Basic development.
   brew install fswatch markdownlint-cli pre-commit vint wget
 
@@ -146,6 +143,13 @@ set -f
   install-extra-tools-for-vim
   # All the Python modules I need for development.
   update-python-modules
+
+  # Install GUI apps if running locally so that confirmation dialogues work.
+  if [[ -z "${SSH_CONNECTION:-}" ]]; then
+    brew install --cask witch
+    cask_install "/Applications/Moom.app" moom
+    cask_install "/Applications/Time Out.app" time-out
+  fi
 }
 
 main "$@"
