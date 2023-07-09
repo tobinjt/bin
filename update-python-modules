@@ -41,11 +41,15 @@ main() {
     printf "Only Mac OS is supported, sorry.\\n" >&2
     exit 1
   fi
-  local skip_flexget=0 skip_python=0 install_individually=0
+  local skip_brew=0 skip_flexget=0 skip_python=0 install_individually=0
   while [[ "$#" -gt 0 ]]; do
     case "${1}" in
       --install_individually)
         install_individually=1
+        shift
+        ;;
+      --skip_brew)
+        skip_brew=1
         shift
         ;;
       --skip_flexget)
@@ -63,15 +67,18 @@ main() {
     esac
   done
 
-  # Dummy values needed by activate scripts.
-  export PS1="dummy"
   # Let Python write bytecode.
   unset PYTHONDONTWRITEBYTECODE
-  # Update all existing Homebrew packages rather than partially upgrading when
-  # installing python and virtualenv.
-  bubc
-  # Install Python and virtualenv, just in case.
-  brew install python virtualenv
+  if [[ "${skip_brew}" -eq 0 ]]; then
+    # Update all existing Homebrew packages rather than partially upgrading when
+    # installing python and virtualenv.
+    bubc
+    # Install Python and virtualenv, just in case.
+    brew install python virtualenv
+  fi
+
+  # Dummy values needed by activate scripts.
+  export PS1="dummy"
   local virtualenv_dir="${HOME}/tmp/virtualenv"
   readonly virtualenv_dir
 
