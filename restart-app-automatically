@@ -49,6 +49,9 @@ USAGE
 
 maybe_reload() {
   local DEST="$1" APP="$2" LABEL="$3" TIMEOUT="$4"
+  if ! grep -q "restart-app-automatically-wrapper" "${DEST}"; then
+    return
+  fi
   if ! diff -u "${DEST}" <(output_plist "${APP}" "${LABEL}" "${TIMEOUT}"); then
     if launchctl list | grep -q "${LABEL}"; then
       # This will kill the app, which is really annoying, but there doesn't seem
@@ -73,7 +76,10 @@ main() {
     return 1
   fi
 
-  local DEST="${HOME}/Library/LaunchAgents/$1"
+  local DEST="$1"
+  if [[ "${DEST:0:1}" != "/" ]]; then
+    DEST="${HOME}/Library/LaunchAgents/${DEST}"
+  fi
   local APP="$2" LABEL="$3" TIMEOUT="$4" ACTION="$5"
 
   if [[ ! -f "${DEST}" ]]; then
