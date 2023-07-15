@@ -1,6 +1,6 @@
 # Save URLs into either GOOD_URLS or BAD_URLS.
 {
-  if (match($0, "200 OK$")) {
+  if (match($0, "200 OK$") || match($0, "300 Multiple Choices$")) {
     for (i = 1; i < NF; i++) {
       if (match($i, "https?://")) {
         GOOD_URLS[$i] = $0;
