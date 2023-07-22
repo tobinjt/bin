@@ -7,8 +7,16 @@ set -e -f -u -o pipefail
 # - RESTIC_PASSWORD_FILE - file containing the password for the repository.
 # - DIRS_TO_BACKUP       - array of directories to backup.
 source "${HOME}/.config/backup-restic/config.sh"
-export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
+export RESTIC_PASSWORD_FILE
 # Fix permissions, just in case.
 chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")" "${RESTIC_PASSWORD_FILE}"
 
-restic backup --quiet "${DIRS_TO_BACKUP[@]}"
+options=("--one-file-system")
+if [[ ! -t 0 ]]; then
+  options+=("--quiet")
+fi
+
+for RESTIC_REPOSITORY in "${RESTIC_REPOSITORIES[@]}"; do
+  export RESTIC_REPOSITORY
+  restic backup "${options[@]}" "${DIRS_TO_BACKUP[@]}"
+done
