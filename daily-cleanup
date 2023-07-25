@@ -13,11 +13,16 @@ if [[ -d "${dir}" ]]; then
   )
 fi
 
+dir_list=()
 # Cleanup Plex updates.
-dir="${HOME}/Library/Application Support/Plex Media Server/Updates"
-if [[ -d "${dir}" ]]; then
-  tmpreaper --mtime 7d "${dir}"
-fi
+dir_list+=("${HOME}/Library/Application Support/Plex Media Server/Updates")
+# Some random Apple thing that leaves lots of logs around.
+dir_list+=("${HOME}/Library/Caches/com.apple.nsurlsessiond/Downloads")
+for dir in "${dir_list[@]}"; do
+  if [[ -d "${dir}" ]]; then
+    tmpreaper --mtime 7d "${dir}"
+  fi
+done
 
 # Clean up vim leftovers.
 tmpreaper --mtime 28d "${HOME}/tmp/vim"
