@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 # config.sh needs to define the following variables:
-# - RESTIC_REPOSITORY    - repository to backup to.
+# - RESTIC_REPOSITORIES  - repositories to backup to.
 # - RESTIC_PASSWORD_FILE - file containing the password for the repository.
 # - DIRS_TO_BACKUP       - array of directories to backup.
 source "${HOME}/.config/backup-restic/config.sh"
