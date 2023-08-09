@@ -98,7 +98,7 @@ main() {
   # Link completions so the shell can use them.
   brew completions link
   # Everything needed for backups.
-  brew install coreutils lockrun rsync
+  brew install coreutils lockrun rclone restic rsync
   # Basics.
   brew install less ripgrep tmux vim
   if [[ "${ariane}" -eq 1 ]]; then
