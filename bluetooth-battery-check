@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+ioreg -l | awk '
+  /"Product"/ {
+    sub(".*Product. = ", "");
+    gsub("\"", "");
+    product = $0;
+  }
+  /BatteryPercent/ {
+    if ($NF < 10) {
+      print "Low battery: " product ": " $NF;
+    }
+  }
+  '
