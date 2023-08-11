@@ -14,13 +14,14 @@ set -e -f -u -o pipefail
 #   to RESTIC_REPOSITORIES.
 # - To configure an rsync.net backup:
 #   - target="most likely the hostname"
-#   - ssh_key_path="${HOME}/.ssh/rsync-net/restic/${target}"
+#   - ssh_key_path="${HOME}/.ssh/rsync-net_restic/${target}"
+#   - mkdir -p "$(dirname "${ssh_key_path}")"
 #   - ssh_key_comment="rsync-net_restic_${target}"
 #   - ssh-keygen -t rsa -b 4096 -o -N '' -q \
 #       -f "${ssh_key_path}" -C "${ssh_key_comment}"
 #   - Add this line to authorized_keys on rsync.net:
 #     - restrict,command="rclone serve restic --stdio restic/${target}" PUB_KEY
-#   - Add `rclone:rsync-net:restic/${target}` to RESTIC_REPOSITORIES.
+#   - Add `rsync-net:${target}` to RESTIC_REPOSITORIES.
 # - https://ruderich.org/simon/notes/append-only-backups-with-restic-and-rclone
 #   has background info about using restricted ssh keys with restic and rclone.
 source "${HOME}/.config/backup-restic/config.sh"
@@ -31,19 +32,32 @@ for RESTIC_REPOSITORY in "${RESTIC_REPOSITORIES[@]}"; do
   # I am using flags rather than environment variables so that copy and paste of
   # commands for debugging is easier.
   options=("--password-file=${RESTIC_PASSWORD_FILE}")
-  options+=("--repo=${RESTIC_REPOSITORY}")
-  if grep -q ':rsync-net:' <<<"${RESTIC_REPOSITORY}"; then
+
+  if grep -q '^rsync-net:' <<<"${RESTIC_REPOSITORY}"; then
     target="${RESTIC_REPOSITORY##*:}"
-    ssh_key_file="${HOME}/.ssh/rsync-net/restic/${target}"
-    options+=("-o" "rclone.program=ssh -i ${ssh_key_file} rsync-net ignored")
+    options+=("--repo=rclone:restic/${target}")
+    # ssh_key_file="${HOME}/.ssh/rsync-net_restic/${target}"
+    # options+=("-o" "rclone.program=ssh -i ${ssh_key_file} rsync-net rclone")
+    # I'm using rclone in the command so that it works whether or not a forced
+    # command is configured on the remote side.
+    options+=("-o" "rclone.program=ssh rsync-net rclone")
+  else
+    options+=("--repo=${RESTIC_REPOSITORY}")
   fi
+
   if [[ ! -t 0 ]]; then
     options+=("--quiet")
+  else
+    # Output commands for easier debugging and understanding what's happening.
+    set -x
   fi
 
   if [[ "${#DIRS_TO_BACKUP}" -eq 0 ]]; then
-    echo restic init "${options[@]}"
+    # Don't try to initialise a second time.
+    if ! restic list "${options[@]}" keys; then
+      restic init "${options[@]}"
+    fi
   else
-    echo restic backup "${options[@]}" "${DIRS_TO_BACKUP[@]}"
+    restic backup "${options[@]}" "${DIRS_TO_BACKUP[@]}"
   fi
 done
