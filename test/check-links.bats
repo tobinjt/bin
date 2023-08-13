@@ -1,7 +1,7 @@
 function setup() {
   bats_require_minimum_version 1.5.0
-  load 'test_helper/bats-support/load' # This is required by bats-assert.
-  load 'test_helper/bats-assert/load'
+  load "${HOME}/src/bats-support/load" # This is required by bats-assert.
+  load "${HOME}/src/bats-assert/load"
   source 'test/gather_coverage.sh'
 
   # wget(1) will be replaced by a mock in $BATS_TEST_TMPDIR.
