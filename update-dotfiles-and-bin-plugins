@@ -32,8 +32,6 @@ main() {
 
   # I have forked vim-markdown, so pull any changes from upstream.
   merge-upstream-changes "${HOME}/src/vim-markdown" "my-changes"
-  # Same for bats-core.
-  merge-upstream-changes "${HOME}/src/bats-core" "coverage-support"
 
   update-all-submodules "${HOME}/bin"
   update-all-submodules "${HOME}/src/dotfiles"
