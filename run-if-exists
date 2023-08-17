@@ -5,6 +5,10 @@ set -e -f -u -o pipefail
 # Run a command if it exists, exit successfully if it doesn't.
 # Initially implemented so I can add `vint` to my dotfiles pre-commit config.
 
+if [[ "$#" -eq 0 ]]; then
+  printf "Usage: %s command [arguments...]\n" "$0" >&2
+  exit 1
+fi
 if type "$1" >& /dev/null; then
   "$@"
 fi
