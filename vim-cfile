@@ -3,4 +3,15 @@
 # Load errors in vim quickfix format from $1.
 set -e -f -u -o pipefail
 
-vim -q "$1" -c ':botright cwindow'
+main() {
+  local cfile="$1"
+  if [[ ! -e "${cfile}" ]]; then
+    printf "Missing file: %s\n" "${cfile}"
+    return 1
+  fi
+  if [[ -s "${cfile}" ]]; then
+    vim -q "$1" -c ':botright cwindow'
+  fi
+}
+
+main "$@"
