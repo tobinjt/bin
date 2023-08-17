@@ -6,6 +6,11 @@ update_one_dir() {
   if [[ ! -f ".pre-commit-config.yaml" ]]; then
     return
   fi
+  if git transport-is-https; then
+    return
+  fi
+
+  check-git-repos --pull_and_push "$(pwd)"
   pre-commit autoupdate
   if ! git check-local-copy-is-clean; then
     pre-commit run --all-files
@@ -15,5 +20,4 @@ update_one_dir() {
   fi
 }
 
-check-git-repos --pull_and_push "$(pwd)"
 update_one_dir
