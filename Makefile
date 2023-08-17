@@ -21,7 +21,7 @@ clean:
 
 test/.%.timestamp: test/%.bats %
 	rm -f $@
-	$(HOME)/src/bats-core/bin/bats ./$<
+	run-if-exists $(HOME)/src/bats-core/bin/bats ./$<
 	touch $@
 
 bats_coverage: clean
