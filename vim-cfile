@@ -6,7 +6,7 @@ set -e -f -u -o pipefail
 main() {
   local cfile="$1"
   if [[ ! -e "${cfile}" ]]; then
-    printf "Missing file: %s\n" "${cfile}"
+    printf "Missing file: %s\n" "${cfile}" >&2
     return 1
   fi
   if [[ -s "${cfile}" ]]; then
