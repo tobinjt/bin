@@ -105,6 +105,7 @@ main() {
       pytest \
       pytest-cov \
       pytest-flakefinder \
+      'python-lsp-server[all]' \
       pyyaml \
       types-PyYAML)
     # Homebrew warns that *-config can cause problems, and AFAIK I don't need
