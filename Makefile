@@ -5,6 +5,7 @@
 # - cd ~/src
 # - git clone https://github.com/bats-core/bats-core.git
 # - git clone https://github.com/bats-core/bats-assert.git
+# - git clone https://github.com/bats-core/bats-file
 # - git clone https://github.com/bats-core/bats-support.git
 
 TEST_PROGRAMS = $(wildcard test/*.bats)
