@@ -65,3 +65,19 @@ FAKE_WGET
   assert_success
   assert_output ""
 }
+
+function test_help() { # @test
+  cat > "${BATS_TEST_TMPDIR}/wget" <<'FAKE_WGET'
+#!/bin/bash
+
+printf "WGET SHOULD NOT BE RUN\n" >&2
+exit 1
+WGET
+FAKE_WGET
+  chmod 755 "${BATS_TEST_TMPDIR}/wget"
+
+  run check-links "--help" < /dev/null
+  assert_failure
+  assert_output --partial "Links outside SOME-WEBSITE will not be checked"
+  refute_output --partial "WGET SHOULD NOT BE RUN"
+}
