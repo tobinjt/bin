@@ -3,20 +3,25 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "%s: [--pull_and_push] DIRECTORY [DIRECTORY...]\\n" "$0"
+  printf "%s: DIRECTORY [DIRECTORY...]\\n" "$0"
 }
 
 git_pull_and_push_if_possible() {
   # Explicitly enable the old default behaviour so that git doesn't spew
   # warnings.
   git config pull.rebase false
-  if git config remote.origin.url >& /dev/null; then
+  if ! git config remote.origin.url >& /dev/null; then
     # Pull and push requires an origin.
-    git pull
-    # Can't push to HTTPS repos without auth.
-    if ! git transport-is-https; then
-      git push
-    fi
+    return
+  fi
+  if git transport-is-ssh && [[ -z "${SSH_AUTH_SOCK}" ]]; then
+    # SSH transport requires ssh-agent.
+    return
+  fi
+  git pull --quiet
+  # Can't push to HTTPS repos without auth.
+  if ! git transport-is-https; then
+    git push
   fi
 }
 
@@ -49,27 +54,19 @@ check_pre-commit_is_installed() {
 # Check that git repos don't have any uncommitted, unpushed, or unpulled
 # changes.
 check_single_repo() {
-  local pull_and_push="$1"
   if [[ ! -d ".git" ]]; then
     # Make it easy to run "check-git-repos ~/src/*".
     return 0
   fi
-  if [[ "${pull_and_push}" -eq 1 ]]; then
-    # Pull to start with so that unpulled changes don't cause failures.
-    git_pull_and_push_if_possible
-  fi
+  # Pull to start with so that unpulled changes don't cause failures.
+  git_pull_and_push_if_possible
   git check-local-copy-is-clean
   check_pre-commit_is_installed
 }
 
 main() {
-  local pull_and_push=0
   while [[ "$#" -gt 0 ]]; do
     case "${1}" in
-      --pull_and_push)
-        pull_and_push=1
-        shift
-        ;;
       -*)
         usage >&2
         return 1
@@ -79,7 +76,6 @@ main() {
         ;;
     esac
   done
-  readonly pull_and_push
 
   local repo result=0
   for repo in "$@"; do
@@ -92,7 +88,7 @@ main() {
     fi
     # Bizzare Posix sh behaviour :(  See
     # https://unix.stackexchange.com/questions/65532/why-does-set-e-not-work-inside-subshells-with-parenthesis-followed-by-an-or
-    (cd "${repo}"; check_single_repo "${pull_and_push}") &
+    (cd "${repo}"; check_single_repo) &
     if ! wait "$!"; then
       result=1
     fi

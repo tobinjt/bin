@@ -7,7 +7,7 @@ check_single_host() {
   printf "\n\n\nProcessing %s\\n" "${host}"
   # shellcheck disable=SC2016
   retry 10 "${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
-    'check-git-repos --pull_and_push "${HOME}/bin" "${HOME}/src/"*'
+    'check-git-repos "${HOME}/bin" "${HOME}/src/"*'
 }
 
 if [[ -z "${CAFFEINATED:-}" ]]; then

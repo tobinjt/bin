@@ -10,7 +10,7 @@ update_one_dir() {
     return
   fi
 
-  check-git-repos --pull_and_push "$(pwd)"
+  check-git-repos "$(pwd)"
   pre-commit autoupdate
   if ! git check-local-copy-is-clean; then
     pre-commit run --all-files
