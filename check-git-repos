@@ -14,7 +14,7 @@ git_pull_and_push_if_possible() {
     # Pull and push requires an origin.
     return
   fi
-  if git transport-is-ssh && [[ -z "${SSH_AUTH_SOCK}" ]]; then
+  if git transport-is-ssh && [[ -z "${SSH_AUTH_SOCK:-}" ]]; then
     # SSH transport requires ssh-agent.
     return
   fi
