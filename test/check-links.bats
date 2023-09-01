@@ -4,7 +4,6 @@ function setup() {
   load "${HOME}/src/bats-support/load"
   load "${HOME}/src/bats-assert/load"
   load "${HOME}/src/bats-file/load"
-  source 'test/gather_coverage.sh'
 
   # wget(1) will be replaced by a mock in $BATS_TEST_TMPDIR.
   PATH="${BATS_TEST_TMPDIR}:${PATH}"
@@ -104,8 +103,6 @@ FAKE_SLEEP
 
   unset SKIP_STARTUP_SLEEP
   run check-links "https://www.johntobin.ie/" < /dev/null
-  SKIP_STARTUP_SLEEP="Skip sleep on startup"
-  export SKIP_STARTUP_SLEEP
   assert_success
   assert_output ""
   assert_exists "${BATS_TEST_TMPDIR}/sleep-was-run"

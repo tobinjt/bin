@@ -2,7 +2,6 @@ function setup() {
   bats_require_minimum_version 1.5.0
   load "${HOME}/src/bats-support/load" # This is required by bats-assert.
   load "${HOME}/src/bats-assert/load"
-  source 'test/gather_coverage.sh'
 
   # Ensure consistent subject line.
   SUBJECT_PREFIX="test@testing"

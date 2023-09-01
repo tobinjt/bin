@@ -2,7 +2,6 @@ function setup() {
   bats_require_minimum_version 1.5.0
   load "${HOME}/src/bats-support/load" # This is required by bats-assert.
   load "${HOME}/src/bats-assert/load"
-  source 'test/gather_coverage.sh'
 
   # Speed up tests by not sleeping.
   SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS=0

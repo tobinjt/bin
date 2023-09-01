@@ -2,7 +2,6 @@ function setup() {
   bats_require_minimum_version 1.5.0
   load "${HOME}/src/bats-support/load" # This is required by bats-assert.
   load "${HOME}/src/bats-assert/load"
-  source 'test/gather_coverage.sh'
 
   # curl(1) will be replaced by a mock in $BATS_TEST_TMPDIR.
   PATH="${BATS_TEST_TMPDIR}:${PATH}"
