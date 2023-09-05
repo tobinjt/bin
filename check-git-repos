@@ -35,6 +35,10 @@ check_pre-commit_is_installed() {
     return 0
   fi
   local hook_file=".git/hooks/pre-commit"
+  local legacy_hook_file="${hook_file}.legacy"
+  if [[ -L "${legacy_hook_file}" || -e "${legacy_hook_file}" ]]; then
+    printf "%s/%s exists\n" "${PWD}" "${legacy_hook_file}" >&2
+  fi
   if [[ "${config_file}" -nt "${hook_file}" ]]; then
     printf "Installing pre-commit in %s\n" "${PWD}"
     pre-commit install --install-hooks
@@ -43,10 +47,6 @@ check_pre-commit_is_installed() {
     printf "%s/%s exists but is not configured by pre-commit\n" \
       "${PWD}" "${hook_file}" >&2
     return 1
-  fi
-  local legacy_hook_file="${hook_file}.legacy"
-  if [[ -L "${legacy_hook_file}" || -e "${legacy_hook_file}" ]]; then
-    printf "%s/%s exists\n" "${PWD}" "${legacy_hook_file}" >&2
   fi
   return 0
 }
