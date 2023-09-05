@@ -137,7 +137,7 @@ main() {
     # Run in a subshell because it changes directory.
     (virtualenv_install "${flexget_dir}" "${install_individually}" \
       "flexget" \
-      "transmission-rpc")
+      "transmission-rpc==4.3.0")
     printf "\\n\\nTesting Flexget\\n"
     flexget-wrapper execute
     printf "\\n\\n\\n\\n\\n"
