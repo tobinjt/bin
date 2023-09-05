@@ -3,9 +3,14 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf \
-    "Usage: %s [--install_individually] [--skip_flexget] [--skip_python]\\n" \
-    "$0"
+  cat <<USAGE
+$0 [FLAGS]
+Flags:
+  --install_individually
+  --skip_brew
+  --skip_flexget
+  --skip_python
+USAGE
 }
 
 virtualenv_install() {
