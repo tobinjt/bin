@@ -19,6 +19,7 @@ bats_tests: $(TIMESTAMP_FILES)
 
 clean:
 	rm -f $(TIMESTAMP_FILES)
+	rm -rf $(KCOVERAGE_DIR)
 
 test/.%.timestamp: test/%.bats %
 	rm -f $@
@@ -26,5 +27,4 @@ test/.%.timestamp: test/%.bats %
 	touch $@
 
 bats_coverage: clean
-	rm -rf $(KCOVERAGE_DIR)
 	KCOVERAGE_DIR=$(KCOVERAGE_DIR) make bats_tests
