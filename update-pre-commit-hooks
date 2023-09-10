@@ -9,6 +9,10 @@ update_one_dir() {
   if git transport-is-https; then
     return
   fi
+  # Skip forked repos, I should not be updating pre-commit hooks there.
+  if git remote show | grep -q upstream; then
+    return
+  fi
 
   check-git-repos "$(pwd)"
   pre-commit autoupdate
