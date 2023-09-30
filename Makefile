@@ -11,6 +11,7 @@
 TEST_PROGRAMS = $(wildcard test/*.bats)
 TIMESTAMP_FILES = $(patsubst test/%.bats, test/.%.timestamp, $(TEST_PROGRAMS))
 KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
+BATS = $(HOME)/src/bats-core/bin/bats
 
 .PHONY: all clean coverage tests
 all: bats_tests
@@ -23,8 +24,11 @@ clean:
 
 test/.%.timestamp: test/%.bats %
 	rm -f $@
-	run-if-exists $(HOME)/src/bats-core/bin/bats ./$<
+	run-if-exists $(BATS) ./$<
 	touch $@
 
 bats_coverage: clean
 	KCOVERAGE_DIR=$(KCOVERAGE_DIR) make bats_tests
+
+bats_coverage_2:
+	kcov --bash-method=DEBUG --clean --bash-parse-files-in-dir=. $(KCOVERAGE_DIR)2 $(BATS) test
