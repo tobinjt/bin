@@ -19,7 +19,7 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
 
     def create_files_for_test(self, data: Dict[str, str]) -> None:
         """Create files for tests."""
-        for (filename, contents) in data.items():
+        for filename, contents in data.items():
             # pylint: disable=no-member
             # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
             self.fs.create_file(filename, contents=contents)
@@ -299,7 +299,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
     def create_files_for_test(self, data: Dict[str, str]) -> None:
         """Create files for tests."""
-        for (filename, contents) in data.items():
+        for filename, contents in data.items():
             # pylint: disable=no-member
             # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
             self.fs.create_file(filename, contents=contents)

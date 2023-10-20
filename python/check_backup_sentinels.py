@@ -137,7 +137,7 @@ def check_sentinels(
         messages.append(warnings[-1])
         # pylint: enable=no-member,unsubscriptable-object
 
-    for (host, last_backup) in sentinels.timestamps.items():
+    for host, last_backup in sentinels.timestamps.items():
         max_delay = sentinels.max_allowed_delay[host]
         sleeping_until = sentinels.sleeping_until[host]
         warning = message % {

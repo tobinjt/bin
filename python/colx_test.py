@@ -74,10 +74,10 @@ class TestArgumentParsing(unittest.TestCase):
                 },
             ),
         ]
-        for (args, expected) in tests:
+        for args, expected in tests:
             with self.subTest(f"Parsing {args}"):
                 actual = colx.parse_arguments(argv=args)
-                for (key, value) in expected.items():
+                for key, value in expected.items():
                     self.assertEqual(value, getattr(actual, key))
 
     def test_error_checking(self):
@@ -148,7 +148,7 @@ class TestProcessFiles(fake_filesystem_unittest.TestCase):
 
     def test_strip_empty_columns(self):
         """Test that empty leading and trailing columns are stripped."""
-        for (test_input, test_output) in [
+        for test_input, test_output in [
             ("  leading\n", "leading"),
             ("trailing  \n", "trailing"),
             ("  both \n", "both"),

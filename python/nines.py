@@ -59,7 +59,7 @@ def format_duration(*, seconds: float) -> str:
     time_units = {}
     seconds_so_far = 1
     units = ((1, "second"), (60, "minute"), (60, "hour"), (24, "day"))
-    for (number, label) in units:
+    for number, label in units:
         seconds_so_far *= number
         time_units[seconds_so_far] = label
 
