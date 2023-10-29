@@ -11,12 +11,12 @@ Arguments >= %(PT)s (e.g. 75) are interpreted as percentages, arguments < %(PT)s
 are interpreted as a number of nines.
 """
 
-__author__ = "johntobin@johntobin.ie (John Tobin)"
-
 import argparse
 import itertools
 import sys
 from typing import List
+
+__author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # Args >= PERCENT_THRESHOLD are interpreted as percentages, < PERCENT_THRESHOLD
 # are interpreted as a number of nines.
