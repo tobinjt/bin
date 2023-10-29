@@ -84,8 +84,10 @@ main() {
 
   # Dummy values needed by activate scripts.
   export PS1="dummy"
+  local date
+  date="$(date +%Y-%m-%d-%H-%M)"
   local virtualenv_dir="${HOME}/tmp/virtualenv"
-  readonly virtualenv_dir
+  readonly date virtualenv_dir
 
   # I tried using homebrew packages for some tools, but that lead to a terrible
   # mix of Python versions and tools not finding modules so I reverted to using
@@ -97,9 +99,10 @@ main() {
   # mypy needs lxml but doesn't depend on it.
   if [[ "${skip_python}" -eq 0 ]]; then
     local python_dir="${virtualenv_dir}/python"
-    rm -rf "${python_dir}"
+    local python_date_dir="${python_dir}-${date}"
+    readonly python_dir python_date_dir
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${python_dir}" "${install_individually}" \
+    (virtualenv_install "${python_date_dir}" "${install_individually}" \
       black \
       identify \
       lxml \
@@ -115,7 +118,8 @@ main() {
       types-PyYAML)
     # Homebrew warns that *-config can cause problems, and AFAIK I don't need
     # this, so delete it.
-    rm -f "${python_dir}/bin/pylint-config"
+    rm -f "${python_date_dir}/bin/pylint-config"
+    ln -sf "${python_date_dir}" "${python_dir}"
     # Normally $PATH will contain this directory; add it so that initial
     # installation works when $PATH does not contain it.
     PATH="${PATH}:${python_dir}/bin"
@@ -133,11 +137,18 @@ main() {
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ "${skip_flexget}" -eq 0 && -d "${HOME}/tmp/logs/flexget" ]]; then
     local flexget_dir="${virtualenv_dir}/flexget"
-    rm -rf "${flexget_dir}"
+    local flexget_date_dir="${flexget_dir}-${date}"
+    readonly flexget_dir flexget_date_dir
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${flexget_dir}" "${install_individually}" \
+    (virtualenv_install "${flexget_date_dir}" "${install_individually}" \
       "flexget" \
       "transmission-rpc==4.3.0")
+    ln -sf "${flexget_date_dir}" "${flexget_dir}"
+    # Normally $PATH will contain this directory; add it so that initial
+    # installation works when $PATH does not contain it.
+    PATH="${PATH}:${flexget_dir}/bin"
+    hash -r
+
     printf "\\n\\nTesting Flexget\\n"
     flexget-wrapper execute
     printf "\\n\\n\\n\\n\\n"
