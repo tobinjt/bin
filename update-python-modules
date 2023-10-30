@@ -85,7 +85,7 @@ main() {
   # Dummy values needed by activate scripts.
   export PS1="dummy"
   local date
-  date="$(date +%Y-%m-%d-%H-%M)"
+  date="$(date +%Y-%m-%d--%H-%M-%S)"
   local virtualenv_dir="${HOME}/tmp/virtualenv"
   readonly date virtualenv_dir
 
