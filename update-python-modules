@@ -13,6 +13,21 @@ Flags:
 USAGE
 }
 
+test_python() {
+  cd "${HOME}/bin/python"
+  pytest
+  set +f
+  pylint ./*.py
+  mypy -- *.py
+  set -f
+}
+
+test_flexget() {
+  printf "\\n\\nTesting Flexget\\n"
+  flexget-wrapper execute
+  printf "\\n\\n\\n\\n\\n"
+}
+
 virtualenv_install() {
   local destdir="$1" install_individually="$2"
   shift 2
@@ -126,12 +141,8 @@ main() {
     hash -r
 
     # Check that tools work properly.
-    cd "${HOME}/bin/python"
-    pytest
-    set +f
-    pylint ./*.py
-    mypy -- *.py
-    set -f
+    # Run in a subshell because it changes directory.
+    (test_python)
   fi
 
   # Flexget.  Only install and test on machines where I normally run flexget.
@@ -148,10 +159,7 @@ main() {
     # installation works when $PATH does not contain it.
     PATH="${PATH}:${flexget_dir}/bin"
     hash -r
-
-    printf "\\n\\nTesting Flexget\\n"
-    flexget-wrapper execute
-    printf "\\n\\n\\n\\n\\n"
+    test_flexget
   fi
 }
 
