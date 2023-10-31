@@ -29,8 +29,8 @@ test_flexget() {
 }
 
 virtualenv_install() {
-  local destdir="$1" install_individually="$2"
-  shift 2
+  local destdir="$1" install_individually="$2" test_function="$3"
+  shift 3
   local date
   date="$(date +%Y-%m-%d--%H-%M-%S)"
   local destdir_date="${destdir}-${date}"
@@ -57,6 +57,12 @@ virtualenv_install() {
     done
   fi
   deactivate
+
+  # Test with the new binaries.
+  PATH="${destdir_date}/bin:${PATH}"
+  hash -r
+  ("${test_function}")
+
   ln -sf "${destdir_date}" "${destdir}"
 }
 
@@ -103,12 +109,14 @@ main() {
 
   # Dummy values needed by activate scripts.
   export PS1="dummy"
-  local virtualenv_dir="${HOME}/tmp/virtualenv"
-  readonly virtualenv_dir
 
   # I tried using homebrew packages for some tools, but that lead to a terrible
   # mix of Python versions and tools not finding modules so I reverted to using
   # Pip for everything.
+
+  local virtualenv_dir="${HOME}/tmp/virtualenv"
+  readonly virtualenv_dir
+  mkdir -p "${virtualenv_dir}"
 
   # Install all Python development tools in a single virtualenv so all the
   # modules are easily available at the same time.
@@ -116,9 +124,8 @@ main() {
   # mypy needs lxml but doesn't depend on it.
   if [[ "${skip_python}" -eq 0 ]]; then
     local python_dir="${virtualenv_dir}/python"
-    readonly python_dir
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${python_dir}" "${install_individually}" \
+    (virtualenv_install "${python_dir}" "${install_individually}" test_python \
       black \
       identify \
       lxml \
@@ -132,32 +139,19 @@ main() {
       'python-lsp-server[all]' \
       pyyaml \
       types-PyYAML)
+
     # Homebrew warns that *-config can cause problems, and AFAIK I don't need
     # this, so delete it.
     rm -f "${python_dir}/bin/pylint-config"
-    # Normally $PATH will contain this directory; add it so that initial
-    # installation works when $PATH does not contain it.
-    PATH="${PATH}:${python_dir}/bin"
-    hash -r
-
-    # Check that tools work properly.
-    # Run in a subshell because it changes directory.
-    (test_python)
   fi
 
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ "${skip_flexget}" -eq 0 && -d "${HOME}/tmp/logs/flexget" ]]; then
-    local flexget_dir="${virtualenv_dir}/flexget"
-    readonly flexget_dir
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${flexget_dir}" "${install_individually}" \
+    (virtualenv_install "${virtualenv_dir}/flexget" "${install_individually}" \
+      test_flexget \
       "flexget" \
       "transmission-rpc==4.3.0")
-    # Normally $PATH will contain this directory; add it so that initial
-    # installation works when $PATH does not contain it.
-    PATH="${PATH}:${flexget_dir}/bin"
-    hash -r
-    test_flexget
   fi
 }
 
