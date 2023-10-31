@@ -31,13 +31,16 @@ test_flexget() {
 virtualenv_install() {
   local destdir="$1" install_individually="$2"
   shift 2
+  local date
+  date="$(date +%Y-%m-%d--%H-%M-%S)"
+  local destdir_date="${destdir}-${date}"
 
-  mkdir -p "${destdir}"
+  mkdir -p "${destdir_date}"
   # Run virtualenv from the destination directory just in case.
-  cd "${destdir}"
-  virtualenv --no-periodic-update "${destdir}"
+  cd "${destdir_date}"
+  virtualenv --no-periodic-update "${destdir_date}"
   # virtualenv sometimes deletes the destination directory so cd there again.
-  cd "${destdir}"
+  cd "${destdir_date}"
   source bin/activate
 
   if [[ "${install_individually}" -eq 0 ]]; then
@@ -54,6 +57,7 @@ virtualenv_install() {
     done
   fi
   deactivate
+  ln -sf "${destdir_date}" "${destdir}"
 }
 
 main() {
@@ -99,10 +103,8 @@ main() {
 
   # Dummy values needed by activate scripts.
   export PS1="dummy"
-  local date
-  date="$(date +%Y-%m-%d--%H-%M-%S)"
   local virtualenv_dir="${HOME}/tmp/virtualenv"
-  readonly date virtualenv_dir
+  readonly virtualenv_dir
 
   # I tried using homebrew packages for some tools, but that lead to a terrible
   # mix of Python versions and tools not finding modules so I reverted to using
@@ -114,10 +116,9 @@ main() {
   # mypy needs lxml but doesn't depend on it.
   if [[ "${skip_python}" -eq 0 ]]; then
     local python_dir="${virtualenv_dir}/python"
-    local python_date_dir="${python_dir}-${date}"
-    readonly python_dir python_date_dir
+    readonly python_dir
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${python_date_dir}" "${install_individually}" \
+    (virtualenv_install "${python_dir}" "${install_individually}" \
       black \
       identify \
       lxml \
@@ -133,8 +134,7 @@ main() {
       types-PyYAML)
     # Homebrew warns that *-config can cause problems, and AFAIK I don't need
     # this, so delete it.
-    rm -f "${python_date_dir}/bin/pylint-config"
-    ln -sf "${python_date_dir}" "${python_dir}"
+    rm -f "${python_dir}/bin/pylint-config"
     # Normally $PATH will contain this directory; add it so that initial
     # installation works when $PATH does not contain it.
     PATH="${PATH}:${python_dir}/bin"
@@ -148,13 +148,11 @@ main() {
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ "${skip_flexget}" -eq 0 && -d "${HOME}/tmp/logs/flexget" ]]; then
     local flexget_dir="${virtualenv_dir}/flexget"
-    local flexget_date_dir="${flexget_dir}-${date}"
-    readonly flexget_dir flexget_date_dir
+    readonly flexget_dir
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${flexget_date_dir}" "${install_individually}" \
+    (virtualenv_install "${flexget_dir}" "${install_individually}" \
       "flexget" \
       "transmission-rpc==4.3.0")
-    ln -sf "${flexget_date_dir}" "${flexget_dir}"
     # Normally $PATH will contain this directory; add it so that initial
     # installation works when $PATH does not contain it.
     PATH="${PATH}:${flexget_dir}/bin"
