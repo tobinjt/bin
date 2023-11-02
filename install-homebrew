@@ -131,6 +131,9 @@ set -f
     # Google Apps Script.  https://github.com/google/clasp
     npm install -g @google/clasp
     npm install -g typescript
+    # Rust.
+    # brew install rustup-init
+    # rustup-init --no-modify-path
     # Calibre.
     cask_install "/Applications/calibre.app" calibre
   fi
@@ -139,7 +142,7 @@ set -f
     brew install ffmpeg transmission-cli wget youtube-dl
     cask_install "/Applications/FileBot.app" filebot
   fi
-  # Tools needed by vim; mostly Golang.
+  # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
   install-extra-tools-for-vim
   # All the Python modules I need for development.
   update-python-modules
