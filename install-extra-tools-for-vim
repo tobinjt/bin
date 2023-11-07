@@ -96,5 +96,6 @@ fi
 
 if type rustup >& /dev/null; then
   rustup update
+  rustup component add rls rust-analysis rust-src
   # TODO: I might need to sign binaries so I can debug.
 fi
