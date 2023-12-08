@@ -10,7 +10,7 @@ main() {
 
   # Upgrade everything to ensure that youtube-dl is up to date.
   bubc
-  until /usr/local/bin/youtube-dl "$@"; do
+  until yt-dlp "$@"; do
     sleep 10
   done
 }

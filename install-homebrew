@@ -139,7 +139,7 @@ set -f
   fi
   if [[ "${imac}" -eq 1 ]]; then
     # Various tools for downloads.
-    brew install ffmpeg transmission-cli wget youtube-dl
+    brew install ffmpeg transmission-cli wget yt-dlp
     cask_install "/Applications/FileBot.app" filebot
   fi
   # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
