@@ -28,6 +28,7 @@ if type go >& /dev/null; then
     # Debugger; installed by vim-go, manual instructions at
     # https://github.com/go-delve/delve/blob/master/Documentation/installation/README.md
     # Enable developer mode to avoid repeated password prompts.
+    printf "Enabling developer mode; sudo might ask for a password\n"
     sudo /usr/sbin/DevToolsSecurity -enable
 
     # Needs to be signed to avoid repeated password prompts.
@@ -59,6 +60,7 @@ CERT_CONFIG
         -config "${cert_config}" -extensions codesign_reqext -batch \
         -out "${new_cert}" -keyout "${new_key}"
 
+      printf "Configuring code signing cert, sudo may ask for a password\n"
       old_rights="$(mktemp /tmp/code-signing.old_rights.XXXXXXXXXX)"
       readonly old_rights
       # shellcheck disable=SC2024
