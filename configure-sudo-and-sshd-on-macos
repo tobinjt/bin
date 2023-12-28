@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Allow sudo without password.
+sudo_without_password() {
+  editor="$(mktemp -t sudoers.XXXXXXXXXXXX)"
+  cat > "${editor}" <<'EDITOR'
+#!/bin/sh
+
+sed -i '' -e '/%admin/s/ALL$/NOPASSWD:ALL/' "$@"
+EDITOR
+  chmod 755 "${editor}"
+
+  EDITOR="${editor}" sudo visudo
+}
+
+# Allow root logins but not with a password.
+allow_root_ssh() {
+sudo sed -i '' -E \
+  -e 's/^\#?PermitRootLogin.*/PermitRootLogin prohibit-password/' \
+  -e 's/^\#?PasswordAuthentication.*/PasswordAuthentication no/' \
+  /etc/ssh/sshd_config
+}
+
+main() {
+  sudo_without_password
+  allow_root_ssh
+}
+
+main "$@"
