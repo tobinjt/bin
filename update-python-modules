@@ -58,12 +58,14 @@ virtualenv_install() {
   fi
   deactivate
 
-  # Test with the new binaries.
+  # Test with the new binaries, from $HOME, just in case.
+  cd "${HOME}"
   PATH="${destdir_date}/bin:${PATH}"
   hash -r
   ("${test_function}")
 
-  ln -sf "${destdir_date}" "${destdir}"
+  # -h: don't follow a destination symlink, replace it instead.
+  ln -sfh "${destdir_date}" "${destdir}"
 }
 
 main() {
