@@ -113,7 +113,7 @@ main() {
     # Misc development.
     brew install kcov
     # My website.
-    brew install closure-compiler hugo markdown prettier
+    brew install closure-compiler hugo markdown marksman prettier
     # PHP.
     brew install composer php phpstan phpunit
     mkdir -p /opt/homebrew/lib/php/pecl
