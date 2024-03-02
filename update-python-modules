@@ -153,7 +153,7 @@ main() {
     (virtualenv_install "${virtualenv_dir}/flexget" "${install_individually}" \
       test_flexget \
       "flexget" \
-      "transmission-rpc==4.3.0")
+      "transmission-rpc")
   fi
 }
 
