@@ -82,6 +82,8 @@ main() {
     (printf "Exit status: %s\\nOutput:\\n" "${EXIT_STATUS}";
       cat "${OUTPUT_FILE}"
     ) | mail -s "${SUBJECT}" "${DESTINATION}"
+    printf "%s -- %s\n" "${DESTINATION}" "${SUBJECT}" \
+      >> "${HOME}/tmp/logs/send-mail-on-failure-or-output.log"
   fi
   return "${EXIT_STATUS}"
 }
