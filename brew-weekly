@@ -9,6 +9,11 @@ main() {
   brew update >& /dev/null
   brew outdated
   brew doctor | grep -v 'Your system is ready to brew.' || true
+  local output
+  output="$(brew leaves --installed-as-dependency)"
+  if [[ -n "${output}" ]]; then
+    printf "Auto-installed packages that can be removed:\n%s\n" "${output}"
+  fi
 }
 
 main "$@"
