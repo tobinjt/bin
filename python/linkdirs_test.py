@@ -600,6 +600,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         {dest_dir}/dir4
         """
         self.create_files(files)
+        # Set permissions on source directory so they differ from destination directory
+        # to check that permissions are reset correctly.
+        os.chmod(f"{src_dir}/dir1", 0o700)
         # Test handling of source symlinks - not supported by create_files().
         os.symlink(os.path.join(src_dir, "file5"), os.path.join(src_dir, "file6"))
         os.symlink(os.path.join(src_dir, "file7"), os.path.join(src_dir, "file8"))
@@ -638,7 +641,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             self.assertFalse(os.path.isdir(os.path.join(dest_dir, "dir2")))
             stdout = "\n".join(
                 [
-                    "chmod 0777 /z/y/x/dir1",
+                    "chmod 0700 /z/y/x/dir1",
                     "mkdir /z/y/x/dir2",
                     "ln /a/b/c/file2 /z/y/x/file2",
                     "/a/b/c/file3 and /z/y/x/file3 are different files but have the"
