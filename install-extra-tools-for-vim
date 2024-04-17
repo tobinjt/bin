@@ -103,7 +103,8 @@ fi
 
 if type rustup >& /dev/null; then
   rustup update
-  rustup component add rls rust-analysis rust-src
+  rustup component add clippy rust-analyzer rust-src
+  rustup update
   # https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#from-source
   cargo +stable install cargo-llvm-cov --locked
   # TODO: I might need to sign binaries so I can debug.
