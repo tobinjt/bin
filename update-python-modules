@@ -104,7 +104,7 @@ main() {
   if [[ "${skip_brew}" -eq 0 ]]; then
     # Update all existing Homebrew packages rather than partially upgrading when
     # installing python and virtualenv.
-    bubc
+    brew-update-brew-cleanup
     # Install Python and virtualenv, just in case.
     brew install python virtualenv
   fi

@@ -9,7 +9,7 @@ main() {
   fi
 
   # Upgrade everything to ensure that youtube-dl is up to date.
-  bubc
+  brew-update-brew-cleanup
   until yt-dlp "$@"; do
     sleep 10
   done

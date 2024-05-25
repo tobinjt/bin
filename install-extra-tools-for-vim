@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 if is_mac_os; then
-  bubc
+  brew-update-brew-cleanup
 fi
 
 # If you run 'go get' from a directory containing go source code it will change
