@@ -55,7 +55,11 @@ main() {
     if [[ "${use_fswatch}" -eq 1 ]]; then
       fswatch --one-event "${files_to_watch[@]}" > /dev/null
     else
-      inotifywait --quiet "${files_to_watch[@]}"
+      # Only trigger on modifications to avoid triggering on programs reading
+      # the file, like the compiler.
+      # inotifywait exits unsuccessfully without an error message so we need to
+      # guard against that with `|| true` :/
+      inotifywait --quiet --quiet --event modify "${files_to_watch[@]}" || true
     fi
     printf "\n\n\n\n"
     "${binary_and_args[@]}" || true
