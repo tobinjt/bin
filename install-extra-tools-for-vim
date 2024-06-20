@@ -109,5 +109,7 @@ if type rustup >& /dev/null; then
   rustup update
   # https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#from-source
   cargo +stable install cargo-llvm-cov --locked
+  # https://crates.io/crates/cargo-watch
+  cargo install cargo-watch
   # TODO: I might need to sign binaries so I can debug.
 fi
