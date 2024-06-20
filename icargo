@@ -5,4 +5,4 @@ set -e -f -u -o pipefail
 # Run cargo when any inputs change.
 set +f
 shopt -s extglob
-inotify_wrapper ./**/*.rs -- cargo --quiet "$@"
+cargo watch --quiet -x "$@"
