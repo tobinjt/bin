@@ -132,7 +132,7 @@ set -f
     npm install -g @google/clasp
     npm install -g typescript
     # Rust.
-    brew install rustup-init
+    brew install rustup
     rustup-init --no-modify-path -y
     # Calibre.
     cask_install "/Applications/calibre.app" calibre
