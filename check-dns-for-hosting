@@ -52,13 +52,13 @@ check_dns_for_host() {
   host_output_file="$(mktemp -t check-dns.XXXXXXXXXXXX)"
   readonly host_output_file
 
-  pattern="^${hostname} has address ${ipv4_address}\$"
+  pattern="has address ${ipv4_address}\$"
   if ! find_address_loop "A" "${hostname}" "${pattern}" \
         "${host_output_file}"; then
     retval=1
   fi
 
-  pattern="^${hostname} has IPv6 address ${ipv6_address}\$"
+  pattern="has IPv6 address ${ipv6_address}\$"
   if ! find_address_loop "AAAA" "${hostname}" "${pattern}" \
         "${host_output_file}"; then
     retval=1
@@ -98,14 +98,23 @@ check_mx_for_host() {
 main() {
   local hostname retval=0
   local ipv4_address="168.119.99.114" ipv6_address="2a01:4f8:c010:21a::1"
+  local github_ipv4_address="185.199.109.153"
+  local github_ipv6_address="2606:50c0:8003::153"
   local mx_addresses=("1 aspmx.l.google.com." "10 aspmx2.googlemail.com." \
                       "10 aspmx3.googlemail.com." "5 alt1.aspmx.l.google.com." \
                       "5 alt2.aspmx.l.google.com.")
-  readonly ipv4_address ipv6_address mx_addresses
+  readonly ipv4_address ipv6_address github_ipv4_address github_ipv6_address
+  readonly mx_addresses
 
   for hostname in "$@"; do
+    if [[ "${hostname}" == "johntobin.ie" ]]; then
+      local v4_address="${github_ipv4_address}"
+      local v6_address="${github_ipv6_address}"
+    else
+      local v4_address="${ipv4_address}" v6_address="${ipv6_address}"
+    fi
     if ! check_dns_for_host "${hostname}" \
-        "${ipv4_address}" "${ipv6_address}"; then
+        "${v4_address}" "${v6_address}"; then
       retval=1
     fi
     if echo "${hostname}" | grep -q '\..*\.'; then
@@ -114,7 +123,7 @@ main() {
       continue
     fi
     if ! check_dns_for_host "www.${hostname}" \
-        "${ipv4_address}" "${ipv6_address}"; then
+        "${v4_address}" "${v6_address}"; then
       retval=1
     fi
     if ! check_mx_for_host "${hostname}" "${mx_addresses[@]}"; then

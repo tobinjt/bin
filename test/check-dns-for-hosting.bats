@@ -58,10 +58,10 @@ HOST
   assert_failure
   local expected_lines line
   expected_lines=(
-    "Bad A address: pattern '^domain3.ie has address 168.119.99.114$' not found"
-    "Bad AAAA address: pattern '^domain3.ie has IPv6 address 2a01:4f8:c010:21a::1$' not found"
-    "Bad A address: pattern '^www.domain3.ie has address 168.119.99.114$' not found"
-    "Bad AAAA address: pattern '^www.domain3.ie has IPv6 address 2a01:4f8:c010:21a::1$' not found"
+    "Bad A address: pattern 'has address 168.119.99.114$' not found"
+    "Bad AAAA address: pattern 'has IPv6 address 2a01:4f8:c010:21a::1$' not found"
+    "Bad A address: pattern 'has address 168.119.99.114$' not found"
+    "Bad AAAA address: pattern 'has IPv6 address 2a01:4f8:c010:21a::1$' not found"
     "Bad MX address: pattern '^domain3.ie mail is handled by 1 aspmx.l.google.com.$' not found"
     "Bad MX address: pattern '^domain3.ie mail is handled by 10 aspmx2.googlemail.com.$' not found"
     "Bad MX address: pattern '^domain3.ie mail is handled by 10 aspmx3.googlemail.com.$' not found"
