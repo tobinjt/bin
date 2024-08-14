@@ -107,7 +107,8 @@ main() {
 
   brew install autossh shellcheck tmpreaper
   # Basic development.
-  brew install fswatch markdownlint-cli pre-commit vint wget
+  brew install bash-language-server fswatch markdownlint-cli pre-commit vint \
+    wget
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
