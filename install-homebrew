@@ -100,7 +100,7 @@ main() {
   # Everything needed for backups.
   brew install coreutils lockrun rclone restic rsync
   # Basics.
-  brew install less ripgrep tmux vim
+  brew install fd less ripgrep tmux vim
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
