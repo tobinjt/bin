@@ -105,10 +105,10 @@ main() {
     return 0
   fi
 
-  brew install autossh shellcheck tmpreaper
+  brew install autossh tmpreaper
   # Basic development.
-  brew install bash-language-server fswatch markdownlint-cli pre-commit vint \
-    wget
+  brew install bash-language-server fswatch git-delta markdownlint-cli \
+    pre-commit shellcheck vint wget
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
