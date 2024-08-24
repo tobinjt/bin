@@ -110,6 +110,12 @@ main() {
   brew install bash-language-server fswatch git-delta markdownlint-cli \
     pre-commit shellcheck vint wget
 
+  # Neovim.  Not installing by default yet, this is for tracking packages I
+  # need.
+  if false; then
+    brew install luarocsk neovim
+  fi
+
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
     brew install kcov
