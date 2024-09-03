@@ -138,6 +138,7 @@ main() {
       pytest \
       pytest-cov \
       pytest-flakefinder \
+      python-lsp-black \
       'python-lsp-server[all]' \
       pyyaml \
       types-PyYAML)
