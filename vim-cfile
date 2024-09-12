@@ -10,7 +10,7 @@ main() {
     return 1
   fi
   if [[ -s "${cfile}" ]]; then
-    vim -q "$1" -c ':botright cwindow'
+    ${EDITOR} -q "$1" -c ':botright cwindow'
   fi
 }
 

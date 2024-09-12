@@ -8,4 +8,4 @@ for file in "$@"; do
   filenames+=("$(basename -- "${file}")")
 done
 
-vim "${filenames[@]}"
+${EDITOR} "${filenames[@]}"

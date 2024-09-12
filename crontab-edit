@@ -9,6 +9,8 @@ export GIT_MERGE_AUTOEDIT
 if [[ "$#" -eq 0 ]]; then
   # Program is being run interactively: set up $EDITOR to run this program,
   # then invoke `crontab -e` to trigger the else branch.
+  ORIGINAL_EDITOR="${EDITOR}"
+  export ORIGINAL_EDITOR
   EDITOR="$0" crontab -e
 else
   # crontab has invoked this as an editor.
@@ -20,11 +22,11 @@ else
   if [[ ! -f "${FILENAME}" ]]; then
     touch "${FILENAME}"
   fi
-  vimdiff "${FILENAME}" "$@"
+  ${ORIGINAL_EDITOR} -d "${FILENAME}" "$@"
   while ! diff -u "${FILENAME}" "$@"; do
     printf "Found diffs between tmp file and repo!\\n"
     read -r -p "Press enter to edit again: "
-    vimdiff "${FILENAME}" "$@"
+    ${ORIGINAL_EDITOR} -d "${FILENAME}" "$@"
   done
   if ! git check-local-copy-is-clean; then
     # Git tracks symlinks, so it does not follow them, so I need to follow them.
@@ -33,7 +35,7 @@ else
     else
       git add "${FILENAME}"
     fi
-    EDITOR="vim" git commit --edit \
+    EDITOR="${ORIGINAL_EDITOR}" git commit --edit \
       --message 'BEWARE: An empty commit message will cause the commit to fail!'
   fi
   git pull
