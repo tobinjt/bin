@@ -113,7 +113,8 @@ main() {
   # Neovim.  Not installing by default yet, this is for tracking packages I
   # need.
   if false; then
-    brew install luarocsk neovim
+    brew install lua-language-server luarocks neovim \
+      vscode-langservers-extracted
   fi
 
   if [[ "${laptop}" -eq 1 ]]; then
