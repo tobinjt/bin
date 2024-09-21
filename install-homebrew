@@ -100,7 +100,7 @@ main() {
   # Everything needed for backups.
   brew install coreutils lockrun rclone restic rsync
   # Basics.
-  brew install fd font-inconsolata-nerd-font less ripgrep tmux vim
+  brew install fd font-inconsolata-nerd-font less neovim ripgrep tmux vim
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
@@ -108,14 +108,10 @@ main() {
   brew install autossh tmpreaper
   # Basic development.
   brew install bash-language-server fswatch git-delta lazygit markdownlint-cli \
-    pre-commit shellcheck vint wget
+    pre-commit ruff shellcheck vint wget
 
-  # Neovim.  Not installing by default yet, this is for tracking packages I
-  # need.
-  if false; then
-    brew install lua-language-server luarocks neovim ruff \
-      vscode-langservers-extracted
-  fi
+  # Neovim.
+  brew install lua-language-server vscode-langservers-extracted
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
