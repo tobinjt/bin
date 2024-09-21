@@ -2,15 +2,19 @@
 
 set -e -f -u -o pipefail
 
-update-all-submodules() {
-  local directory="$1"
-  cd "${directory}"
-  git submodule update --recursive --remote
+commit_any_changes() {
   # Commit the changes if any.
   git add -A .
   if ! git check-local-copy-is-clean 2>/dev/null; then
     git commit -m 'Update all plugins.'
   fi
+}
+
+update-all-submodules() {
+  local directory="$1"
+  cd "${directory}"
+  git submodule update --recursive --remote
+  commit_any_changes
 }
 
 merge-upstream-changes() {
@@ -26,6 +30,12 @@ merge-upstream-changes() {
   git push
 }
 
+update-neovim-plugins() {
+  cd "${HOME}/src/dotfiles"
+  nvim --headless -c "Lazy! sync" -c "qa"
+  commit_any_changes
+}
+
 main() {
   # Check there aren't any diffs.
   update-dotfiles-and-bin
@@ -35,6 +45,7 @@ main() {
 
   update-all-submodules "${HOME}/bin"
   update-all-submodules "${HOME}/src/dotfiles"
+  update-neovim-plugins
 
   # Force overwriting and deletion of removed files.
   dotfiles -f -X
