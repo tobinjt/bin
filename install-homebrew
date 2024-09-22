@@ -18,6 +18,15 @@ cask_install() {
   fi
 }
 
+php_config_dirs() {
+  local php_config_base_dir="${homebrew_base}/etc/php/"
+  set +f
+  for php_config_dir in "${php_config_base_dir}"/*; do
+    echo "${php_config_dir}";
+  done
+  set -f
+}
+
 main() {
   local url_base="https://raw.githubusercontent.com/Homebrew/install/HEAD"
   local install_url="${url_base}/install.sh"
@@ -121,16 +130,28 @@ main() {
     brew install kcov
     # My website.
     brew install closure-compiler hugo markdown marksman prettier
+
     # PHP.
     brew install composer php phpstan phpunit
-    mkdir -p /opt/homebrew/lib/php/pecl
+
+    # PHP: Uninstall any existing xdebug.
+    pecl uninstall xdebug || true
+    local php_config_dir
+    for php_config_dir in $(php_config_dirs); do
+      sed -i.bak -e '/zend_extension/d' "${php_config_dir}/php.ini"
+    done
+
+    # PHP: Install xdebug.
+    mkdir -p "${homebrew_base}/lib/php/pecl"
     pecl install xdebug
-    set +f
-    cat > /opt/homebrew/etc/php/*/conf.d/99-xdebug.ini <<CONFIG
-zend_extension = xdebug
+
+    # PHP: Configure xdebug to support coverage.
+    for php_config_dir in $(php_config_dirs); do
+      cat > "${php_config_dir}/conf.d/99-xdebug.ini" <<CONFIG
 xdebug.mode = coverage
 CONFIG
-set -f
+    done
+
     # Lint for CSS.
     npm install -g csslint
     # Golang.
