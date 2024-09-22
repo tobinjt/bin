@@ -87,6 +87,9 @@ main() {
   if [[ ! -d "${homebrew_dir}" ]]; then
     # Install Homebrew.
     curl_pipe_shell "${install_url}"
+  else
+    # Get updates out of the way early when I'm running this a second time.
+    brew-update-brew-cleanup
   fi
 
   # Ensure that brew is in $PATH.
