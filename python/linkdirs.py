@@ -18,7 +18,7 @@ import stat
 import sys
 import textwrap
 import time
-from typing import NewType, Tuple
+from typing import NewType
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -521,7 +521,7 @@ def read_skip_patterns_from_file(*, filename: Path) -> SkipPatterns:
     return SkipPatterns(patterns)
 
 
-def parse_arguments(*, argv: CommandLineArgs) -> Tuple[argparse.Namespace, Messages]:
+def parse_arguments(*, argv: CommandLineArgs) -> tuple[argparse.Namespace, Messages]:
     """Parse the arguments provided by the user.
 
     Args:

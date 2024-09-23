@@ -18,7 +18,7 @@ import os
 import re
 import sys
 import time
-from typing import NewType, Tuple
+from typing import NewType
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -93,7 +93,7 @@ def parse_sentinels(*, directory: str, default_delay: int) -> ParsedSentinels:
 
 def check_sentinels(
     *, sentinels: ParsedSentinels, max_global_delay: int
-) -> Tuple[Warnings, Messages]:
+) -> tuple[Warnings, Messages]:
     """Check sentinels for backups that are too old and return warnings.
 
     Args:
