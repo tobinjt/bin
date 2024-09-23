@@ -18,16 +18,16 @@ import os
 import re
 import sys
 import time
-from typing import Dict, List, NewType, Tuple
+from typing import NewType, Tuple
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # Type annotation aliases.
 # Mutating these doesn't cause tests to fail because they are just used for type
 # checking.
-SentinelMap = NewType("SentinelMap", Dict[str, int])  # pragma: no mutate
-Messages = NewType("Messages", List[str])  # pragma: no mutate
-Warnings = NewType("Warnings", List[str])  # pragma: no mutate
+SentinelMap = NewType("SentinelMap", dict[str, int])  # pragma: no mutate
+Messages = NewType("Messages", list[str])  # pragma: no mutate
+Warnings = NewType("Warnings", list[str])  # pragma: no mutate
 
 # Filename constants.
 # These constants are used consistently so mutating them doesn't provide signal.
@@ -178,7 +178,7 @@ def check_sentinels(
     return (warnings, messages)
 
 
-def main(*, argv: List[str]):
+def main(*, argv: list[str]):
     if len(argv) != 2 or not os.path.isdir(argv[1]):
         raise Error(f"Usage: {argv[0]} DIRECTORY")
     # There's no benefit to mutating this constant.

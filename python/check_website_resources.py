@@ -55,7 +55,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, List
+from typing import Any
 import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -94,14 +94,14 @@ class SingleURLConfig:
     """
 
     url: str
-    resources: List[str]
+    resources: list[str]
     comment: str
-    cookies: Dict[str, str]
-    optional_resources: List[str] = dataclasses.field(default_factory=list)
-    optional_resource_regexes: List[str] = dataclasses.field(default_factory=list)
+    cookies: dict[str, str]
+    optional_resources: list[str] = dataclasses.field(default_factory=list)
+    optional_resource_regexes: list[str] = dataclasses.field(default_factory=list)
 
 
-def read_wget_log() -> List[str]:
+def read_wget_log() -> list[str]:
     """Read and return wget.log.
 
     Inlining this code and using pyfakefs breaks pytest, it fails with:
@@ -121,7 +121,7 @@ def read_wget_log() -> List[str]:
         return [line.rstrip("\n") for line in wget_log.readlines()]  # pragma: no mutate
 
 
-def write_cookies_file(*, lines: List[str]):
+def write_cookies_file(*, lines: list[str]):
     """Write cookies.txt.
 
     See read_wget_log() for why this function exists.
@@ -133,7 +133,7 @@ def write_cookies_file(*, lines: List[str]):
         print("\n".join(lines), file=cookies_txt)
 
 
-def run_wget(*, url: str, load_cookies: bool) -> List[str]:
+def run_wget(*, url: str, load_cookies: bool) -> list[str]:
     """Run wget to fetch the specified URL, returning the contents of wget.log.
 
     Args:
@@ -159,7 +159,7 @@ def run_wget(*, url: str, load_cookies: bool) -> List[str]:
         raise WgetFailedException(message) from err
 
 
-def reverse_pagespeed_mangling(*, paths: List[str]) -> List[str]:
+def reverse_pagespeed_mangling(*, paths: list[str]) -> list[str]:
     """Reverse the changes made to paths by mod_pagespeed.
 
     This is based on reverse engineering the paths returned on Ariane's website,
@@ -189,7 +189,7 @@ def reverse_pagespeed_mangling(*, paths: List[str]) -> List[str]:
     return new_paths
 
 
-def check_single_url(*, config: SingleURLConfig) -> List[str]:
+def check_single_url(*, config: SingleURLConfig) -> list[str]:
     """Check a single URL requires only the expected resources.
 
     Args:
@@ -248,7 +248,7 @@ def check_single_url(*, config: SingleURLConfig) -> List[str]:
     return errors
 
 
-def validate_list_of_strings(*, path: str, name: str, data: List[str]):
+def validate_list_of_strings(*, path: str, name: str, data: list[str]):
     """Validate a data structure is a list of strings.
 
     Args:
@@ -265,7 +265,7 @@ def validate_list_of_strings(*, path: str, name: str, data: List[str]):
         raise ValueError(f'{path}: all "{name}" must be strings: ' + ", ".join(bad))
 
 
-def validate_dict_of_strings(*, path: str, name: str, data: List[str]):
+def validate_dict_of_strings(*, path: str, name: str, data: list[str]):
     """Validate a data structure is a dict of string -> string.
 
     Args:
@@ -346,7 +346,7 @@ def validate_user_config(*, path: str, configs: Any):
         validate_dict_of_strings(path=path, name="cookies", data=config["cookies"])
 
 
-def read_config(*, path: str) -> List[SingleURLConfig]:
+def read_config(*, path: str) -> list[SingleURLConfig]:
     """Read the specified config and parse it as JSON.
 
     Args:
@@ -366,7 +366,7 @@ def read_config(*, path: str) -> List[SingleURLConfig]:
     return configs
 
 
-def generate_cookies_file_contents(*, url: str, cookies: Dict[str, str]) -> List[str]:
+def generate_cookies_file_contents(*, url: str, cookies: dict[str, str]) -> list[str]:
     """Generate the contents of a cookies file.
 
     It would be much cleaner to use http.cookiejar for this, but after spending
@@ -388,7 +388,7 @@ def generate_cookies_file_contents(*, url: str, cookies: Dict[str, str]) -> List
     return lines
 
 
-def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
+def parse_arguments(*, argv: list[str]) -> argparse.Namespace:
     """Parse command line arguments.
 
     Args:
@@ -415,7 +415,7 @@ def parse_arguments(*, argv: List[str]) -> argparse.Namespace:
     return argv_parser.parse_args(argv)
 
 
-def main(*, argv: List[str]) -> int:
+def main(*, argv: list[str]) -> int:
     """Main."""
     options = parse_arguments(argv=argv[1:])
     messages = []

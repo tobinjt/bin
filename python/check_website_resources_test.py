@@ -5,7 +5,6 @@ import io
 import logging
 import subprocess
 import textwrap
-from typing import List
 import unittest
 from unittest import mock
 
@@ -14,7 +13,7 @@ import pyfakefs
 import check_website_resources
 
 
-def split_inline_string(*, string: str) -> List[str]:
+def split_inline_string(*, string: str) -> list[str]:
     """Split a multi-line inline string, stripping empty start and end lines."""
     return textwrap.dedent(string).strip().split("\n")
 

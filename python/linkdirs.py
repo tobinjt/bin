@@ -18,7 +18,7 @@ import stat
 import sys
 import textwrap
 import time
-from typing import List, NewType, Tuple
+from typing import NewType, Tuple
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -26,15 +26,15 @@ __author__ = "johntobin@johntobin.ie (John Tobin)"
 # A single path.
 Path = NewType("Path", str)  # pragma: no mutate
 # A list of directories, filenames, or paths.
-Paths = NewType("Paths", List[Path])  # pragma: no mutate
+Paths = NewType("Paths", list[Path])  # pragma: no mutate
 # Diffs between files.
-Diffs = NewType("Diffs", List[str])  # pragma: no mutate
+Diffs = NewType("Diffs", list[str])  # pragma: no mutate
 # Messages to print.
-Messages = NewType("Messages", List[str])  # pragma: no mutate
+Messages = NewType("Messages", list[str])  # pragma: no mutate
 # Shell patterns to skip.
-SkipPatterns = NewType("SkipPatterns", List[str])  # pragma: no mutate
+SkipPatterns = NewType("SkipPatterns", list[str])  # pragma: no mutate
 # Command line args.
-CommandLineArgs = NewType("CommandLineArgs", List[str])  # pragma: no mutate
+CommandLineArgs = NewType("CommandLineArgs", list[str])  # pragma: no mutate
 
 
 class Error(Exception):

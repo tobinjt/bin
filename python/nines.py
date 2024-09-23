@@ -14,7 +14,6 @@ are interpreted as a number of nines.
 import argparse
 import itertools
 import sys
-from typing import List
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -142,7 +141,7 @@ def nines(*, num_nines: float, days: float) -> str:
     return f"{nines_no_zeroes}%: {seconds} seconds ({human}) per {days} days"
 
 
-def main(*, argv: List[str]) -> None:
+def main(*, argv: list[str]) -> None:
     (usage, description) = __doc__.split("\n", maxsplit=1)
     description = description % {
         "PT": PERCENT_THRESHOLD,
