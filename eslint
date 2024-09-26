@@ -2,6 +2,4 @@
 
 set -e -f -u -o pipefail
 
-if [[ -n "$(type -a npx)" ]]; then
-  npx eslint "$@"
-fi
+run-if-exists npx eslint "$@"
