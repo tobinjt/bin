@@ -18,10 +18,6 @@ main() {
   date="$(date +%Y-%m-%d-%H-%M)"
   readonly db_password db_name db_user date
 
-  for command in --check --analyze; do
-    mysqlcheck "${command}" --auto-repair --silent \
-      --user="${db_user}" --password="${db_password}" --databases "${db_name}"
-  done
   local dest="${HOME}/wordpress-backups"
   if [ ! -d "${dest}" ]; then
     mkdir -p "${dest}"
