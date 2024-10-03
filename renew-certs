@@ -6,11 +6,15 @@ cd /etc
 git check-local-copy-is-clean
 
 # These arguments are necessary when a cert needs to be renewed.
-certbot renew \
+(certbot renew \
   --quiet \
   --pre-hook "service apache2 stop" \
   --post-hook "service apache2 start" \
-  --standalone
+  --standalone 2>&1) \
+  | (grep -v -e /usr/lib/python3/dist-packages/certbot/ocsp.py \
+      -e response_ocsp.this_update \
+      -e response_ocsp.next_update \
+      || true)
 
 if ! git check-local-copy-is-clean 2>/dev/null; then
   etckeeper commit 'Renew some certs.'
