@@ -62,11 +62,7 @@ check_ssh_agent() {
 }
 
 update_git_checkout_and_push() {
-  if [[ "$#" -ne 1 ]]; then
-    die "update_git_checkout_and_push needs one argument, got $#"
-  fi
-  local dir="$1"
-  echo "Processing ${dir}"
+  echo "Processing $(git rev-parse --show-toplevel)"
 
   # Refuse to do anything if there are uncommitted changes.
   # If there are deleted submodules hanging around clean them up with:
@@ -124,7 +120,7 @@ main() {
   orig_code="$(cat "${BASH_SOURCE[0]}")"
   local dir
   for dir in $(bin_sources); do
-    (cd "${dir}" && update_git_checkout_and_push "${dir}")
+    (cd "${dir}" && update_git_checkout_and_push)
     # Check for unfinished changes; this happens when submodules are removed
     # because git won't delete the submodule directory.
     (cd "${dir}" && git check-local-copy-is-clean)
@@ -141,7 +137,7 @@ main() {
 
   # Update all dotfiles.
   for dir in $(dotfiles_sources); do
-    (cd "${dir}" && update_git_checkout_and_push "${dir}")
+    (cd "${dir}" && update_git_checkout_and_push)
     # Forcibly update.  There is a risk that we clobber a file in our home
     # directory with a file we've just checked out, but the alternative is for
     # the user to forcibly update manually.  This also prevents files that have
