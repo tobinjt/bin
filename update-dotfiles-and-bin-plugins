@@ -5,7 +5,7 @@ set -e -f -u -o pipefail
 commit_any_changes() {
   # Commit the changes if any.
   git add -A .
-  if ! git check-local-copy-is-clean 2>/dev/null; then
+  if ! git check-local-copy-is-clean --ignore-unpushed-commits 2>/dev/null; then
     git commit -m 'Update all plugins.'
   fi
 }
@@ -45,10 +45,11 @@ main() {
 
   update-all-submodules "${HOME}/bin"
   update-all-submodules "${HOME}/src/dotfiles"
-  update-neovim-plugins
-
   # Force overwriting and deletion of removed files.
   dotfiles -f -X
+  update-neovim-plugins
+  dotfiles -f -X
+
   # Push to upstream, update vim helptags, etc.
   update-dotfiles-and-bin
   # Install syntax checkers and other necessary tools.
