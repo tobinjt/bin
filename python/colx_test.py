@@ -118,9 +118,9 @@ class TestArgumentParsing(unittest.TestCase):
             "Column ranges of the form 3:8, -3:1, 7:-7, and -1:-3 are accepted.",
             "COLUMNS_THEN_FILES    Any argument that looks like a column specifier",
             "remaining arguments are used as",
-            "-d DELIMITER, --delimiter DELIMITER",
+            "--delimiter DELIMITER",
             " Regex delimiting input columns; ",
-            "-s SEPARATOR, --separator SEPARATOR",
+            "--separator SEPARATOR",
             " Separator between output columns",
             " backslash escape sequences will be expanded",
         ]
