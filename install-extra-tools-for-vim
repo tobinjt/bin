@@ -104,6 +104,10 @@ SIGNING
 fi
 
 if type rustup >& /dev/null; then
+  rustup-init --no-modify-path -y
+  # Add ~/.cargo/bin to $PATH.
+  source "${HOME}/.shellrc"
+  rustup install stable
   rustup update
   rustup component add clippy rust-analyzer rust-src
   rustup update
