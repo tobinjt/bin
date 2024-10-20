@@ -40,9 +40,6 @@ main() {
   # Check there aren't any diffs.
   update-dotfiles-and-bin
 
-  # I have forked vim-markdown, so pull any changes from upstream.
-  merge-upstream-changes "${HOME}/src/vim-markdown" "my-changes"
-
   update-all-submodules "${HOME}/bin"
   update-all-submodules "${HOME}/src/dotfiles"
   # Force overwriting and deletion of removed files.
