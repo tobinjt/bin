@@ -154,6 +154,7 @@ main() {
     (virtualenv_install "${virtualenv_dir}/flexget" "${install_individually}" \
       test_flexget \
       "flexget" \
+      "legacy-cgi" \
       "transmission-rpc")
   fi
 }
