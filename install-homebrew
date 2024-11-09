@@ -66,6 +66,12 @@ main() {
     return 1
   fi
 
+  if [[ -x /usr/sbin/DevToolsSecurity ]]; then
+    # Enable developer mode to avoid repeated password prompts.
+    printf "Enabling developer mode; sudo might ask for a password\n"
+    sudo /usr/sbin/DevToolsSecurity -enable
+  fi
+
   local uname_machine homebrew_base homebrew_dir
   uname_machine="$(uname -m)"
   if [[ "${uname_machine}" == "arm64" ]]; then
