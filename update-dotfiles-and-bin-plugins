@@ -49,8 +49,6 @@ main() {
 
   # Push to upstream, update vim helptags, etc.
   update-dotfiles-and-bin
-  # Install syntax checkers and other necessary tools.
-  install-extra-tools-for-vim
 }
 
 # Stop git looking for a commit message when 'git pull' is run.
