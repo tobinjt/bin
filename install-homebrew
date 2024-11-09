@@ -155,7 +155,8 @@ CONFIG
     # Lint for CSS.
     npm install -g csslint
     # Golang.
-    brew install go golangci-lint gopls gotags graphviz staticcheck
+    brew install delve go golangci-lint gopls gotags govulncheck graphviz \
+      staticcheck
     # Google Apps Script.  https://github.com/google/clasp
     npm install -g @google/clasp
     npm install -g typescript

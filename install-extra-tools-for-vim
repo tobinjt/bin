@@ -18,22 +18,15 @@ if type go >& /dev/null; then
   fi
 
   # keep-sorted start
-  # Debugger.
-  go install github.com/go-delve/delve/cmd/dlv@latest
-  # Linting.
-  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   # Dead code detection.
   go install golang.org/x/tools/cmd/deadcode@latest
   # Auto-import packages.
   go install golang.org/x/tools/cmd/goimports@master
-  # LSP.
-  go install golang.org/x/tools/gopls@latest
-  # Vulnerability checking.
-  go install golang.org/x/vuln/cmd/govulncheck@latest
   # keep-sorted end
 
+  # TODO: check if this is necessary with Homebrew dlv.
   if type codesign >& /dev/null; then
-    # Debugger; installed by vim-go, manual instructions at
+    # Debugger; manual instructions at
     # https://github.com/go-delve/delve/blob/master/Documentation/installation/README.md
     # Enable developer mode to avoid repeated password prompts.
     printf "Enabling developer mode; sudo might ask for a password\n"
