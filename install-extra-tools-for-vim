@@ -16,20 +16,21 @@ if type go >& /dev/null; then
     printf "Clearing out binaries from %s\\n" "${bindir}"
     find "${bindir}" -type f -delete
   fi
-  # Binaries needed by vim-go; use GoInstallBinaries because GoUpdateBinaries
-  # would install second copies of homebrew binaries; all the existing binaries
-  # have been deleted so fresh binaries will be built.
-  vim -c 'execute ":GoInstallBinaries" | :quit'
 
-  # Tools used by Syntastic; some of the tools are installed by GoUpdateBinaries
-  # so I don't need to install them a second time.
-  go install golang.org/x/tools/cmd/gotype@latest
-
-  # Vulnerability checking.
-  go install golang.org/x/vuln/cmd/govulncheck@latest
-
+  # keep-sorted start
+  # Debugger.
+  go install github.com/go-delve/delve/cmd/dlv@latest
+  # Linting.
+  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   # Dead code detection.
   go install golang.org/x/tools/cmd/deadcode@latest
+  # Auto-import packages.
+  go install golang.org/x/tools/cmd/goimports@master
+  # LSP.
+  go install golang.org/x/tools/gopls@latest
+  # Vulnerability checking.
+  go install golang.org/x/vuln/cmd/govulncheck@latest
+  # keep-sorted end
 
   if type codesign >& /dev/null; then
     # Debugger; installed by vim-go, manual instructions at
