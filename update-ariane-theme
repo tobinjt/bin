@@ -26,7 +26,7 @@ commit_all() {
   printf "Processing %s\\n" "${dir}"
   if ! git check-local-copy-is-clean 2>/dev/null; then
     git add "${subdir}"
-    git commit -m 'Updated ariane-theme.'
+    git commit -m 'chore: Updated ariane-theme.'
   fi
 }
 

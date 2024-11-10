@@ -87,7 +87,7 @@ main() {
   if ! git check-local-copy-is-clean --ignore-unpushed-commits 2>/dev/null; then
     printf "*** Commiting changes in %s\\n" "${WEBSITE_DIR}"
     git add "${THEME_SUBDIR}"
-    git commit -m "Updated ${THEME_SUBDIR}."
+    git commit -m "chore: Updated ${THEME_SUBDIR}."
   fi
   printf "*** Updating in %s\\n" "${WEBSITE_DIR}"
   git pull

@@ -18,7 +18,7 @@ update_one_dir() {
   pre-commit autoupdate
   if ! git check-local-copy-is-clean; then
     pre-commit run --all-files
-    git commit -a -m 'Update hooks version.'
+    git commit -a -m 'chore: Update hooks version.'
     git push
     pre-commit install --install-hooks
   fi
