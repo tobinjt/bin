@@ -25,6 +25,9 @@ main() {
   if [[ "${config_file}" -nt "${hook_file}" ]]; then
     printf "Installing pre-commit in %s\n" "${PWD}"
     pre-commit install --install-hooks
+    if grep -q -F 'stages: [commit-msg]' "${config_file}"; then
+      pre-commit install --hook-type commit-msg
+    fi
   fi
   # Unconditionally install hooks; this is a quiet no-op if hooks are already
   # installed.
