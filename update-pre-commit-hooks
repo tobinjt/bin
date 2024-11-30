@@ -20,7 +20,7 @@ update_one_dir() {
     pre-commit run --all-files
     git commit -a -m 'chore: Update hooks version.'
     git push
-    pre-commit install --install-hooks
+    install-pre-commit-hooks
   fi
 }
 
