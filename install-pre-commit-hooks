@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 main() {
-  if [[ -z "$(type -a pre-commit)" ]]; then
+  if ! type pre-commit >& /dev/null; then
     printf "pre-commit is not installed, exiting successfully.\n"
     return 0
   fi
