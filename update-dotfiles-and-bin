@@ -95,6 +95,9 @@ update_git_checkout_and_push() {
   else
     git push
   fi
+
+  # Install pre-commit hooks if necessary.
+  install-pre-commit-hooks
 }
 
 main() {
