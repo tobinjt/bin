@@ -179,7 +179,7 @@ CONFIG
     cask_install "/Applications/FileBot.app" filebot
   fi
   # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
-  install-extra-tools-for-vim
+  install-extra-development-tools
   # All the Python modules I need for development.
   update-python-modules
 
