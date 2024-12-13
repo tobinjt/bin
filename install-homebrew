@@ -171,6 +171,7 @@ CONFIG
     rustup-init --no-modify-path -y
     # Calibre.
     cask_install "/Applications/calibre.app" calibre
+    cask_install "/Applications/WezTerm.app" wezterm
   fi
   if [[ "${imac}" -eq 1 ]]; then
     # Various tools for downloads.
