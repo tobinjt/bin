@@ -144,10 +144,13 @@ run_rsync() {
               -e '^Connection reset by' \
               -e '^Connection timed out during banner exchange' \
               -e '^Connection to .* timed out' \
+              -e '^Read from remote host .*: Connection reset by peer' \
+              -e '^Read from remote host .*: Operation timed out' \
               -e '^Timeout, server .* not responding' \
               -e '^Warning: Permanently added the .* host key .* known hosts' \
               -e '^client_loop: send disconnect: Broken pipe' \
               -e '^file has vanished:' \
+              -e '^kex_exchange_identification: Connection closed by remote host' \
               -e '^packet_write_wait: Connection to .* Broken pipe' \
               -e '^rsync error: error in rsync protocol data stream (code 12)' \
               -e '^rsync error: error in socket IO (code 10) at io.c' \
@@ -160,6 +163,7 @@ run_rsync() {
               -e '^ssh: connect to host .*: Connection timed out' \
               -e '^ssh: connect to host .*: No route to host' \
               -e '^ssh: connect to host .*: Operation timed out' \
+              -e '^ssh_dispatch_run_fatal: Connection to .* port 22: Operation timed out' \
               -e 'ssh_exchange_identification: Connection closed by remote ' \
               -e 'ssh_exchange_identification: read: Connection reset by peer' \
             || true)) \
