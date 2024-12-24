@@ -118,10 +118,8 @@ def check_sentinels(
     time_fmt = "%Y-%m-%d %H:%M"
 
     if not sentinels.timestamps:
-        # pylint: disable=no-member,unsubscriptable-object
         warnings.append("Zero sentinels passed, something is wrong.")
         messages.append(warnings[-1])
-        # pylint: enable=no-member,unsubscriptable-object
         return (warnings, messages)
 
     globally_delayed = [
@@ -130,12 +128,10 @@ def check_sentinels(
         if now - sentinels.timestamps[host] > max_global_delay
     ]
     if len(globally_delayed) == len(sentinels.timestamps):
-        # pylint: disable=no-member,unsubscriptable-object
         warnings.append(
             "All backups are delayed by at least " f"{max_global_delay} seconds"
         )
         messages.append(warnings[-1])
-        # pylint: enable=no-member,unsubscriptable-object
 
     for host, last_backup in sentinels.timestamps.items():
         max_delay = sentinels.max_allowed_delay[host]
@@ -157,7 +153,7 @@ def check_sentinels(
                 time_fmt, time.gmtime(sleeping_until)
             ),
         }
-        messages.append(warning)  # pylint: disable=no-member
+        messages.append(warning)
 
         # Disable mutations because changing '<' to '<=' is not meaningful.
         if now - last_backup < max_delay:  # pragma: no mutate
@@ -168,13 +164,11 @@ def check_sentinels(
             continue
 
         # Something is wrong :(
-        warnings.append(warning)  # pylint: disable=no-member
+        warnings.append(warning)
 
-    # pylint: disable=not-an-iterable
     messages = Messages(
         sorted(message.replace("too old", "debug info") for message in messages)
     )
-    # pylint: enable=not-an-iterable
     return (warnings, messages)
 
 
@@ -185,13 +179,11 @@ def main(*, argv: list[str]):
     day = 24 * 60 * 60  # pragma: no mutate
     sentinels = parse_sentinels(directory=argv[1], default_delay=day)
     (warnings, messages) = check_sentinels(sentinels=sentinels, max_global_delay=day)
-    # pylint: disable=not-an-iterable
     if sys.stdin.isatty():
         for line in messages:
             print(line)
     for line in warnings:
         print(line, file=sys.stderr)
-    # pylint: enable=not-an-iterable
     if warnings:
         sys.exit(1)
     else:

@@ -60,7 +60,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
     def setUp(self):
         # Do not truncate diffs.
-        self.maxDiff = None  # pylint: disable=invalid-name
+        self.maxDiff = None
         self.setUpPyfakefs()
 
     def create_files(self, string):
@@ -80,7 +80,6 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             string: str, string listing files as described above.
         """
         for line in string.split("\n"):
-            # pylint: disable=no-member
             # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
             line = line.strip()
             if not line or line.startswith("#"):
@@ -499,9 +498,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             argv=["linkdirs", os.path.dirname(src_file), os.path.dirname(dest_file)]
         )
         # Strip off timestamps.
-        # pylint: disable=not-an-iterable
         actual = [re.sub(r"\t.*$", "\t", x) for x in actual]
-        # pylint: enable=not-an-iterable
         expected = [
             f"--- {dest_file}\t",
             f"+++ {src_file}\t",
@@ -612,9 +609,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 argv=["linkdirs", "--dryrun", src_dir, dest_dir]
             )
             # Strip off timestamps.
-            # pylint: disable=not-an-iterable
             messages = [re.sub(r"\t.*$", "\t", x) for x in messages]
-            # pylint: enable=not-an-iterable
             expected = [
                 "--- /z/y/x/file1\t",
                 "+++ /a/b/c/file1\t",

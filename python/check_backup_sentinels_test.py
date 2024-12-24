@@ -19,7 +19,6 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     def create_files_for_test(self, data: dict[str, str]) -> None:
         """Create files for tests."""
         for filename, contents in data.items():
-            # pylint: disable=no-member
             # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
             self.fs.create_file(filename, contents=contents)
 
@@ -150,7 +149,7 @@ class TestCheckSentinels(unittest.TestCase):
             warning.replace("too old", "debug info") for warning in expected_warnings
         ]
         # Do not truncate diffs.
-        self.maxDiff = None  # pylint: disable=invalid-name
+        self.maxDiff = None
         self.assertEqual(expected_messages, messages)
         self.assertEqual(expected_warnings, warnings)
 
@@ -194,7 +193,7 @@ class TestCheckSentinels(unittest.TestCase):
             " sleeping until: 0/1970-01-01 00:00",
         ]
         # Do not truncate diffs.
-        self.maxDiff = None  # pylint: disable=invalid-name
+        self.maxDiff = None
         self.assertEqual(expected_warnings, warnings)
         self.assertEqual(3, len(messages))
 
@@ -227,7 +226,7 @@ class TestCheckSentinels(unittest.TestCase):
             sentinels=sentinels, max_global_delay=hour
         )
         # Do not truncate diffs.
-        self.maxDiff = None  # pylint: disable=invalid-name
+        self.maxDiff = None
         self.assertEqual([], warnings)
         self.assertEqual(2, len(messages))
 
@@ -238,7 +237,6 @@ class TestMain(fake_filesystem_unittest.TestCase):
     def setUp(self):
         self.setUpPyfakefs()
         self._testdir = "/test/dir"
-        # pylint: disable=no-member
         # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
         self.fs.create_file(os.path.join(self._testdir, "qwerty"), contents="test test")
 
@@ -299,7 +297,6 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     def create_files_for_test(self, data: dict[str, str]) -> None:
         """Create files for tests."""
         for filename, contents in data.items():
-            # pylint: disable=no-member
             # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
             self.fs.create_file(filename, contents=contents)
 

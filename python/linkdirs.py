@@ -273,20 +273,17 @@ def link_files(
 
     results = LinkResults(Paths([]), Diffs([]), Messages([]))
     files = remove_skip_patterns(files=files, skip=options.skip)
-    # Pylint doesn't understand that Paths is actually a list, so disable those
     # warnings :(
-    # pylint: disable=not-an-iterable
     files = Paths(
         [
             Path(os.path.join(directory, filename))
             for filename in remove_skip_patterns(files=files, skip=options.skip)
         ]
     )
-    # pylint: enable=not-an-iterable
     skip = SkipPatterns([f"*{os.sep}{pattern}" for pattern in options.skip])
     files = remove_skip_patterns(files=files, skip=skip)
-    files.sort()  # pylint: disable=no-member
-    for source_filename in files:  # pylint: disable=not-an-iterable
+    files.sort()
+    for source_filename in files:
         dest_filename = Path(source_filename.replace(source, dest, 1))
         results.expected_files.append(dest_filename)
 
@@ -432,12 +429,10 @@ def report_unexpected_files(
 
     msgs = Messages([])
     if options.delete_unexpected_files:
-        msgs.extend(  # pylint: disable=no-member
+        msgs.extend(
             delete_unexpected_files(unexpected_paths=unexpected_paths, options=options)
         )
-    msgs.extend(  # pylint: disable=no-member
-        format_unexpected_files(unexpected_paths=unexpected_paths)
-    )
+    msgs.extend(format_unexpected_files(unexpected_paths=unexpected_paths))
     return msgs
 
 
@@ -490,21 +485,21 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
     unexpected_paths.directories.sort()
     unexpected_paths.files.sort()
     unexpected_msgs = Messages([])
-    unexpected_msgs.extend(  # pylint: disable=no-member
+    unexpected_msgs.extend(
         [f"Unexpected directory: {path}" for path in unexpected_paths.directories]
     )
-    unexpected_msgs.extend(  # pylint: disable=no-member
+    unexpected_msgs.extend(
         [f"Unexpected file: {path}" for path in unexpected_paths.files]
     )
     if unexpected_paths.files:
-        unexpected_msgs.append(  # pylint: disable=no-member
+        unexpected_msgs.append(
             "rm " + " ".join([shlex.quote(f) for f in unexpected_paths.files])
         )
     if unexpected_paths.directories:
         # Descending sort by length, so that child directories are removed before
         # parent directories.
         unexpected_paths.directories.sort(key=len, reverse=True)
-        unexpected_msgs.append(  # pylint: disable=no-member
+        unexpected_msgs.append(
             "rmdir " + " ".join([shlex.quote(d) for d in unexpected_paths.directories])
         )
     return unexpected_msgs
@@ -645,9 +640,9 @@ def parse_arguments(*, argv: CommandLineArgs) -> tuple[argparse.Namespace, Messa
     options = argv_parser.parse_args(argv[1:])
     messages = Messages([])
     if len(options.args) < 2:
-        messages.append(usage % {"prog": argv[0]})  # pylint: disable=no-member
+        messages.append(usage % {"prog": argv[0]})
     if options.delete_unexpected_files and not options.ignore_unexpected_children:
-        messages.append(  # pylint: disable=no-member
+        messages.append(
             "Cannot enable --delete_unexpected_files without "
             "--ignore_unexpected_children"
         )
@@ -677,7 +672,7 @@ def real_main(*, argv: CommandLineArgs) -> Messages:
         source = source.rstrip(os.sep)
         all_results.extend(link_dir(source=source, dest=dest, options=options))
     if options.report_unexpected_files or options.delete_unexpected_files:
-        unexpected_msgs.extend(  # pylint: disable=no-member
+        unexpected_msgs.extend(
             report_unexpected_files(
                 dest_dir=dest,
                 expected_files_list=all_results.expected_files,
@@ -690,7 +685,7 @@ def real_main(*, argv: CommandLineArgs) -> Messages:
 
 def main(*, argv: CommandLineArgs):
     messages = real_main(argv=argv)
-    for line in messages:  # pylint: disable=not-an-iterable
+    for line in messages:
         print(line)
     if messages:
         sys.exit(1)
