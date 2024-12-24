@@ -17,7 +17,6 @@ test_python() {
   cd "${HOME}/bin/python"
   pytest
   set +f
-  pylint ./*.py
   mypy -- *.py
   set -f
 }
@@ -134,7 +133,6 @@ main() {
       mypy \
       pudb \
       pyfakefs \
-      pylint \
       pytest \
       pytest-cov \
       pytest-flakefinder \
@@ -142,10 +140,6 @@ main() {
       'python-lsp-server[all]' \
       pyyaml \
       types-PyYAML)
-
-    # Homebrew warns that *-config can cause problems, and AFAIK I don't need
-    # this, so delete it.
-    rm -f "${python_dir}/bin/pylint-config"
   fi
 
   # Flexget.  Only install and test on machines where I normally run flexget.

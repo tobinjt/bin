@@ -43,13 +43,6 @@ repos:
         language: system
         types: [python]
         entry: mypy --ignore-missing-imports --scripts-are-modules
-      # Using this instead of a packaged pylint check because the packaged one
-      # doesn't find modules in virtualenv.
-      - id: pylint
-        name: Run `pylint`
-        language: system
-        types: [python]
-        entry: pylint
       - id: pytest
         name: Run `pytest`
         language: system
