@@ -132,6 +132,7 @@ main() {
       lxml \
       mypy \
       pudb \
+      pydantic \
       pyfakefs \
       pytest \
       pytest-cov \

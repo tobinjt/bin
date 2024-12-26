@@ -47,15 +47,16 @@ Example JSON_CONFIG_FILE:
 """
 
 import argparse
-import dataclasses
 import json
 import logging
 import os
+
+# This import works because virtualenv's python3 is the first python3 in $PATH.
+import pydantic
 import re
 import subprocess
 import sys
 import tempfile
-from typing import Any
 import urllib.parse
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -80,8 +81,7 @@ class WgetFailedException(Error):
     """Running wget failed."""
 
 
-@dataclasses.dataclass(frozen=True)
-class SingleURLConfig:
+class SingleURLConfig(pydantic.BaseModel):
     """Config for a single URL.
 
     Attributes:
@@ -93,12 +93,14 @@ class SingleURLConfig:
         comment: comment to help identify the config.
     """
 
+    model_config = pydantic.ConfigDict(extra="forbid", frozen=True)
+
     url: str
     resources: list[str]
-    comment: str
-    cookies: dict[str, str]
-    optional_resources: list[str] = dataclasses.field(default_factory=list)
-    optional_resource_regexes: list[str] = dataclasses.field(default_factory=list)
+    comment: str = "no comment"
+    cookies: dict[str, str] = {}
+    optional_resources: list[str] = []
+    optional_resource_regexes: list[str] = []
 
 
 def read_wget_log() -> list[str]:
@@ -248,104 +250,6 @@ def check_single_url(*, config: SingleURLConfig) -> list[str]:
     return errors
 
 
-def validate_list_of_strings(*, path: str, name: str, data: list[str]):
-    """Validate a data structure is a list of strings.
-
-    Args:
-        path: path to the config file, used in error messages.
-        name: name of the data structure, used in error messages.
-        data: the data structure to validate.
-    Raises:
-        ValueError if any validation fails.
-    """
-    if not isinstance(data, list):
-        raise ValueError(f'{path}: "{name}" must be a list of strings')
-    bad = [str(r) for r in data if not isinstance(r, str)]
-    if bad:
-        raise ValueError(f'{path}: all "{name}" must be strings: ' + ", ".join(bad))
-
-
-def validate_dict_of_strings(*, path: str, name: str, data: list[str]):
-    """Validate a data structure is a dict of string -> string.
-
-    Args:
-        path: path to the config file, used in error messages.
-        name: name of the data structure, used in error messages.
-        data: the data structure to validate.
-    Raises:
-        ValueError if any validation fails.
-    """
-    if not isinstance(data, dict):
-        raise ValueError(f'{path}: "{name}" must be a dict')
-    contents = list(data.keys()) + list(data.values())
-    bad = [str(c) for c in contents if not isinstance(c, str)]
-    if bad:
-        raise ValueError(
-            f'{path}: everything in "{name}" must be strings: ' + ", ".join(bad)
-        )
-
-
-def validate_user_config(*, path: str, configs: Any):
-    """Validate the configs supplied by the user.
-
-    NOTE: the configs will be modified in-place to fill missing fields with
-    defaults.
-
-    Args:
-        path: path of the config file, used for error messages.
-        configs: the data structure returned by json.loads().
-    Raises:
-        ValueError if any validation fails.
-    """
-    if not isinstance(configs, list):
-        raise ValueError(f"{path}: Top-level data structure must be a list")
-    for config in configs:
-        if not isinstance(config, dict):
-            raise ValueError(f"{path}: All entries in the list must be dicts")
-        known_keys = {
-            "url",
-            "resources",
-            "cookies",
-            "comment",
-            "optional_resources",
-            "optional_resource_regexes",
-        }
-        actual_keys = set(config.keys())
-        if not actual_keys.issubset(known_keys):
-            bad_keys = list(actual_keys - known_keys)
-            bad_keys.sort()
-            raise ValueError(f"{path}: Unsupported key(s): " + ", ".join(bad_keys))
-        if "url" not in config:
-            raise ValueError(f'{path}: required config "url" not provided')
-        if "resources" not in config:
-            raise ValueError(f'{path}: required config "resources" not provided')
-        if "cookies" not in config:
-            config["cookies"] = {}
-        if "comment" not in config:
-            config["comment"] = config["url"]
-        if "optional_resources" not in config:
-            config["optional_resources"] = []
-        if "optional_resource_regexes" not in config:
-            config["optional_resource_regexes"] = []
-
-        if not isinstance(config["url"], str):
-            raise ValueError(f"{path}: url must be a string")
-
-        if not isinstance(config["comment"], str):
-            raise ValueError(f"{path}: comment must be a string")
-
-        validate_list_of_strings(path=path, name="resources", data=config["resources"])
-        validate_list_of_strings(
-            path=path, name="optional_resources", data=config["optional_resources"]
-        )
-        validate_list_of_strings(
-            path=path,
-            name="optional_resource_regexes",
-            data=config["optional_resource_regexes"],
-        )
-        validate_dict_of_strings(path=path, name="cookies", data=config["cookies"])
-
-
 def read_config(*, path: str) -> list[SingleURLConfig]:
     """Read the specified config and parse it as JSON.
 
@@ -356,9 +260,14 @@ def read_config(*, path: str) -> list[SingleURLConfig]:
     """
     with open(path, encoding="utf8") as filehandle:
         data = json.loads(filehandle.read())
-    validate_user_config(path=path, configs=data)
     configs = []
     for config in data:
+        # pydantic can perform the URL and resources checks, but the error messages are
+        # far less clear, so for user-friendliness I implemented the checks here.
+        if "url" not in config:
+            raise ValueError(f'{path}: required config "url" not provided')
+        if "resources" not in config:
+            raise ValueError(f'{path}: required config "resources" not provided')
         if config["url"] not in config["resources"]:
             # The URL needs to be included, but do that automatically for the user.
             config["resources"].insert(0, config["url"])

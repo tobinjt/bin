@@ -1,8 +1,8 @@
 """Tests for check_website_resources."""
 
-import dataclasses
 import io
 import logging
+import pydantic
 import subprocess
 import textwrap
 import unittest
@@ -60,12 +60,10 @@ class TestReadConfig(unittest.TestCase):
             cookies={},
             comment="https://www.example.com/",
         )
-        with self.assertRaisesRegex(
-            dataclasses.FrozenInstanceError, "cannot assign to field"
-        ):
+        with self.assertRaisesRegex(pydantic.ValidationError, "Instance is frozen"):
             config.url = "overwritten"
 
-    def test_url_is_included(self):
+    def test_url_is_included_in_resources(self):
         """Test explicit inclusion of URL works."""
         with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
             contents = """
@@ -84,7 +82,7 @@ class TestReadConfig(unittest.TestCase):
                     url="https://www.example.com/",
                     resources=["https://www.example.com/", "resource 1"],
                     cookies={},
-                    comment="https://www.example.com/",
+                    comment="no comment",
                 )
             ]
             filename = "test.json"
@@ -92,7 +90,7 @@ class TestReadConfig(unittest.TestCase):
             actual = check_website_resources.read_config(path=filename)
             self.assertEqual(expected, actual)
 
-    def test_url_is_not_included(self):
+    def test_url_is_not_included_in_resources(self):
         """Test URL not being included works."""
         with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
             contents = """
@@ -110,7 +108,7 @@ class TestReadConfig(unittest.TestCase):
                     url="https://www.example.com/",
                     resources=["https://www.example.com/", "resource 1"],
                     cookies={},
-                    comment="https://www.example.com/",
+                    comment="no comment",
                 )
             ]
             filename = "test.json"
@@ -118,66 +116,41 @@ class TestReadConfig(unittest.TestCase):
             actual = check_website_resources.read_config(path=filename)
             self.assertEqual(expected, actual)
 
+    def test_url_is_missing_from_config(self):
+        """Test URL not being included fails validation."""
+        with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+            contents = """
+                    [
+                        {
+                            "resources": [
+                                "resource 1"
+                            ]
+                        }
+                    ]
+                    """
+            filename = "test.json"
+            patcher.fs.create_file(filename, contents=contents)
+            with self.assertRaisesRegex(
+                ValueError, 'required config "url" not provided'
+            ):
+                check_website_resources.read_config(path=filename)
 
-class TestValidateUserConfig(unittest.TestCase):
-    """Tests for validate_user_config."""
-
-    def test_validation(self):
-        """Tests for all the validations."""
-        # tests is a dict mapping 'assertion message' to the data structure that
-        # should generate that assertion message.
-        tests = {
-            "Top-level data structure": 1,
-            "All entries in the list must be dicts": [1],
-            "Unsupported key.s.: asdf, qwerty": [{"asdf": 1, "qwerty": 2}],
-            'required config "url" not provided': [{"resources": 1}],
-            'required config "resources" not provided': [{"url": 1}],
-            "url must be a string": [{"url": 1, "resources": []}],
-            "comment must be a string": [{"url": "x", "resources": [], "comment": 1}],
-            '"resources" must be a list of strings': [{"url": "x", "resources": 1}],
-            'all "resources" must be strings: 1, 2': [
-                {"url": "x", "resources": [1, 2]}
-            ],
-            '"optional_resources" must be a list of strings': [
-                {"url": "x", "resources": [], "optional_resources": 1}
-            ],
-            'all "optional_resources" must be strings: 1, 2': [
-                {"url": "x", "resources": [], "optional_resources": [1, 2]}
-            ],
-            '"optional_resource_regexes" must be a list of strings': [
-                {"url": "x", "resources": [], "optional_resource_regexes": 1}
-            ],
-            'all "optional_resource_regexes" must be strings: 1, 2': [
-                {"url": "x", "resources": [], "optional_resource_regexes": [1, 2]}
-            ],
-            '"cookies" must be a dict': [
-                {"url": "x", "resources": ["x"], "cookies": 1}
-            ],
-            'everything in "cookies" must be strings: 1, 2': [
-                {"url": "x", "resources": ["x"], "cookies": {1: "x", "y": 2}}
-            ],
-        }
-        for message, data in tests.items():
-            with self.subTest(message):
-                with self.assertRaisesRegex(ValueError, "^config.json:.*" + message):
-                    check_website_resources.validate_user_config(
-                        path="config.json", configs=data
-                    )
-
-    def test_valid_config(self):
-        """Test that a valid config does not trigger any exceptions."""
-        data = [
-            {
-                "url": "http://www.example.com/",
-                "resources": ["http://www.example.com/style.css"],
-                "cookies": {"key": "value"},
-            },
-            {
-                "url": "http://example.com/",
-                "resources": ["http://example.com/style.css"],
-            },
-        ]
-        check_website_resources.validate_user_config(path="config.json", configs=data)
+    def test_resources_are_missing_from_config(self):
+        """Test resources not being included fails validation."""
+        with pyfakefs.fake_filesystem_unittest.Patcher() as patcher:
+            contents = """
+                    [
+                        {
+                            "url": "https://www.example.com/"
+                        }
+                    ]
+                    """
+            filename = "test.json"
+            patcher.fs.create_file(filename, contents=contents)
+            with self.assertRaisesRegex(
+                ValueError, 'required config "resources" not provided'
+            ):
+                check_website_resources.read_config(path=filename)
 
 
 @mock.patch("subprocess.run")
@@ -497,7 +470,7 @@ class TestMain(unittest.TestCase):
                     self.assertEqual(1, status)
                     warnings = mock_stderr.getvalue()
                     self.assertEqual(
-                        "www.example.com (www.example.com): running wget "
+                        "www.example.com (no comment): running wget "
                         + "failed; forced failure\n",
                         warnings,
                     )
@@ -536,9 +509,9 @@ class TestMain(unittest.TestCase):
                     warnings = mock_stderr.getvalue().rstrip("\n").split("\n")
                     expected = split_inline_string(
                         string="""
-                            Missing resources for www.example.com (www.example.com):
+                            Missing resources for www.example.com (no comment):
                             resource_2
-                            Unmatched resources for www.example.com (www.example.com):
+                            Unmatched resources for www.example.com (no comment):
                             resource_3
                             """
                     )
