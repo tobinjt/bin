@@ -5,7 +5,7 @@ set -e -f -u -o pipefail
 main() {
   if [[ "$#" != 0 ]]; then
     printf "Usage: %s\\n" "$0" >&2
-    printf "You will be promoted for a SASL password\\n" >&2
+    printf "You may be promoted for a SASL password\\n" >&2
     exit 1
   fi
 
@@ -29,6 +29,11 @@ johntobin johntobin@johntobin.ie
 END_OF_VIRTUAL
   postmap hash:/etc/postfix/virtual
 
+  # Remove backwards-compatible settings.
+  postconf -X smtp_use_tls
+  postconf -X smtpd_use_tls
+
+  postconf compatibility_level="3.6"
   postconf inet_interfaces="loopback-only"
   postconf inet_protocols="all"
   postconf mydestination="localhost.localdomain, localhost"
@@ -37,7 +42,8 @@ END_OF_VIRTUAL
   postconf smtp_sasl_auth_enable="yes"
   postconf smtp_sasl_password_maps="hash:/etc/postfix/sasl_passwd"
   postconf smtp_sasl_security_options="noanonymous"
-  postconf smtp_use_tls="yes"
+  postconf smtp_tls_security_level="encrypt"
+  postconf smtp_tls_mandatory_ciphers="high"
   postconf virtual_alias_maps="hash:/etc/postfix/virtual"
   # Cargo culting these settings from old hosting.
   postconf default_transport="smtp"
