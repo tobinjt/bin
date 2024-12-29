@@ -28,4 +28,10 @@ main() {
   done
 }
 
+if [[ -z "${CAFFEINATED:-}" ]]; then
+  CAFFEINATED="do not sleep"
+  export CAFFEINATED
+  exec caffeinate -i "$0"
+fi
+
 main "$@"

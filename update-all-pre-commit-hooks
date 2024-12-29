@@ -2,6 +2,12 @@
 
 set -e -f -u -o pipefail
 
+if [[ -z "${CAFFEINATED:-}" ]]; then
+  CAFFEINATED="do not sleep"
+  export CAFFEINATED
+  exec caffeinate -i "$0"
+fi
+
 dirs_to_update() {
   set +f
   echo "${HOME}/src/"*
