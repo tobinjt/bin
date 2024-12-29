@@ -94,14 +94,6 @@ main() {
   git push
   git check-local-copy-is-clean
 
-  # Update the live site with whatever has changed.
-  printf "*** Diffing and pushing to production\\n"
-  cd "${WEBSITE_DIR}"
-  make push
-
-  # Flush the mod_pagespeed cache to prevent mismatches and rejected content.
-  ssh -t hosting 'sudo touch /var/cache/mod_pagespeed/cache.flush'
-
   # Update on other machines.
   local machine
   for machine in hosting imac; do
