@@ -5,9 +5,11 @@ set -e -f -u -o pipefail
 main() {
   local tmpfile
   tmpfile="$(mktemp -t vim-grep.XXXXXXXXXXXX)"
-  # We can't do anything clever here because we don't know whether the search
-  # targets are git repos so always use --no-index.
-  git grep --no-index --line-number "$@" > "${tmpfile}"
+  if git rev-parse --show-toplevel >& /dev/null; then
+    git grep --untracked --line-number "$@" > "${tmpfile}"
+  else
+    git grep --no-index --line-number "$@" > "${tmpfile}"
+  fi
   vim-cfile "${tmpfile}"
   rm -f "${tmpfile}"
 }
