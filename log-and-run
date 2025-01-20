@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+(date; echo "$@") >> "${HOME}/tmp/logs/log-and-run.log"
+"$@"
