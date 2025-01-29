@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Run phpinsights when any PHP files change.
+set +f
+echo inotify_wrapper *.php src/*.php tests/*.php -- .phpinsights-pre-commit
