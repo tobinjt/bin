@@ -4,5 +4,4 @@ set -e -f -u -o pipefail
 
 # Run phpunit when any PHP files change.
 set +f
-# TODO: Test out this filename pattern.
-inotify_wrapper ./**/*.php -- phpunit "$@"
+inotify_wrapper ./*.php src/*.php tests/*.php -- phpunit "$@"
