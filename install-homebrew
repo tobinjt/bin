@@ -125,7 +125,7 @@ main() {
 
   brew install autossh tmpreaper
   # Basic development.
-  brew install bash-language-server fswatch git-delta lazygit markdownlint-cli \
+  brew install bash-language-server fswatch lazygit markdownlint-cli \
     pre-commit ruff shellcheck vint wget
 
   # Neovim.
