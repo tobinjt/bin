@@ -158,6 +158,8 @@ xdebug.mode = coverage
 CONFIG
     done
 
+    # Update existing packages first.
+    npm update -g
     # Lint for CSS.
     npm install -g csslint
     # Golang.
