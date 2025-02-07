@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local url="https://github.com/neovim/neovim/releases/download/stable/"
+  url+="nvim-linux-x86_64.appimage"
+  readonly url
+  local date
+  date="$(date +%Y-%m-%d)"
+  readonly date
+  local filename="nvim.appimage.${date}" extraction_dir="nvim.${date}"
+  readonly filename extraction_dir
+
+  cd "${HOME}/tmp/nvim"
+  rm -f "${filename}"
+  curl --location --output "${filename}" "${url}"
+  chmod 755 "${filename}"
+  rm -rf "squashfs-root"
+  "./${filename}" --appimage-extract
+  rm -r -f "${extraction_dir}"
+  mv "squashfs-root" "${extraction_dir}"
+  ln -s -f -n "${extraction_dir}" nvim
+}
+
+main "$@"
