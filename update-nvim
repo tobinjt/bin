@@ -20,6 +20,7 @@ main() {
   "./${filename}" --appimage-extract
   rm -r -f "${extraction_dir}"
   mv "squashfs-root" "${extraction_dir}"
+  "${extraction_dir}/usr/bin/nvim" --version
   ln -s -f -n "${extraction_dir}" nvim
 }
 
