@@ -35,7 +35,12 @@ main() {
   fi
   # Unconditionally install hooks; this is a quiet no-op if hooks are already
   # installed.
-  pre-commit install-hooks
+  local output
+  output="$(pre-commit install-hooks)"
+  if [[ -n "${output}" ]]; then
+    printf "Installing pre-commit hooks in %s\n" "${PWD}"
+    printf "%s\n" "${output}"
+  fi
   return 0
 }
 
