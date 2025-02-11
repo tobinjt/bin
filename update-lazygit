@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  # TODO: turn this into an argument or something.
+  local url="https://github.com/jesseduffield/lazygit/releases/download/"
+  url+="v0.45.2/lazygit_0.45.2_Linux_x86_64.tar.gz"
+  readonly url
+  local date
+  date="$(date +%Y-%m-%d)"
+  readonly date
+  local extraction_dir="${HOME}/tmp/lazygit/lazygit.${date}"
+  readonly extraction_dir
+
+  mkdir -p "${extraction_dir}"
+  cd "${extraction_dir}"
+  rm -f "$(basename "${url}")"
+  wget "${url}"
+  tar zxvf "$(basename "${url}")"
+  ./lazygit --help
+  cd ..
+  ln -s -f -n "${extraction_dir}/lazygit" lazygit
+}
+
+main "$@"
