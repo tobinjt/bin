@@ -9,6 +9,7 @@ backup "$@" "${hostname}" backups "${HOME}/backups"
 backup "$@" "${hostname}" Documents "${HOME}/Documents"
 backup "$@" "${hostname}" Media_ArianeStuff_FromOldLaptops \
   "${HOME}/Media/ArianeStuff/From-old-laptops"
+backup "$@" "${hostname}" Downloaded_Ebooks "${HOME}/Media/Downloaded_Ebooks"
 backup "$@" "${hostname}" Pictures_Lightroom "${HOME}/Pictures/Lightroom"
 backup "$@" "${hostname}" src "${HOME}/src"
 if all_backups_succeeded; then
