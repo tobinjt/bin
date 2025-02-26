@@ -11,8 +11,17 @@ main() {
 
   local version="$1"
   readonly version
+  if is_mac_os; then
+    if is_x86_64; then
+      os_type="Darwin_x86_64"
+    else
+      os_type="Darwin_arm64"
+    fi
+  else
+    os_type="Linux_x86_64"
+  fi
   local url="https://github.com/jesseduffield/lazygit/releases/download/"
-  url+="v${version}/lazygit_${version}_Linux_x86_64.tar.gz"
+  url+="v${version}/lazygit_${version}_${os_type}.tar.gz"
   readonly url
   local date
   date="$(date +%Y-%m-%d)"
