@@ -3,9 +3,16 @@
 set -e -f -u -o pipefail
 
 main() {
-  # TODO: turn this into an argument or something.
+  if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 VERSION" >&2
+    echo "E.g. $0 0.47.2" >&2
+    return 1
+  fi
+
+  local version="$1"
+  readonly version
   local url="https://github.com/jesseduffield/lazygit/releases/download/"
-  url+="v0.45.2/lazygit_0.45.2_Linux_x86_64.tar.gz"
+  url+="v${version}/lazygit_${version}_Linux_x86_64.tar.gz"
   readonly url
   local date
   date="$(date +%Y-%m-%d)"
