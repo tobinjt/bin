@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+uname -a | grep -q x86_64
