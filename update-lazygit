@@ -23,16 +23,17 @@ main() {
   local url="https://github.com/jesseduffield/lazygit/releases/download/"
   url+="v${version}/lazygit_${version}_${os_type}.tar.gz"
   readonly url
-  local date
-  date="$(date +%Y-%m-%d)"
-  readonly date
-  local extraction_dir="${HOME}/tmp/lazygit/lazygit.${date}"
+  local filename
+  filename="$(basename "${url}")"
+  readonly filename
+  local extraction_dir
+  extraction_dir="${HOME}/tmp/lazygit/lazygit.$(date +%Y-%m-%d)"
   readonly extraction_dir
 
   mkdir -p "${extraction_dir}"
   cd "${extraction_dir}"
-  rm -f "$(basename "${url}")"
-  wget "${url}"
+  rm -f "${filename}"
+  curl --location --output "${filename}" "${url}"
   tar zxvf "$(basename "${url}")"
   ./lazygit --help
   cd ..
