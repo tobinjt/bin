@@ -170,7 +170,6 @@ CONFIG
     npm install -g typescript
     # Rust.
     brew install rustup
-    rustup-init --no-modify-path -y
 
     # Fonts used by wezterm.
     # Should I use the nerd-font versions?  I haven't seen much need TBH.
