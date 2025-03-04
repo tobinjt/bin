@@ -30,12 +30,9 @@ if type rustup >& /dev/null; then
   # Add ~/.cargo/bin to $PATH.
   source "${HOME}/.shellrc"
   rustup install stable
-  # TODO: is it necessary to call `rustup update` so frequently?
   rustup update
   rustup toolchain install
-  rustup update
   rustup component add clippy rust-analyzer rust-src
-  rustup update
   # https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#from-source
   cargo +stable install cargo-llvm-cov --locked
   # https://crates.io/crates/cargo-watch
