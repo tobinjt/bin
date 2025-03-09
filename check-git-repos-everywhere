@@ -25,7 +25,7 @@ update-hugo-coder
 # Ariane's website also needs to be updated in the right order.  Push any local
 # changes first.
 retry 30 initial-ariane-theme \
-  check-git-repos --pull_and_push "${HOME}/src/ariane-theme"
+  check-git-repos "${HOME}/src/ariane-theme"
 printf "\\n\\n\\nariane-theme\\n"
 retry 30 update-ariane-theme \
   ssh -o ControlMaster=no -t johntobin@hosting update-ariane-theme
