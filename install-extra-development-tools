@@ -26,7 +26,10 @@ if type go >& /dev/null; then
 fi
 
 if type rustup >& /dev/null; then
-  rustup-init --no-modify-path -y
+  # Used with Homebrew Rust but not on Debian?
+  if type rustup-init >& /dev/null; then
+    rustup-init --no-modify-path -y
+  fi
   # Add ~/.cargo/bin to $PATH.
   source "${HOME}/.shellrc"
   rustup install stable
