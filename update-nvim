@@ -4,24 +4,46 @@ set -e -f -u -o pipefail
 
 main() {
   local url="https://github.com/neovim/neovim/releases/download/stable/"
-  url+="nvim-linux-x86_64.appimage"
+  if is_mac_os; then
+    if is_x86_64; then
+      url+="nvim-macos-x86_64.tar.gz"
+    else
+      url+="nvim-macos-arm64.tar.gz"
+    fi
+  else
+    url+="nvim-linux-x86_64.appimage"
+  fi
   readonly url
-  local date
-  date="$(date +%Y-%m-%d)"
-  readonly date
-  local filename="nvim.appimage.${date}" extraction_dir="nvim.${date}"
-  readonly filename extraction_dir
 
-  cd "${HOME}/tmp/nvim"
+  local filename
+  filename="$(basename "${url}")"
+  readonly filename
+
+  local base_dir="${HOME}/tmp/nvim"
+  readonly base_dir
+  mkdir -p "${base_dir}"
+  cd "${base_dir}"
   rm -f "${filename}"
   curl --location --output "${filename}" "${url}"
-  chmod 755 "${filename}"
-  rm -rf "squashfs-root"
-  "./${filename}" --appimage-extract
-  rm -r -f "${extraction_dir}"
-  mv "squashfs-root" "${extraction_dir}"
-  "${extraction_dir}/usr/bin/nvim" --version
-  ln -s -f -n "${extraction_dir}" nvim
+
+  if is_mac_os; then
+    # Used in $PATH.
+    local subdir="nvim"
+    rm -r -f "${subdir}"
+    mkdir -p "${subdir}"
+    tar zxf "$(basename "${url}")" --directory="${subdir}" --strip-components=1
+  else
+    chmod 755 "${filename}"
+    rm -rf "squashfs-root"
+    "./${filename}" --appimage-extract
+    local extraction_dir
+    extraction_dir="nvim.$(date +%Y-%m-%d)"
+    readonly extraction_dir
+    rm -r -f "${extraction_dir}"
+    mv "squashfs-root" "${extraction_dir}"
+    "${extraction_dir}/usr/bin/nvim" --version
+    ln -s -f -n "${extraction_dir}" nvim
+  fi
 }
 
 main "$@"
