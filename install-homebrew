@@ -195,6 +195,10 @@ CONFIG
   fi
   # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
   install-extra-development-tools
+  if type cargo >& /dev/null; then
+    cargo install colx
+    cargo install path-parents
+  fi
   # All the Python modules I need for development.
   update-python-modules
 
