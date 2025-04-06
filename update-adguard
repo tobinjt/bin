@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+fresh_install() {
+  local install_dir binary="$1"
+  install_dir="$(dirname "${binary}")"
+  readonly install_dir binary
+
+  local url="https://static.adtidy.org/adguardhome/release"
+  url+="/AdGuardHome_darwin_amd64.zip"
+  readonly url
+
+  local filename
+  filename="${TMPDIR}/$(mktemp -t "$(basename "${url}").XXXXXXXXXXXX").zip"
+  readonly filename
+
+  curl --location --output "${filename}" "${url}"
+
+  sudo mkdir -m 755 -p "${install_dir}"
+  sudo unzip "${filename}" -d "$(dirname "${install_dir}")" -o
+  sudo "${binary}" -s install
+}
+
+main() {
+  local binary="/Applications/AdGuardHome/AdGuardHome"
+  readonly binary
+  if [[ -f "${binary}" ]]; then
+    sudo "${binary}" --update
+  else
+    fresh_install "${binary}"
+  fi
+}
+
+main "$@"
