@@ -10,7 +10,7 @@
 
 TEST_PROGRAMS = $(wildcard test/*.bats)
 TIMESTAMP_FILES = $(patsubst test/%.bats, test/.%.timestamp, $(TEST_PROGRAMS))
-KCOVERAGE_DIR = $(HOME)/tmp/kcoverage
+KCOVERAGE_DIR = $(HOME)/tmp/generated/kcoverage
 BATS = $(HOME)/src/bats-core/bin/bats
 
 .PHONY: all clean coverage tests

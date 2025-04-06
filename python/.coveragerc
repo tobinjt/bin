@@ -18,4 +18,4 @@ exclude_lines =
 
 [html]
 # Where to write output.
-directory = ../../tmp/coverage
+directory = ../../tmp/generated/coverage
