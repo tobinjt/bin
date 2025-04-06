@@ -115,7 +115,7 @@ main() {
   # mix of Python versions and tools not finding modules so I reverted to using
   # Pip for everything.
 
-  local virtualenv_dir="${HOME}/tmp/virtualenv"
+  local virtualenv_dir="${HOME}/tmp/bin/virtualenv"
   readonly virtualenv_dir
   mkdir -p "${virtualenv_dir}"
 

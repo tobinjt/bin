@@ -27,7 +27,7 @@ main() {
   filename="$(basename "${url}")"
   readonly filename
   local extraction_dir
-  extraction_dir="${HOME}/tmp/lazygit/lazygit.$(date +%Y-%m-%d)"
+  extraction_dir="${HOME}/tmp/bin/lazygit/lazygit.$(date +%Y-%m-%d)"
   readonly extraction_dir
 
   mkdir -p "${extraction_dir}"

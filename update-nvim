@@ -19,7 +19,7 @@ main() {
   filename="$(basename "${url}")"
   readonly filename
 
-  local base_dir="${HOME}/tmp/nvim"
+  local base_dir="${HOME}/tmp/bin/nvim"
   readonly base_dir
   mkdir -p "${base_dir}"
   cd "${base_dir}"
