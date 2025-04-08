@@ -22,6 +22,8 @@ else
   if [[ ! -f "${FILENAME}" ]]; then
     touch "${FILENAME}"
   fi
+  # Update the PATH variable in the crontab file with my current PATH.
+  sed -i '' -e "s,^PATH=.*,PATH=${PATH}," "${FILENAME}"
   ${ORIGINAL_EDITOR} -d "${FILENAME}" "$@"
   while ! diff -u "${FILENAME}" "$@"; do
     printf "Found diffs between tmp file and repo!\\n"
