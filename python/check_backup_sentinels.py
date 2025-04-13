@@ -129,7 +129,7 @@ def check_sentinels(
     ]
     if len(globally_delayed) == len(sentinels.timestamps):
         warnings.append(
-            "All backups are delayed by at least " f"{max_global_delay} seconds"
+            f"All backups are delayed by at least {max_global_delay} seconds"
         )
         messages.append(warnings[-1])
 
