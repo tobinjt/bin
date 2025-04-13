@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Installs development tools that aren't packaged by Homebrew or Debian.
+
 set -e -f -u -o pipefail
 
 if is_mac_os; then
@@ -40,4 +42,17 @@ if type rustup >& /dev/null; then
   cargo +stable install cargo-llvm-cov --locked
   # https://crates.io/crates/cargo-watch
   cargo install cargo-watch
+  # Tooling I wrote :)
+  cargo install colx
+  cargo install path-parents
+fi
+
+if type npm >& /dev/null; then
+  # Update existing packages first.
+  npm update -g
+  # Lint for CSS.
+  npm install -g csslint
+  # Google Apps Script.  https://github.com/google/clasp
+  npm install -g @google/clasp
+  npm install -g typescript
 fi

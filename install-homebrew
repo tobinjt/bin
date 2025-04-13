@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Installs Homebrew and the packages I need.
+# See install-extra-development-tools for unpackaged tools.
+
 set -e -f -u -o pipefail
 
 usage() {
@@ -124,23 +127,22 @@ main() {
   fi
 
   brew install autossh tmpreaper
-  # Basic development.
-  brew install bash-language-server fswatch lazygit markdownlint-cli \
-    pre-commit ruff shellcheck vint wget
-
-  # Neovim.
-  brew install lua-language-server vscode-langservers-extracted
+  # Basic development.  I prefer to install tooling with Neovim's Mason so that
+  # it's consistent across machines.
+  brew install fswatch lazygit pre-commit shellcheck wget
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
     brew install kcov
     # My website.
-    brew install closure-compiler hugo markdown marksman prettier
+    brew install closure-compiler hugo markdown
 
     # PHP.
     brew install composer php phpstan phpunit
 
     # PHP: Uninstall any existing xdebug.
+    # This stays in this file because I don't want to do it on hosting where it
+    # would affect serving.
     pecl uninstall xdebug || true
     local php_config_dir
     for php_config_dir in $(php_config_dirs); do
@@ -158,16 +160,9 @@ xdebug.mode = coverage
 CONFIG
     done
 
-    # Update existing packages first.
-    npm update -g
-    # Lint for CSS.
-    npm install -g csslint
     # Golang.
     brew install delve go golangci-lint gopls gotags govulncheck graphviz \
       staticcheck
-    # Google Apps Script.  https://github.com/google/clasp
-    npm install -g @google/clasp
-    npm install -g typescript
     # Rust.
     brew install rustup
 
@@ -193,12 +188,9 @@ CONFIG
     brew install ffmpeg transmission-cli wget yt-dlp
     cask_install "/Applications/FileBot.app" filebot
   fi
-  # Tools needed by vim; mostly Golang, with a bit of Rust if it's installed.
+
+  # Non-packaged development tools.
   install-extra-development-tools
-  if type cargo >& /dev/null; then
-    cargo install colx
-    cargo install path-parents
-  fi
   # All the Python modules I need for development.
   update-python-modules
 
