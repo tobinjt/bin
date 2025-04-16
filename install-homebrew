@@ -129,7 +129,7 @@ main() {
   brew install autossh tmpreaper
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
-  brew install fswatch lazygit pre-commit shellcheck wget
+  brew install fswatch lazygit luarocks pre-commit shellcheck wget
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
