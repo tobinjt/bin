@@ -5,15 +5,13 @@ set -e -f -u -o pipefail
 # config.sh needs to define the following variables:
 # - RESTIC_REPOSITORIES  - repositories to backup to.
 # - RESTIC_PASSWORD_FILE - file containing the password for the repository.
-# - DIRS_TO_BACKUP       - array of directories to backup; if DIRS_TO_BACKUP is
-#                          empty, `restic init` will be run instead of `restic
-#                          backup`.
+# - DIRS_TO_BACKUP       - array of directories to backup.
 #
 # - To configure a Google Drive backup see https://rclone.org/drive/ and name
 #   the target `google-drive-backups`.  Add `rclone:google-drive-backups:PATH`
 #   to RESTIC_REPOSITORIES.
 # - To configure an rsync.net backup:
-#   - target="most likely the hostname"
+#   - target="most likely the hostname", e.g. target="johntobin-laptop-2022".
 #   - ssh_key_path="${HOME}/.ssh/rsync-net_restic/${target}"
 #   - mkdir -p "$(dirname "${ssh_key_path}")"
 #   - ssh_key_comment="rsync-net_restic_${target}"
@@ -21,43 +19,47 @@ set -e -f -u -o pipefail
 #       -f "${ssh_key_path}" -C "${ssh_key_comment}"
 #   - Add this line to authorized_keys on rsync.net:
 #     - restrict,command="rclone serve restic --stdio restic/${target}" PUB_KEY
-#   - Add `rsync-net:${target}` to RESTIC_REPOSITORIES.
+#   - RESTIC_REPOSITORIES+=("ssh%rsync-net%rclone:${target}")
 # - https://ruderich.org/simon/notes/append-only-backups-with-restic-and-rclone
 #   has background info about using restricted ssh keys with restic and rclone.
 source "${HOME}/.config/backup-restic/config.sh"
 # Fix permissions, just in case.
-chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")" "${RESTIC_PASSWORD_FILE}"
+chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")"
+chmod 400 "${RESTIC_PASSWORD_FILE}"
 
 for RESTIC_REPOSITORY in "${RESTIC_REPOSITORIES[@]}"; do
   # I am using flags rather than environment variables so that copy and paste of
   # commands for debugging is easier.
   options=("--password-file=${RESTIC_PASSWORD_FILE}")
 
-  if grep -q '^rsync-net:' <<<"${RESTIC_REPOSITORY}"; then
-    target="${RESTIC_REPOSITORY##*:}"
-    options+=("--repo=rclone:restic/${target}")
-    # ssh_key_file="${HOME}/.ssh/rsync-net_restic/${target}"
-    # options+=("-o" "rclone.program=ssh -i ${ssh_key_file} rsync-net rclone")
+  if [[ "${RESTIC_REPOSITORY}" =~ ^ssh% ]]; then
+    # Example: ssh%rsync-net%rclone:restic/johntobin-laptop-2022
+    # ssh indicates that the repository is accessed via ssh.
+    # rsync-net is the hostname of the server.
+    IFS='%' read -r -a parts <<< "${RESTIC_REPOSITORY}"
+    server="${parts[1]}"
+    destdir="${parts[2]}"
+    options+=("--repo=${destdir}")
+
     # I'm using rclone in the command so that it works whether or not a forced
     # command is configured on the remote side.
-    options+=("-o" "rclone.program=ssh rsync-net rclone")
+    ssh_key_file="${HOME}/.ssh/${server}_restic/$(basename "${destdir}")"
+    if [[ -f "${ssh_key_file}" ]]; then
+      options+=("-o" "rclone.program=ssh -i ${ssh_key_file} ${server} rclone")
+    else
+      options+=("-o" "rclone.program=ssh ${server} rclone")
+    fi
   else
     options+=("--repo=${RESTIC_REPOSITORY}")
   fi
 
   if [[ ! -t 0 ]]; then
     options+=("--quiet")
-  else
-    # Output commands for easier debugging and understanding what's happening.
-    set -x
   fi
 
-  if [[ "${#DIRS_TO_BACKUP}" -eq 0 ]]; then
-    # Don't try to initialise a second time.
-    if ! restic list "${options[@]}" keys; then
-      restic init "${options[@]}"
-    fi
-  else
-    restic backup "${options[@]}" "${DIRS_TO_BACKUP[@]}"
+  # Don't try to initialise a second time.
+  if ! restic "${options[@]}" list keys; then
+    restic "${options[@]}" init
   fi
+  restic "${options[@]}" backup "${DIRS_TO_BACKUP[@]}"
 done
