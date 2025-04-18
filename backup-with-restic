@@ -26,7 +26,7 @@ set -e -f -u -o pipefail
 #   has background info about using restricted ssh keys with restic and rclone.
 source "${HOME}/.config/backups/restic-config.sh"
 
-RESTIC_PASSWORD_FILE="${HOME}/.config/backup/restic-password"
+RESTIC_PASSWORD_FILE="${HOME}/.config/backups/restic-password"
 readonly RESTIC_PASSWORD_FILE
 # Fix permissions, just in case.
 chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")"
