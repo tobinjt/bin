@@ -121,7 +121,7 @@ main() {
   # Everything needed for backups.
   brew install coreutils lockrun rclone restic rsync
   # Basics.
-  brew install fd less neovim ripgrep tmux vim
+  brew install fd less neovim ripgrep tmux
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
@@ -129,7 +129,10 @@ main() {
   brew install autossh tmpreaper
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
-  brew install fswatch lazygit luarocks pre-commit shellcheck wget
+  brew install fswatch lazygit pre-commit wget
+
+  # Needed to install tools for Neovim.
+  brew install luarocks node npm virtualenv
 
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
@@ -138,7 +141,7 @@ main() {
     brew install closure-compiler hugo markdown
 
     # PHP.
-    brew install composer php phpstan phpunit
+    brew install composer php phpunit
 
     # PHP: Uninstall any existing xdebug.
     # This stays in this file because I don't want to do it on hosting where it
@@ -161,8 +164,7 @@ CONFIG
     done
 
     # Golang.
-    brew install delve go golangci-lint gopls gotags govulncheck graphviz \
-      staticcheck
+    brew install go govulncheck graphviz
     # Rust.
     brew install rustup
 
