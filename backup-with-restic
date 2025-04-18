@@ -2,10 +2,10 @@
 
 set -e -f -u -o pipefail
 
-# config.sh needs to define the following variables:
 # ~/.config/backups/restic-password needs a single line containing the password
 # for the restic repositories.
 #
+# ~/.config/backups/restic-config.sh needs to define the following variables:
 # - RESTIC_REPOSITORIES  - repositories to backup to.
 # - DIRS_TO_BACKUP       - array of directories to backup.
 #
@@ -24,7 +24,7 @@ set -e -f -u -o pipefail
 #   - RESTIC_REPOSITORIES+=("ssh%rsync-net%rclone:${target}")
 # - https://ruderich.org/simon/notes/append-only-backups-with-restic-and-rclone
 #   has background info about using restricted ssh keys with restic and rclone.
-source "${HOME}/.config/backup-restic/config.sh"
+source "${HOME}/.config/backups/restic-config.sh"
 
 RESTIC_PASSWORD_FILE="${HOME}/.config/backup/restic-password"
 readonly RESTIC_PASSWORD_FILE
