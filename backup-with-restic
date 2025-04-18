@@ -3,8 +3,10 @@
 set -e -f -u -o pipefail
 
 # config.sh needs to define the following variables:
+# ~/.config/backups/restic-password needs a single line containing the password
+# for the restic repositories.
+#
 # - RESTIC_REPOSITORIES  - repositories to backup to.
-# - RESTIC_PASSWORD_FILE - file containing the password for the repository.
 # - DIRS_TO_BACKUP       - array of directories to backup.
 #
 # - To configure a Google Drive backup see https://rclone.org/drive/ and name
@@ -23,6 +25,9 @@ set -e -f -u -o pipefail
 # - https://ruderich.org/simon/notes/append-only-backups-with-restic-and-rclone
 #   has background info about using restricted ssh keys with restic and rclone.
 source "${HOME}/.config/backup-restic/config.sh"
+
+RESTIC_PASSWORD_FILE="${HOME}/.config/backup/restic-password"
+readonly RESTIC_PASSWORD_FILE
 # Fix permissions, just in case.
 chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")"
 chmod 400 "${RESTIC_PASSWORD_FILE}"
