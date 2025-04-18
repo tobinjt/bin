@@ -41,7 +41,7 @@ for RESTIC_REPOSITORY in "${RESTIC_REPOSITORIES[@]}"; do
     destdir="${parts[2]}"
     options+=("--repo=${destdir}")
 
-    # I'm using rclone in the command so that it works whether or not a forced
+    # I'm using the full rclone command so that it works whether or not a forced
     # command is configured on the remote side.
     ssh_key_file="${HOME}/.ssh/${server}_restic/$(basename "${destdir}")"
     if [[ -f "${ssh_key_file}" ]]; then
@@ -49,6 +49,7 @@ for RESTIC_REPOSITORY in "${RESTIC_REPOSITORIES[@]}"; do
     else
       options+=("-o" "rclone.program=ssh ${server} rclone")
     fi
+    options+=("-o" "rclone.args=serve restic --stdio --append-only")
   else
     options+=("--repo=${RESTIC_REPOSITORY}")
   fi
