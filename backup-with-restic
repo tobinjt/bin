@@ -62,7 +62,7 @@ for RESTIC_REPOSITORY in "${RESTIC_REPOSITORIES[@]}"; do
   fi
 
   # Don't try to initialise a second time.
-  if ! restic "${options[@]}" list keys; then
+  if ! restic "${options[@]}" list keys > /dev/null; then
     restic "${options[@]}" init
   fi
   restic "${options[@]}" backup "${DIRS_TO_BACKUP[@]}"
