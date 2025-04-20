@@ -1,0 +1,46 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+source "${HOME}/bin/backup-to-rsync-net-lib"
+
+main() {
+  if [[ "$#" -eq 0 ]]; then
+    echo "Usage: $0 [--make-keys-only] HOSTNAME"
+    return 1
+  fi
+
+  local backup_configs=(
+    "CalibreLibrary:${HOME}/Calibre Library"
+    "Desktop:${HOME}/Desktop"
+    "Documents:${HOME}/Documents"
+    "Downloaded_Ebooks:${HOME}/Media/Downloaded_Ebooks"
+    "Downloads:${HOME}/Downloads"
+    "Media_ArianeStuff_FromOldLaptops:${HOME}/Media/ArianeStuff/From-old-laptops"
+    "Pictures:${HOME}/Pictures"
+    "Pictures_Lightroom:${HOME}/Pictures/Lightroom"
+    "arianetobin.ie:/var/www/sites/arianetobin.ie/blog"
+    "backups:${HOME}/backups"
+    "dev.arianetobin.ie:/var/www/sites/dev.arianetobin.ie"
+    "etc:/etc"
+    "src:${HOME}/src"
+    "wordpress-backups:/home/johntobin/wordpress-backups"
+  )
+
+  local backup_config
+  for backup_config in "${backup_configs[@]}"; do
+    local destination directory
+    IFS=":" read -r destination directory <<< "${backup_config}"
+    # Only backup if the directory is writable, so unprivileged users don't try
+    # to backup /etc.
+    if [[ -d "${directory}" && -w "${directory}" ]]; then
+      backup "$@" "${destination}" "${directory}"
+    fi
+  done
+
+  if all_backups_succeeded; then
+    backup-update-rsync-net-sentinel "$@"
+  fi
+}
+
+main "$@"
