@@ -27,7 +27,8 @@ set -e -f -u -o pipefail
 source "${HOME}/.config/backups/restic-config.sh"
 
 main() {
-  RESTIC_PASSWORD_FILE="${HOME}/.config/backups/restic-password"
+  local RESTIC_REPOSITORY="$1"
+  local RESTIC_PASSWORD_FILE="${HOME}/.config/backups/restic-password"
   readonly RESTIC_PASSWORD_FILE
   # Fix permissions, just in case.
   chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")"
@@ -35,39 +36,37 @@ main() {
   # Ensure it can't accidentally use the wrong key.
   unset SSH_AUTH_SOCK
 
-  for RESTIC_REPOSITORY in "${RESTIC_REPOSITORIES[@]}"; do
-    # I am using flags rather than environment variables so that copy and paste of
-    # commands for debugging is easier.
-    options=("--password-file=${RESTIC_PASSWORD_FILE}")
+  # I am using flags rather than environment variables so that copy and paste of
+  # commands for debugging is easier.
+  options=("--password-file=${RESTIC_PASSWORD_FILE}")
 
-    if [[ "${RESTIC_REPOSITORY}" =~ ^ssh% ]]; then
-      # Example: ssh%rsync-net%rclone:restic/johntobin-laptop-2022
-      # ssh indicates that the repository is accessed via ssh.
-      # rsync-net is the hostname of the server.
-      IFS='%' read -r -a parts <<< "${RESTIC_REPOSITORY}"
-      server="${parts[1]}"
-      destdir="${parts[2]}"
-      options+=("--repo=${destdir}")
+  if [[ "${RESTIC_REPOSITORY}" =~ ^ssh% ]]; then
+    # Example: ssh%rsync-net%rclone:restic/johntobin-laptop-2022
+    # ssh indicates that the repository is accessed via ssh.
+    # rsync-net is the hostname of the server.
+    IFS='%' read -r -a parts <<< "${RESTIC_REPOSITORY}"
+    server="${parts[1]}"
+    destdir="${parts[2]}"
+    options+=("--repo=${destdir}")
 
-      # I'm using the full rclone command so that it works whether or not a forced
-      # command is configured on the remote side.
-      ssh_key_file="${HOME}/.ssh/${server}_restic/$(basename "${destdir}")"
-      options+=("-o" "rclone.program=ssh -i ${ssh_key_file} ${server} rclone")
-      options+=("-o" "rclone.args=serve restic --stdio --append-only")
-    else
-      options+=("--repo=${RESTIC_REPOSITORY}")
-    fi
+    # I'm using the full rclone command so that it works whether or not a forced
+    # command is configured on the remote side.
+    ssh_key_file="${HOME}/.ssh/${server}_restic/$(basename "${destdir}")"
+    options+=("-o" "rclone.program=ssh -i ${ssh_key_file} ${server} rclone")
+    options+=("-o" "rclone.args=serve restic --stdio --append-only")
+  else
+    options+=("--repo=${RESTIC_REPOSITORY}")
+  fi
 
-    if [[ ! -t 0 ]]; then
-      options+=("--quiet")
-    fi
+  if [[ ! -t 0 ]]; then
+    options+=("--quiet")
+  fi
 
-    # Don't try to initialise a second time.
-    if ! restic "${options[@]}" list keys > /dev/null; then
-      restic "${options[@]}" init
-    fi
-    restic "${options[@]}" backup "${DIRS_TO_BACKUP[@]}"
-  done
+  # Don't try to initialise a second time.
+  if ! restic "${options[@]}" list keys > /dev/null; then
+    restic "${options[@]}" init
+  fi
+  restic "${options[@]}" backup "${DIRS_TO_BACKUP[@]}"
 }
 
 main "$@"
