@@ -5,10 +5,6 @@ set -e -f -u -o pipefail
 # ~/.config/backups/restic-password needs a single line containing the password
 # for the restic repositories.
 #
-# ~/.config/backups/restic-config.sh needs to define the following variables:
-# - RESTIC_REPOSITORIES  - repositories to backup to.
-# - DIRS_TO_BACKUP       - array of directories to backup.
-#
 # - To configure a Google Drive backup see https://rclone.org/drive/ and name
 #   the target `google-drive-backups`.  Add `rclone:google-drive-backups:PATH`
 #   to RESTIC_REPOSITORIES.
@@ -21,10 +17,9 @@ set -e -f -u -o pipefail
 #       -f "${ssh_key_path}" -C "${ssh_key_comment}"
 #   - Add this line to authorized_keys on rsync.net:
 #     - restrict,command="rclone serve restic --stdio restic/${target}" PUB_KEY
-#   - RESTIC_REPOSITORIES+=("ssh%rsync-net%rclone:${target}")
+#   - backup-with-restic "ssh%rsync-net%rclone:${target}"
 # - https://ruderich.org/simon/notes/append-only-backups-with-restic-and-rclone
 #   has background info about using restricted ssh keys with restic and rclone.
-source "${HOME}/.config/backups/restic-config.sh"
 
 main() {
   if [[ "$#" -ne 1 ]]; then
@@ -69,11 +64,29 @@ main() {
     options+=("--quiet")
   fi
 
+  local backup_configs=() line
+  while IFS='' read -r line; do
+    backup_configs+=("${line}");
+  done < "${HOME}/.config/backups/dirs-to-backup"
+
+  local dirs_to_backup=()
+  local backup_config
+  for backup_config in "${backup_configs[@]}"; do
+    local directory
+    IFS=":" read -r _ directory <<< "${backup_config}"
+    directory="${directory/#\~/${HOME}}"
+    # Only backup if the directory is writable, so unprivileged users don't try
+    # to backup /etc.
+    if [[ -d "${directory}" && -w "${directory}" ]]; then
+      dirs_to_backup+=("${directory}")
+    fi
+  done
+
   # Don't try to initialise a second time.
   if ! restic "${options[@]}" list keys > /dev/null; then
     restic "${options[@]}" init
   fi
-  restic "${options[@]}" backup "${DIRS_TO_BACKUP[@]}"
+  restic "${options[@]}" backup "${dirs_to_backup[@]}"
 }
 
 main "$@"
