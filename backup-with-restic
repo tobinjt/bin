@@ -27,9 +27,14 @@ set -e -f -u -o pipefail
 source "${HOME}/.config/backups/restic-config.sh"
 
 main() {
+  if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 RESTIC_REPOSITORY"
+    return 1
+  fi
+
   local RESTIC_REPOSITORY="$1"
   local RESTIC_PASSWORD_FILE="${HOME}/.config/backups/restic-password"
-  readonly RESTIC_PASSWORD_FILE
+  readonly RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
   # Fix permissions, just in case.
   chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")"
   chmod 400 "${RESTIC_PASSWORD_FILE}"
@@ -38,19 +43,21 @@ main() {
 
   # I am using flags rather than environment variables so that copy and paste of
   # commands for debugging is easier.
-  options=("--password-file=${RESTIC_PASSWORD_FILE}")
+  local options=("--password-file=${RESTIC_PASSWORD_FILE}")
 
   if [[ "${RESTIC_REPOSITORY}" =~ ^ssh% ]]; then
     # Example: ssh%rsync-net%rclone:restic/johntobin-laptop-2022
     # ssh indicates that the repository is accessed via ssh.
     # rsync-net is the hostname of the server.
+    local parts
     IFS='%' read -r -a parts <<< "${RESTIC_REPOSITORY}"
-    server="${parts[1]}"
-    destdir="${parts[2]}"
+    local server="${parts[1]}"
+    local destdir="${parts[2]}"
     options+=("--repo=${destdir}")
 
     # I'm using the full rclone command so that it works whether or not a forced
     # command is configured on the remote side.
+    local ssh_key_file
     ssh_key_file="${HOME}/.ssh/${server}_restic/$(basename "${destdir}")"
     options+=("-o" "rclone.program=ssh -i ${ssh_key_file} ${server} rclone")
     options+=("-o" "rclone.args=serve restic --stdio --append-only")
