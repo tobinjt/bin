@@ -10,6 +10,8 @@ main() {
     return 1
   fi
 
+  # Ensure it can't accidentally use the wrong key.
+  unset SSH_AUTH_SOCK
   local backup_config
   for backup_config in $(< "${HOME}/.config/backups/dirs-to-backup"); do
     local destination directory
