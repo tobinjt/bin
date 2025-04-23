@@ -135,7 +135,7 @@ run_rsync() {
   # value 24, which is a magic exit code that means some files disappeared
   # during the transfer.
   local exit_status=0
-  ( rsync --archive --bwlimit=4M \
+  ( rsync --archive --bwlimit=20M \
         --partial-dir=.rsync-partial --partial \
         --rsh="ssh -i ${ssh_key_path} -o PasswordAuthentication=no" \
         "${flags[@]:+${flags[@]}}" \
