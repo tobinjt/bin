@@ -6,8 +6,7 @@ set -e -f -u -o pipefail
 # for the restic repositories.
 #
 # - To configure a Google Drive backup see https://rclone.org/drive/ and name
-#   the target `google-drive-backups`.  Add `rclone:google-drive-backups:PATH`
-#   to RESTIC_REPOSITORIES.
+#   the target `google-drive-backups`.
 # - To configure an rsync.net backup:
 #   - target="most likely the hostname", e.g. target="johntobin-laptop-2022".
 #   - ssh_key_path="${HOME}/.ssh/rsync-net_restic/${target}"
@@ -54,6 +53,18 @@ main() {
     # command is configured on the remote side.
     local ssh_key_file
     ssh_key_file="${HOME}/.ssh/${server}_restic/$(basename "${destdir}")"
+    if [[ ! -f "${ssh_key_file}" ]]; then
+      mkdir -p "$(dirname "${ssh_key_file}")"
+      ssh-keygen -t rsa -b 4096 -o -N '' -q \
+        -f "${ssh_key_file}" -C "rsync-net_$(basename "${destdir}")"
+      printf 'restrict,command="rclone serve restic --stdio --append-only '
+      printf '%s"' "${destdir}"
+      printf ',no-pty,no-agent-forwarding,no-port-forwarding '
+      cat "${ssh_key_file}.pub"
+
+      # We need to add the public key to the server's authorized_keys file.
+      return 1
+    fi
     options+=("-o" "rclone.program=ssh -i ${ssh_key_file} ${server} rclone")
     options+=("-o" "rclone.args=serve restic --stdio --append-only")
   else
