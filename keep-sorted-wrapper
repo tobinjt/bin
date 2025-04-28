@@ -5,10 +5,10 @@ set -e -f -u -o pipefail
 main() {
   local filename="$1"
   readonly filename
-  if ! type cargo >& /dev/null; then
+  if ! type keep-sorted >& /dev/null; then
     return 0
   fi
-  if ! grep -q "keep-sorted" "${filename}"; then
+  if ! grep -q "keep-sorted start" "${filename}"; then
     return 0
   fi
   keep-sorted "${filename}"
