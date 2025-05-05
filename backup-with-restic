@@ -93,9 +93,17 @@ main() {
     fi
   done
 
-  # Don't try to initialise a second time.
-  if ! restic "${options[@]}" list keys > /dev/null; then
-    restic "${options[@]}" init
+  # Don't try to initialise a second time, see
+  # https://restic.readthedocs.io/en/stable/075_scripting.html#check-if-a-repository-is-already-initialized
+  local exit_status=0
+  restic "${options[@]}" cat config > /dev/null || exit_status="$?"
+  if [[ "${exit_status}" -ne 0 ]]; then
+    if [[ "${exit_status}" -eq 10 ]]; then
+      restic "${options[@]}" init
+    else
+      echo "Error: restic init failed with exit status ${exit_status}."
+      return 1
+    fi
   fi
   restic "${options[@]}" backup "${dirs_to_backup[@]}"
 }
