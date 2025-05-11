@@ -31,7 +31,6 @@ main() {
   readonly RESTIC_REPOSITORY RESTIC_PASSWORD_FILE
   # Fix permissions, just in case.
   chmod 700 "$(dirname "${RESTIC_PASSWORD_FILE}")"
-  chmod 400 "${RESTIC_PASSWORD_FILE}"
   # Ensure it can't accidentally use the wrong key.
   unset SSH_AUTH_SOCK
 
