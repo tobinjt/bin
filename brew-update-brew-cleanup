@@ -20,4 +20,6 @@ brew upgrade --formula
 sleep 2
 brew upgrade --cask --greedy
 sleep 2
+brew autoremove
+sleep 2
 brew cleanup
