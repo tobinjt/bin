@@ -114,9 +114,9 @@ main() {
   echo "Running dotfiles to check for pre-existing diffs."
   # First make sure we're up to date so that current diffs aren't mixed in with
   # future diffs.
-  dotfiles
+  dotfiles -n
   echo "Running dotfiles to check for unexpected files."
-  dotfiles -r
+  dotfiles -n -r
 
   # Update bin dirs.
   local orig_code
@@ -136,7 +136,7 @@ main() {
   fi
 
   # Check for diffs again with possibly new binaries.
-  dotfiles
+  dotfiles -n
 
   # Update all dotfiles.
   for dir in $(dotfiles_sources); do
@@ -146,13 +146,16 @@ main() {
     # the user to forcibly update manually.  This also prevents files that have
     # been deleted from the current repo being left behind in $HOME if updating
     # a later repo fails.
-    dotfiles -X -f
+    dotfiles -n -X -f
     # Check for unfinished changes; this happens when submodules are removed
     # because git won't delete the submodule directory.  Do this after running
     # dotfiles, otherwise there is a high chance that the next run of this
     # program will find diffs and will exit.
     (cd "${dir}" && git check-local-copy-is-clean)
   done
+
+  # Run config snippets.
+  dotfiles
 }
 
 # Make sure $HOME/bin is in $PATH to support running

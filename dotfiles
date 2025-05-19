@@ -15,8 +15,8 @@ list_config_snippets() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local flags=("--ignore_symlinks") return_early=0 opt
-  while getopts ":dfhrX" opt "$@"; do
+  local flags=("--ignore_symlinks") return_early=0 run_config_snippets=1 opt
+  while getopts ":dfhnrX" opt "$@"; do
     case "${opt}" in
       d)
         flags+=("--dryrun")
@@ -27,7 +27,7 @@ main() {
         ;;
       h)
         cat <<END_OF_HELP
-Usage: $0 [-d] [-f] [-r] [-X]
+Usage: $0 [-d] [-f] [-n] [-r] [-X]
 Links files in ${HOME}/src/*dotfiles* to ${HOME}
 Files and directories listed in ${HOME}/src/*dotfiles*/${IGNORE_FILENAME} will
 be ignored.  Note: ${IGNORE_FILENAME} lists are global, not scoped to the
@@ -36,10 +36,14 @@ directory containing them.
 Options:
   -f: force overwrite of files that differ.
   -d: dry run, overrides -f.
+  -n: do not run config snippets.
   -r: report unexpected files in destination.
   -X: delete unexpected files in destination.
 END_OF_HELP
         exit 0
+        ;;
+      n)
+        run_config_snippets=0
         ;;
       r)
         flags+=("--report_unexpected_files" "--ignore_unexpected_children")
@@ -76,6 +80,9 @@ END_OF_HELP
     return
   fi
 
+  if [[ "${run_config_snippets}" -eq 0 ]]; then
+    return
+  fi
   local snippet
   for snippet in $(list_config_snippets "${HOME}/.dotfiles.d"); do
     if ! "${snippet}"; then
