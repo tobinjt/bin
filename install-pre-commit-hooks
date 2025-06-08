@@ -27,6 +27,7 @@ main() {
     return 1
   fi
   if [[ "${config_file}" -nt "${hook_file}" ]]; then
+    stat "${config_file}" "${hook_file}"
     printf "Installing pre-commit in %s\n" "${PWD}"
     pre-commit install --install-hooks
     if grep -q -F 'stages: [commit-msg]' "${config_file}"; then
