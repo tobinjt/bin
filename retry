@@ -4,26 +4,50 @@ set -e -f -u -o pipefail
 
 usage() {
   cat >&2 <<END_OF_USAGE
-Usage: $0 SLEEP_TIME MESSAGE COMMAND [COMMAND_ARGS]
+Usage: $0 [--press_enter_before_retrying] \
+SLEEP_TIME MESSAGE COMMAND [COMMAND_ARGS]
 
-SLEEP_TIME: number of seconds to sleep between retries.
-MESSAGE: message to display between retries.
+Flags:
+--press_enter_before_retrying: If set, the user will be prompted to press
+  enter before retrying.
+
+Required arguments:
+SLEEP_TIME: Number of seconds to sleep between retries.
+MESSAGE: Message to display between retries.
 COMMAND: The command to run.
+
+Optional arguments:
 COMMAND_ARGS: Arguments to be passed to COMMAND.
 END_OF_USAGE
-  exit "$1"
 }
 
 retry() {
+  local press_enter_before_retrying=false
+  if [[ "$1" == "--press_enter_before_retrying" ]]; then
+    press_enter_before_retrying=true
+    shift
+  fi
+
   local sleep_time="$1" message="$2"
   shift 2
+  if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 1
+  fi
+
   until "$@"; do
-    printf "Retrying %s\\n" "${message}"
+    printf "Sleeping for %d seconds before retrying %s\\n" \
+      "${sleep_time}" "${message}"
     sleep "${sleep_time}"
+    if "${press_enter_before_retrying}"; then
+      read -r -p "Press Enter to retry: "
+    fi
+    printf "Retrying %s\\n" "${message}"
   done
 }
 
 if [[ "$#" -lt 3 ]]; then
-  usage 1
+  usage
+  exit 1
 fi
 retry "$@"
