@@ -6,14 +6,17 @@ update-single-host() {
   local host="$1"
 
   printf "\\n\\n\\njohntobin@%s\\n" "${host}"
-  retry 10 "johntobin@${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
+  retry --press_enter_before_retrying 10 "johntobin@${host}" \
+    ssh -o ControlMaster=no -t "johntobin@${host}" \
     update-dotfiles-and-bin
   printf "\\n\\n\\nroot@%s\\n" "${host}"
   # sudo dscl . -change /Users/root UserShell /bin/sh /bin/bash
-  retry 10 "root@${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
+  retry --press_enter_before_retrying 10 "root@${host}" \
+    ssh -o ControlMaster=no -t "johntobin@${host}" \
     sudo --login update-dotfiles-and-bin
   printf "\\n\\n\\narianetobin@%s\\n" "${host}"
-  retry 10 "arianetobin@${host}" ssh -o ControlMaster=no -t \
+  retry --press_enter_before_retrying 10 "arianetobin@${host}" \
+    ssh -o ControlMaster=no -t \
     "arianetobin@${host}" update-dotfiles-and-bin
 }
 
@@ -21,7 +24,8 @@ main() {
   if [[ "$#" -eq 0 ]]; then
     exec "$0" laptop imac hosting
   fi
-  retry 10 "initial update" update-dotfiles-and-bin
+  retry --press_enter_before_retrying 10 "initial update" \
+    update-dotfiles-and-bin
   local host
   for host in "$@"; do
     update-single-host "${host}"

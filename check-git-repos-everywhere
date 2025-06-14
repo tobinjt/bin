@@ -6,7 +6,8 @@ check_single_host() {
   local host="$1"
   printf "\n\n\nProcessing %s\\n" "${host}"
   # shellcheck disable=SC2016
-  retry 10 "${host}" ssh -o ControlMaster=no -t "johntobin@${host}" \
+  retry --press_enter_before_retrying 10 "${host}" \
+    ssh -o ControlMaster=no -t "johntobin@${host}" \
     'check-git-repos "${HOME}/bin" "${HOME}/src/"*'
 }
 
@@ -24,10 +25,10 @@ fi
 update-hugo-coder
 # Ariane's website also needs to be updated in the right order.  Push any local
 # changes first.
-retry 30 initial-ariane-theme \
+retry --press_enter_before_retrying 30 initial-ariane-theme \
   check-git-repos "${HOME}/src/ariane-theme"
 printf "\\n\\n\\nariane-theme\\n"
-retry 30 update-ariane-theme \
+retry --press_enter_before_retrying 30 update-ariane-theme \
   ssh -o ControlMaster=no -t johntobin@hosting update-ariane-theme
 
 # dotfiles and bin are the next most likely source of diffs, and they can be
