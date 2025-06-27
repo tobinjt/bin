@@ -171,13 +171,11 @@ CONFIG
     # Fonts used by wezterm.
     # Should I use the nerd-font versions?  I haven't seen much need TBH.
     brew install \
-      font-anonymous-pro \
       font-cousine \
       font-fira-code \
       font-hack \
       font-inconsolata-nerd-font \
       font-monaspace \
-      font-pt-mono \
       font-red-hat-mono \
       font-source-code-pro
 
