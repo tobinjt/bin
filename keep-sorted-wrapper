@@ -3,15 +3,11 @@
 set -e -f -u -o pipefail
 
 main() {
-  local filename="$1"
-  readonly filename
   if ! type keep-sorted >& /dev/null; then
-    return 0
+    cat "$@"
+  else
+    log-and-run keep-sorted "$@"
   fi
-  if ! grep -q "keep-sorted start" "${filename}"; then
-    return 0
-  fi
-  keep-sorted "${filename}"
 }
 
 main "$@"
