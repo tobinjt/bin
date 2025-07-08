@@ -5,7 +5,11 @@ set -e -f -u -o pipefail
 main() {
   local tmpfile
   tmpfile="$(mktemp -t vim-grep.XXXXXXXXXXXX)"
-  if git rev-parse --show-toplevel >& /dev/null; then
+  # If I'm in a git checkout, and the current directory isn't being ignored, use
+  # standard git-grep.  Otherwise tell git-grep to ignore the index so it works
+  # outside a checkout.
+  if git rev-parse --show-toplevel >& /dev/null \
+    && git ls-files --error-unmatch . >& /dev/null; then
     git grep --untracked --line-number "$@" > "${tmpfile}"
   else
     git grep --no-index --line-number "$@" > "${tmpfile}"
