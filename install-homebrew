@@ -137,8 +137,9 @@ main() {
   if [[ "${laptop}" -eq 1 ]]; then
     # Misc development.
     brew install kcov
-    # My website.
-    brew install closure-compiler hugo markdown
+    # My website.  I install mdformat from Homebrew rather than Mason so it
+    # doesn't conflict with a different mdformat tool in work.
+    brew install closure-compiler hugo markdown mdformat
 
     # PHP.
     brew install composer php phpunit
