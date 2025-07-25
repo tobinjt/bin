@@ -56,7 +56,7 @@ merge-upstream-changes() {
 
 update-neovim-plugins() {
   cd "${HOME}/src/dotfiles"
-  nvim --headless -c "Lazy! sync" -c "qa"
+  run-if-exists nvim --headless -c "Lazy! sync" -c "qa"
   commit_any_changes
 }
 
