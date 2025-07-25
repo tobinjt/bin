@@ -21,13 +21,10 @@ update-single-host() {
 }
 
 main() {
-  if [[ "$#" -eq 0 ]]; then
-    exec "$0" laptop imac hosting
-  fi
   retry --press_enter_before_retrying 10 "initial update" \
     update-dotfiles-and-bin
   local host
-  for host in "$@"; do
+  for host in laptop imac hosting; do
     update-single-host "${host}"
   done
 }
