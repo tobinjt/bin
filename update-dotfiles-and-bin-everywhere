@@ -22,11 +22,17 @@ update-single-host() {
 }
 
 main() {
+  if [[ "$#" -eq 0 ]]; then
+    echo "Usage: $0 update-dotfiles-and-bin | update-dotfiles-and-bin-plugins" \
+      >&2
+    return 1
+  fi
+
   retry --press_enter_before_retrying 10 "initial update" \
     update-dotfiles-and-bin
   local host
   for host in laptop imac hosting; do
-    update-single-host "${host}" update-dotfiles-and-bin
+    update-single-host "${host}" "$@"
   done
 }
 
