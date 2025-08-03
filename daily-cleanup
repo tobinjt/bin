@@ -23,6 +23,3 @@ for dir in "${dir_list[@]}"; do
     tmpreaper --mtime 7d "${dir}"
   fi
 done
-
-# Clean up vim leftovers.
-tmpreaper --mtime 28d "${HOME}/tmp/vim"
