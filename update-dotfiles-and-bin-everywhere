@@ -11,7 +11,6 @@ update-single-host() {
     ssh -o ControlMaster=no -t "johntobin@${host}" \
     "$@"
   printf "\\n\\n\\nroot@%s\\n" "${host}"
-  # sudo dscl . -change /Users/root UserShell /bin/sh /bin/bash
   retry --press_enter_before_retrying 10 "root@${host}" \
     ssh -o ControlMaster=no -t "johntobin@${host}" \
     sudo --login "$@"

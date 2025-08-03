@@ -6,7 +6,7 @@ set -e -f -u -o pipefail
 sudo_without_password() {
   editor="$(mktemp -t sudoers.XXXXXXXXXXXX)"
   cat > "${editor}" <<'EDITOR'
-#!/bin/sh
+#!/bin/bash
 
 sed -i '' -e '/%admin/s/ALL$/NOPASSWD:ALL/' "$@"
 EDITOR
