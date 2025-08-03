@@ -10,12 +10,6 @@ export PATH
 GIT_MERGE_AUTOEDIT=no
 export GIT_MERGE_AUTOEDIT
 
-if [[ -z "$(type -a vim)" ]]; then
-  echo "Missing vim :(" >&2
-  echo "apt-get install vim-nox" >&2
-  exit 1
-fi
-
 DESTDIR="${HOME}/src/dotfiles"
 readonly DESTDIR
 if [[ ! -d "${DESTDIR}" ]]; then
