@@ -140,7 +140,10 @@ main() {
       python-lsp-black \
       'python-lsp-server[all]' \
       pyyaml \
-      types-PyYAML)
+      retry \
+      types-PyYAML\
+      types-retry \
+    )
   fi
 
   # Flexget.  Only install and test on machines where I normally run flexget.
