@@ -1,1 +1,7 @@
-python/probe_arianetobin.py
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Set $PATH so that I get the correct Python version.
+source "${HOME}/.shellrc"
+"${HOME}/bin/python/probe_arianetobin.py"
