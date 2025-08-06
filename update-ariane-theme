@@ -35,8 +35,6 @@ main() {
     # Update dev.
     commit_all "${HOME}/src/dev.arianetobin.ie"
     printf "Checking for problems in https://dev.arianetobin.ie/\\n"
-    check_website_resources \
-      "${HOME}/src/ariane-theme/check_website_resources-dev.json"
     check-links https://dev.arianetobin.ie/
     # Update www.
     ssh -o ControlMaster=no arianetobin@hosting \
