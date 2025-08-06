@@ -63,24 +63,21 @@ virtualenv_install() {
   hash -r
   ("${test_function}")
 
-  # -h: don't follow a destination symlink, replace it instead.
-  ln -sfh "${destdir_date}" "${destdir}"
+  if is_mac_os; then
+    # -h: don't follow a destination symlink, replace it instead.
+    ln -sfh "${destdir_date}" "${destdir}"
+  else
+    # -n: don't follow a destination symlink, replace it instead.
+    ln -sfn "${destdir_date}" "${destdir}"
+  fi
 }
 
 main() {
-  if ! is_mac_os; then
-    printf "Only Mac OS is supported, sorry.\\n" >&2
-    exit 1
-  fi
-  local skip_brew=0 skip_flexget=0 skip_python=0 install_individually=0
+  local skip_flexget=0 skip_python=0 install_individually=0
   while [[ "$#" -gt 0 ]]; do
     case "${1}" in
       --install_individually)
         install_individually=1
-        shift
-        ;;
-      --skip_brew)
-        skip_brew=1
         shift
         ;;
       --skip_flexget)
@@ -100,12 +97,15 @@ main() {
 
   # Let Python write bytecode.
   unset PYTHONDONTWRITEBYTECODE
-  if [[ "${skip_brew}" -eq 0 ]]; then
+  if type brew >&/dev/null; then
     # Update all existing Homebrew packages rather than partially upgrading when
     # installing python and virtualenv.
     brew-update-brew-cleanup
     # Install Python and virtualenv, just in case.
     brew install python virtualenv
+  fi
+  if type apt >&/dev/null; then
+    sudo apt install python3 python3-pip virtualenv
   fi
 
   # Dummy values needed by activate scripts.
@@ -123,6 +123,7 @@ main() {
   # modules are easily available at the same time.
   # Removed packages: mutmut depends on pony which doesn't support Python 3.9.
   # mypy needs lxml but doesn't depend on it.
+  # https://pypi.org/project/python-lsp-server/ - install all supported plugins.
   if [[ "${skip_python}" -eq 0 ]]; then
     local python_dir="${virtualenv_dir}/python"
     # Run in a subshell because it changes directory.
@@ -157,7 +158,7 @@ main() {
   fi
 }
 
-if [[ -z "${CAFFEINATED:-}" ]]; then
+if [[ -z "${CAFFEINATED:-}" ]] && type caffeinate >&/dev/null; then
   CAFFEINATED="do not sleep"
   export CAFFEINATED
   exec caffeinate -i "$0"
