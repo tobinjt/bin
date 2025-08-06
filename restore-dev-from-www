@@ -61,8 +61,6 @@ UPDATE `[% table_prefix %][% table %]`
 -%]
 [%
 columns_to_rewrite = [
-  { table = "cart66_sessions", column = "user_agent" },
-  { table = "cart66_sessions", column = "user_data" },
   { table = "commentmeta", column = "meta_value" },
   { table = "comments", column = "comment_author_url" },
   { table = "options", column = "option_value" },
