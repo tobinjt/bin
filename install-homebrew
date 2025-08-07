@@ -135,6 +135,8 @@ main() {
   brew install luarocks node npm virtualenv
 
   if [[ "${laptop}" -eq 1 ]]; then
+    # AI.
+    brew install gemini-cli
     # Misc development.
     brew install kcov
     # My website.  I install mdformat from Homebrew rather than Mason so it
