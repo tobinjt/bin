@@ -142,6 +142,7 @@ main() {
       requests \
       retry \
       types-PyYAML\
+      types-requests \
       types-retry \
     )
   fi
