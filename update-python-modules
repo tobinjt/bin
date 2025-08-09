@@ -120,17 +120,15 @@ main() {
   mkdir -p "${virtualenv_dir}"
 
   # Install all Python development tools in a single virtualenv so all the
-  # modules are easily available at the same time.
-  # Removed packages: mutmut depends on pony which doesn't support Python 3.9.
-  # mypy needs lxml but doesn't depend on it.
+  # modules are easily available at the same time, particularly debugpy.
   # https://pypi.org/project/python-lsp-server/ - install all supported plugins.
   if [[ "${skip_python}" -eq 0 ]]; then
     local python_dir="${virtualenv_dir}/python"
     # Run in a subshell because it changes directory.
     (virtualenv_install "${python_dir}" "${install_individually}" test_python \
       black \
+      debugpy \
       identify \
-      lxml \
       mypy \
       pudb \
       pydantic \
@@ -141,8 +139,10 @@ main() {
       python-lsp-black \
       'python-lsp-server[all]' \
       pyyaml \
+      requests \
       retry \
       types-PyYAML\
+      types-requests \
       types-retry \
     )
   fi

@@ -8,9 +8,8 @@ times before giving up.
 
 import logging
 import sys
-import urllib.error
-import urllib.request
 
+import requests
 import retry
 
 NUMBER_OF_ATTEMPTS = 5
@@ -24,7 +23,7 @@ class SentinelNotFoundError(Exception):
 
 
 @retry.retry(
-    (urllib.error.URLError, urllib.error.HTTPError, SentinelNotFoundError),
+    (requests.exceptions.RequestException, SentinelNotFoundError),
     tries=NUMBER_OF_ATTEMPTS,
     delay=SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS,
 )
@@ -33,17 +32,11 @@ def probe_website(website: str, sentinel: str) -> None:
     Probes the website to see if it's up and the sentinel is present.
     The @retry decorator handles the retry logic.
     """
-    with urllib.request.urlopen(website, timeout=30) as response:
-        # Read and decode the content
-        # The 'ignore' errors handler will drop any characters that
-        # can't be decoded, which is a reasonable fallback.
-        content = response.read().decode("utf-8", errors="ignore")
-
-        if sentinel not in content:
-            # Raise an exception to trigger a retry
-            raise SentinelNotFoundError(
-                f"Sentinel '{sentinel}' not found in the response."
-            )
+    response = requests.get(website, timeout=30)
+    response.raise_for_status()
+    if sentinel not in response.text:
+        # Raise an exception to trigger a retry
+        raise SentinelNotFoundError(f"Sentinel '{sentinel}' not found in the response.")
 
 
 def main():
@@ -53,7 +46,7 @@ def main():
     try:
         probe_website(WEBSITE, SENTINEL)
         return 0
-    except (urllib.error.URLError, urllib.error.HTTPError, SentinelNotFoundError) as e:
+    except (requests.exceptions.RequestException, SentinelNotFoundError) as e:
         print(
             f"Did not find sentinel '{SENTINEL}' in {WEBSITE} after {
                 NUMBER_OF_ATTEMPTS

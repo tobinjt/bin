@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Set $PATH so that I get the correct Python version.
+source "${HOME}/.shellrc"
+"${HOME}/bin/python/check_redirects_for_hosting.py"

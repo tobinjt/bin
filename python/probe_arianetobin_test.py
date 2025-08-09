@@ -1,50 +1,53 @@
-import http.client
 import io
 import sys
 import time
 import unittest
 from unittest import mock
-import urllib.error
-import urllib.request
+
+import requests
 
 import probe_arianetobin
 
 
 class TestProbeWebsite(unittest.TestCase):
-    @mock.patch.object(urllib.request, "urlopen")
-    def test_probe_website_success(self, mock_urlopen):
+    @mock.patch.object(requests, "get")
+    def test_probe_website_success(self, mock_get):
         """Test that probe_website succeeds when the sentinel is found."""
-        mock_response = mock.create_autospec(http.client.HTTPResponse, instance=True)
-        mock_response.read.return_value = probe_arianetobin.SENTINEL.encode("utf-8")
-        mock_urlopen.return_value.__enter__.return_value = mock_response
+        mock_response = mock.create_autospec(requests.Response, instance=True)
+        mock_response.text = probe_arianetobin.SENTINEL
+        mock_get.return_value = mock_response
 
         try:
             probe_arianetobin.probe_website(
                 probe_arianetobin.WEBSITE, probe_arianetobin.SENTINEL
             )
         except (
-            urllib.error.URLError,
-            urllib.error.HTTPError,
+            requests.exceptions.RequestException,
             probe_arianetobin.SentinelNotFoundError,
         ) as e:
             self.fail(f"probe_website raised an exception unexpectedly: {e}")
+        mock_response.raise_for_status.assert_called_once()
 
-    @mock.patch.object(time, "sleep")
-    @mock.patch.object(urllib.request, "urlopen")
-    def test_probe_website_sentinel_not_found(self, mock_urlopen, mock_sleep):
+    @mock.patch.object(time, "sleep", return_value=None)
+    @mock.patch.object(requests, "get")
+    def test_probe_website_sentinel_not_found(self, mock_get, mock_sleep):
         """Test that probe_website raises SentinelNotFoundError and retries."""
-        mock_response = mock.create_autospec(http.client.HTTPResponse, instance=True)
-        mock_response.read.return_value = b"some other content"
-        mock_urlopen.return_value.__enter__.return_value = mock_response
+        mock_response = mock.create_autospec(requests.Response, instance=True)
+        mock_response.text = "some other content"
+        mock_get.return_value = mock_response
 
         with self.assertRaises(probe_arianetobin.SentinelNotFoundError):
             probe_arianetobin.probe_website(
                 probe_arianetobin.WEBSITE, probe_arianetobin.SENTINEL
             )
 
-        self.assertEqual(mock_urlopen.call_count, probe_arianetobin.NUMBER_OF_ATTEMPTS)
+        self.assertEqual(mock_get.call_count, probe_arianetobin.NUMBER_OF_ATTEMPTS)
         self.assertEqual(
             mock_sleep.call_count, probe_arianetobin.NUMBER_OF_ATTEMPTS - 1
+        )
+        self.assertEqual(
+            mock_response.raise_for_status.call_count,
+            probe_arianetobin.NUMBER_OF_ATTEMPTS,
         )
 
     @mock.patch.object(probe_arianetobin, "probe_website")
