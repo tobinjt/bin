@@ -96,7 +96,7 @@ main() {
   done
 
   # Let Python write bytecode.
-  unset PYTHONDONTWRITEBYTECODE
+  unset PYTHONPYCACHEPREFIX PYTHONDONTWRITEBYTECODE
   if type brew >&/dev/null; then
     # Update all existing Homebrew packages rather than partially upgrading when
     # installing python and virtualenv.
