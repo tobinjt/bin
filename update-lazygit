@@ -6,6 +6,7 @@ main() {
   if [[ "$#" -ne 1 ]]; then
     echo "Usage: $0 VERSION" >&2
     echo "E.g. $0 0.47.2" >&2
+    echo "See https://github.com/jesseduffield/lazygit/releases" >&2
     return 1
   fi
 
