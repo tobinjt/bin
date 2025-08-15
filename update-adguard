@@ -30,6 +30,7 @@ main() {
   else
     fresh_install "${binary}"
   fi
+  echo "http://192.168.86.2/"
 }
 
 main "$@"
