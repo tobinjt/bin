@@ -130,6 +130,7 @@ main() {
     (virtualenv_install "${python_dir}" "${install_individually}" test_python \
       black \
       debugpy \
+      dnspython \
       identify \
       mypy \
       pudb \
