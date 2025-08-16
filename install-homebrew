@@ -171,16 +171,8 @@ CONFIG
     # Rust.
     brew install rustup
 
-    # Fonts used by wezterm.
-    # Should I use the nerd-font versions?  I haven't seen much need TBH.
-    brew install \
-      font-cousine \
-      font-fira-code \
-      font-hack \
-      font-inconsolata-nerd-font \
-      font-monaspace \
-      font-red-hat-mono \
-      font-source-code-pro
+    # Font used by wezterm.
+    brew install font-inconsolata-nerd-font
 
     # Calibre.
     cask_install "/Applications/calibre.app" calibre
