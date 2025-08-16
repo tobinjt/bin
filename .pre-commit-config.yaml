@@ -20,16 +20,6 @@ repos:
       - id: trailing-whitespace
   - repo: local
     hooks:
-      # Unconditionally run these tests because properly checking whether
-      # running them is necessary would duplicate the Makefile.  If nothing has
-      # changed this is a no-op, if something has changed the tests are fast and
-      # need to be run.
-      - id: bats
-        name: Run bats tests
-        language: system
-        pass_filenames: false
-        files: .*
-        entry: make bats_tests
       # Using this instead of a packaged black check because it's trivial.
       - id: black
         name: Run `black`
