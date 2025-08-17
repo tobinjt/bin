@@ -119,7 +119,7 @@ HOSTS_TO_CHECK = [
 
 
 @retry.retry(
-    dns.exception.Timeout,
+    (dns.resolver.NoNameservers, dns.exception.Timeout),
     tries=NUMBER_OF_ATTEMPTS,
     delay=SECONDS_TO_SLEEP_BETWEEN_ATTEMPTS,
 )

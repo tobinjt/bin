@@ -88,7 +88,7 @@ class TestQueryDnsWithRetry(unittest.TestCase):
         # Fail twice, then succeed.
         mock_resolve.side_effect = [
             dns.exception.Timeout,
-            dns.exception.Timeout,
+            dns.resolver.NoNameservers,
             expected,
         ]
 
