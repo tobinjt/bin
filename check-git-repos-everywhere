@@ -31,10 +31,10 @@ retry --press_enter_before_retrying 30 update-ariane-theme -- \
 # dotfiles and bin are the next most likely source of diffs, and they can be
 # fixed mostly automatically.
 printf "\\n\\n\\ndotfiles\\n"
-update-dotfiles-and-bin-everywhere update-dotfiles-and-bin
+run-everywhere update-dotfiles-and-bin
 # Run a second time so that commits from later machines are pulled to earlier
 # machines.
-update-dotfiles-and-bin-everywhere update-dotfiles-and-bin
+run-everywhere update-dotfiles-and-bin
 
 # Now do the rest of the checks.
 for host in laptop home hosting; do
