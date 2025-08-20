@@ -3,5 +3,5 @@
 set -e -f -u -o pipefail
 
 mkdir -p "${HOME}/tmp/logs"
-(date; echo "$@") >> "${HOME}/tmp/logs/log-and-run.log"
+(date +"%Y-%m-%d %H:%M:%S"; echo "$@") >> "${HOME}/tmp/logs/log-and-run.log"
 "$@"
