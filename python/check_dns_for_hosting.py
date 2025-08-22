@@ -285,5 +285,5 @@ if __name__ == "__main__":
     if sys.stdin.isatty():
         logging.basicConfig(level=logging.INFO)
     else:
-        logging.basicConfig()
+        logging.basicConfig(level=logging.ERROR)
     sys.exit(main(sys.argv))
