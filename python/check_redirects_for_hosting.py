@@ -20,7 +20,9 @@ class MissingRedirectError(Error):
     """Expected redirect not found."""
 
 
-@retry.retry(MissingRedirectError, tries=5, delay=1)
+@retry.retry(
+    MissingRedirectError, tries=15, delay=2, max_delay=60, backoff=2, jitter=(1, 5)
+)
 def check_single_redirect(expected_url: str, check_url: str) -> None:
     """
     Checks that a single URL redirects to the expected URL.

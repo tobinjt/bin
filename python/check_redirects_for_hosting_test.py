@@ -1,3 +1,4 @@
+import time
 import unittest
 from unittest import mock
 
@@ -18,7 +19,8 @@ class CheckRedirectsForHostingTest(unittest.TestCase):
         )
 
     @mock.patch.object(requests, "head")
-    def test_check_single_redirect_failure(self, mock_head):
+    @mock.patch.object(time, "sleep")
+    def test_check_single_redirect_failure(self, mock_head, mock_sleep):
         mock_response = mock.create_autospec(requests.Response, instance=True)
         mock_response.url = "http://some-other-url.com"
         mock_head.return_value = mock_response
