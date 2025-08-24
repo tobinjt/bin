@@ -141,13 +141,6 @@ main() {
   # Update all dotfiles.
   for dir in $(dotfiles_sources); do
     (cd "${dir}" && update_git_checkout_and_push)
-    # Temporary code to delete the last remains of vim.
-    if [[ -d "${HOME}/.vim" ]]; then
-      rm -rf "${HOME}/.vim"
-    fi
-    if [[ -f "${HOME}/.viminfo" ]]; then
-      rm -f "${HOME}/.viminfo"
-    fi
     # Forcibly update.  There is a risk that we clobber a file in our home
     # directory with a file we've just checked out, but the alternative is for
     # the user to forcibly update manually.  This also prevents files that have
