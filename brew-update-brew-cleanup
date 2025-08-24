@@ -2,10 +2,7 @@
 
 set -e -f -u -o pipefail
 
-# Removing old versions of vim breaks running vim sessions, and sometimes the
-# autocmds break badly enough that modified files can't be saved.  Disable
-# removal of old versions of vim.
-# Similarly for neovim and tmux.
+# Disable removal of old versions neovim and tmux.
 HOMEBREW_NO_CLEANUP_FORMULAE=neovim,tmux
 export HOMEBREW_NO_CLEANUP_FORMULAE
 
