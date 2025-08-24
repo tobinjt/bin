@@ -9,10 +9,14 @@ require user interaction (pressing Enter) before each new attempt.
 """
 
 import argparse
+import logging
 import subprocess
 import sys
 import time
 from typing import Sequence
+
+
+logger = logging.getLogger("retry_tool")
 
 
 def main(argv: Sequence[str]) -> int:
@@ -55,21 +59,26 @@ def main(argv: Sequence[str]) -> int:
         return 2
 
     while True:
+        logger.info(f"Running: {args.command_args}")
         result = subprocess.run(args.command_args, check=False)
         if result.returncode == 0:
             return 0
 
-        print(
-            f"Sleeping for {args.sleep_time} seconds before retrying {args.message}",
-            file=sys.stderr,
+        logger.info(f"Exit status: {result.returncode}")
+        logger.warning(
+            f"Sleeping for {args.sleep_time} seconds before retrying {args.message}"
         )
         time.sleep(args.sleep_time)
 
         if args.press_enter_before_retrying:
             input("Press Enter to retry: ")
 
-        print(f"Retrying {args.message}", file=sys.stderr)
+        logger.info(f"Retrying {args.message}")
 
 
 if __name__ == "__main__":
+    if sys.stdin.isatty():
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.ERROR)
     sys.exit(main(sys.argv[1:]))

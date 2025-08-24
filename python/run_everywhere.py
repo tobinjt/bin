@@ -10,10 +10,14 @@ on macOS to prevent the system from sleeping during its operation. This is
 controlled by the `CAFFEINATED` environment variable.
 """
 
+import logging
 import os
 import shutil
 import subprocess
 import sys
+
+
+logger = logging.getLogger("run_everywhere")
 
 
 def update_single_host(host: str, command: list[str]) -> None:
@@ -31,7 +35,7 @@ def update_single_host(host: str, command: list[str]) -> None:
     }
 
     for user, ssh_target in users.items():
-        print(f"\n\n\n{user}@{host}")
+        logger.info(f"{user}@{host}")
 
         ssh_command_base = ["ssh", "-o", "ControlMaster=no", "-t", ssh_target]
 
@@ -47,6 +51,7 @@ def update_single_host(host: str, command: list[str]) -> None:
             f"{user}@{host}",
         ] + full_command
 
+        logger.info(f"Will run: {retry_command}")
         subprocess.run(retry_command, check=False)
 
 
@@ -94,4 +99,8 @@ def run_caffeinated(argv: list[str]) -> None:
 
 if __name__ == "__main__":
     run_caffeinated(sys.argv)
+    if sys.stdin.isatty():
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.ERROR)
     sys.exit(main(sys.argv[1:]))
