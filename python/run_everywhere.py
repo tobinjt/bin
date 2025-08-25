@@ -47,7 +47,7 @@ def update_single_host(host: str, command: list[str]) -> None:
         retry_command = [
             "retry",
             "--press_enter_before_retrying",
-            "10",
+            "0",
             f"{user}@{host}",
         ] + full_command
 

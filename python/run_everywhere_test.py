@@ -24,7 +24,7 @@ class RunEverywhereTest(unittest.TestCase):
                 [
                     "retry",
                     "--press_enter_before_retrying",
-                    "10",
+                    "0",
                     "johntobin@testhost",
                     "ssh",
                     "-o",
@@ -40,7 +40,7 @@ class RunEverywhereTest(unittest.TestCase):
                 [
                     "retry",
                     "--press_enter_before_retrying",
-                    "10",
+                    "0",
                     "root@testhost",
                     "ssh",
                     "-o",
@@ -58,7 +58,7 @@ class RunEverywhereTest(unittest.TestCase):
                 [
                     "retry",
                     "--press_enter_before_retrying",
-                    "10",
+                    "0",
                     "arianetobin@testhost",
                     "ssh",
                     "-o",
