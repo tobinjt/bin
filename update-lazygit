@@ -3,14 +3,13 @@
 set -e -f -u -o pipefail
 
 main() {
-  if [[ "$#" -ne 1 ]]; then
-    echo "Usage: $0 VERSION" >&2
-    echo "E.g. $0 0.47.2" >&2
-    echo "See https://github.com/jesseduffield/lazygit/releases" >&2
-    return 1
-  fi
-
-  local version="$1"
+  # Figure out the latest release
+  local latest_url="https://github.com/jesseduffield/lazygit/releases/latest"
+  local redirect_url
+  redirect_url="$(curl -Ls -o /dev/null -w '%{url_effective}\n' "${latest_url}")"
+  local version
+  version="$(basename "${redirect_url}")"
+  version="${version/v/}"
   readonly version
   if is_mac_os; then
     if is_x86_64; then
