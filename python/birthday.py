@@ -12,23 +12,6 @@ import sys
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
-def factorial(number: int) -> int:
-    """Calculate the factorial of a number.
-
-    Args:
-      number: the number to take the factorial of.
-
-    Returns:
-      int, The factorial of the argument.
-    """
-
-    fac = 1
-    while number > 1:
-        fac *= number
-        number -= 1
-    return fac
-
-
 def birthday(num_people: int, num_days: int) -> decimal.Decimal:
     """Calculate the probability of a birthday collision.
 
@@ -41,15 +24,36 @@ def birthday(num_people: int, num_days: int) -> decimal.Decimal:
       collision.
     """
 
-    numerator = decimal.Decimal(factorial(num_days)) / decimal.Decimal(
-        factorial(num_days - num_people)
-    )
-    denominator = decimal.Decimal(num_days) ** decimal.Decimal(num_people)
-    probability_of_no_collision = numerator / denominator
-    return 1 - probability_of_no_collision
+    if num_people > num_days:
+        return decimal.Decimal(1)
+
+    # We want to calculate P(collision) = 1 - P(no collision)
+    # P(no collision) = (num_days / num_days) *
+    #   ((num_days - 1) / num_days) * ... *
+    #   ((num_days - num_people + 1) / num_days)
+    # P(no collision) = product_{i=0}^{num_people-1} (num_days - i) / num_days
+    # To avoid floating point issues with very large numbers, we use logarithms.
+    # log(P(no collision)) = sum_{i=0}^{num_people-1} log((num_days - i) / num_days)
+    # log(P(no collision)) = sum_{i=0}^{num_people-1}
+    #   (log(num_days - i) - log(num_days))
+    # Then P(no collision) = 10^log(P(no collision))
+
+    log_prob_no_collision = decimal.Decimal(0)
+    for i in range(num_people):
+        log_prob_no_collision += (
+            decimal.Decimal(num_days - i).log10() - decimal.Decimal(num_days).log10()
+        )
+
+    prob_no_collision = decimal.Decimal(10) ** log_prob_no_collision
+    return 1 - prob_no_collision
 
 
 def main(argv):
+    """Parse arguments and call birthday.
+
+    Args:
+        argv: command line arguments.
+    """
     if len(argv) not in (2, 3):
         sys.exit(f"Usage: {argv[0]} NUM_PEOPLE [NUM_DAYS]")
 
@@ -62,6 +66,11 @@ def main(argv):
     (num_people, num_days) = (int(argv[1]), 365)
     if len(argv) == 3:
         num_days = int(argv[2])
+
+    if num_people <= 0:
+        sys.exit(f"Number of people must be greater than 0: {num_people}")
+    if num_days <= 0:
+        sys.exit(f"Number of days must be greater than 0: {num_days}")
 
     print(birthday(num_people, num_days))
 
