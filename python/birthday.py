@@ -12,21 +12,16 @@ import sys
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
-def factorial(number: float) -> int:
+def factorial(number: int) -> int:
     """Calculate the factorial of a number.
 
     Args:
-      number: int.  It will be coerced to an integer using int(), so you can pass
-              a string; if you pass a float, it will be rounded by int().
+      number: the number to take the factorial of.
 
     Returns:
       int, The factorial of the argument.
-
-    Raises:
-      ValueError: the number argument could not be coerced to an integer.
     """
 
-    number = int(number)
     fac = 1
     while number > 1:
         fac *= number
