@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Show the probability of a birthday paradox collision.
+
+The probability of a birthday paradox collision happening is surprisingly high.
+This program calculates the probability of a birthday collision between N
+people, or the probability of a collision between N of M things.
+"""
+
+import decimal
+import sys
+
+__author__ = "johntobin@johntobin.ie (John Tobin)"
+
+
+def factorial(number: float) -> int:
+    """Calculate the factorial of a number.
+
+    Args:
+      number: int.  It will be coerced to an integer using int(), so you can pass
+              a string; if you pass a float, it will be rounded by int().
+
+    Returns:
+      int, The factorial of the argument.
+
+    Raises:
+      ValueError: the number argument could not be coerced to an integer.
+    """
+
+    number = int(number)
+    fac = 1
+    while number > 1:
+        fac *= number
+        number -= 1
+    return fac
+
+
+def birthday(num_people: int, num_days: int) -> decimal.Decimal:
+    """Calculate the probability of a birthday collision.
+
+    Args:
+      num_days: int, the number of days in the year
+      num_people: int, the number of people
+
+    Returns:
+      decimal.Decimal, a number between 0 and 1 giving the probability of a
+      collision.
+    """
+
+    numerator = decimal.Decimal(factorial(num_days)) / decimal.Decimal(
+        factorial(num_days - num_people)
+    )
+    denominator = decimal.Decimal(num_days) ** decimal.Decimal(num_people)
+    probability_of_no_collision = numerator / denominator
+    return 1 - probability_of_no_collision
+
+
+def main(argv):
+    if len(argv) not in (2, 3):
+        sys.exit(f"Usage: {argv[0]} NUM_PEOPLE [NUM_DAYS]")
+
+    try:
+        for number in argv[1:]:
+            int(number)
+    except ValueError:
+        sys.exit(f"Argument is not a number: {str(number)}")
+
+    (num_people, num_days) = (int(argv[1]), 365)
+    if len(argv) == 3:
+        num_days = int(argv[2])
+
+    print(birthday(num_people, num_days))
+
+
+if __name__ == "__main__":
+    main(sys.argv)
