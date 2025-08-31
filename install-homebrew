@@ -143,6 +143,9 @@ main() {
     # doesn't conflict with a different mdformat tool in work.
     brew install closure-compiler hugo markdown mdformat
 
+    # Lua testing.
+    brew install busted
+
     # PHP.
     brew install composer php phpunit
 
