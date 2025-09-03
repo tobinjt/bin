@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Run busted when inputs change.
+if [[ "$#" -eq 0 ]]; then
+  set +f
+  files=(./*.lua)
+  set -f
+else
+  files=("$@")
+fi
+inotify_wrapper "${files[@]}" -- busted -- "${files[@]}"
