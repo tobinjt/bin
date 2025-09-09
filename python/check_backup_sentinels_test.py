@@ -2,6 +2,8 @@
 
 from io import StringIO
 import os
+import sys
+import time
 import unittest
 from unittest import mock
 
@@ -76,7 +78,7 @@ class TestCheckSentinels(unittest.TestCase):
         self.assertEqual(expected, warnings)
         self.assertEqual(expected, messages)
 
-    @mock.patch("time.time")
+    @mock.patch.object(time, "time")
     def test_all_backups_are_recent(self, mock_time):
         """All backups are recent, no warnings."""
         host1 = "asdf"
@@ -103,7 +105,7 @@ class TestCheckSentinels(unittest.TestCase):
         (warnings, _) = cbs.check_sentinels(sentinels=sentinels, max_global_delay=hour)
         self.assertEqual([], warnings)
 
-    @mock.patch("time.time")
+    @mock.patch.object(time, "time")
     def test_all_backups_are_old(self, mock_time):
         """All backups are old :("""
         host1 = "asdf"
@@ -153,7 +155,7 @@ class TestCheckSentinels(unittest.TestCase):
         self.assertEqual(expected_messages, messages)
         self.assertEqual(expected_warnings, warnings)
 
-    @mock.patch("time.time")
+    @mock.patch.object(time, "time")
     def test_one_backup_is_old(self, mock_time):
         """One backup (asdf) is old"""
         host1 = "asdf"
@@ -197,7 +199,7 @@ class TestCheckSentinels(unittest.TestCase):
         self.assertEqual(expected_warnings, warnings)
         self.assertEqual(3, len(messages))
 
-    @mock.patch("time.time")
+    @mock.patch.object(time, "time")
     def test_one_host_is_sleeping(self, mock_time):
         """One host is sleeping, no warnings"""
         host1 = "asdf"
@@ -249,39 +251,39 @@ class TestMain(fake_filesystem_unittest.TestCase):
         with self.assertRaisesRegex(cbs.Error, "^Usage:.*"):
             cbs.main(argv=["argv0", "not a directory"])
 
-    @mock.patch("sys.exit")
-    @mock.patch("check_backup_sentinels.check_sentinels")
-    @mock.patch("check_backup_sentinels.parse_sentinels")
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(cbs, "check_sentinels")
+    @mock.patch.object(cbs, "parse_sentinels")
     def test_no_warnings(self, unused_mock_parse, mock_check, mock_exit):
         """Check that good args are accepted."""
         mock_check.return_value = ([], [])
-        with mock.patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+        with mock.patch.object(sys, "stderr", new_callable=StringIO) as mock_stderr:
             cbs.main(argv=["argv0", self._testdir])
             warnings = mock_stderr.getvalue()
             self.assertEqual("", warnings)
         mock_exit.assert_called_with(0)
 
-    @mock.patch("sys.exit")
-    @mock.patch("check_backup_sentinels.check_sentinels")
-    @mock.patch("check_backup_sentinels.parse_sentinels")
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(cbs, "check_sentinels")
+    @mock.patch.object(cbs, "parse_sentinels")
     def test_warnings_are_printed(self, unused_mock_parse, mock_check, mock_exit):
         """Check that warnings are printed out."""
         expected = ["warning warning"]
         mock_check.return_value = (expected, [])
-        with mock.patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+        with mock.patch.object(sys, "stderr", new_callable=StringIO) as mock_stderr:
             cbs.main(argv=["argv0", self._testdir])
             warnings = mock_stderr.getvalue()
             self.assertEqual(f"{expected[0]}\n", warnings)
         mock_exit.assert_called_with(1)
 
-    @mock.patch("sys.exit")
-    @mock.patch("check_backup_sentinels.check_sentinels")
-    @mock.patch("check_backup_sentinels.parse_sentinels")
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(cbs, "check_sentinels")
+    @mock.patch.object(cbs, "parse_sentinels")
     def test_messages_are_printed(self, unused_mock_parse, mock_check, mock_exit):
         """Check that good args are accepted."""
         mock_check.return_value = (["warning warning"], ["message message"])
         with mock.patch("sys.stdin.isatty", return_value=True):
-            with mock.patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            with mock.patch.object(sys, "stdout", new_callable=StringIO) as mock_stdout:
                 cbs.main(argv=["argv0", self._testdir])
                 output = mock_stdout.getvalue()
                 self.assertEqual("message message\n", output)
@@ -300,8 +302,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             # Disable "Instance of 'FakeFilesystem' has no 'create_file' member"
             self.fs.create_file(filename, contents=contents)
 
-    @mock.patch("sys.exit")
-    @mock.patch("time.time")
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(time, "time")
     def test_integration(self, mock_time, mock_exit):
         """Integration test that produces warnings."""
         testdir = "/test/check_sentinels"
@@ -317,7 +319,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.create_files_for_test(files)
         mock_time.return_value = 8.5 * day
         with mock.patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            with mock.patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+            with mock.patch.object(sys, "stderr", new_callable=StringIO) as mock_stderr:
                 cbs.main(argv=["argv0", testdir])
                 messages = mock_stdout.getvalue()
                 warnings = mock_stderr.getvalue()

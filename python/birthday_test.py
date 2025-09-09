@@ -21,7 +21,7 @@ class TestBirthday(unittest.TestCase):
 class TestMain(unittest.TestCase):
     """Tests for main."""
 
-    @mock.patch("birthday.birthday")
+    @mock.patch.object(birthday, "birthday")
     def test_main(self, mock_birthday):
         """Test cases for main."""
         birthday.main(["birthday.py", "23"])

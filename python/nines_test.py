@@ -1,6 +1,7 @@
 """Tests for nines."""
 
 from io import StringIO
+import sys
 import unittest
 from unittest import mock
 
@@ -69,7 +70,7 @@ class TestFormatting(unittest.TestCase):
 class TestMain(unittest.TestCase):
     """Tests for main."""
 
-    @mock.patch("sys.stdout", new_callable=StringIO)
+    @mock.patch.object(sys, "stdout", new_callable=StringIO)
     def test_main(self, mock_stdout):
         """Test main."""
         for arg in ["2", "7"]:
@@ -82,10 +83,10 @@ class TestMain(unittest.TestCase):
         for exp in expected:
             self.assertIn(exp, output)
 
-    @mock.patch("nines.parse_nines_arg", return_value=99)
-    @mock.patch("sys.exit")
-    @mock.patch("sys.stdout", new_callable=StringIO)
-    @mock.patch("sys.stderr", new_callable=StringIO)
+    @mock.patch.object(nines, "parse_nines_arg", return_value=99)
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(sys, "stdout", new_callable=StringIO)
+    @mock.patch.object(sys, "stderr", new_callable=StringIO)
     def test_no_args(self, mock_stderr, _, mock_exit, __):
         """Test no args."""
         nines.main(argv=["argv0"])
@@ -98,9 +99,9 @@ class TestMain(unittest.TestCase):
         self.assertEqual(expected, mock_stderr.getvalue().replace("pytest-3", "pytest"))
         mock_exit.assert_called()
 
-    @mock.patch("nines.parse_nines_arg", return_value=99)
-    @mock.patch("sys.exit")
-    @mock.patch("sys.stdout", new_callable=StringIO)
+    @mock.patch.object(nines, "parse_nines_arg", return_value=99)
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(sys, "stdout", new_callable=StringIO)
     def test_help(self, mock_stdout, mock_exit, __):
         """Test --help to ensure that the description is correctly set up."""
         nines.main(argv=["argv0", "--help"])

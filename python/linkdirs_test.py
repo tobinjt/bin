@@ -4,6 +4,7 @@ import io
 import os
 import re
 import stat
+import sys
 import textwrap
 import unittest
 from unittest import mock
@@ -16,19 +17,19 @@ import linkdirs
 class TestMain(unittest.TestCase):
     """Tests for main()."""
 
-    @mock.patch("linkdirs.real_main", return_value=[])
-    @mock.patch("sys.exit")
+    @mock.patch.object(linkdirs, "real_main", return_value=[])
+    @mock.patch.object(sys, "exit")
     def test_success(self, mock_sys_exit, unused_mock_real_main):
         """Successful run."""
-        with mock.patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+        with mock.patch.object(sys, "stderr", new_callable=io.StringIO) as mock_stderr:
             linkdirs.main(argv=[])
             warnings = mock_stderr.getvalue()
             self.assertEqual("", warnings)
         mock_sys_exit.assert_called_once_with(0)
 
-    @mock.patch("sys.stdout", new_callable=io.StringIO)
-    @mock.patch("linkdirs.real_main", return_value=["a message"])
-    @mock.patch("sys.exit")
+    @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
+    @mock.patch.object(linkdirs, "real_main", return_value=["a message"])
+    @mock.patch.object(sys, "exit")
     def test_failure(self, mock_sys_exit, unused_mock_real_main, mock_stdout):
         """Failed run."""
         linkdirs.main(argv=[])
@@ -143,7 +144,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         os.chmod(src_dir, mode)
         os.chmod(dest_dir, mode)
 
-        with mock.patch("os.chmod") as fake_chmod:
+        with mock.patch.object(os, "chmod") as fake_chmod:
             linkdirs.real_main(
                 argv=["linkdirs", os.path.dirname(src_dir), os.path.dirname(dest_dir)]
             )
@@ -206,7 +207,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.create_files(f"{src_file}:qwerty")
         self.create_files(f"{dest_file}:qwerty")
 
-        with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+        with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
             linkdirs.real_main(
                 argv=["linkdirs", os.path.dirname(src_file), os.path.dirname(dest_file)]
             )
@@ -227,7 +228,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             os.path.join(src_dir, "sym-source"), os.path.join(src_dir, "sym-dest")
         )
 
-        with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+        with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
             linkdirs.real_main(
                 argv=["linkdirs", "--ignore_symlinks", src_dir, dest_dir]
             )
@@ -552,7 +553,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """
         self.create_files(files)
 
-        with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+        with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
             messages = linkdirs.real_main(
                 argv=["linkdirs", "--force", src_dir, dest_dir]
             )
@@ -604,7 +605,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         os.symlink(os.path.join(src_dir, "file5"), os.path.join(src_dir, "file6"))
         os.symlink(os.path.join(src_dir, "file7"), os.path.join(src_dir, "file8"))
 
-        with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+        with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
             messages = linkdirs.real_main(
                 argv=["linkdirs", "--dryrun", src_dir, dest_dir]
             )
@@ -656,9 +657,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 class TestUsage(unittest.TestCase):
     """Tests for usage messages."""
 
-    @mock.patch("sys.exit")
-    @mock.patch("sys.stdout", new_callable=io.StringIO)
-    @mock.patch("sys.stderr", new_callable=io.StringIO)
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
+    @mock.patch.object(sys, "stderr", new_callable=io.StringIO)
     def test_no_args(self, mock_stderr, mock_stdout, _):
         """Test no args."""
         linkdirs.real_main(argv=["argv0"])
@@ -670,8 +671,8 @@ class TestUsage(unittest.TestCase):
         )
         self.assertEqual(expected, mock_stderr.getvalue().replace("pytest-3", "pytest"))
 
-    @mock.patch("sys.exit")
-    @mock.patch("sys.stdout", new_callable=io.StringIO)
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     def test_help(self, mock_stdout, _):
         """Test --help to ensure that the description is correctly set up."""
         linkdirs.real_main(argv=["argv0", "--help"])
@@ -714,7 +715,7 @@ class TestMisc(fake_filesystem_unittest.TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-    @mock.patch("sys.stdout", new_callable=io.StringIO)
+    @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     def test_safe_unlink_prints(self, mock_stdout):
         """Integration tests cannot make safe_unlink print for directories."""
         test_dir = "/a/b/c"
@@ -722,7 +723,7 @@ class TestMisc(fake_filesystem_unittest.TestCase):
         linkdirs.safe_unlink(unlink_me=test_dir, dryrun=True)
         self.assertEqual(f"rm -r {test_dir}\n", mock_stdout.getvalue())
 
-    @mock.patch("os.path.islink")
+    @mock.patch.object(os.path, "islink")
     def test_safe_unlink_race_condition(self, mock_islink):
         """Pretend a file exists to test deletion race condition handling."""
         mock_islink.return_value = True
