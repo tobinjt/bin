@@ -1,6 +1,7 @@
 import logging
 import time
 import unittest
+from typing import override
 from unittest import mock
 
 import check_dns_for_hosting
@@ -42,6 +43,7 @@ class MockMxRdata:
         self.preference = preference
         self.exchange = dns.name.from_text(exchange)
 
+    @override
     def __str__(self):
         return f"{self.preference} {self.exchange}"
 
@@ -50,7 +52,7 @@ class TestQueryDns(unittest.TestCase):
     """Test cases for query_dns."""
 
     @mock.patch.object(check_dns_for_hosting, "query_dns_with_retry")
-    def test_success(self, mock_retry_func):
+    def test_success(self, mock_retry_func: mock.Mock):
         """Test that query_dns returns the answer on success."""
         expected = "the answer"
         mock_retry_func.return_value = expected
@@ -60,7 +62,7 @@ class TestQueryDns(unittest.TestCase):
 
     @mock.patch.object(check_dns_for_hosting, "query_dns_with_retry")
     @mock.patch.object(check_dns_for_hosting, "logger")
-    def test_timeout(self, mock_logger, mock_retry_func):
+    def test_timeout(self, mock_logger: mock.Mock, mock_retry_func: mock.Mock):
         """Test that query_dns returns None on timeout."""
         mock_retry_func.side_effect = dns.exception.Timeout
         result = check_dns_for_hosting.query_dns("example.com", "A")
@@ -72,7 +74,7 @@ class TestQueryDnsWithRetry(unittest.TestCase):
     """Test cases for query_dns_with_retry."""
 
     @mock.patch.object(dns.resolver, "resolve")
-    def test_success_on_first_try(self, mock_resolve):
+    def test_success_on_first_try(self, mock_resolve: mock.Mock):
         """Test that query_dns_with_retry returns the answer on the first attempt."""
         expected = "the answer"
         mock_resolve.return_value = expected
@@ -82,7 +84,9 @@ class TestQueryDnsWithRetry(unittest.TestCase):
 
     @mock.patch.object(time, "sleep")
     @mock.patch.object(dns.resolver, "resolve")
-    def test_success_after_retries(self, mock_resolve, mock_sleep):
+    def test_success_after_retries(
+        self, mock_resolve: mock.Mock, mock_sleep: mock.Mock
+    ):
         """Test that query_dns_with_retry succeeds after some retries on Timeout."""
         expected = "the answer"
         # Fail twice, then succeed.
@@ -107,7 +111,9 @@ class TestQueryDnsWithRetry(unittest.TestCase):
 
     @mock.patch.object(time, "sleep")
     @mock.patch.object(dns.resolver, "resolve")
-    def test_failure_after_all_retries(self, mock_resolve, mock_sleep):
+    def test_failure_after_all_retries(
+        self, mock_resolve: mock.Mock, mock_sleep: mock.Mock
+    ):
         """Test that query_dns_with_retry fails after all retries on Timeout."""
         mock_resolve.side_effect = dns.exception.Timeout
 
@@ -122,7 +128,7 @@ class TestQueryDnsWithRetry(unittest.TestCase):
         )
 
     @mock.patch.object(dns.resolver, "resolve")
-    def test_immediate_failure_on_other_exception(self, mock_resolve):
+    def test_immediate_failure_on_other_exception(self, mock_resolve: mock.Mock):
         """Test that query_dns_with_retry fails immediately for non-timeout errors."""
         mock_resolve.side_effect = dns.resolver.NXDOMAIN
         with self.assertRaises(dns.resolver.NXDOMAIN):
@@ -134,7 +140,7 @@ class TestCheckDnsForHost(unittest.TestCase):
     """Test cases for check_dns_for_host."""
 
     @mock.patch.object(check_dns_for_hosting, "query_dns")
-    def test_success(self, mock_query_dns):
+    def test_success(self, mock_query_dns: mock.Mock):
         """Test success case with correct records."""
         mock_query_dns.return_value = MockAnswer(
             [MockRdata("1.2.3.4"), MockRdata("5.6.7.8")]
@@ -148,7 +154,7 @@ class TestCheckDnsForHost(unittest.TestCase):
 
     @mock.patch.object(check_dns_for_hosting, "query_dns")
     @mock.patch.object(check_dns_for_hosting, "logger")
-    def test_failure_no_answer(self, mock_logger, mock_query_dns):
+    def test_failure_no_answer(self, mock_logger: mock.Mock, mock_query_dns: mock.Mock):
         """Test failure when there is no DNS answer."""
         mock_query_dns.return_value = None
         self.assertFalse(
@@ -160,7 +166,9 @@ class TestCheckDnsForHost(unittest.TestCase):
 
     @mock.patch.object(check_dns_for_hosting, "query_dns")
     @mock.patch.object(check_dns_for_hosting, "logger")
-    def test_failure_wrong_records(self, mock_logger, mock_query_dns):
+    def test_failure_wrong_records(
+        self, mock_logger: mock.Mock, mock_query_dns: mock.Mock
+    ):
         """Test failure when DNS returns incorrect records."""
         mock_query_dns.return_value = MockAnswer([MockRdata("9.9.9.9")])
         self.assertFalse(
@@ -175,7 +183,7 @@ class TestCheckMxForHost(unittest.TestCase):
     """Test cases for check_mx_for_host."""
 
     @mock.patch.object(check_dns_for_hosting, "query_dns")
-    def test_success(self, mock_query_dns):
+    def test_success(self, mock_query_dns: mock.Mock):
         """Test success case with correct MX records."""
         mock_query_dns.return_value = MockAnswer([MockMxRdata(10, "mail.good.com.")])
         self.assertTrue(
@@ -185,7 +193,7 @@ class TestCheckMxForHost(unittest.TestCase):
 
     @mock.patch.object(check_dns_for_hosting, "query_dns")
     @mock.patch.object(check_dns_for_hosting, "logger")
-    def test_failure_no_answer(self, mock_logger, mock_query_dns):
+    def test_failure_no_answer(self, mock_logger: mock.Mock, mock_query_dns: mock.Mock):
         """Test failure when there is no DNS answer for MX records."""
         mock_query_dns.return_value = None
         self.assertFalse(
@@ -193,12 +201,14 @@ class TestCheckMxForHost(unittest.TestCase):
         )
         mock_logger.warning.assert_called_once_with(
             "Error: Bad MX records for bad.com: Expected {'10 mail.bad.com.'}. "
-            "Got set()"
+            + "Got set()"
         )
 
     @mock.patch.object(check_dns_for_hosting, "query_dns")
     @mock.patch.object(check_dns_for_hosting, "logger")
-    def test_failure_empty_rrset(self, mock_logger, mock_query_dns):
+    def test_failure_empty_rrset(
+        self, mock_logger: mock.Mock, mock_query_dns: mock.Mock
+    ):
         """Test failure when the MX answer has an empty rrset."""
         mock_query_dns.return_value = MockAnswer(None)
         self.assertFalse(
@@ -206,12 +216,14 @@ class TestCheckMxForHost(unittest.TestCase):
         )
         mock_logger.warning.assert_called_once_with(
             "Error: Bad MX records for bad.com: Expected {'10 mail.bad.com.'}. "
-            "Got set()"
+            + "Got set()"
         )
 
     @mock.patch.object(check_dns_for_hosting, "query_dns")
     @mock.patch.object(check_dns_for_hosting, "logger")
-    def test_failure_wrong_records(self, mock_logger, mock_query_dns):
+    def test_failure_wrong_records(
+        self, mock_logger: mock.Mock, mock_query_dns: mock.Mock
+    ):
         """Test failure when DNS returns incorrect MX records."""
         mock_query_dns.return_value = MockAnswer([MockMxRdata(99, "wrong.com.")])
         self.assertFalse(
@@ -219,7 +231,7 @@ class TestCheckMxForHost(unittest.TestCase):
         )
         mock_logger.warning.assert_called_once_with(
             "Error: Bad MX records for bad.com: Expected {'10 mail.bad.com.'}. "
-            "Got {'99 wrong.com.'}"
+            + "Got {'99 wrong.com.'}"
         )
 
 
@@ -228,7 +240,9 @@ class TestCheckSingleHost(unittest.TestCase):
 
     @mock.patch.object(check_dns_for_hosting, "check_mx_for_host", return_value=True)
     @mock.patch.object(check_dns_for_hosting, "check_dns_for_host", return_value=True)
-    def test_success_full_check(self, mock_check_dns, mock_check_mx):
+    def test_success_full_check(
+        self, mock_check_dns: mock.Mock, mock_check_mx: mock.Mock
+    ):
         """Test a successful check for a host with all options enabled."""
         config = check_dns_for_hosting.HostConfig(
             name="test.com",
@@ -249,7 +263,7 @@ class TestCheckSingleHost(unittest.TestCase):
         mock_check_mx.assert_called_once_with("test.com", ["10 mail.test.com."])
 
     @mock.patch.object(check_dns_for_hosting, "check_dns_for_host", return_value=False)
-    def test_failure_dns(self, mock_check_dns):
+    def test_failure_dns(self, _unused_mock_check_dns: mock.Mock):
         """Test failure when a primary DNS check fails."""
         config = check_dns_for_hosting.HostConfig(
             name="test.com", ipv4=["1.1.1.1"], ipv6=["::1"]
@@ -296,7 +310,7 @@ class TestMain(unittest.TestCase):
             self.assertEqual(mock_check.call_count, 2)
 
     @mock.patch.object(check_dns_for_hosting, "logger")
-    def test_main_bad_args(self, mock_logger):
+    def test_main_bad_args(self, mock_logger: mock.Mock):
         """Test main returns 1 when passed extra arguments."""
         self.assertEqual(check_dns_for_hosting.main(["script.py", "bad"]), 1)
         mock_logger.warning.assert_called()

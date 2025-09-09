@@ -50,7 +50,7 @@ def check_redirects(expected_url: str, *urls: str) -> list[str]:
         expected_url: The URL we expect to be redirected to.
         urls: The URLs to check for redirection.
     """
-    error_messages = []
+    error_messages: list[str] = []
     for url in urls:
         try:
             check_single_redirect(expected_url, url)

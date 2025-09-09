@@ -184,8 +184,8 @@ def check_dns_for_host(hostname: str, addresses: list[str], record_type: str) ->
     if expected != records:
         logger.warning(
             f"Bad {record_type} record for {hostname}: "
-            f"Expected {expected}. "
-            f"Got: {records}"
+            + f"Expected {expected}. "
+            + f"Got: {records}"
         )
         return False
     return True
@@ -212,8 +212,8 @@ def check_mx_for_host(hostname: str, expected_mx_records: list[str]) -> bool:
     if expected_set != found_mx_records:
         logger.warning(
             f"Error: Bad MX records for {hostname}: "
-            f"Expected {expected_set}. "
-            f"Got {found_mx_records}"
+            + f"Expected {expected_set}. "
+            + f"Got {found_mx_records}"
         )
         return False
     return True

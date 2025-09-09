@@ -5,11 +5,11 @@ Runs a command and sends an email if the command fails or produces output.
 """
 
 import argparse
-import os
-import socket
-import subprocess
+import os as os
+import socket as socket
+import subprocess as subprocess
 import sys
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def should_send_mail(

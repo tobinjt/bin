@@ -40,12 +40,12 @@ class MainFunctionTest(unittest.TestCase):
     @mock.patch.object(send_mail.subprocess, "run")
     def test_mail_is_sent_on_failure(
         self,
-        mock_subprocess_run,
-        mock_open,
-        mock_makedirs,
-        mock_expanduser,
-        mock_gethostname,
-        mock_getlogin,
+        mock_subprocess_run: mock.Mock,
+        mock_open: mock.Mock,
+        mock_makedirs: mock.Mock,
+        mock_expanduser: mock.Mock,
+        _unused_mock_gethostname: mock.Mock,
+        _unused_mock_getlogin: mock.Mock,
     ) -> None:
         """
         Tests that an email is sent when the command fails.
@@ -93,7 +93,7 @@ class MainFunctionTest(unittest.TestCase):
         )
 
     @mock.patch.object(send_mail.subprocess, "run")
-    def test_mail_is_not_sent_on_success(self, mock_subprocess_run) -> None:
+    def test_mail_is_not_sent_on_success(self, mock_subprocess_run: mock.Mock) -> None:
         """
         Tests that no email is sent when the command succeeds with no output.
         """

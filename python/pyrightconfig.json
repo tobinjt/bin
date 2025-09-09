@@ -1,0 +1,4 @@
+{
+  "reportImplicitRelativeImport": false,
+  "reportUnusedCallResult": false,
+}

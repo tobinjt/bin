@@ -68,7 +68,7 @@ class LinkResults:
     diffs: Diffs
     errors: Messages
 
-    def extend(self, other) -> None:
+    def extend(self, other: "LinkResults") -> None:
         """Extend self with the data from other.
 
         Args:
@@ -170,7 +170,7 @@ def remove_skip_patterns(*, files: Paths, skip: SkipPatterns) -> Paths:
         An array of filenames.
     """
 
-    unmatched = []
+    unmatched: list[Path] = []
     skip_more = skip[:]
     skip_more.extend([os.sep.join(["*", pattern]) for pattern in skip])
     skip_more.extend([os.sep.join(["*", pattern, "*"]) for pattern in skip])
@@ -343,7 +343,7 @@ def link_files(
         if num_links != 1:
             results.errors.append(
                 f"{dest_filename}: link count is {num_links}; is this file present "
-                "in multiple source directories?"
+                + "in multiple source directories?"
             )
             continue
 
@@ -526,7 +526,7 @@ def parse_arguments(*, argv: CommandLineArgs) -> tuple[argparse.Namespace, Messa
     """
     # __doc__ is written to pass pylint checks, so it must be changed before being
     # used as a usage message.
-    (usage, description) = __doc__.split("\n", maxsplit=1)
+    (usage, description) = str(__doc__).split("\n", maxsplit=1)
     argv_parser = argparse.ArgumentParser(
         description=description,
         usage=usage,
@@ -644,7 +644,7 @@ def parse_arguments(*, argv: CommandLineArgs) -> tuple[argparse.Namespace, Messa
     if options.delete_unexpected_files and not options.ignore_unexpected_children:
         messages.append(
             "Cannot enable --delete_unexpected_files without "
-            "--ignore_unexpected_children"
+            + "--ignore_unexpected_children"
         )
     return (options, messages)
 

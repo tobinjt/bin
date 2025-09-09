@@ -54,11 +54,11 @@ class TestFormatting(unittest.TestCase):
 
     def test_strip_trailing_zeros(self):
         """Tests for strip_trailing_zeros."""
-        self.assertEqual("123", nines.strip_trailing_zeros(number="123"))
-        self.assertEqual("123", nines.strip_trailing_zeros(number="123.0"))
-        self.assertEqual("10", nines.strip_trailing_zeros(number="10"))
-        self.assertEqual("10.1", nines.strip_trailing_zeros(number="10.1"))
-        self.assertEqual(".1", nines.strip_trailing_zeros(number=".1"))
+        self.assertEqual("123", nines.strip_trailing_zeros(number=123))
+        self.assertEqual("123", nines.strip_trailing_zeros(number=123.0))
+        self.assertEqual("10", nines.strip_trailing_zeros(number=10))
+        self.assertEqual("10.1", nines.strip_trailing_zeros(number=10.1))
+        self.assertEqual("0.1", nines.strip_trailing_zeros(number=0.1))
 
     def test_format_duration(self):
         """Tests for format_duration."""
@@ -71,7 +71,7 @@ class TestMain(unittest.TestCase):
     """Tests for main."""
 
     @mock.patch.object(sys, "stdout", new_callable=StringIO)
-    def test_main(self, mock_stdout):
+    def test_main(self, mock_stdout: StringIO):
         """Test main."""
         for arg in ["2", "7"]:
             nines.main(argv=["argv0", arg])
@@ -87,7 +87,13 @@ class TestMain(unittest.TestCase):
     @mock.patch.object(sys, "exit")
     @mock.patch.object(sys, "stdout", new_callable=StringIO)
     @mock.patch.object(sys, "stderr", new_callable=StringIO)
-    def test_no_args(self, mock_stderr, _, mock_exit, __):
+    def test_no_args(
+        self,
+        mock_stderr: StringIO,
+        _unused_moclstdout: StringIO,
+        mock_exit: mock.Mock,
+        _unused_mock_pna: mock.Mock,
+    ):
         """Test no args."""
         nines.main(argv=["argv0"])
         # The name of the program is pytest when running tests.
@@ -102,7 +108,9 @@ class TestMain(unittest.TestCase):
     @mock.patch.object(nines, "parse_nines_arg", return_value=99)
     @mock.patch.object(sys, "exit")
     @mock.patch.object(sys, "stdout", new_callable=StringIO)
-    def test_help(self, mock_stdout, mock_exit, __):
+    def test_help(
+        self, mock_stdout: StringIO, mock_exit: mock.Mock, _unused_mock_pna: mock.Mock
+    ):
         """Test --help to ensure that the description is correctly set up."""
         nines.main(argv=["argv0", "--help"])
         # The name of the program is pytest when running tests.

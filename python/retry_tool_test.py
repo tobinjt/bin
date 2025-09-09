@@ -77,7 +77,7 @@ class RetryMainTest(unittest.TestCase):
     @mock.patch("sys.exit")
     @mock.patch("sys.stdout", new_callable=io.StringIO)
     def test_not_enough_arguments(
-        self, mock_stdout: mock.Mock, mock_exit: mock.Mock
+        self, mock_stdout: mock.Mock, _unused_mock_exit: mock.Mock
     ) -> None:
         return_code = retry_tool.main(["1", "message"])
         self.assertEqual(return_code, 2)

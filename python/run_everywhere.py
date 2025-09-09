@@ -11,9 +11,9 @@ controlled by the `CAFFEINATED` environment variable.
 """
 
 import logging
-import os
-import shutil
-import subprocess
+import os as os
+import shutil as shutil
+import subprocess as subprocess
 import sys
 
 

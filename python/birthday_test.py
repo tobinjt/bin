@@ -22,7 +22,7 @@ class TestMain(unittest.TestCase):
     """Tests for main."""
 
     @mock.patch.object(birthday, "birthday")
-    def test_main(self, mock_birthday):
+    def test_main(self, mock_birthday: mock.Mock):
         """Test cases for main."""
         birthday.main(["birthday.py", "23"])
         mock_birthday.assert_called_with(23, 365)
@@ -56,4 +56,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    _ = unittest.main()

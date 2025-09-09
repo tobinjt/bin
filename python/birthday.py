@@ -48,7 +48,7 @@ def birthday(num_people: int, num_days: int) -> decimal.Decimal:
     return 1 - prob_no_collision
 
 
-def main(argv):
+def main(argv: list[str]):
     """Parse arguments and call birthday.
 
     Args:
@@ -59,7 +59,7 @@ def main(argv):
 
     try:
         for number in argv[1:]:
-            int(number)
+            _ = int(number)
     except ValueError:
         sys.exit(f"Argument is not a number: {str(number)}")
 

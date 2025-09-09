@@ -11,7 +11,7 @@ import probe_arianetobin
 
 class TestProbeWebsite(unittest.TestCase):
     @mock.patch.object(requests, "get")
-    def test_probe_website_success(self, mock_get):
+    def test_probe_website_success(self, mock_get: mock.Mock):
         """Test that probe_website succeeds when the sentinel is found."""
         mock_response = mock.create_autospec(requests.Response, instance=True)
         mock_response.text = probe_arianetobin.SENTINEL
@@ -30,7 +30,9 @@ class TestProbeWebsite(unittest.TestCase):
 
     @mock.patch.object(time, "sleep", return_value=None)
     @mock.patch.object(requests, "get")
-    def test_probe_website_sentinel_not_found(self, mock_get, mock_sleep):
+    def test_probe_website_sentinel_not_found(
+        self, mock_get: mock.Mock, mock_sleep: mock.Mock
+    ):
         """Test that probe_website raises SentinelNotFoundError and retries."""
         mock_response = mock.create_autospec(requests.Response, instance=True)
         mock_response.text = "some other content"
@@ -51,14 +53,16 @@ class TestProbeWebsite(unittest.TestCase):
         )
 
     @mock.patch.object(probe_arianetobin, "probe_website")
-    def test_main_success(self, mock_probe_website):
+    def test_main_success(self, mock_probe_website: mock.Mock):
         """Test that main returns 0 on success."""
         mock_probe_website.return_value = None
         self.assertEqual(probe_arianetobin.main(), 0)
 
     @mock.patch.object(probe_arianetobin, "probe_website")
     @mock.patch.object(sys, "stderr", new_callable=io.StringIO)
-    def test_main_failure(self, mock_stderr, mock_probe_website):
+    def test_main_failure(
+        self, mock_stderr: io.StringIO, mock_probe_website: mock.Mock
+    ):
         """Test that main returns 1 and prints to stderr on failure."""
         mock_probe_website.side_effect = probe_arianetobin.SentinelNotFoundError(
             "Test error"

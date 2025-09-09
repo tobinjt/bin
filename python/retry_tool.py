@@ -10,10 +10,10 @@ require user interaction (pressing Enter) before each new attempt.
 
 import argparse
 import logging
-import subprocess
+import subprocess as subprocess
 import sys
-import time
-from typing import Sequence
+import time as time
+from collections.abc import Sequence
 
 
 logger = logging.getLogger("retry_tool")
