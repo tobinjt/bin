@@ -10,26 +10,11 @@ import dns.resolver
 import dns.name
 
 
-class MockAnswer:
-    """A mock for dns.resolver.Answer."""
-
-    def __init__(self, records):
-        self._records = records if records is not None else []
-
-    def __iter__(self):
-        return iter(self._records)
-
-    @property
-    def rrset(self):
-        """Returns the mocked rrset."""
-        return self
-
-
 class MockRdata:
     """A mock for dns.rdata.Rdata."""
 
-    def __init__(self, text):
-        self._text = text
+    def __init__(self, text: str):
+        self._text: str = text
 
     def to_text(self):
         """Returns the text form of the rdata."""
@@ -39,13 +24,28 @@ class MockRdata:
 class MockMxRdata:
     """A mock for MX rdata."""
 
-    def __init__(self, preference, exchange):
-        self.preference = preference
-        self.exchange = dns.name.from_text(exchange)
+    def __init__(self, preference: int, exchange: str):
+        self.preference: int = preference
+        self.exchange: dns.name.Name = dns.name.from_text(exchange)
 
     @override
     def __str__(self):
         return f"{self.preference} {self.exchange}"
+
+
+class MockAnswer:
+    """A mock for dns.resolver.Answer."""
+
+    def __init__(self, records: list[MockMxRdata | MockRdata]):
+        self._records: list[MockMxRdata | MockRdata] = records
+
+    def __iter__(self):
+        return iter(self._records)
+
+    @property
+    def rrset(self):
+        """Returns the mocked rrset."""
+        return self
 
 
 class TestQueryDns(unittest.TestCase):
@@ -210,7 +210,7 @@ class TestCheckMxForHost(unittest.TestCase):
         self, mock_logger: mock.Mock, mock_query_dns: mock.Mock
     ):
         """Test failure when the MX answer has an empty rrset."""
-        mock_query_dns.return_value = MockAnswer(None)
+        mock_query_dns.return_value = MockAnswer([])
         self.assertFalse(
             check_dns_for_hosting.check_mx_for_host("bad.com", ["10 mail.bad.com."])
         )
@@ -274,7 +274,7 @@ class TestCheckSingleHost(unittest.TestCase):
 class TestMain(unittest.TestCase):
     """Test cases for the main function."""
 
-    MOCK_CONFIG = [
+    MOCK_CONFIG: list[check_dns_for_hosting.HostConfig] = [
         check_dns_for_hosting.HostConfig(
             name="test1.com", ipv4=["1.1.1.1"], ipv6=["::1"]
         ),

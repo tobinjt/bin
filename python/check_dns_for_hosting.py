@@ -203,10 +203,12 @@ def check_mx_for_host(hostname: str, expected_mx_records: list[str]) -> bool:
         True if all expected MX records are found, False otherwise.
     """
     mx_answers = query_dns(hostname, "MX")
+    found_mx_records: set[str] = set([])
     if mx_answers and mx_answers.rrset:
-        found_mx_records = {f"{mx.preference} {mx.exchange}" for mx in mx_answers.rrset}
-    else:
-        found_mx_records = set([])
+        for mx in mx_answers.rrset:  # pyright: ignore [reportUnknownVariableType]
+            found_mx_records.add(
+                f"{mx.preference} {mx.exchange}"  # pyright: ignore [reportUnknownMemberType]
+            )
     expected_set = set(expected_mx_records)
 
     if expected_set != found_mx_records:

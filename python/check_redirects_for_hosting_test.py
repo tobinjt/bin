@@ -10,7 +10,7 @@ import check_redirects_for_hosting
 class CheckRedirectsForHostingTest(unittest.TestCase):
     @mock.patch.object(requests, "head")
     def test_check_single_redirect_success(self, mock_head: mock.Mock):
-        mock_response = mock.create_autospec(requests.Response, instance=True)
+        mock_response = requests.Response()
         mock_response.url = "https://www.arianetobin.ie/"
         mock_head.return_value = mock_response
 
@@ -23,7 +23,7 @@ class CheckRedirectsForHostingTest(unittest.TestCase):
     def test_check_single_redirect_failure(
         self, mock_head: mock.Mock, _unused_mock_sleep: mock.Mock
     ):
-        mock_response = mock.create_autospec(requests.Response, instance=True)
+        mock_response = requests.Response()
         mock_response.url = "http://some-other-url.com"
         mock_head.return_value = mock_response
 
@@ -33,7 +33,7 @@ class CheckRedirectsForHostingTest(unittest.TestCase):
             )
 
     @mock.patch.object(check_redirects_for_hosting, "check_single_redirect")
-    def test_check_redirects_success(self, mock_check_single_redirect):
+    def test_check_redirects_success(self, mock_check_single_redirect: mock.Mock):
         errors = check_redirects_for_hosting.check_redirects(
             "https://www.arianetobin.ie/", "http://ariane.ie/", "https://ariane.ie/"
         )

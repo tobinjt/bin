@@ -1,3 +1,4 @@
+import subprocess
 import unittest
 from unittest import mock
 
@@ -52,13 +53,14 @@ class MainFunctionTest(unittest.TestCase):
         """
         mock_expanduser.return_value = "/home/testuser/tmp/logs"
         # Mock the command execution
-        mock_process_result = mock.create_autospec(
-            send_mail.subprocess.CompletedProcess, instance=True
+        mock_process_result = subprocess.CompletedProcess(
+            args=[], returncode=1, stdout="error output", stderr=""
         )
-        mock_process_result.returncode = 1
-        mock_process_result.stdout = "error output"
         # The first call is the command, the second is the mailer
-        mock_subprocess_run.side_effect = [mock_process_result, mock.DEFAULT]
+        mock_subprocess_run.side_effect = [
+            mock_process_result,
+            mock.DEFAULT,  # pyright: ignore [reportAny]
+        ]
 
         argv = ["test@example.com", "ls", "nonexistent"]
         exit_code = send_mail.main(argv)
@@ -76,8 +78,14 @@ class MainFunctionTest(unittest.TestCase):
         self.assertEqual(
             mail_call.args[0], ["mail", "-s", expected_subject, "test@example.com"]
         )
-        self.assertIn("Exit status: 1", mail_call.kwargs["input"])
-        self.assertIn("error output", mail_call.kwargs["input"])
+        self.assertIn(
+            "Exit status: 1",
+            mail_call.kwargs["input"],  # pyright: ignore [reportAny]
+        )
+        self.assertIn(
+            "error output",
+            mail_call.kwargs["input"],  # pyright: ignore [reportAny]
+        )
 
         # Check logging
         mock_expanduser.assert_called_once_with("~/tmp/logs")
@@ -87,8 +95,8 @@ class MainFunctionTest(unittest.TestCase):
             "a",
             encoding="utf-8",
         )
-        handle = mock_open()
-        handle.write.assert_called_once_with(
+        handle = mock_open()  # pyright: ignore [reportAny]
+        handle.write.assert_called_once_with(  # pyright: ignore [reportAny]
             f"test@example.com -- {expected_subject}\n"
         )
 
@@ -97,11 +105,9 @@ class MainFunctionTest(unittest.TestCase):
         """
         Tests that no email is sent when the command succeeds with no output.
         """
-        mock_process_result = mock.create_autospec(
-            send_mail.subprocess.CompletedProcess, instance=True
+        mock_process_result = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="", stderr=""
         )
-        mock_process_result.returncode = 0
-        mock_process_result.stdout = ""
         mock_subprocess_run.return_value = mock_process_result
 
         argv = ["test@example.com", "echo", "hello"]
@@ -109,7 +115,10 @@ class MainFunctionTest(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         mock_subprocess_run.assert_called_once_with(
-            ["echo", "hello"], stdout=mock.ANY, stderr=mock.ANY, text=True
+            ["echo", "hello"],
+            stdout=mock.ANY,  # pyright: ignore [reportAny]
+            stderr=mock.ANY,  # pyright: ignore [reportAny]
+            text=True,
         )
 
 

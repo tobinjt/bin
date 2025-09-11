@@ -43,7 +43,7 @@ def main(argv: Sequence[str]) -> int:
     )
     parser.add_argument(
         "sleep_time",
-        type=int,
+        type=float,
         help="Number of seconds to sleep between retries.",
     )
     parser.add_argument("message", help="Message to display between retries.")
@@ -53,27 +53,34 @@ def main(argv: Sequence[str]) -> int:
         help="Command and arguments.",
     )
 
+    # Appease basedpyright by making copies of the flags etc. to ensure they are
+    # correctly typed. If we don't do this, then pyright incorrectly types everything
+    # as "Any" objects.
     args = parser.parse_args(argv)
-    if not args.command_args:
+    if not args.command_args:  # pyright: ignore [reportAny]
         parser.print_usage()
         return 2
+    command_args = [str(a) for a in args.command_args]  # pyright: ignore [reportAny]
+    (message, sleep_time, press_enter_before_retrying) = (
+        str(args.message),  # pyright: ignore [reportAny]
+        float(args.sleep_time),  # pyright: ignore [reportAny]
+        bool(args.press_enter_before_retrying),  # pyright: ignore [reportAny]
+    )
 
     while True:
-        logger.info(f"Running: {args.command_args}")
-        result = subprocess.run(args.command_args, check=False)
+        logger.info(f"Running: {command_args}")
+        result = subprocess.run(command_args, check=False)
         if result.returncode == 0:
             return 0
 
         logger.info(f"Exit status: {result.returncode}")
-        logger.warning(
-            f"Sleeping for {args.sleep_time} seconds before retrying {args.message}"
-        )
-        time.sleep(args.sleep_time)
+        logger.warning(f"Sleeping for {sleep_time} seconds before retrying {message}")
+        time.sleep(sleep_time)
 
-        if args.press_enter_before_retrying:
+        if press_enter_before_retrying:
             input("Press Enter to retry: ")
 
-        logger.info(f"Retrying {args.message}")
+        logger.info(f"Retrying {message}")
 
 
 if __name__ == "__main__":

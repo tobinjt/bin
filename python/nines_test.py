@@ -28,22 +28,21 @@ class TestParsing(unittest.TestCase):
     def test_parse_nines_arg(self):
         """Test general parsing."""
         for nine, result in [
-            ("0", 0),
-            ("3", 99.9),
-            ("7", 99.99999),
-            ("20", 20),
-            ("21", 21),
-            ("80", 80),
-            ("100", 100),
+            (0, 0),
+            (3, 99.9),
+            (7, 99.99999),
+            (20, 20),
+            (21, 21),
+            (80, 80),
+            (100, 100),
         ]:
             self.assertAlmostEqual(
                 result, nines.parse_nines_arg(num_nines=nine), places=10
             )
 
         for nine, message in [
-            ("as", "^Argument is not a number"),
-            ("-5", "^You cannot have a negative uptime"),
-            ("101", "^You cannot have more than 100% uptime"),
+            (-5, "^You cannot have a negative uptime"),
+            (101, "^You cannot have more than 100% uptime"),
         ]:
             with self.assertRaisesRegex(ValueError, message):
                 nines.parse_nines_arg(num_nines=nine)

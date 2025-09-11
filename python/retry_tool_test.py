@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 
 import io
+import sys
 import retry_tool
 
 
@@ -74,10 +75,10 @@ class RetryMainTest(unittest.TestCase):
         mock_sleep.assert_called_once_with(1)
         mock_input.assert_called_once_with("Press Enter to retry: ")
 
-    @mock.patch("sys.exit")
-    @mock.patch("sys.stdout", new_callable=io.StringIO)
+    @mock.patch.object(sys, "exit")
+    @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     def test_not_enough_arguments(
-        self, mock_stdout: mock.Mock, _unused_mock_exit: mock.Mock
+        self, mock_stdout: io.StringIO, _unused_mock_exit: mock.Mock
     ) -> None:
         return_code = retry_tool.main(["1", "message"])
         self.assertEqual(return_code, 2)

@@ -55,27 +55,23 @@ def format_duration(*, seconds: float) -> str:
     Returns:
         string to print.
     """
-    time_units = {}
-    seconds_so_far = 1
-    units = ((1, "second"), (60, "minute"), (60, "hour"), (24, "day"))
-    for number, label in units:
-        seconds_so_far *= number
-        time_units[seconds_so_far] = label
+    time_units: list[tuple[int, str]] = [
+        (24 * 60 * 60, "day"),
+        (60 * 60, "hour"),
+        (60, "minute"),
+        (1, "second"),
+    ]
 
-    durations = []
-    for seconds_per_time_unit in sorted(time_units, reverse=True):
-        if seconds_per_time_unit <= seconds:
-            num_time_units, seconds = divmod(seconds, seconds_per_time_unit)
-            plural = ""
-            if num_time_units > 1:
-                plural = "s"
-            durations.append(
-                f"{int(num_time_units)} {time_units[seconds_per_time_unit]}{plural}"
-            )
+    durations: list[str] = []
+    for divisor, description in time_units:
+        if divisor <= seconds:
+            num_time_units, seconds = divmod(seconds, divisor)
+            plural = "s" if num_time_units > 1 else ""
+            durations.append(f"{int(num_time_units)} {description}{plural}")
     return ", ".join(durations)
 
 
-def parse_nines_arg(*, num_nines: str) -> float:
+def parse_nines_arg(*, num_nines: float) -> float:
     """Parse an CLI argument, converting it into a percentage.
 
     Args:
@@ -85,17 +81,13 @@ def parse_nines_arg(*, num_nines: str) -> float:
     Raises:
         ValueError, when an invalid argument is provided.
     """
-    try:
-        parsed_num_nines = float(num_nines)
-    except ValueError as err:
-        raise ValueError(f"Argument is not a number: {num_nines}") from err
-    if parsed_num_nines < 0:
+    if num_nines < 0:
         raise ValueError(f"You cannot have a negative uptime: {num_nines}")
-    if parsed_num_nines > 100:
+    if num_nines > 100:
         raise ValueError(f"You cannot have more than 100% uptime: {num_nines}")
-    if parsed_num_nines >= PERCENT_THRESHOLD:
-        return parsed_num_nines
-    return nines_into_percent(num_nines=parsed_num_nines)
+    if num_nines >= PERCENT_THRESHOLD:
+        return num_nines
+    return nines_into_percent(num_nines=num_nines)
 
 
 def nines_into_percent(*, num_nines: float) -> float:
@@ -160,7 +152,8 @@ def main(*, argv: list[str]) -> None:
     )
     options = argv_parser.parse_args(argv[1:])
 
-    print(nines(num_nines=parse_nines_arg(num_nines=options.nines), days=options.days))
+    num_nines = parse_nines_arg(num_nines=options.nines)  # pyright: ignore [reportAny]
+    print(nines(num_nines=num_nines, days=options.days))  # pyright: ignore [reportAny]
 
 
 if __name__ == "__main__":  # pragma: no mutate

@@ -57,11 +57,11 @@ def main(argv: list[str]):
     if len(argv) not in (2, 3):
         sys.exit(f"Usage: {argv[0]} NUM_PEOPLE [NUM_DAYS]")
 
-    try:
-        for number in argv[1:]:
+    for number in argv[1:]:
+        try:
             _ = int(number)
-    except ValueError:
-        sys.exit(f"Argument is not a number: {str(number)}")
+        except ValueError:
+            sys.exit(f"Argument is not a number: {str(number)}")
 
     (num_people, num_days) = (int(argv[1]), 365)
     if len(argv) == 3:

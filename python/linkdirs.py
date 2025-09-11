@@ -351,7 +351,7 @@ def link_files(
         if filecmp.cmp(source_filename, dest_filename, shallow=False):
             print(
                 f"{source_filename} and {dest_filename} are different files but"
-                " have the same contents; deleting and linking"
+                + " have the same contents; deleting and linking"
             )
             safe_unlink(unlink_me=dest_filename, dryrun=options.dryrun)
             safe_link(
@@ -507,7 +507,7 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
 
 def read_skip_patterns_from_file(*, filename: Path) -> SkipPatterns:
     """Read skip patterns from filename, ignoring comments and empty lines."""
-    patterns = []
+    patterns: list[str] = []
     with open(filename, encoding="utf8") as pfh:
         for line in pfh.readlines():
             line = line.strip()

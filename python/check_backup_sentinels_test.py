@@ -23,7 +23,9 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     def create_files_for_test(self, data: dict[str, str]) -> None:
         """Create files for tests."""
         for filename, contents in data.items():
-            self.fs.create_file(filename, contents=contents)
+            self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
+                filename, contents=contents
+            )
 
     def test_simple(self):
         """Test basic processing."""
@@ -268,7 +270,9 @@ class TestMain(fake_filesystem_unittest.TestCase):
     @override
     def setUp(self):
         self.setUpPyfakefs()
-        self.fs.create_file(os.path.join(self.TEST_DIR, "qwerty"), contents="test test")
+        self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
+            os.path.join(self.TEST_DIR, "qwerty"), contents="test test"
+        )
 
     def test_bad_args(self):
         """Check that bad args are rejected."""
@@ -334,7 +338,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     def create_files_for_test(self, data: dict[str, str]) -> None:
         """Create files for tests."""
         for filename, contents in data.items():
-            self.fs.create_file(filename, contents=contents)
+            self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
+                filename, contents=contents
+            )
 
     @mock.patch.object(sys, "exit")
     @mock.patch.object(time, "time")

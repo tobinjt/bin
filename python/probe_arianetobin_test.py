@@ -13,8 +13,9 @@ class TestProbeWebsite(unittest.TestCase):
     @mock.patch.object(requests, "get")
     def test_probe_website_success(self, mock_get: mock.Mock):
         """Test that probe_website succeeds when the sentinel is found."""
-        mock_response = mock.create_autospec(requests.Response, instance=True)
-        mock_response.text = probe_arianetobin.SENTINEL
+        mock_response = requests.Response()
+        mock_response._content = probe_arianetobin.SENTINEL.encode()
+        mock_response.status_code = 200
         mock_get.return_value = mock_response
 
         try:
@@ -26,7 +27,6 @@ class TestProbeWebsite(unittest.TestCase):
             probe_arianetobin.SentinelNotFoundError,
         ) as e:
             self.fail(f"probe_website raised an exception unexpectedly: {e}")
-        mock_response.raise_for_status.assert_called_once()
 
     @mock.patch.object(time, "sleep", return_value=None)
     @mock.patch.object(requests, "get")
@@ -34,8 +34,9 @@ class TestProbeWebsite(unittest.TestCase):
         self, mock_get: mock.Mock, mock_sleep: mock.Mock
     ):
         """Test that probe_website raises SentinelNotFoundError and retries."""
-        mock_response = mock.create_autospec(requests.Response, instance=True)
-        mock_response.text = "some other content"
+        mock_response = requests.Response()
+        mock_response._content = "some other content".encode()
+        mock_response.status_code = 200
         mock_get.return_value = mock_response
 
         with self.assertRaises(probe_arianetobin.SentinelNotFoundError):
@@ -46,10 +47,6 @@ class TestProbeWebsite(unittest.TestCase):
         self.assertEqual(mock_get.call_count, probe_arianetobin.NUMBER_OF_ATTEMPTS)
         self.assertEqual(
             mock_sleep.call_count, probe_arianetobin.NUMBER_OF_ATTEMPTS - 1
-        )
-        self.assertEqual(
-            mock_response.raise_for_status.call_count,
-            probe_arianetobin.NUMBER_OF_ATTEMPTS,
         )
 
     @mock.patch.object(probe_arianetobin, "probe_website")

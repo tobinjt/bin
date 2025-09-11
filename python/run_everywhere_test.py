@@ -93,7 +93,6 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main([])
         self.assertEqual(return_code, 1)
 
-    @mock.patch.dict(run_everywhere.os.environ, {}, clear=True)
     @mock.patch.object(
         run_everywhere.shutil, "which", return_value="/usr/bin/caffeinate"
     )
@@ -101,32 +100,35 @@ class RunEverywhereTest(unittest.TestCase):
     def test_caffeinate_wrapper_activates(
         self, mock_execvp: mock.Mock, mock_which: mock.Mock
     ) -> None:
-        run_everywhere.run_caffeinated(["/path/to/script", "arg1"])
+        with mock.patch.dict(run_everywhere.os.environ, {}, clear=True):
+            run_everywhere.run_caffeinated(["/path/to/script", "arg1"])
 
-        mock_which.assert_called_once_with("caffeinate")
-        self.assertEqual(run_everywhere.os.environ["CAFFEINATED"], "do not sleep")
-        mock_execvp.assert_called_once_with(
-            "/usr/bin/caffeinate",
-            ["/usr/bin/caffeinate", "-i", "/path/to/script", "arg1"],
-        )
+            mock_which.assert_called_once_with("caffeinate")
+            self.assertEqual(run_everywhere.os.environ["CAFFEINATED"], "do not sleep")
+            mock_execvp.assert_called_once_with(
+                "/usr/bin/caffeinate",
+                ["/usr/bin/caffeinate", "-i", "/path/to/script", "arg1"],
+            )
 
-    @mock.patch.dict(run_everywhere.os.environ, {"CAFFEINATED": "active"}, clear=True)
     @mock.patch.object(run_everywhere.os, "execvp")
     def test_caffeinate_wrapper_does_not_activate_if_set(
         self, mock_execvp: mock.Mock
     ) -> None:
-        run_everywhere.run_caffeinated(["/path/to/script", "arg1"])
-        mock_execvp.assert_not_called()
+        with mock.patch.dict(
+            run_everywhere.os.environ, {"CAFFEINATED": "active"}, clear=True
+        ):
+            run_everywhere.run_caffeinated(["/path/to/script", "arg1"])
+            mock_execvp.assert_not_called()
 
-    @mock.patch.dict(run_everywhere.os.environ, {}, clear=True)
     @mock.patch.object(run_everywhere.shutil, "which", return_value=None)
     @mock.patch.object(run_everywhere.os, "execvp")
     def test_caffeinate_wrapper_does_not_activate_if_missing(
         self, mock_execvp: mock.Mock, mock_which: mock.Mock
     ) -> None:
-        run_everywhere.run_caffeinated(["/path/to/script", "arg1"])
-        mock_which.assert_called_once_with("caffeinate")
-        mock_execvp.assert_not_called()
+        with mock.patch.dict(run_everywhere.os.environ, {}, clear=True):
+            run_everywhere.run_caffeinated(["/path/to/script", "arg1"])
+            mock_which.assert_called_once_with("caffeinate")
+            mock_execvp.assert_not_called()
 
 
 if __name__ == "__main__":
