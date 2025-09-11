@@ -4,7 +4,7 @@ set -e -f -u -o pipefail
 
 main() {
   if ! type keep-sorted >& /dev/null; then
-    cat "$@"
+    log-and-run cat "$@"
   else
     log-and-run keep-sorted "$@"
   fi
