@@ -67,7 +67,7 @@ class TestQueryDns(unittest.TestCase):
         mock_retry_func.side_effect = dns.exception.Timeout
         result = check_dns_for_hosting.query_dns("example.com", "A")
         self.assertIsNone(result)
-        mock_logger.warning.assert_called_once()
+        mock_logger.warning.assert_called_once()  # pyright: ignore [reportAny]
 
 
 class TestQueryDnsWithRetry(unittest.TestCase):
@@ -160,7 +160,7 @@ class TestCheckDnsForHost(unittest.TestCase):
         self.assertFalse(
             check_dns_for_hosting.check_dns_for_host("bad.com", ["1.2.3.4"], "A")
         )
-        mock_logger.warning.assert_called_once_with(
+        mock_logger.warning.assert_called_once_with(  # pyright: ignore [reportAny]
             "Bad A record for bad.com: No answer from DNS."
         )
 
@@ -174,7 +174,7 @@ class TestCheckDnsForHost(unittest.TestCase):
         self.assertFalse(
             check_dns_for_hosting.check_dns_for_host("bad.com", ["1.2.3.4"], "A")
         )
-        mock_logger.warning.assert_called_once_with(
+        mock_logger.warning.assert_called_once_with(  # pyright: ignore [reportAny]
             "Bad A record for bad.com: Expected {'1.2.3.4'}. Got: {'9.9.9.9'}"
         )
 
@@ -199,7 +199,7 @@ class TestCheckMxForHost(unittest.TestCase):
         self.assertFalse(
             check_dns_for_hosting.check_mx_for_host("bad.com", ["10 mail.bad.com."])
         )
-        mock_logger.warning.assert_called_once_with(
+        mock_logger.warning.assert_called_once_with(  # pyright: ignore [reportAny]
             "Error: Bad MX records for bad.com: Expected {'10 mail.bad.com.'}. "
             + "Got set()"
         )
@@ -214,7 +214,7 @@ class TestCheckMxForHost(unittest.TestCase):
         self.assertFalse(
             check_dns_for_hosting.check_mx_for_host("bad.com", ["10 mail.bad.com."])
         )
-        mock_logger.warning.assert_called_once_with(
+        mock_logger.warning.assert_called_once_with(  # pyright: ignore [reportAny]
             "Error: Bad MX records for bad.com: Expected {'10 mail.bad.com.'}. "
             + "Got set()"
         )
@@ -229,7 +229,7 @@ class TestCheckMxForHost(unittest.TestCase):
         self.assertFalse(
             check_dns_for_hosting.check_mx_for_host("bad.com", ["10 mail.bad.com."])
         )
-        mock_logger.warning.assert_called_once_with(
+        mock_logger.warning.assert_called_once_with(  # pyright: ignore [reportAny]
             "Error: Bad MX records for bad.com: Expected {'10 mail.bad.com.'}. "
             + "Got {'99 wrong.com.'}"
         )
@@ -313,7 +313,7 @@ class TestMain(unittest.TestCase):
     def test_main_bad_args(self, mock_logger: mock.Mock):
         """Test main returns 1 when passed extra arguments."""
         self.assertEqual(check_dns_for_hosting.main(["script.py", "bad"]), 1)
-        mock_logger.warning.assert_called()
+        mock_logger.warning.assert_called()  # pyright: ignore [reportAny]
 
 
 if __name__ == "__main__":

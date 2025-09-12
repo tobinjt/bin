@@ -33,8 +33,6 @@ Diffs = NewType("Diffs", list[str])  # pragma: no mutate
 Messages = NewType("Messages", list[str])  # pragma: no mutate
 # Shell patterns to skip.
 SkipPatterns = NewType("SkipPatterns", list[str])  # pragma: no mutate
-# Command line args.
-CommandLineArgs = NewType("CommandLineArgs", list[str])  # pragma: no mutate
 
 
 class Error(Exception):
@@ -77,6 +75,43 @@ class LinkResults:
         self.expected_files.extend(other.expected_files)
         self.diffs.extend(other.diffs)
         self.errors.extend(other.errors)
+
+
+@dataclasses.dataclass
+class Options:
+    """Commandline options."""
+
+    args: list[str]
+    delete_unexpected_files: bool
+    dryrun: bool
+    force: bool
+    ignore_symlinks: bool
+    ignore_unexpected_children: bool
+    report_unexpected_files: bool
+    ignore_file: Paths
+    skip: SkipPatterns
+
+
+def options_from_args(args: argparse.Namespace) -> Options:
+    """Parse command line arguments into an Options object.
+
+    Args:
+        args: command line arguments, not including argv[0].
+
+    Returns:
+        Options.
+    """
+    return Options(
+        args=args.args,  # pyright: ignore [reportAny]
+        delete_unexpected_files=args.delete_unexpected_files,  # pyright: ignore [reportAny]
+        dryrun=args.dryrun,  # pyright: ignore [reportAny]
+        force=args.force,  # pyright: ignore [reportAny]
+        ignore_symlinks=args.ignore_symlinks,  # pyright: ignore [reportAny]
+        ignore_unexpected_children=args.ignore_unexpected_children,  # pyright: ignore [reportAny]
+        report_unexpected_files=args.report_unexpected_files,  # pyright: ignore [reportAny]
+        ignore_file=args.ignore_file,  # pyright: ignore [reportAny]
+        skip=SkipPatterns(args.ignore_pattern),  # pyright: ignore [reportAny]
+    )
 
 
 def safe_unlink(*, unlink_me: Path, dryrun: bool) -> None:
@@ -183,7 +218,7 @@ def remove_skip_patterns(*, files: Paths, skip: SkipPatterns) -> Paths:
     return Paths(unmatched)
 
 
-def link_dir(*, source: Path, dest: Path, options: argparse.Namespace) -> LinkResults:
+def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
     """Recursively link files in source directory to dest directory.
 
     Args:
@@ -256,7 +291,7 @@ def link_files(
     dest: Path,
     directory: Path,
     files: Paths,
-    options: argparse.Namespace,
+    options: Options,
 ) -> LinkResults:
     """Link files from source to dest.
 
@@ -369,7 +404,7 @@ def link_files(
 
 
 def report_unexpected_files(
-    *, dest_dir: Path, expected_files_list: Paths, options: argparse.Namespace
+    *, dest_dir: Path, expected_files_list: Paths, options: Options
 ) -> Messages:
     """Check for and maybe delete files in destdir that aren't in source_dir.
 
@@ -437,7 +472,7 @@ def report_unexpected_files(
 
 
 def delete_unexpected_files(
-    *, unexpected_paths: UnexpectedPaths, options: argparse.Namespace
+    *, unexpected_paths: UnexpectedPaths, options: Options
 ) -> Messages:
     """Delete unexpected files, but not directories.
 
@@ -516,7 +551,7 @@ def read_skip_patterns_from_file(*, filename: Path) -> SkipPatterns:
     return SkipPatterns(patterns)
 
 
-def parse_arguments(*, argv: CommandLineArgs) -> tuple[argparse.Namespace, Messages]:
+def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     """Parse the arguments provided by the user.
 
     Args:
@@ -637,7 +672,7 @@ def parse_arguments(*, argv: CommandLineArgs) -> tuple[argparse.Namespace, Messa
         help="See usage for details",
     )
 
-    options = argv_parser.parse_args(argv[1:])
+    options = options_from_args(argv_parser.parse_args(argv[1:]))
     messages = Messages([])
     if len(options.args) < 2:
         messages.append(usage % {"prog": argv[0]})
@@ -649,27 +684,27 @@ def parse_arguments(*, argv: CommandLineArgs) -> tuple[argparse.Namespace, Messa
     return (options, messages)
 
 
-def real_main(*, argv: CommandLineArgs) -> Messages:
+def real_main(*, argv: list[str]) -> Messages:
     """The real main function, it just doesn't print anything or exit."""
 
     (options, messages) = parse_arguments(argv=argv)
     if messages:
         return messages
-    ignore_patterns = options.ignore_pattern[:]
+    skip = options.skip[:]
     for filename in options.ignore_file:
-        ignore_patterns.extend(read_skip_patterns_from_file(filename=filename))
+        skip.extend(read_skip_patterns_from_file(filename=filename))
+    options.skip = SkipPatterns(skip)
 
     all_results = LinkResults(Paths([]), Diffs([]), Messages([]))
     unexpected_msgs = Messages([])
     # When mutmut mutates these lines the tests take long enough for mutmut to
     # report them as suspicious, so disable mutations.
-    dest = options.args.pop().rstrip(os.sep)  # pragma: no mutate
+    dest = Path(options.args.pop().rstrip(os.sep))  # pragma: no mutate
     if not os.path.isdir(dest):  # pragma: no mutate
         os.makedirs(dest)
 
-    options.skip = ignore_patterns
     for source in options.args:
-        source = source.rstrip(os.sep)
+        source = Path(source.rstrip(os.sep))
         all_results.extend(link_dir(source=source, dest=dest, options=options))
     if options.report_unexpected_files or options.delete_unexpected_files:
         unexpected_msgs.extend(
@@ -683,7 +718,7 @@ def real_main(*, argv: CommandLineArgs) -> Messages:
     return Messages(all_results.diffs + all_results.errors + unexpected_msgs)
 
 
-def main(*, argv: CommandLineArgs):
+def main(*, argv: list[str]):
     messages = real_main(argv=argv)
     for line in messages:
         print(line)
@@ -693,4 +728,4 @@ def main(*, argv: CommandLineArgs):
 
 
 if __name__ == "__main__":  # pragma: no mutate
-    main(argv=CommandLineArgs(sys.argv))
+    main(argv=list[str](sys.argv))

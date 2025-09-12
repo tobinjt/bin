@@ -6,6 +6,7 @@ import re
 import stat
 import sys
 import textwrap
+from typing import override
 import unittest
 from unittest import mock
 
@@ -19,7 +20,7 @@ class TestMain(unittest.TestCase):
 
     @mock.patch.object(linkdirs, "real_main", return_value=[])
     @mock.patch.object(sys, "exit")
-    def test_success(self, mock_sys_exit, unused_mock_real_main):
+    def test_success(self, mock_sys_exit: mock.Mock, _unused_mock_real_main: mock.Mock):
         """Successful run."""
         with mock.patch.object(sys, "stderr", new_callable=io.StringIO) as mock_stderr:
             linkdirs.main(argv=[])
@@ -30,7 +31,12 @@ class TestMain(unittest.TestCase):
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     @mock.patch.object(linkdirs, "real_main", return_value=["a message"])
     @mock.patch.object(sys, "exit")
-    def test_failure(self, mock_sys_exit, unused_mock_real_main, mock_stdout):
+    def test_failure(
+        self,
+        mock_sys_exit: mock.Mock,
+        _unused_mock_real_main: mock.Mock,
+        mock_stdout: io.StringIO,
+    ):
         """Failed run."""
         linkdirs.main(argv=[])
         self.assertEqual("a message\n", mock_stdout.getvalue())
@@ -55,16 +61,17 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     - Dry-run.
     """
 
-    def assert_files_are_linked(self, file1, file2):
+    def assert_files_are_linked(self, file1: str, file2: str):
         """Assert that two files are linked."""
         self.assertTrue(os.path.samefile(file1, file2))
 
+    @override
     def setUp(self):
         # Do not truncate diffs.
-        self.maxDiff = None
+        self.maxDiff: int | None = 1000000
         self.setUpPyfakefs()
 
-    def create_files(self, string):
+    def create_files(self, string: str):
         """Create files in a newline-separated string of files.
 
         Format:
@@ -92,7 +99,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 # This allows creating a file with specific contents and then linking it
                 # later.
                 if not os.path.exists(src):
-                    self.fs.create_file(src)
+                    self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
+                        src
+                    )
                 directory = os.path.dirname(dest)
                 if not os.path.exists(directory):
                     os.makedirs(directory)
@@ -111,13 +120,15 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             if ":" in line:
                 (filename, contents) = line.split(":")
             else:
-                (filename, contents) = (line, None)
+                (filename, contents) = (line, "")
             if os.path.exists(filename):
                 continue
             if filename.endswith(os.sep):
                 os.makedirs(filename)
             else:
-                self.fs.create_file(filename, contents=contents)
+                self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
+                    filename, contents=contents
+                )
 
     def test_nothing_changes(self):
         """Nothing needs to be done."""
@@ -283,12 +294,12 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             "Unexpected directory: /z/y/x/asdf/delete dir with spaces",
             "Unexpected directory: /z/y/x/asdf/report_me",
             "Unexpected file: /z/y/x/asdf/delete dir with spaces/delete "
-            "file with spaces",
+            + "file with spaces",
             "Unexpected file: /z/y/x/asdf/symlink-to-report",
             "Unexpected file: /z/y/x/pinky",
             "Unexpected file: /z/y/x/the_brain",
             "rm '/z/y/x/asdf/delete dir with spaces/delete file with spaces' "
-            "/z/y/x/asdf/symlink-to-report /z/y/x/pinky /z/y/x/the_brain",
+            + "/z/y/x/asdf/symlink-to-report /z/y/x/pinky /z/y/x/the_brain",
             "rmdir '/z/y/x/asdf/delete dir with spaces' /z/y/x/asdf/report_me",
         ]
         self.assertEqual(expected, actual)
@@ -359,7 +370,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         )
         expected = [
             "Refusing to delete directories without --force/-f:"
-            " /z/y/x/asdf/report_me /z/y/x/asdf/report_me_too",
+            + " /z/y/x/asdf/report_me /z/y/x/asdf/report_me_too",
             "Unexpected directory: /z/y/x/asdf/report_me",
             "Unexpected directory: /z/y/x/asdf/report_me_too",
             "rmdir /z/y/x/asdf/report_me_too /z/y/x/asdf/report_me",
@@ -470,10 +481,12 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         )
 
         files = []
-        for dirpath, unused_x, filenames in os.walk(dest_dir):
+        for dirpath, _unused_x, filenames in os.walk(dest_dir):
             for filename in filenames:
-                files.append(os.path.join(dirpath, filename))
-        files.sort()
+                files.append(  # pyright: ignore [reportUnknownMemberType]
+                    os.path.join(dirpath, filename)
+                )
+        files.sort()  # pyright: ignore [reportUnknownMemberType]
         expected = [
             "harry/link_me",
             "harry/me_too",
@@ -529,7 +542,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         )
         expected = [
             "Cannot enable --delete_unexpected_files without "
-            "--ignore_unexpected_children"
+            + "--ignore_unexpected_children"
         ]
         actual = linkdirs.real_main(
             argv=["linkdirs", "--delete_unexpected_files", "/asdf", "/qwerty"]
@@ -621,7 +634,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 "/z/y/x/dir4 is not a directory",
                 "/z/y/x/file4: is not a file",
                 "/z/y/x/file5: link count is 2; is this file present in multiple "
-                "source directories?",
+                + "source directories?",
                 "Skipping symbolic link /a/b/c/file6",
                 "Skipping symbolic link /a/b/c/file8",
             ]
@@ -641,7 +654,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                     "mkdir /z/y/x/dir2",
                     "ln /a/b/c/file2 /z/y/x/file2",
                     "/a/b/c/file3 and /z/y/x/file3 are different files but have the"
-                    " same contents; deleting and linking",
+                    + " same contents; deleting and linking",
                     "rm /z/y/x/file3",
                     "ln /a/b/c/file3 /z/y/x/file3",
                     "ln /a/b/c/dir1/file1 /z/y/x/dir1/file1",
@@ -660,7 +673,12 @@ class TestUsage(unittest.TestCase):
     @mock.patch.object(sys, "exit")
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     @mock.patch.object(sys, "stderr", new_callable=io.StringIO)
-    def test_no_args(self, mock_stderr, mock_stdout, _):
+    def test_no_args(
+        self,
+        mock_stderr: io.StringIO,
+        mock_stdout: io.StringIO,
+        _unused_mock_exit: mock.Mock,
+    ):
         """Test no args."""
         linkdirs.real_main(argv=["argv0"])
         self.assertEqual("", mock_stdout.getvalue())
@@ -673,7 +691,7 @@ class TestUsage(unittest.TestCase):
 
     @mock.patch.object(sys, "exit")
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
-    def test_help(self, mock_stdout, _):
+    def test_help(self, mock_stdout: io.StringIO, _unused_mock_exit: mock.Mock):
         """Test --help to ensure that the description is correctly set up."""
         linkdirs.real_main(argv=["argv0", "--help"])
         # The name of the program is pytest when running tests.
@@ -688,9 +706,9 @@ class TestUsage(unittest.TestCase):
             "['CVS', '.git', '.gitignore', '.gitmodules', '.hg', '.svn', '*.swp']",
             "--ignore_unexpected_children When checking for unexpected files or",
             "--report_unexpected_files Report unexpected files in"
-            " DESTINATION_DIRECTORY (default: False)",
+            + " DESTINATION_DIRECTORY (default: False)",
             "--delete_unexpected_files Delete unexpected files in"
-            " DESTINATION_DIRECTORY (default: False)",
+            + " DESTINATION_DIRECTORY (default: False)",
         ]
         # The position of newlines depends on the width of the terminal, so remove
         # them for consistency.  Likewise spaces.
@@ -703,37 +721,38 @@ class TestUsage(unittest.TestCase):
         self.assertRegex(
             stdout,
             r"^usage: pytest .OPTIONS. SOURCE_DIRECTORY ....."
-            r" DESTINATION_DIRECTORY Link all files in SOURCE_DIRECTORY"
-            r" .SOURCE_DIRECTORY.... to DESTINATION_DIRECTORY, creating the"
-            r" destination directory hierarchy where",
+            + r" DESTINATION_DIRECTORY Link all files in SOURCE_DIRECTORY"
+            + r" .SOURCE_DIRECTORY.... to DESTINATION_DIRECTORY, creating the"
+            + r" destination directory hierarchy where",
         )
 
 
 class TestMisc(fake_filesystem_unittest.TestCase):
     """Tests for code that can't otherwise be tested."""
 
+    @override
     def setUp(self):
         self.setUpPyfakefs()
 
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
-    def test_safe_unlink_prints(self, mock_stdout):
+    def test_safe_unlink_prints(self, mock_stdout: io.StringIO):
         """Integration tests cannot make safe_unlink print for directories."""
-        test_dir = "/a/b/c"
+        test_dir = linkdirs.Path("/a/b/c")
         os.makedirs(test_dir)
         linkdirs.safe_unlink(unlink_me=test_dir, dryrun=True)
         self.assertEqual(f"rm -r {test_dir}\n", mock_stdout.getvalue())
 
     @mock.patch.object(os.path, "islink")
-    def test_safe_unlink_race_condition(self, mock_islink):
+    def test_safe_unlink_race_condition(self, mock_islink: mock.Mock):
         """Pretend a file exists to test deletion race condition handling."""
         mock_islink.return_value = True
         # An exception will be raised if the code doesn't handle the missing file
         # correctly.
-        linkdirs.safe_unlink(unlink_me="/does-not-exist", dryrun=False)
+        linkdirs.safe_unlink(unlink_me=linkdirs.Path("/does-not-exist"), dryrun=False)
 
     def test_read_skip_patterns(self):
         """Test that patterns are read correctly."""
-        filename = "ignore-file"
+        filename = linkdirs.Path("ignore-file")
         contents = (
             textwrap.dedent(
                 """
@@ -746,7 +765,9 @@ class TestMisc(fake_filesystem_unittest.TestCase):
             ).strip()
             + "\n\n"
         )
-        self.fs.create_file(filename, contents=contents)
+        self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
+            filename, contents=contents
+        )
         expected = ["foo", "bar*baz", "dir/subdir"]
         actual = linkdirs.read_skip_patterns_from_file(filename=filename)
         self.assertEqual(expected, actual)

@@ -5,11 +5,34 @@ Runs a command and sends an email if the command fails or produces output.
 """
 
 import argparse
+import dataclasses
 import os as os
 import socket as socket
 import subprocess as subprocess
 import sys
 from collections.abc import Sequence
+
+
+@dataclasses.dataclass
+class Config:
+    """Configuration, initialised from command line arguments."""
+
+    command: str
+    command_args: list[str]
+    email_address: str
+    ignore_exit_status: bool = False
+    only_on_failure: bool = False
+
+
+def config_from_args(args: argparse.Namespace) -> Config:
+    """Create a Config object from parsed command-line arguments."""
+    return Config(
+        command=args.command,  # pyright: ignore [reportAny]
+        command_args=args.command_args,  # pyright: ignore [reportAny]
+        email_address=args.email_address,  # pyright: ignore [reportAny]
+        ignore_exit_status=args.ignore_exit_status,  # pyright: ignore [reportAny]
+        only_on_failure=args.only_on_failure,  # pyright: ignore [reportAny]
+    )
 
 
 def should_send_mail(
@@ -74,10 +97,11 @@ def main(argv: Sequence[str]) -> int:
     )
 
     args = parser.parse_args(argv)
-    if args.ignore_exit_status and args.only_on_failure:
+    config = config_from_args(args)
+    if config.ignore_exit_status and config.only_on_failure:
         parser.error("Cannot use both --ignore_exit_status and --only_on_failure")
 
-    command_to_run = [args.command] + args.command_args
+    command_to_run = [config.command] + config.command_args
 
     result = subprocess.run(
         command_to_run,
@@ -90,7 +114,7 @@ def main(argv: Sequence[str]) -> int:
     output = result.stdout
 
     if should_send_mail(
-        exit_status, output, args.ignore_exit_status, args.only_on_failure
+        exit_status, output, config.ignore_exit_status, config.only_on_failure
     ):
         user = os.getlogin()
         hostname = socket.gethostname()
@@ -98,7 +122,7 @@ def main(argv: Sequence[str]) -> int:
         body = f"Exit status: {exit_status}\nOutput:\n{output}"
 
         subprocess.run(
-            ["mail", "-s", subject, args.email_address],
+            ["mail", "-s", subject, config.email_address],
             input=body,
             text=True,
             check=False,
@@ -108,7 +132,7 @@ def main(argv: Sequence[str]) -> int:
         os.makedirs(log_dir, exist_ok=True)
         log_file = os.path.join(log_dir, "send-mail-on-failure-or-output.log")
         with open(log_file, "a", encoding="utf-8") as f:
-            f.write(f"{args.email_address} -- {subject}\n")
+            f.write(f"{config.email_address} -- {subject}\n")
 
     return exit_status
 
