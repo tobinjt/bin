@@ -142,6 +142,19 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         )
         self.assert_files_are_linked(src_file, dest_file)
 
+    def test_git_subdirectory_is_ignored(self):
+        """.git isn't linked, testing that --ignore_pattern works."""
+        src_dir = "/a/b/c/dir"
+        dest_dir = "/z/y/x/dir"
+        files = f"""
+        {src_dir}/.git/config:pretend config
+        {dest_dir}/
+        """
+        self.create_files(files)
+
+        linkdirs.real_main(argv=["linkdirs", src_dir, dest_dir])
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, ".git", "config")))
+
     def test_dest_perms_unchanged(self):
         """Destination directory perms don't change unnecessarily."""
         src_dir = "/a/b/c/dir"
