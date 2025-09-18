@@ -121,20 +121,23 @@ main() {
   # Everything needed for backups.
   brew install coreutils lockrun rclone restic rsync
   # Basics.
-  brew install fd less neovim ripgrep tmux
+  brew install fd less neovim ripgrep tmpreaper tmux
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
 
-  brew install autossh tmpreaper
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
-  brew install fswatch lazygit pre-commit wget
+  brew install fswatch lazygit pre-commit
 
-  # Needed to install tools for Neovim.
-  brew install luarocks node npm virtualenv
+  # Needed to install Python modules.
+  brew install virtualenv
 
   if [[ "${laptop}" -eq 1 ]]; then
+    # Used to reconnect to machines.
+    brew install autossh
+    # Needed to install tools for Neovim.
+    brew install luarocks node npm virtualenv
     # AI.
     brew install gemini-cli
     # Misc development.
@@ -183,7 +186,7 @@ CONFIG
   fi
   if [[ "${imac}" -eq 1 ]]; then
     # Various tools for downloads.
-    brew install ffmpeg transmission-cli wget yt-dlp
+    brew install transmission-cli
     cask_install "/Applications/FileBot.app" filebot
   fi
 
