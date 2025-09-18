@@ -8,14 +8,20 @@ export HOMEBREW_NO_CLEANUP_FORMULAE
 
 brew update
 brew outdated
-# Separately upgrade formula and casks so I can force bottles.
-# Sometimes a formula doesn't have a bottle and upgrading will fail, so we
-# survive the failure and try again without forcing bottle.
-brew upgrade --force-bottle --formula || true
-sleep 2
-brew upgrade --formula
-sleep 2
-brew upgrade --cask --greedy
+if is_x86_64; then
+  # Upgrade everything at once, not worrying about bottles.  The imac is
+  # unsupported by Homebrew, and bottles aren't always available.
+  brew upgrade
+else
+  # Separately upgrade formula and casks so I can force bottles.
+  # Sometimes a formula doesn't have a bottle and upgrading will fail, so we
+  # survive the failure and try again without forcing bottle.
+  brew upgrade --force-bottle --formula || true
+  sleep 2
+  brew upgrade --formula
+  sleep 2
+  brew upgrade --cask --greedy
+fi
 sleep 2
 brew autoremove
 sleep 2
