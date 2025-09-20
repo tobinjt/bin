@@ -8,7 +8,10 @@ main() {
   # This is very spammy now so just discard the output entirely.
   brew update >& /dev/null
   brew outdated
-  brew doctor | grep -v 'Your system is ready to brew.' || true
+  # The imac is old enough that brew reports unfixable problems.
+  if ! is_x86_64; then
+    brew doctor | grep -v 'Your system is ready to brew.' || true
+  fi
   local output
   output="$(brew leaves --installed-as-dependency)"
   if [[ -n "${output}" ]]; then
