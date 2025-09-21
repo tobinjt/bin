@@ -10,6 +10,8 @@ on macOS to prevent the system from sleeping during its operation. This is
 controlled by the `CAFFEINATED` environment variable.
 """
 
+import argparse
+import dataclasses
 import logging
 import os as os
 import shutil as shutil
@@ -18,6 +20,43 @@ import sys
 
 
 logger = logging.getLogger("run_everywhere")
+
+
+@dataclasses.dataclass
+class Config:
+    command: list[str]
+    hosts: list[str]
+
+
+def parse_args(argv: list[str]) -> Config | None:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Executes a command on multiple hosts.",
+        epilog=(
+            "Use '--' to separate run_everywhere.py options from the command "
+            "to be executed, especially if the command has options that might "
+            "conflict."
+        ),
+    )
+    parser.add_argument(
+        "--hosts",
+        nargs="+",
+        default=["laptop", "imac", "hosting"],
+        help="The hosts to run the command on. Defaults to %(default)s.",
+    )
+    parser.add_argument("command", nargs=argparse.REMAINDER, help="The command to run.")
+
+    args = parser.parse_args(argv)
+    config = Config(
+        command=args.command,  # pyright: ignore [reportAny]
+        hosts=args.hosts,  # pyright: ignore [reportAny]
+    )
+    if config.command and config.command[0] == "--":
+        config.command = config.command[1:]
+    if not config.command:
+        parser.print_help(file=sys.stderr)
+        return None
+    return config
 
 
 def update_single_host(host: str, command: list[str]) -> None:
@@ -65,14 +104,12 @@ def main(argv: list[str]) -> int:
     Returns:
         An exit code, 0 for success.
     """
-    if len(argv) < 1:
-        print(f"Usage: {sys.argv[0]} COMMAND [ARGS...]", file=sys.stderr)
+    config = parse_args(argv)
+    if not config:
         return 1
 
-    hosts = ["laptop", "imac", "hosting"]
-
-    for host in hosts:
-        update_single_host(host, argv)
+    for host in config.hosts:
+        update_single_host(host, config.command)
 
     return 0
 

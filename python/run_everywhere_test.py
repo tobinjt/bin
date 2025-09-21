@@ -89,6 +89,22 @@ class RunEverywhereTest(unittest.TestCase):
         ]
         mock_update_single_host.assert_has_calls(expected_calls, any_order=True)
 
+    @mock.patch.object(run_everywhere, "update_single_host")
+    def test_main_minus_minus(self, mock_update_single_host: mock.Mock) -> None:
+        # -- should be ignored.
+        argv = ["--", "do-something", "arg"]
+        return_code = run_everywhere.main(argv)
+
+        self.assertEqual(return_code, 0)
+        self.assertEqual(mock_update_single_host.call_count, 3)
+
+        expected_calls = [
+            mock.call("laptop", ["do-something", "arg"]),
+            mock.call("imac", ["do-something", "arg"]),
+            mock.call("hosting", ["do-something", "arg"]),
+        ]
+        mock_update_single_host.assert_has_calls(expected_calls, any_order=True)
+
     def test_main_no_args(self) -> None:
         return_code = run_everywhere.main([])
         self.assertEqual(return_code, 1)
