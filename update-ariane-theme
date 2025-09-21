@@ -34,8 +34,6 @@ main() {
   if [[ "$#" -eq 0 ]]; then
     # Update dev.
     commit_all "${HOME}/src/dev.arianetobin.ie"
-    printf "Checking for problems in https://dev.arianetobin.ie/\\n"
-    check-links https://dev.arianetobin.ie/
     # Update www.
     ssh -o ControlMaster=no arianetobin@hosting \
       "${HOME}/bin/update-ariane-theme" argument_just_to_trigger_other_branch
