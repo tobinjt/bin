@@ -37,6 +37,6 @@ run-everywhere update-dotfiles-and-bin
 run-everywhere update-dotfiles-and-bin
 
 # Now do the rest of the checks.
-for host in laptop home hosting; do
+for host in laptop imac hosting; do
   check_single_host "${host}"
 done
