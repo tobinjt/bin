@@ -15,7 +15,7 @@ class RunEverywhereTest(unittest.TestCase):
         host = "testhost"
         command = ["my-command", "--arg1"]
         users = ["johntobin", "root", "arianetobin"]
-        run_everywhere.update_single_host(host, command, users)
+        run_everywhere.update_single_host(host, users, command)
 
         self.assertEqual(mock_subprocess_run.call_count, 3)
 
@@ -85,9 +85,9 @@ class RunEverywhereTest(unittest.TestCase):
 
         default_users = ["johntobin", "root", "arianetobin"]
         expected_calls = [
-            mock.call("laptop", ["do-something", "arg"], default_users),
-            mock.call("imac", ["do-something", "arg"], default_users),
-            mock.call("hosting", ["do-something", "arg"], default_users),
+            mock.call("laptop", default_users, ["do-something", "arg"]),
+            mock.call("imac", default_users, ["do-something", "arg"]),
+            mock.call("hosting", default_users, ["do-something", "arg"]),
         ]
         mock_update_single_host.assert_has_calls(expected_calls, any_order=True)
 
@@ -102,9 +102,9 @@ class RunEverywhereTest(unittest.TestCase):
 
         default_users = ["johntobin", "root", "arianetobin"]
         expected_calls = [
-            mock.call("laptop", ["do-something", "arg"], default_users),
-            mock.call("imac", ["do-something", "arg"], default_users),
-            mock.call("hosting", ["do-something", "arg"], default_users),
+            mock.call("laptop", default_users, ["do-something", "arg"]),
+            mock.call("imac", default_users, ["do-something", "arg"]),
+            mock.call("hosting", default_users, ["do-something", "arg"]),
         ]
         mock_update_single_host.assert_has_calls(expected_calls, any_order=True)
 

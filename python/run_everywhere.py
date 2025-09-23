@@ -41,23 +41,21 @@ def parse_args(argv: list[str]) -> Config | None:
     )
     parser.add_argument(
         "--hosts",
-        nargs="+",
-        default=["laptop", "imac", "hosting"],
-        help="The hosts to run the command on. Defaults to %(default)s.",
+        default="laptop,imac,hosting",
+        help="A comma-separated list of hosts to run the command on. Defaults to %(default)s.",
     )
     parser.add_argument(
         "--users",
-        nargs="+",
-        default=["johntobin", "root", "arianetobin"],
-        help="The users to run the command as. Defaults to %(default)s.",
+        default="johntobin,root,arianetobin",
+        help="A comma-separated list of users to run the command as. Defaults to %(default)s.",
     )
     parser.add_argument("command", nargs=argparse.REMAINDER, help="The command to run.")
 
     args = parser.parse_args(argv)
     config = Config(
         command=args.command,  # pyright: ignore [reportAny]
-        hosts=args.hosts,  # pyright: ignore [reportAny]
-        users=args.users,  # pyright: ignore [reportAny]
+        hosts=[h.strip() for h in args.hosts.split(",")],  # pyright: ignore [reportAny]
+        users=[u.strip() for u in args.users.split(",")],  # pyright: ignore [reportAny]
     )
     if config.command and config.command[0] == "--":
         config.command = config.command[1:]
@@ -67,14 +65,14 @@ def parse_args(argv: list[str]) -> Config | None:
     return config
 
 
-def update_single_host(host: str, command: list[str], users: list[str]) -> None:
+def update_single_host(host: str, users: list[str], command: list[str]) -> None:
     """
     Runs a command on a single host as multiple users.
 
     Args:
         host: The hostname to connect to.
-        command: The command to execute, as a list of strings.
         users: The users to run as.
+        command: The command to execute, as a list of strings.
     """
     ssh_targets = {
         "root": f"johntobin@{host}",
@@ -118,7 +116,7 @@ def main(argv: list[str]) -> int:
         return 1
 
     for host in config.hosts:
-        update_single_host(host, config.command, config.users)
+        update_single_host(host, config.users, config.command)
 
     return 0
 
