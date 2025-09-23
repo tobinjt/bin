@@ -21,6 +21,11 @@ repos:
   - repo: local
     hooks:
       # Using this instead of a packaged black check because it's trivial.
+      - id: basedpyright
+        name: Run `basedpyright`
+        language: system
+        types: [python]
+        entry: basedpyright
       - id: black
         name: Run `black`
         language: system
