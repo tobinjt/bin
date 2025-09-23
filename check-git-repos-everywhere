@@ -2,15 +2,6 @@
 
 set -e -f -u -o pipefail
 
-check_single_host() {
-  local host="$1"
-  printf "\n\n\nProcessing %s\\n" "${host}"
-  # shellcheck disable=SC2016
-  retry --press_enter_before_retrying 0 "${host}" -- \
-    ssh -o ControlMaster=no -t "johntobin@${host}" \
-    'check-git-repos "${HOME}/bin" "${HOME}/src/"*'
-}
-
 if [[ -z "${CAFFEINATED:-}" ]]; then
   CAFFEINATED="do not sleep"
   export CAFFEINATED
@@ -37,6 +28,5 @@ run-everywhere update-dotfiles-and-bin
 run-everywhere update-dotfiles-and-bin
 
 # Now do the rest of the checks.
-for host in laptop imac hosting; do
-  check_single_host "${host}"
-done
+# shellcheck disable=SC2016
+run-everywhere --users johntobin 'check-git-repos "${HOME}/bin" "${HOME}/src/"*'
