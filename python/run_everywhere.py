@@ -26,6 +26,7 @@ logger = logging.getLogger("run_everywhere")
 class Config:
     command: list[str]
     hosts: list[str]
+    users: list[str]
 
 
 def parse_args(argv: list[str]) -> Config | None:
@@ -44,12 +45,19 @@ def parse_args(argv: list[str]) -> Config | None:
         default=["laptop", "imac", "hosting"],
         help="The hosts to run the command on. Defaults to %(default)s.",
     )
+    parser.add_argument(
+        "--users",
+        nargs="+",
+        default=["johntobin", "root", "arianetobin"],
+        help="The users to run the command as. Defaults to %(default)s.",
+    )
     parser.add_argument("command", nargs=argparse.REMAINDER, help="The command to run.")
 
     args = parser.parse_args(argv)
     config = Config(
         command=args.command,  # pyright: ignore [reportAny]
         hosts=args.hosts,  # pyright: ignore [reportAny]
+        users=args.users,  # pyright: ignore [reportAny]
     )
     if config.command and config.command[0] == "--":
         config.command = config.command[1:]
@@ -59,39 +67,40 @@ def parse_args(argv: list[str]) -> Config | None:
     return config
 
 
-def update_single_host(host: str, command: list[str]) -> None:
+def update_single_host(host: str, command: list[str], users: list[str]) -> None:
     """
     Runs a command on a single host as multiple users.
 
     Args:
         host: The hostname to connect to.
         command: The command to execute, as a list of strings.
+        users: The users to run as.
     """
-    users = {
-        "johntobin": f"johntobin@{host}",
+    ssh_targets = {
         "root": f"johntobin@{host}",
-        "arianetobin": f"arianetobin@{host}",
+    }
+    sudo_commands = {
+        "root": ["sudo", "--login"],
     }
 
-    for user, ssh_target in users.items():
+    for user in users:
         logger.info(f"{user}@{host}")
-
-        ssh_command_base = ["ssh", "-o", "ControlMaster=no", "-t", ssh_target]
-
-        if user == "root":
-            full_command = ssh_command_base + ["sudo", "--login"] + command
-        else:
-            full_command = ssh_command_base + command
 
         retry_command = [
             "retry",
             "--press_enter_before_retrying",
             "0",
             f"{user}@{host}",
-        ] + full_command
+            "ssh",
+            "-o",
+            "ControlMaster=no",
+            "-t",
+            ssh_targets.get(user, f"{user}@{host}"),
+        ]
+        full_command = retry_command + sudo_commands.get(user, []) + command
 
-        logger.info(f"Will run: {retry_command}")
-        subprocess.run(retry_command, check=False)
+        logger.info(f"Will run: {full_command}")
+        subprocess.run(full_command, check=False)
 
 
 def main(argv: list[str]) -> int:
@@ -109,7 +118,7 @@ def main(argv: list[str]) -> int:
         return 1
 
     for host in config.hosts:
-        update_single_host(host, config.command)
+        update_single_host(host, config.command, config.users)
 
     return 0
 
