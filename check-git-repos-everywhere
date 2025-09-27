@@ -10,13 +10,12 @@ fi
 
 # Deal with the special cases first.
 # hugo-coder needs to be updated in the right order.
-retry --press_enter_before_retrying 0 hugo -- update-hugo-coder
+retry hugo -- update-hugo-coder
 # Ariane's website also needs to be updated in the right order.  Push any local
 # changes first.
-retry --press_enter_before_retrying 0 initial-ariane-theme -- \
-  check-git-repos "${HOME}/src/ariane-theme"
+retry initial-ariane-theme -- check-git-repos "${HOME}/src/ariane-theme"
 printf "\\n\\n\\nariane-theme\\n"
-retry --press_enter_before_retrying 0 update-ariane-theme -- \
+retry update-ariane-theme -- \
   ssh -o ControlMaster=no -t johntobin@hosting update-ariane-theme
 
 # dotfiles and bin are the next most likely source of diffs, and they can be

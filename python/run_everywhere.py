@@ -86,8 +86,6 @@ def update_single_host(host: str, users: list[str], command: list[str]) -> None:
 
         retry_command = [
             "retry",
-            "--press_enter_before_retrying",
-            "0",
             f"{user}@{host}",
             "ssh",
             "-o",

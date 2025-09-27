@@ -4,15 +4,13 @@
 A command-line utility to retry a command until it succeeds.
 
 This script repeatedly executes a given command until it returns a zero exit
-code. It provides options to configure the delay between retries and to
-require user interaction (pressing Enter) before each new attempt.
+code. It requires user interaction (pressing Enter) before each new attempt.
 """
 
 import argparse
 import logging
 import subprocess as subprocess
 import sys
-import time as time
 from collections.abc import Sequence
 
 
@@ -31,20 +29,7 @@ def main(argv: Sequence[str]) -> int:
     """
     parser = argparse.ArgumentParser(
         description="Retry a command until it succeeds.",
-        usage=(
-            "%(prog)s [--press_enter_before_retrying] "
-            "SLEEP_TIME MESSAGE -- COMMAND [COMMAND_ARGS...]"
-        ),
-    )
-    parser.add_argument(
-        "--press_enter_before_retrying",
-        action="store_true",
-        help="If set, the user will be prompted to press enter before retrying.",
-    )
-    parser.add_argument(
-        "sleep_time",
-        type=float,
-        help="Number of seconds to sleep between retries.",
+        usage="%(prog)s MESSAGE -- COMMAND [COMMAND_ARGS...]",
     )
     parser.add_argument("message", help="Message to display between retries.")
     parser.add_argument(
@@ -61,11 +46,7 @@ def main(argv: Sequence[str]) -> int:
         parser.print_usage()
         return 2
     command_args = [str(a) for a in args.command_args]  # pyright: ignore [reportAny]
-    (message, sleep_time, press_enter_before_retrying) = (
-        str(args.message),  # pyright: ignore [reportAny]
-        float(args.sleep_time),  # pyright: ignore [reportAny]
-        bool(args.press_enter_before_retrying),  # pyright: ignore [reportAny]
-    )
+    message = str(args.message)  # pyright: ignore [reportAny]
 
     while True:
         logger.info(f"Running: {command_args}")
@@ -74,11 +55,9 @@ def main(argv: Sequence[str]) -> int:
             return 0
 
         logger.info(f"Exit status: {result.returncode}")
-        logger.warning(f"Sleeping for {sleep_time} seconds before retrying {message}")
-        time.sleep(sleep_time)
+        logger.warning(f"Command failed. Retrying {message}")
 
-        if press_enter_before_retrying:
-            input("Press Enter to retry: ")
+        input("Press Enter to retry: ")
 
         logger.info(f"Retrying {message}")
 
