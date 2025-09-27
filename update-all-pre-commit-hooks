@@ -2,7 +2,7 @@
 
 set -e -f -u -o pipefail
 
-if [[ -z "${CAFFEINATED:-}" ]]; then
+if [[ -z "${CAFFEINATED:-}" ]] && type caffeinate >& /dev/null; then
   CAFFEINATED="do not sleep"
   export CAFFEINATED
   exec caffeinate -i "$0"
