@@ -13,15 +13,15 @@ retry install-extra-development-tools -- install-extra-development-tools
 if [[ -f "/Applications/AdGuardHome/AdGuardHome" ]]; then
   retry AdGuard -- update-adguard
 fi
-if [[ -f "${HOME}/tmp/bin/lazygit" ]]; then
+if [[ -d "${HOME}/tmp/bin/lazygit" ]]; then
   retry update-lazygit -- update-lazygit
 fi
-if [[ -f "${HOME}/tmp/bin/nvim" ]]; then
+if [[ -d "${HOME}/tmp/bin/nvim" ]]; then
   retry update-nvim -- update-nvim
 fi
-if [[ -f "${HOME}/tmp/bin/virtualenv" ]]; then
+if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
   retry update-python-modules -- update-python-modules
 fi
-if [[ -f "${HOME}/wordpress" ]]; then
+if [[ -d "${HOME}/wordpress" ]]; then
   retry update-all-wordpress -- update-all-wordpress
 fi
