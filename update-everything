@@ -13,6 +13,9 @@ fi
 
 if is_mac_os && type brew >& /dev/null; then
   retry brew-update-brew-cleanup -- brew-update-brew-cleanup
+elif is_linux && type apt >& /dev/null; then
+  retry "apt update" -- sudo apt update
+  retry "apt upgrade" -- sudo apt upgrade --assume-yes
 fi
 retry update-dotfiles-and-bin-plugins -- update-dotfiles-and-bin-plugins
 retry update-all-pre-commit-hooks -- update-all-pre-commit-hooks
