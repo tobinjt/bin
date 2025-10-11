@@ -4,15 +4,16 @@
 import fileinput
 import re
 import sys
-from typing import List, Union
+
+from collections.abc import Sequence
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 
-def make_natural_sort_key(something: str) -> List[Union[str, float]]:
+def make_natural_sort_key(something: str) -> list[str | float]:
     """Create a list of keys to use when sorting."""
     fields = re.split(r"(\d+(?:.\d+)?)", something)
-    converted_fields: List[Union[str, float]] = []
+    converted_fields: list[str | float] = []
     for field in fields:
         try:
             converted_fields.append(float(field))
@@ -21,7 +22,7 @@ def make_natural_sort_key(something: str) -> List[Union[str, float]]:
     return converted_fields
 
 
-def main(argv):
+def main(argv: Sequence[str]):
     for entry in sorted(fileinput.input(argv), key=make_natural_sort_key):
         print(entry, end="")
 
