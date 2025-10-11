@@ -66,7 +66,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.assertTrue(os.path.samefile(file1, file2))
 
     @override
-    def setUp(self):
+    def setUp(self) -> None:
         # Do not truncate diffs.
         self.maxDiff: int | None = 1000000
         self.setUpPyfakefs()
