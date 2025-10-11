@@ -179,7 +179,7 @@ def check_dns_for_host(hostname: str, addresses: list[str], record_type: str) ->
         logger.warning(f"Bad {record_type} record for {hostname}: No answer from DNS.")
         return False
 
-    records = {a.to_text() for a in answers}
+    records = {a.to_text() for a in answers}  # pyright: ignore [reportAny]
     expected = set(addresses)
     if expected != records:
         logger.warning(
