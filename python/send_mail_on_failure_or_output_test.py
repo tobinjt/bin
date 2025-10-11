@@ -116,8 +116,8 @@ class MainFunctionTest(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         mock_subprocess_run.assert_called_once_with(
             ["echo", "hello"],
-            stdout=mock.ANY,  # pyright: ignore [reportAny]
-            stderr=mock.ANY,  # pyright: ignore [reportAny]
+            stdout=mock.ANY,
+            stderr=mock.ANY,
             text=True,
         )
 
