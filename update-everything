@@ -22,6 +22,7 @@ fi
 # Do this before anything else because they're used in pre-commit hooks.
 retry "Delete Mason packages" -- rm -rf "${HOME}/.local/share/nvim/mason"
 retry "Install Mason packages" -- run-nvim-command ":MasonToolsUpdateSync"
+retry "Fix vint" -- fix-vint-installation
 
 echo "Updating pre-commit hooks"
 retry update-all-pre-commit-hooks -- update-all-pre-commit-hooks

@@ -2,6 +2,6 @@
 
 set -e -f -u -o pipefail
 
-cd "${HOME}/.local/share/nvim/mason/packages/vint/venv/bin"
+cd "${HOME}/.local/share/nvim/mason/packages/vint/venv/bin" || exit 0
 source ./activate
 pip install setuptools
