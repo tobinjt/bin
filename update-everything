@@ -17,6 +17,12 @@ elif is_linux && type apt >& /dev/null; then
   retry "apt update" -- sudo apt update
   retry "apt upgrade" -- sudo apt upgrade --assume-yes
 fi
+
+# Mason-installed packages are frequently broken by upgrades, reinstall them.
+# Do this before anything else because they're used in pre-commit hooks.
+retry "Delete Mason packages" -- rm -rf "${HOME}/.local/share/nvim/mason"
+retry "Install Mason packages" -- run-nvim-command ":MasonToolsUpdateSync"
+
 retry update-dotfiles-and-bin-plugins -- update-dotfiles-and-bin-plugins
 retry update-all-pre-commit-hooks -- update-all-pre-commit-hooks
 retry install-extra-development-tools -- install-extra-development-tools
