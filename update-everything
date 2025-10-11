@@ -40,6 +40,11 @@ fi
 if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
   retry update-python-modules -- update-python-modules
 fi
+# This ensures that updates to ~/src/ariane-theme are committed *before* we try
+# to update Wordpress.
+if [[ -d "${HOME}/src/dev.arianetobin.ie" ]]; then
+  retry update-ariane-theme -- update-ariane-theme
+fi
 if [[ -d "${HOME}/wordpress" ]]; then
   retry update-all-wordpress -- update-all-wordpress
 fi
