@@ -2,7 +2,15 @@
 
 set -e -f -u -o pipefail
 
+# Restart with updated code if necessary.
+orig_code="$(cat "${BASH_SOURCE[0]}")"
 retry update-dotfiles-and-bin -- update-dotfiles-and-bin
+new_code="$(cat "${BASH_SOURCE[0]}")"
+if [[ "${orig_code}" != "${new_code}" ]]; then
+  echo "Restarting with updated tools"
+  exec "${BASH_SOURCE[0]}"
+fi
+
 if is_mac_os && type brew >& /dev/null; then
   retry brew-update-brew-cleanup -- brew-update-brew-cleanup
 fi
