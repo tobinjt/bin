@@ -108,8 +108,8 @@ main() {
     sudo apt install python3 python3-pip virtualenv
   fi
 
-  # Dummy values needed by activate scripts.
-  export PS1="dummy"
+  # Environment values needed by activate scripts.
+  export PS1="needed-by-activate-scripts"
 
   # I tried using homebrew packages for some tools, but that lead to a terrible
   # mix of Python versions and tools not finding modules so I reverted to using
