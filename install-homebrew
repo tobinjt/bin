@@ -140,8 +140,6 @@ main() {
     brew install luarocks node npm virtualenv
     # AI.
     brew install gemini-cli
-    # Misc development.
-    brew install kcov
     # My website.  I install mdformat from Homebrew rather than Mason so it
     # doesn't conflict with a different mdformat tool in work.
     brew install closure-compiler hugo markdown mdformat
