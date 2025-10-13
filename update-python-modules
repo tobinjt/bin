@@ -138,8 +138,6 @@ main() {
       pytest-cov \
       pytest-flakefinder \
       pytest-timeout \
-      python-lsp-black \
-      'python-lsp-server[all]' \
       pyyaml \
       requests \
       retry \
