@@ -104,10 +104,8 @@ main() {
     # Install Python and virtualenv, just in case.
     brew install python virtualenv
   fi
-  # Using apt-get rather than apt because MacOS has /usr/bin/apt, which is some
-  # Java thing that doesn't work because there's no JDK installed :/
-  if type apt-get >&/dev/null; then
-    sudo apt-get install python3 python3-pip virtualenv
+  if is_linux && type apt >&/dev/null; then
+    sudo apt install python3 python3-pip virtualenv
   fi
 
   # Dummy values needed by activate scripts.
