@@ -302,7 +302,6 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 dest_dir,
             ]
         )
-        # TODO: change this to a multi-line string?
         expected = [
             "Unexpected directory: /z/y/x/asdf/delete dir with spaces",
             "Unexpected directory: /z/y/x/asdf/report_me",
