@@ -573,8 +573,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         dest="dryrun",
         default=False,
         help=textwrap.fill(
-            """Perform a trial run with no changes made
-                           (default: %(default)s)"""
+            "Perform a trial run with no changes made (default: %(default)s)"
         ),
     )
     argv_parser.add_argument(
@@ -582,10 +581,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         action="store_true",
         dest="force",
         default=False,
-        help=textwrap.fill(
-            """Remove existing files if necessary (default:
-                           %(default)s)"""
-        ),
+        help=textwrap.fill("Remove existing files if necessary (default: %(default)s)"),
     )
     argv_parser.add_argument(
         "--ignore_file",
@@ -594,9 +590,8 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         metavar="FILENAME",
         default=[],
         help=textwrap.fill(
-            """File containing shell patterns to ignore.  To
-                           specify multiple filenames, use this option multiple
-                           times."""
+            """File containing shell patterns to ignore.  To specify multiple filenames,
+            use this option multiple times."""
         ),
     )
     argv_parser.add_argument(
@@ -616,9 +611,8 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
             "*.swp",
         ],  # pragma: no mutate
         help=textwrap.fill(
-            """Extra shell patterns to ignore (appended to this
-                              list: %(default)s).  To specify multiple filenames, use
-                              this option multiple times."""
+            """Extra shell patterns to ignore (appended to this list: %(default)s).
+            To specify multiple filenames, use this option multiple times."""
         ),
     )
     argv_parser.add_argument(
@@ -640,8 +634,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         dest="report_unexpected_files",
         default=False,
         help=textwrap.fill(
-            """Report unexpected files in DESTINATION_DIRECTORY
-                              (default: %(default)s)"""
+            "Report unexpected files in DESTINATION_DIRECTORY (default: %(default)s)"
         ),
     )
     argv_parser.add_argument(
@@ -650,8 +643,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         dest="delete_unexpected_files",
         default=False,
         help=textwrap.fill(
-            """Delete unexpected files in DESTINATION_DIRECTORY
-                              (default: %(default)s)"""
+            "Delete unexpected files in DESTINATION_DIRECTORY (default: %(default)s)"
         ),
     )
     argv_parser.add_argument(
@@ -660,8 +652,8 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         dest="ignore_symlinks",
         default=False,
         help=textwrap.fill(
-            """Ignore symlinks rather than reporting an error and
-               failing (default: %(default)s)"""
+            """Ignore symlinks rather than reporting an error and failing
+            (default: %(default)s)"""
         ),
     )
     argv_parser.add_argument(
