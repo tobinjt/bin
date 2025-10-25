@@ -2,6 +2,11 @@
 
 set -e -f -u -o pipefail
 
+if [ "$#" -eq 0 ]; then
+  echo "Usage: run-nvim-command <nvim-command ...>" >&2
+  exit 1
+fi
+
 # Stop TmuxSetWindowName loading: it's not useful and it doesn't work properly
 # when tmux is focused on a different pane.
 nvim --headless \
