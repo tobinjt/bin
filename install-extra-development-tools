@@ -39,13 +39,13 @@ if type rustup >& /dev/null; then
   rustup toolchain install
   rustup component add clippy rust-analyzer rust-src
   # https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#from-source
-  cargo +stable install cargo-llvm-cov --locked
+  cargo +stable install --locked cargo-llvm-cov
   # https://crates.io/crates/cargo-binutils
-  cargo install cargo-binutils
+  cargo install --locked cargo-binutils
   # https://github.com/dtolnay/cargo-expand
-  cargo install cargo-expand
+  cargo install --locked cargo-expand
   # https://crates.io/crates/cargo-watch
-  cargo install cargo-watch
+  cargo install --locked cargo-watch
   # Tooling I wrote :)
   cargo install colx
   cargo install path-parents
