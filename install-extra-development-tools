@@ -44,6 +44,8 @@ if type rustup >& /dev/null; then
   cargo install --locked cargo-binutils
   # https://github.com/dtolnay/cargo-expand
   cargo install --locked cargo-expand
+  # https://crates.io/crates/cargo-mutants
+  cargo install --locked cargo-mutants
   # https://crates.io/crates/cargo-watch
   cargo install --locked cargo-watch
   # Tooling I wrote :)
