@@ -40,6 +40,8 @@ if type rustup >& /dev/null; then
   rustup component add clippy rust-analyzer rust-src
   # https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#from-source
   cargo +stable install cargo-llvm-cov --locked
+  # https://crates.io/crates/cargo-binutils
+  cargo install cargo-binutils
   # https://crates.io/crates/cargo-watch
   cargo install cargo-watch
   # Tooling I wrote :)
