@@ -4,7 +4,7 @@
 
 set -e -f -u -o pipefail
 
-if is_mac_os; then
+if is_mac_os && type brew >& /dev/null; then
   brew-update-brew-cleanup
 fi
 
