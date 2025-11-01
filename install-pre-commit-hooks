@@ -4,7 +4,6 @@ set -e -f -u -o pipefail
 
 main() {
   if ! type pre-commit >& /dev/null; then
-    printf "pre-commit is not installed, exiting successfully.\n"
     return 0
   fi
   local config_file=".pre-commit-config.yaml"
