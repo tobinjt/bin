@@ -22,8 +22,8 @@ chmod 700 .ssh
 git pull --no-rebase
 git submodule init
 git submodule update
-# Remove .bashrc that linkdirs will not overwrite.
-rm -f "${HOME}/.bashrc"
+# Remove files that linkdirs will not overwrite.
+rm -f "${HOME}/.bashrc" "${HOME}/.bash_logout" "${HOME}/.profile"
 dotfiles
 if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
