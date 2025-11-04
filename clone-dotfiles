@@ -25,6 +25,8 @@ git submodule update
 # Remove files that linkdirs will not overwrite.
 rm -f "${HOME}/.bashrc" "${HOME}/.bash_logout" "${HOME}/.profile"
 dotfiles
+# Create some directories that'll be needed.
+mkdir -p "${HOME}/tmp/generated" "${HOME}/tmp/ssh"
 if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
   # I need to do this anyway, so might as well do it now.
