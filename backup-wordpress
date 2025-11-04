@@ -32,6 +32,7 @@ main() {
       --user="${db_user}" --password="${db_password}" \
       "${db_name}" \
     | bzip2 -c > "${db_name}_${date}".sql.bz2
+  mkdir -p "${HOME}/tmp/locks"
   flock "${HOME}/tmp/locks/backup-wordpress__tmpreaper" tmpreaper --mtime 15d .
 }
 
