@@ -9,8 +9,6 @@ if [[ -z "${CAFFEINATED:-}" ]]; then
 fi
 
 # Deal with the special cases first.
-# hugo-coder needs to be updated in the right order.
-retry hugo -- update-hugo-coder
 # Ariane's website also needs to be updated in the right order.  Push any local
 # changes first.
 retry initial-ariane-theme -- check-git-repos "${HOME}/src/ariane-theme"
