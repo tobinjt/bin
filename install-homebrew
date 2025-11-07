@@ -6,7 +6,7 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "%s: --ariane|--imac|--laptop [--clean_install]\\n" "$0"
+  printf "%s: --ariane|--laptop [--clean_install]\\n" "$0"
 }
 
 curl_pipe_shell() {
@@ -36,7 +36,7 @@ main() {
   local uninstall_url="${url_base}/uninstall.sh"
   readonly url_base install_url uninstall_url
 
-  local ariane=0 clean_install=0 imac=0 laptop=0
+  local ariane=0 clean_install=0 laptop=0
   while [[ "$#" -gt 0 ]]; do
     case "${1}" in
       --ariane)
@@ -45,10 +45,6 @@ main() {
         ;;
       --clean_install)
         clean_install=1
-        shift
-        ;;
-      --imac)
-        imac=1
         shift
         ;;
       --laptop)
@@ -61,9 +57,9 @@ main() {
         ;;
     esac
   done
-  readonly clean_install ariane imac laptop
+  readonly clean_install ariane laptop
 
-  local sum=$((ariane + imac + laptop))
+  local sum=$((ariane + laptop))
   if [[ "${sum}" != 1 ]]; then
     usage >&2
     return 1
@@ -75,14 +71,8 @@ main() {
     sudo /usr/sbin/DevToolsSecurity -enable
   fi
 
-  local uname_machine homebrew_base homebrew_dir
-  uname_machine="$(uname -m)"
-  if [[ "${uname_machine}" == "arm64" ]]; then
-    homebrew_base="/opt/homebrew"
-  else
-    homebrew_base="/usr/local"
-  fi
-  homebrew_dir="${homebrew_base}/Cellar"
+  local homebrew_base="/opt/homebrew"
+  local homebrew_dir="${homebrew_base}/Cellar"
   if [[ -d "${homebrew_dir}" ]]; then
     if [[ "${clean_install}" -eq 1 ]]; then
       # Uninstall Homebrew.
@@ -186,11 +176,6 @@ CONFIG
     cask_install "/Applications/WezTerm.app" wezterm
     cask_install "/Applications/calibre.app" calibre
     # keep-sorted end
-  fi
-  if [[ "${imac}" -eq 1 ]]; then
-    # Various tools for downloads.
-    brew install transmission-cli
-    cask_install "/Applications/FileBot.app" filebot
   fi
 
   # Non-packaged development tools.
