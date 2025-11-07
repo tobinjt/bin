@@ -2,6 +2,13 @@
 
 set -e -f -u -o pipefail
 
+# Keep the laptop awake.
+if [[ -z "${CAFFEINATED:-}" ]] && type caffeinate >& /dev/null; then
+  CAFFEINATED="do not sleep"
+  export CAFFEINATED
+  exec caffeinate -i "$0"
+fi
+
 # Restart with updated code if necessary.
 orig_code="$(cat "${BASH_SOURCE[0]}")"
 retry update-dotfiles-and-bin -- update-dotfiles-and-bin
