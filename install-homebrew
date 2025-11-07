@@ -110,28 +110,30 @@ main() {
     return 0
   fi
 
+  # Used to reconnect to machines.
+  brew install autossh
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
   brew install fswatch lazygit pre-commit
-
-  # Needed to install Python modules.
-  brew install virtualenv
-
-  # Used to reconnect to machines.
-  brew install autossh
-  # Needed to install tools for Neovim.
-  brew install luarocks node npm virtualenv
   # AI.
   brew install gemini-cli
+
+  # Needed to install tools for Neovim.
+  brew install luarocks node npm virtualenv
   # My website.  I install mdformat from Homebrew rather than Mason so it
   # doesn't conflict with a different mdformat tool in work.
   brew install closure-compiler hugo markdown mdformat
 
+  # Golang.
+  brew install go govulncheck graphviz
   # Lua testing.
   brew install busted
-
-  # PHP.
+  # PHP; there's more config later.
   brew install composer php phpunit
+  # Python.
+  brew install virtualenv
+  # Rust.
+  brew install rustup
 
   # PHP: Uninstall any existing xdebug.
   # This stays in this file because I don't want to do it on hosting where it
@@ -153,17 +155,11 @@ xdebug.mode = coverage
 CONFIG
   done
 
-  # Golang.
-  brew install go govulncheck graphviz
-  # Rust.
-  brew install rustup
-
-  # Font used by wezterm.
-  brew install font-inconsolata-nerd-font
-
   # Apps.
   # keep-sorted start
   brew install --cask witch
+  # Font used by wezterm.
+  brew install font-inconsolata-nerd-font
   cask_install "/Applications/Moom.app" moom
   cask_install "/Applications/Time Out.app" time-out
   cask_install "/Applications/WezTerm.app" wezterm
