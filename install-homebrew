@@ -6,7 +6,7 @@
 set -e -f -u -o pipefail
 
 usage() {
-  printf "%s: --ariane|--laptop [--clean_install]\\n" "$0"
+  printf "%s: --ariane|--johntobin [--clean_install]\\n" "$0"
 }
 
 curl_pipe_shell() {
@@ -36,7 +36,7 @@ main() {
   local uninstall_url="${url_base}/uninstall.sh"
   readonly url_base install_url uninstall_url
 
-  local ariane=0 clean_install=0 laptop=0
+  local ariane=0 clean_install=0 johntobin=0
   while [[ "$#" -gt 0 ]]; do
     case "${1}" in
       --ariane)
@@ -47,8 +47,8 @@ main() {
         clean_install=1
         shift
         ;;
-      --laptop)
-        laptop=1
+      --johntobin)
+        johntobin=1
         shift
         ;;
       *)
@@ -57,9 +57,9 @@ main() {
         ;;
     esac
   done
-  readonly clean_install ariane laptop
+  readonly clean_install ariane johntobin
 
-  local sum=$((ariane + laptop))
+  local sum=$((ariane + johntobin))
   if [[ "${sum}" != 1 ]]; then
     usage >&2
     return 1
@@ -123,7 +123,7 @@ main() {
   # Needed to install Python modules.
   brew install virtualenv
 
-  if [[ "${laptop}" -eq 1 ]]; then
+  if [[ "${johntobin}" -eq 1 ]]; then
     # Used to reconnect to machines.
     brew install autossh
     # Needed to install tools for Neovim.
