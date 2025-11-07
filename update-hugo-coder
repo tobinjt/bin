@@ -93,14 +93,6 @@ main() {
   git pull
   git push
   git check-local-copy-is-clean
-
-  # Update on other machines.
-  local machine
-  for machine in hosting imac; do
-    printf "*** Updating on %s\\n" "${machine}"
-    ssh -t "${machine}" 'cd src/johntobin.ie && GIT_MERGE_AUTOEDIT=no git pull'
-    ssh -t "${machine}" 'cd src/johntobin.ie && git submodule update'
-  done
 }
 
 # Stop git looking for a commit message when 'git pull' is run.
