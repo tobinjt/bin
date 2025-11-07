@@ -8,14 +8,6 @@ if [[ -z "${CAFFEINATED:-}" ]]; then
   exec caffeinate -i "$0"
 fi
 
-# Deal with the special cases first.
-# Ariane's website also needs to be updated in the right order.  Push any local
-# changes first.
-retry initial-ariane-theme -- check-git-repos "${HOME}/src/ariane-theme"
-printf "\\n\\n\\nariane-theme\\n"
-retry update-ariane-theme -- \
-  ssh -o ControlMaster=no -t johntobin@hosting update-ariane-theme
-
 # dotfiles and bin are the next most likely source of diffs, and they can be
 # fixed mostly automatically.
 printf "\\n\\n\\ndotfiles\\n"
