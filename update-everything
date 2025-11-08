@@ -61,3 +61,10 @@ fi
 if [[ -d "${HOME}/wordpress" ]]; then
   retry update-all-wordpress -- update-all-wordpress
 fi
+
+# Update any git repo that hasn't already been updated.
+set +f
+for repo in "${HOME}/src/"*; do
+  retry "check-git-repos ${repo}" -- check-git-repos "${repo}"
+done
+set -f
