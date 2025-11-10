@@ -28,8 +28,10 @@ fi
 # Mason-installed packages are frequently broken by upgrades, reinstall them.
 # Do this before anything else because they're used in pre-commit hooks.
 retry "Delete Mason packages" -- rm -rf "${HOME}/.local/share/nvim/mason"
-retry "Install Mason packages" -- run-nvim-command ":MasonToolsUpdateSync"
-retry "Fix vint" -- fix-vint-installation
+if type nvim >& /dev/null; then
+  retry "Install Mason packages" -- run-nvim-command ":MasonToolsUpdateSync"
+  retry "Fix vint" -- fix-vint-installation
+fi
 
 if type pre-commit >& /dev/null; then
   echo "Updating pre-commit hooks"
