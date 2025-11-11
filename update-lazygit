@@ -37,7 +37,8 @@ main() {
   tar zxvf "$(basename "${url}")"
   ./lazygit --help
   cd ..
-  ln -s -f -n "${extraction_dir}/lazygit" lazygit
+  mkdir -p bin
+  ln -s -f -n "${extraction_dir}/lazygit" bin/lazygit
 }
 
 main "$@"
