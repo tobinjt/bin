@@ -19,6 +19,9 @@ class TestParseSentinels(fake_filesystem_unittest.TestCase):
     @override
     def setUp(self):
         self.setUpPyfakefs()
+        # Without this the coverage handler can't read the file.  I dunno why this is
+        # necessary here and nowhere else.
+        self.fs.add_real_file(cbs.__file__)  # pyright: ignore [reportUnknownMemberType]
 
     def create_files_for_test(self, data: dict[str, str]) -> None:
         """Create files for tests."""
