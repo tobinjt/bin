@@ -1,4 +1,6 @@
+import io
 import subprocess
+import sys
 import unittest
 from unittest import mock
 
@@ -120,6 +122,29 @@ class MainFunctionTest(unittest.TestCase):
             stderr=mock.ANY,
             text=True,
         )
+
+    def test_cannot_use_ignore_exit_status_and_only_on_failure_together(self) -> None:
+        """
+        Tests that using both --ignore_exit_status and --only_on_failure raises an error.
+        """
+
+        argv = [
+            "--ignore_exit_status",
+            "--only_on_failure",
+            "test@example.com",
+            "echo",
+            "hello",
+        ]
+
+        with self.assertRaisesRegex(SystemExit, "2"):
+            with mock.patch.object(
+                sys, "stderr", new_callable=io.StringIO
+            ) as mock_stderr:
+                send_mail.main(argv)
+            self.assertIn(
+                "Cannot use both --ignore_exit_status and --only_on_failure",
+                mock_stderr.getvalue(),
+            )
 
 
 if __name__ == "__main__":
