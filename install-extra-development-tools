@@ -55,7 +55,7 @@ if type rustup >& /dev/null; then
   cargo install path-parents
 fi
 
-if type npm >& /dev/null; then
+if [[ -d "${HOME}/tmp/bin/node_modules" ]]; then
   # Update existing packages first.
   npm update -g
   # Lint for CSS.

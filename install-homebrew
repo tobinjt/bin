@@ -120,6 +120,9 @@ main() {
 
   # Needed to install tools for Neovim.
   brew install luarocks node npm virtualenv
+  # Create the npm directory so that `install-extra-development-tools` will
+  # install packages.
+  mkdir -p "${HOME}/tmp/bin/node_modules"
   # My website.  I install mdformat from Homebrew rather than Mason so it
   # doesn't conflict with a different mdformat tool in work.
   brew install closure-compiler hugo markdown mdformat
