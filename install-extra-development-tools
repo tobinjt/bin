@@ -42,6 +42,8 @@ if type rustup >& /dev/null; then
   cargo +stable install --locked cargo-llvm-cov
   # https://crates.io/crates/cargo-binutils
   cargo install --locked cargo-binutils
+  # https://github.com/dtolnay/cargo-edit
+  cargo install --locked cargo-edit
   # https://github.com/dtolnay/cargo-expand
   cargo install --locked cargo-expand
   # https://crates.io/crates/cargo-mutants
