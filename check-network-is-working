@@ -1,5 +1,0 @@
-#!/bin/bash
-
-set -e -f -u -o pipefail
-
-ping -c 5 -o 8.8.8.8 >& /dev/null
