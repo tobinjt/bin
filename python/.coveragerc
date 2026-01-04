@@ -4,7 +4,10 @@ branch = True
 omit =
   # Exclude everything installed with pip.
   */site-packages/*
+  # Exclude tests.
   *_test.py
+  # Exclude Python libraries.
+  */Frameworks/Python.framework/Versions/*
 
 [report]
 # Fail if less that this percentage of lines are covered.
