@@ -4,6 +4,7 @@
 
 import logging
 import sys
+import urllib3
 
 import requests
 import retry
@@ -33,7 +34,11 @@ def check_single_redirect(expected_url: str, check_url: str) -> None:
         check_url: The URL to check for redirection.
     """
     logger.info(f"checking {check_url}")
-    req = requests.head(check_url, allow_redirects=True)
+    try:
+        req = requests.head(check_url, allow_redirects=True)
+    except (requests.exceptions.RequestException, urllib3.exceptions.HTTPError) as e:
+        logger.warning(f"Error during request for {check_url}: {e}")
+        raise MissingRedirectError(f"URL {check_url} request failed: {e}")
     if req.url != expected_url:
         logger.warning(
             f"bad redirect for {check_url}: {req.url}, expected {expected_url}"

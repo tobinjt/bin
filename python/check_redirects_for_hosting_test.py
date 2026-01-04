@@ -21,7 +21,7 @@ class CheckRedirectsForHostingTest(unittest.TestCase):
     @mock.patch.object(requests, "head")
     @mock.patch.object(time, "sleep")
     def test_check_single_redirect_failure(
-        self, mock_head: mock.Mock, _unused_mock_sleep: mock.Mock
+        self, _mock_sleep: mock.Mock, mock_head: mock.Mock
     ):
         mock_response = requests.Response()
         mock_response.url = "http://some-other-url.com"
@@ -31,6 +31,21 @@ class CheckRedirectsForHostingTest(unittest.TestCase):
             check_redirects_for_hosting.check_single_redirect(
                 "https://www.arianetobin.ie/", "http://ariane.ie/"
             )
+
+    @mock.patch.object(requests, "head")
+    @mock.patch.object(time, "sleep")
+    def test_check_single_redirect_exception(
+        self, _mock_sleep: mock.Mock, mock_head: mock.Mock
+    ):
+        mock_head.side_effect = requests.exceptions.RequestException("connection error")
+
+        with self.assertRaises(check_redirects_for_hosting.MissingRedirectError) as cm:
+            check_redirects_for_hosting.check_single_redirect(
+                "https://www.arianetobin.ie/", "http://ariane.ie/"
+            )
+        self.assertIn(
+            "URL http://ariane.ie/ request failed: connection error", str(cm.exception)
+        )
 
     @mock.patch.object(check_redirects_for_hosting, "check_single_redirect")
     def test_check_redirects_success(self, mock_check_single_redirect: mock.Mock):
