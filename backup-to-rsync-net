@@ -30,9 +30,7 @@ main() {
     fi
   done
 
-  if all_backups_succeeded; then
-    backup-update-rsync-net-sentinel "$@"
-  fi
+  all_backups_succeeded
 }
 
 main "$@"
