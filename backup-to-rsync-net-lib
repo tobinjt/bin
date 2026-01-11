@@ -125,48 +125,14 @@ run_rsync() {
     flags+=("${source_dir}/" "rsync-net:${dest_dir}/")
   fi
 
-  # https://git.samba.org/?p=rsync.git;a=blob_plain;f=support/rsync-no-vanished;hb=HEAD
-  # Suppress certain error messages by passing stderr through grep, taking care
-  # to handle grep failing if no lines are output.  Why not discard stderr
-  # entirely?  Because I want to know when weird errors happen, e.g. destination
-  # missing.
-
   # Save the exit status if rsync fails so that it can be checked for the magic
   # value 24, which is a magic exit code that means some files disappeared
   # during the transfer.
   local exit_status=0
-  ( rsync --archive --bwlimit=20M \
+  rsync --archive --bwlimit=20M \
         --partial-dir=.rsync-partial --partial \
         --rsh="ssh -i ${ssh_key_path} -o PasswordAuthentication=no" \
         "${flags[@]:+${flags[@]}}" \
-      2> >( grep -v \
-              -e '^Connection closed by' \
-              -e '^Connection reset by' \
-              -e '^Connection timed out during banner exchange' \
-              -e '^Connection to .* timed out' \
-              -e '^Read from remote host .*: Connection reset by peer' \
-              -e '^Read from remote host .*: Operation timed out' \
-              -e '^Timeout, server .* not responding' \
-              -e '^Warning: Permanently added the .* host key .* known hosts' \
-              -e '^client_loop: send disconnect: Broken pipe' \
-              -e '^file has vanished:' \
-              -e '^kex_exchange_identification: Connection closed by remote host' \
-              -e '^packet_write_wait: Connection to .* Broken pipe' \
-              -e '^rsync error: error in rsync protocol data stream (code 12)' \
-              -e '^rsync error: error in socket IO (code 10) at io.c' \
-              -e '^rsync error: unexplained error' \
-              -e '^rsync warning: some files vanished before they could be ' \
-              -e '^rsync: .sender. write error: Broken pipe (32)' \
-              -e '^rsync: connection unexpectedly closed' \
-              -e '^rsync: safe_write failed to write .* bytes to socket' \
-              -e '^ssh: Could not resolve hostname' \
-              -e '^ssh: connect to host .*: Connection timed out' \
-              -e '^ssh: connect to host .*: No route to host' \
-              -e '^ssh: connect to host .*: Operation timed out' \
-              -e '^ssh_dispatch_run_fatal: Connection to .* port 22: Operation timed out' \
-              -e 'ssh_exchange_identification: Connection closed by remote ' \
-              -e 'ssh_exchange_identification: read: Connection reset by peer' \
-            || true)) \
     || exit_status="$?"
   # Replace 24 with 0 so we exit successfully.
   if [[ "${exit_status}" == 24 ]]; then
