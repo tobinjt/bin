@@ -103,9 +103,9 @@ main() {
   # Link completions so the shell can use them.
   brew completions link
   # Everything needed for backups.
-  brew install coreutils rclone restic rsync
+  brew install autorestic coreutils rsync
   # Basics.
-  brew install fd less neovim ripgrep tmpreaper tmux
+  brew install fd less neovim ripgrep tmux
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
@@ -125,7 +125,7 @@ main() {
   mkdir -p "${HOME}/tmp/bin/node_modules"
   # My website.  I install mdformat from Homebrew rather than Mason so it
   # doesn't conflict with a different mdformat tool in work.
-  brew install closure-compiler hugo markdown mdformat
+  brew install hugo markdown mdformat
 
   # Golang.
   brew install go govulncheck graphviz
