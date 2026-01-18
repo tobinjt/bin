@@ -110,11 +110,13 @@ main() {
     return 0
   fi
 
+  # More basics.
+  brew install atuin bat
   # Used to reconnect to machines.
   brew install autossh
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
-  brew install fswatch lazygit pre-commit
+  brew install fswatch keep-sorted lazygit pre-commit
   # AI.
   brew install gemini-cli
 
