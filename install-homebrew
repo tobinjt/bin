@@ -153,16 +153,21 @@ main() {
 
   # PHP: Configure xdebug to support coverage.
   for php_config_dir in $(php_config_dirs); do
+    mkdir -p "${php_config_dir}/conf.d"
     cat > "${php_config_dir}/conf.d/99-xdebug.ini" <<CONFIG
 xdebug.mode = coverage
 CONFIG
   done
 
   # Apps.
-  # keep-sorted start
-  brew install --cask witch
+  if [[ ! -d "/Users/johntobin/Library/PreferencePanes/Witch.prefPane" ]]; then
+    brew install --cask witch
+  fi
   # Font used by wezterm.
-  brew install font-inconsolata-nerd-font
+  if [[ ! -f "/Users/johntobin/Library/Fonts/InconsolataNerdFont-Bold.ttf" ]]; then
+    brew install font-inconsolata-nerd-font
+  fi
+  # keep-sorted start
   cask_install "/Applications/Moom.app" moom
   cask_install "/Applications/Time Out.app" time-out
   cask_install "/Applications/WezTerm.app" wezterm
