@@ -131,6 +131,9 @@ main() {
 
   # Golang.
   brew install go govulncheck graphviz
+  # Create the go directory so that `install-extra-development-tools` will
+  # install packages.
+  mkdir -p "${GOPATH}"
   # Lua testing.
   brew install busted
   # PHP; there's more config later.
@@ -139,6 +142,9 @@ main() {
   brew install virtualenv
   # Rust.
   brew install rustup
+  # Create the cargo directory so that `install-extra-development-tools` will
+  # install packages.
+  mkdir -p "${HOME}/.cargo"
 
   # PHP: Uninstall any existing xdebug.
   # This stays in this file because I don't want to do it on hosting where it

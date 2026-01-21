@@ -11,7 +11,7 @@ fi
 # If you run 'go get' from a directory containing go source code it will change
 # go.{mod,sum} in that directory, so change to a temporary directory.
 cd "${TMPDIR:-/tmp}"
-if type go >& /dev/null; then
+if type go >& /dev/null && [[ -d "${GOPATH}" ]]; then
   # Clean up binaries so that GoInstallBinaries will install updated binaries.
   bindir="${GOPATH}/bin"
   if [[ -d "${bindir}" ]]; then
@@ -27,7 +27,7 @@ if type go >& /dev/null; then
   # keep-sorted end
 fi
 
-if type rustup >& /dev/null; then
+if type rustup >& /dev/null && [[ -d "${HOME}/.cargo" ]]; then
   # Used with Homebrew Rust but not on Debian?
   if type rustup-init >& /dev/null; then
     rustup-init --no-modify-path -y
