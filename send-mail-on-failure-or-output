@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e -f -u -o pipefail
-
-# Set $PATH so that I get the correct Python version.
-source "${HOME}/.shellrc"
-"${HOME}/bin/python/send_mail_on_failure_or_output.py" "$@"
