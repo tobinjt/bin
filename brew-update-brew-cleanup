@@ -34,4 +34,11 @@ fi
 sleep 2
 brew autoremove
 sleep 2
-brew cleanup
+# The imac is old enough that brew reports unfixable problems.
+if ! is_x86_64; then
+  brew autoremove
+  sleep 2
+  brew cleanup
+  sleep 2
+  brew doctor --quiet
+fi
