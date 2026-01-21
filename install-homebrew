@@ -162,11 +162,11 @@ CONFIG
   done
 
   # Apps.
-  if [[ ! -d "/Users/johntobin/Library/PreferencePanes/Witch.prefPane" ]]; then
+  if [[ ! -d "${HOME}/Library/PreferencePanes/Witch.prefPane" ]]; then
     brew install --cask witch
   fi
   # Font used by wezterm.
-  if [[ ! -f "/Users/johntobin/Library/Fonts/InconsolataNerdFont-Bold.ttf" ]]; then
+  if [[ ! -f "${HOME}/Library/Fonts/InconsolataNerdFont-Bold.ttf" ]]; then
     brew install font-inconsolata-nerd-font
   fi
   # keep-sorted start
