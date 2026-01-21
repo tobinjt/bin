@@ -2,6 +2,15 @@
 
 set -e -f -u -o pipefail
 
+# Homebrew doesn't run as root.
+if [[ "${USER}" == "root" ]]; then
+  exit 0
+fi
+# Don't try to update if the user can't write to the install directory.
+if [[ ! -w "$(brew --prefix)" ]]; then
+  exit 0
+fi
+
 # Disable removal of old versions neovim and tmux.
 HOMEBREW_NO_CLEANUP_FORMULAE=neovim,tmux
 export HOMEBREW_NO_CLEANUP_FORMULAE
