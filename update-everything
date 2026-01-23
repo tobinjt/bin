@@ -61,8 +61,6 @@ fi
 # to update Wordpress.
 if [[ -d "${HOME}/src/dev.arianetobin.ie" ]]; then
   retry update-ariane-theme -- update-ariane-theme
-fi
-if [[ -d "${HOME}/wordpress" ]]; then
   retry update-all-wordpress -- update-all-wordpress
 fi
 
