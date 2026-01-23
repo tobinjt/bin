@@ -23,6 +23,11 @@ fresh_install() {
 }
 
 main() {
+  if ! groups | grep -w -q admin; then
+    # Can't sudo. In practice root isn't a member of admin so this also prevents
+    # root updating AdGuard.
+    return 0
+  fi
   local binary="/Applications/AdGuardHome/AdGuardHome"
   readonly binary
   if [[ -f "${binary}" ]]; then
