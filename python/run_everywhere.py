@@ -18,7 +18,6 @@ import shutil as shutil
 import subprocess as subprocess
 import sys
 
-
 logger = logging.getLogger("run_everywhere")
 
 

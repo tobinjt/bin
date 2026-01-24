@@ -13,7 +13,6 @@ import subprocess as subprocess
 import sys
 from collections.abc import Sequence
 
-
 logger = logging.getLogger("retry_tool")
 
 

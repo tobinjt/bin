@@ -9,7 +9,6 @@ import urllib3
 import requests
 import retry
 
-
 logger = logging.getLogger("check_redirects_for_hosting")
 
 

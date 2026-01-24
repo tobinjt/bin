@@ -134,7 +134,7 @@ def nines(*, num_nines: float, days: float) -> str:
 
 
 def main(*, argv: list[str]) -> None:
-    (usage, description) = str(__doc__).split("\n", maxsplit=1)
+    usage, description = str(__doc__).split("\n", maxsplit=1)
     description = description % {
         "PT": PERCENT_THRESHOLD,
     }
