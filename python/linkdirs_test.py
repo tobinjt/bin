@@ -95,7 +95,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
             if "=" in line:
                 # Hard link.
-                (src, dest) = line.split("=")
+                src, dest = line.split("=")
                 # This allows creating a file with specific contents and then linking it
                 # later.
                 if not os.path.exists(src):
@@ -110,7 +110,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
             if "->" in line:
                 # Symbolic link.
-                (link, target) = line.split("->")
+                link, target = line.split("->")
                 directory = os.path.dirname(link)
                 if not os.path.exists(directory):
                     os.makedirs(directory)
@@ -118,9 +118,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 continue
 
             if ":" in line:
-                (filename, contents) = line.split(":")
+                filename, contents = line.split(":")
             else:
-                (filename, contents) = (line, "")
+                filename, contents = (line, "")
             if os.path.exists(filename):
                 continue
             if filename.endswith(os.sep):
@@ -711,15 +711,15 @@ class TestUsage(unittest.TestCase):
             "usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] ",
             "Link all files in SOURCE_DIRECTORY",
             "positional arguments: DIRECTORIES See usage for details",
-            "--dryrun Perform a trial run with no changes made (default: False)",
-            "--force Remove existing files if necessary (default: False)",
+            "--dryrun, --no-dryrun Perform a trial run with no changes made (default: False)",
+            "--force, --no-force Remove existing files if necessary (default: False)",
             "--ignore_file FILENAME File containing shell patterns to ignore.",
             "--ignore_pattern FILENAME Extra shell patterns to ignore",
             "['CVS', '.git', '.gitignore', '.gitmodules', '.hg', '.svn', '*.swp']",
-            "--ignore_unexpected_children When checking for unexpected files or",
-            "--report_unexpected_files Report unexpected files in"
+            "--ignore_unexpected_children, --no-ignore_unexpected_children When checking for unexpected files or",
+            "--report_unexpected_files, --no-report_unexpected_files Report unexpected files in"
             + " DESTINATION_DIRECTORY (default: False)",
-            "--delete_unexpected_files Delete unexpected files in"
+            "--delete_unexpected_files, --no-delete_unexpected_files Delete unexpected files in"
             + " DESTINATION_DIRECTORY (default: False)",
         ]
         # The position of newlines depends on the width of the terminal, so remove
@@ -765,18 +765,13 @@ class TestMisc(fake_filesystem_unittest.TestCase):
     def test_read_skip_patterns(self):
         """Test that patterns are read correctly."""
         filename = linkdirs.Path("ignore-file")
-        contents = (
-            textwrap.dedent(
-                """
+        contents = textwrap.dedent("""
         # Comments should be skipped.
         foo
         bar*baz
         dir/subdir
         # Empty lines should be skipped
-        """
-            ).strip()
-            + "\n\n"
-        )
+        """).strip() + "\n\n"
         self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
             filename, contents=contents
         )

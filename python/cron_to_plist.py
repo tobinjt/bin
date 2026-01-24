@@ -136,8 +136,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
         description="Convert a basic crontab line to a launchd.plist file.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=textwrap.dedent(
-            """
+        epilog=textwrap.dedent("""
             Examples:
               ./cron_to_plist.py -l com.my.job "* 5 * * * my_script.sh --hourly"
               ./cron_to_plist.py -l com.my.job.daily "@daily my_script.sh --daily"
@@ -146,8 +145,7 @@ def main(argv: list[str]) -> int:
             Save it and load it like this:
               ./cron_to_plist.py ... > ~/Library/LaunchAgents/com.my.job.plist
               launchctl load ~/Library/LaunchAgents/com.my.job.plist
-            """
-        ),
+            """),
     )
     parser.add_argument(
         "crontab_line", help="The full crontab line, enclosed in quotes."
@@ -161,7 +159,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "-w",
         "--write",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         help="Write the plist file to ~/Library/LaunchAgents/.",
     )
     args = parser.parse_args(argv[1:], namespace=Args())

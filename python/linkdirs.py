@@ -561,7 +561,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     """
     # __doc__ is written to pass pylint checks, so it must be changed before being
     # used as a usage message.
-    (usage, description) = str(__doc__).split("\n", maxsplit=1)
+    usage, description = str(__doc__).split("\n", maxsplit=1)
     argv_parser = argparse.ArgumentParser(
         description=description,
         usage=usage,
@@ -569,7 +569,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     )
     argv_parser.add_argument(
         "--dryrun",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         dest="dryrun",
         default=False,
         help=textwrap.fill(
@@ -578,7 +578,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     )
     argv_parser.add_argument(
         "--force",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         dest="force",
         default=False,
         help=textwrap.fill("Remove existing files if necessary (default: %(default)s)"),
@@ -617,20 +617,18 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     )
     argv_parser.add_argument(
         "--ignore_unexpected_children",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         dest="ignore_unexpected_children",
         default=False,
-        help=textwrap.fill(
-            """When checking for unexpected files or directories,
+        help=textwrap.fill("""When checking for unexpected files or directories,
                ignore unexpected child directories and symlinks in
                DESTINATION_DIRECTORY; unexpected grandchild
                directories of DESTINATION_DIRECTORY will not be
-               ignored (default: %(default)s)"""
-        ),
+               ignored (default: %(default)s)"""),
     )
     argv_parser.add_argument(
         "--report_unexpected_files",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         dest="report_unexpected_files",
         default=False,
         help=textwrap.fill(
@@ -639,7 +637,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     )
     argv_parser.add_argument(
         "--delete_unexpected_files",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         dest="delete_unexpected_files",
         default=False,
         help=textwrap.fill(
@@ -648,13 +646,11 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     )
     argv_parser.add_argument(
         "--ignore_symlinks",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         dest="ignore_symlinks",
         default=False,
-        help=textwrap.fill(
-            """Ignore symlinks rather than reporting an error and failing
-            (default: %(default)s)"""
-        ),
+        help=textwrap.fill("""Ignore symlinks rather than reporting an error and failing
+            (default: %(default)s)"""),
     )
     argv_parser.add_argument(
         "args",
@@ -679,7 +675,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
 def real_main(*, argv: list[str]) -> Messages:
     """The real main function, it just doesn't print anything or exit."""
 
-    (options, messages) = parse_arguments(argv=argv)
+    options, messages = parse_arguments(argv=argv)
     if messages:
         return messages
     skip = options.skip[:]
