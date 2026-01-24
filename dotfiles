@@ -15,8 +15,9 @@ list_config_snippets() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local flags=("--ignore_symlinks") return_early=0 run_config_snippets=1 opt
-  while getopts ":dfhnrX" opt "$@"; do
+  local flags=("--ignore_symlinks") later_flags=()
+  local return_early=0 run_config_snippets=1 opt
+  while getopts ":dfhnrRX" opt "$@"; do
     case "${opt}" in
       d)
         flags+=("--dryrun")
@@ -27,7 +28,7 @@ main() {
         ;;
       h)
         cat <<END_OF_HELP
-Usage: $0 [-d] [-f] [-n] [-r] [-X]
+Usage: $0 [-d] [-f] [-n] [-r] [-R] [-X]
 Links files in ${HOME}/src/*dotfiles* to ${HOME}
 Files and directories listed in ${HOME}/src/*dotfiles*/${IGNORE_FILENAME} will
 be ignored.  Note: ${IGNORE_FILENAME} lists are global, not scoped to the
@@ -38,6 +39,7 @@ Options:
   -d: dry run, overrides -f.
   -n: do not run config snippets.
   -r: report unexpected files in destination.
+  -R: report unexpected directories in destination.
   -X: delete unexpected files in destination.
 END_OF_HELP
         exit 0
@@ -47,6 +49,11 @@ END_OF_HELP
         ;;
       r)
         flags+=("--report_unexpected_files" "--ignore_unexpected_children")
+        return_early=1
+        ;;
+      R)
+        flags+=("--report_unexpected_files")
+        later_flags+=("--no-ignore_unexpected_children")
         return_early=1
         ;;
       X)
@@ -74,6 +81,7 @@ END_OF_HELP
     "${SKIP_FLAGS[@]:+${SKIP_FLAGS[@]}}" \
     "${SKIP_FILES[@]:+${SKIP_FILES[@]}}" \
     "${flags[@]:+${flags[@]}}" \
+    "${later_flags[@]:+${later_flags[@]}}" \
     "${SOURCE_DIRS[@]}" \
     "${HOME}"
   if [[ "${return_early}" -eq 1 ]]; then
