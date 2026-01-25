@@ -678,6 +678,19 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             )
             self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
 
+    def test_debug_output(self):
+        """Test that --debug prints the parsed options."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        os.makedirs(src_dir)
+        os.makedirs(dest_dir)
+
+        with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
+            linkdirs.real_main(argv=["linkdirs", "--debug", src_dir, dest_dir])
+            output = mock_stdout.getvalue()
+            self.assertIn("DEBUG: options:", output)
+            self.assertIn("'debug': True", output)
+
 
 class TestUsage(unittest.TestCase):
     """Tests for usage messages."""
@@ -712,6 +725,7 @@ class TestUsage(unittest.TestCase):
             "Link all files in SOURCE_DIRECTORY",
             "positional arguments: DIRECTORIES See usage for details",
             "--dryrun, --no-dryrun Perform a trial run with no changes made (default: False)",
+            "--debug, --no-debug Enable debug output (default: False)",
             "--force, --no-force Remove existing files if necessary (default: False)",
             "--ignore_file FILENAME File containing shell patterns to ignore.",
             "--ignore_pattern FILENAME Extra shell patterns to ignore",

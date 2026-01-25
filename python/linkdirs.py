@@ -12,6 +12,7 @@ import difflib
 import filecmp
 import fnmatch
 import os
+import pprint
 import shlex
 import shutil
 import stat
@@ -82,6 +83,7 @@ class Options:
     """Commandline options."""
 
     args: list[str]
+    debug: bool
     delete_unexpected_files: bool
     dryrun: bool
     force: bool
@@ -103,6 +105,7 @@ def options_from_args(args: argparse.Namespace) -> Options:
     """
     return Options(
         args=args.args,  # pyright: ignore [reportAny]
+        debug=args.debug,  # pyright: ignore [reportAny]
         delete_unexpected_files=args.delete_unexpected_files,  # pyright: ignore [reportAny]
         dryrun=args.dryrun,  # pyright: ignore [reportAny]
         force=args.force,  # pyright: ignore [reportAny]
@@ -568,6 +571,13 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     argv_parser.add_argument(
+        "--debug",
+        action=argparse.BooleanOptionalAction,
+        dest="debug",
+        default=False,
+        help=textwrap.fill("Enable debug output (default: %(default)s)"),
+    )
+    argv_parser.add_argument(
         "--dryrun",
         action=argparse.BooleanOptionalAction,
         dest="dryrun",
@@ -682,6 +692,10 @@ def real_main(*, argv: list[str]) -> Messages:
     for filename in options.ignore_file:
         skip.extend(read_skip_patterns_from_file(filename=filename))
     options.skip = SkipPatterns(skip)
+
+    if options.debug:
+        print("DEBUG: options:")
+        pprint.pprint(dataclasses.asdict(options), indent=2, width=100)
 
     all_results = LinkResults(Paths([]), Diffs([]), Messages([]))
     unexpected_msgs = Messages([])
