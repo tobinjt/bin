@@ -19,21 +19,19 @@ import stat
 import sys
 import textwrap
 import time
-from typing import NewType
+from pathlib import Path
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
 # Type definitions.
-# A single path.
-Path = NewType("Path", str)  # pragma: no mutate
 # A list of directories, filenames, or paths.
-Paths = NewType("Paths", list[Path])  # pragma: no mutate
+Paths = list[Path]
 # Diffs between files.
-Diffs = NewType("Diffs", list[str])  # pragma: no mutate
+Diffs = list[str]
 # Messages to print.
-Messages = NewType("Messages", list[str])  # pragma: no mutate
+Messages = list[str]
 # Shell patterns to skip.
-SkipPatterns = NewType("SkipPatterns", list[str])  # pragma: no mutate
+SkipPatterns = list[str]
 
 
 class Error(Exception):
@@ -112,8 +110,8 @@ def options_from_args(args: argparse.Namespace) -> Options:
         ignore_symlinks=args.ignore_symlinks,  # pyright: ignore [reportAny]
         ignore_unexpected_children=args.ignore_unexpected_children,  # pyright: ignore [reportAny]
         report_unexpected_files=args.report_unexpected_files,  # pyright: ignore [reportAny]
-        ignore_file=args.ignore_file,  # pyright: ignore [reportAny]
-        skip=SkipPatterns(args.ignore_pattern),  # pyright: ignore [reportAny]
+        ignore_file=[Path(x) for x in args.ignore_file],  # pyright: ignore [reportAny]
+        skip=args.ignore_pattern,  # pyright: ignore [reportAny]
     )
 
 
@@ -129,18 +127,18 @@ def safe_unlink(*, unlink_me: Path, dryrun: bool) -> None:
         OSError: there was a problem removing unlink_me.
     """
 
-    if os.path.islink(unlink_me) or not os.path.isdir(unlink_me):
+    if unlink_me.is_symlink() or not unlink_me.is_dir():
         if dryrun:
-            print(f"rm {shlex.quote(unlink_me)}")
+            print(f"rm {shlex.quote(str(unlink_me))}")
         else:
             try:
-                os.unlink(unlink_me)
+                unlink_me.unlink()
             except FileNotFoundError:
                 #  Something else deleted the file, don't die.
                 pass
     else:
         if dryrun:
-            print(f"rm -r {shlex.quote(unlink_me)}")
+            print(f"rm -r {shlex.quote(str(unlink_me))}")
         else:
             shutil.rmtree(unlink_me)
 
@@ -158,9 +156,11 @@ def safe_link(*, source_filename: Path, dest_filename: Path, dryrun: bool) -> No
     """
 
     if dryrun:
-        print(f"ln {shlex.quote(source_filename)} {shlex.quote(dest_filename)}")
+        print(
+            f"ln {shlex.quote(str(source_filename))} {shlex.quote(str(dest_filename))}"
+        )
     else:
-        os.link(source_filename, dest_filename)
+        dest_filename.hardlink_to(source_filename)
 
 
 def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
@@ -178,23 +178,23 @@ def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
     """
 
     # pyfakefs doesn't seem to validate the mode, so stop mutating it.
-    old_timestamp = time.ctime(os.stat(old_filename).st_mtime)
-    new_timestamp = time.ctime(os.stat(new_filename).st_mtime)
-    with open(old_filename, encoding="utf8") as old_fh:
-        with open(new_filename, encoding="utf8") as new_fh:
+    old_timestamp = time.ctime(old_filename.stat().st_mtime)
+    new_timestamp = time.ctime(new_filename.stat().st_mtime)
+    with old_filename.open(encoding="utf8") as old_fh:
+        with new_filename.open(encoding="utf8") as new_fh:
             old_contents = old_fh.readlines()
             new_contents = new_fh.readlines()
             diff_generator = difflib.unified_diff(
                 new_contents,
                 old_contents,
-                new_filename,
-                old_filename,
+                str(new_filename),
+                str(old_filename),
                 new_timestamp,
                 old_timestamp,
             )
             # Strip the newline here because one will be added later when printing the
             # messages.
-            return Diffs([d.rstrip("\n") for d in diff_generator])  # pragma: no mutate
+            return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
 
 
 def remove_skip_patterns(*, files: Paths, skip: SkipPatterns) -> Paths:
@@ -214,11 +214,11 @@ def remove_skip_patterns(*, files: Paths, skip: SkipPatterns) -> Paths:
     skip_more.extend([os.sep.join(["*", pattern, "*"]) for pattern in skip])
     for filename in files:
         for pattern in skip_more:
-            if fnmatch.fnmatch(filename, pattern):
+            if fnmatch.fnmatch(str(filename), pattern):
                 break
         else:
-            unmatched.append(Path(filename))
-    return Paths(unmatched)
+            unmatched.append(filename)
+    return unmatched
 
 
 def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
@@ -236,32 +236,35 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
         OSError: a filesystem operation failed.
     """
 
-    results = LinkResults(Paths([]), Diffs([]), Messages([]))
-    for directory, subdirs, files in os.walk(source):
+    results = LinkResults(expected_files=[], diffs=[], errors=[])
+    for directory_str, subdirs, files in os.walk(source):
+        directory = Path(directory_str)
         # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
         # from descending into the skipped subdirs.
-        subdirs[:] = remove_skip_patterns(
-            files=Paths([Path(s) for s in subdirs]), skip=options.skip
+        # remove_skip_patterns returns list[Path], but we need list[str] for os.walk.
+        filtered_subdirs = remove_skip_patterns(
+            files=[Path(s) for s in subdirs], skip=options.skip
         )
+        subdirs[:] = [str(s) for s in filtered_subdirs]
         subdirs.sort()
         for subdir in subdirs:
-            source_dir = os.path.join(directory, subdir)
-            dest_dir = Path(source_dir.replace(source, dest, 1))
+            source_dir = directory / subdir
+            dest_dir = dest / source_dir.relative_to(source)
             results.expected_files.append(dest_dir)
-            source_mode = stat.S_IMODE(os.stat(source_dir).st_mode)
+            source_mode = stat.S_IMODE(source_dir.stat().st_mode)
 
-            if os.path.isdir(dest_dir):
-                dest_mode = stat.S_IMODE(os.stat(dest_dir).st_mode)
+            if dest_dir.is_dir():
+                dest_mode = stat.S_IMODE(dest_dir.stat().st_mode)
                 if dest_mode == source_mode:
                     continue
                 if not options.dryrun:
-                    os.chmod(dest_dir, source_mode)
+                    dest_dir.chmod(source_mode)
                 else:
                     mode = oct(source_mode).replace("o", "")
-                    print(f"chmod {mode} {shlex.quote(dest_dir)}")
+                    print(f"chmod {mode} {shlex.quote(str(dest_dir))}")
                 continue
 
-            if os.path.exists(dest_dir):
+            if dest_dir.exists():
                 # Destination isn't a directory.
                 if options.force:
                     safe_unlink(unlink_me=dest_dir, dryrun=options.dryrun)
@@ -270,17 +273,17 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
                     continue
 
             if options.dryrun:
-                print(f"mkdir {shlex.quote(dest_dir)}")
+                print(f"mkdir {shlex.quote(str(dest_dir))}")
             else:
-                os.mkdir(dest_dir, source_mode)
-                os.chmod(dest_dir, source_mode)
+                dest_dir.mkdir(mode=source_mode)
+                dest_dir.chmod(source_mode)
 
         results.extend(
             link_files(
                 source=source,
                 dest=dest,
-                directory=Path(directory),
-                files=Paths([Path(f) for f in files]),
+                directory=directory,
+                files=[Path(f) for f in files],
                 options=options,
             )
         )
@@ -309,23 +312,21 @@ def link_files(
         LinkResults.  expected_files will not include files that are skipped.
     """
 
-    results = LinkResults(Paths([]), Diffs([]), Messages([]))
+    results = LinkResults(expected_files=[], diffs=[], errors=[])
     files = remove_skip_patterns(files=files, skip=options.skip)
     # warnings :(
-    files = Paths(
-        [
-            Path(os.path.join(directory, filename))
-            for filename in remove_skip_patterns(files=files, skip=options.skip)
-        ]
-    )
-    skip = SkipPatterns([f"*{os.sep}{pattern}" for pattern in options.skip])
+    files = [
+        directory / filename
+        for filename in remove_skip_patterns(files=files, skip=options.skip)
+    ]
+    skip = [f"*{os.sep}{pattern}" for pattern in options.skip]
     files = remove_skip_patterns(files=files, skip=skip)
     files.sort()
     for source_filename in files:
-        dest_filename = Path(source_filename.replace(source, dest, 1))
+        dest_filename = dest / source_filename.relative_to(source)
         results.expected_files.append(dest_filename)
 
-        if os.path.islink(source_filename):
+        if source_filename.is_symlink():
             # Skip source symlinks.
             if options.ignore_symlinks:
                 # Work around coverage weirdness; this would be more natural:
@@ -339,7 +340,7 @@ def link_files(
             results.errors.append(f"Skipping symbolic link {source_filename}")
             continue
 
-        if not os.path.exists(dest_filename) and not os.path.islink(dest_filename):
+        if not dest_filename.exists() and not dest_filename.is_symlink():
             # Destination doesn't already exist, and it's not a dangling symlink, so
             # just link it.
             safe_link(
@@ -349,7 +350,7 @@ def link_files(
             )
             continue
 
-        if os.path.islink(dest_filename) or not os.path.isfile(dest_filename):
+        if dest_filename.is_symlink() or not dest_filename.is_file():
             # Destination exists and is not a file.
             if options.force:
                 safe_unlink(unlink_me=dest_filename, dryrun=options.dryrun)
@@ -362,7 +363,7 @@ def link_files(
                 results.errors.append(f"{dest_filename}: is not a file")
             continue
 
-        if os.path.samefile(source_filename, dest_filename):
+        if source_filename.samefile(dest_filename):
             # The file is correctly linked.
             continue
 
@@ -377,7 +378,7 @@ def link_files(
             continue
 
         # If the destination is already linked don't change it without --force.
-        num_links = os.stat(dest_filename)[stat.ST_NLINK]
+        num_links = dest_filename.stat().st_nlink
         if num_links != 1:
             results.errors.append(
                 f"{dest_filename}: link count is {num_links}; is this file present "
@@ -423,49 +424,47 @@ def report_unexpected_files(
     expected_files = set(expected_files_list)
     expected_files.add(dest_dir)
 
-    unexpected_paths = UnexpectedPaths(Paths([]), Paths([]))
-    for directory, subdirs, files in os.walk(dest_dir):
-        subdirs[:] = remove_skip_patterns(
-            files=Paths([Path(s) for s in subdirs]), skip=options.skip
-        )
-        subdirs.sort()
-        files = list(
-            remove_skip_patterns(
-                files=Paths([Path(f) for f in files]), skip=options.skip
+    unexpected_paths = UnexpectedPaths(files=[], directories=[])
+    for directory_str, subdirs, files in os.walk(dest_dir):
+        directory = Path(directory_str)
+        subdirs[:] = [
+            str(s.name)
+            for s in remove_skip_patterns(
+                files=[Path(s) for s in subdirs], skip=options.skip
             )
+        ]
+        subdirs.sort()
+        filtered_files = list(
+            remove_skip_patterns(files=[Path(f) for f in files], skip=options.skip)
         )
-        files.sort()
+        filtered_files.sort()
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level directories.
             unexpected = [
                 subdir
                 for subdir in subdirs
-                if os.path.join(directory, subdir) not in expected_files
+                if (directory / subdir) not in expected_files
             ]
             for subdir in unexpected:
                 subdirs.remove(subdir)
 
-        full_subdirs = Paths(
-            [Path(os.path.join(directory, entry)) for entry in subdirs]
-        )
-        full_files = Paths([Path(os.path.join(directory, entry)) for entry in files])
+        full_subdirs = [directory / entry for entry in subdirs]
+        full_files = [directory / entry for entry in filtered_files]
         full_subdirs = remove_skip_patterns(files=full_subdirs, skip=options.skip)
         full_files = remove_skip_patterns(files=full_files, skip=options.skip)
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
-            symlinks = Paths(
-                [Path(file) for file in list(full_files) if os.path.islink(file)]
-            )
-            full_files = Paths(list(set(full_files) - set(symlinks)))
+            symlinks = [file for file in full_files if file.is_symlink()]
+            full_files = list(set(full_files) - set(symlinks))
 
         unexpected_paths.directories.extend(
             sorted(set(full_subdirs) - set(expected_files))
         )
         unexpected_paths.files.extend(sorted(set(full_files) - set(expected_files)))
 
-    msgs = Messages([])
+    msgs: Messages = []
     if options.delete_unexpected_files:
         msgs.extend(
             delete_unexpected_files(unexpected_paths=unexpected_paths, options=options)
@@ -492,22 +491,20 @@ def delete_unexpected_files(
     # Don't report files that have been deleted.
     unexpected_paths.files[:] = []
     if not unexpected_paths.directories:
-        return Messages([])
+        return []
     if not options.force:
-        return Messages(
-            [
-                "Refusing to delete directories without --force/-f: "
-                + " ".join(unexpected_paths.directories)
-            ]
-        )
+        return [
+            "Refusing to delete directories without --force/-f: "
+            + " ".join([str(d) for d in unexpected_paths.directories])
+        ]
     # Descending sort by length, so that child directories are removed before
     # parent directories.
-    unexpected_paths.directories.sort(key=len, reverse=True)
+    unexpected_paths.directories.sort(key=lambda p: len(str(p)), reverse=True)
     for entry in unexpected_paths.directories:
         safe_unlink(unlink_me=entry, dryrun=options.dryrun)
     # Don't report directories that have been deleted.
     unexpected_paths.directories[:] = []
-    return Messages([])
+    return []
 
 
 def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
@@ -522,7 +519,7 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
 
     unexpected_paths.directories.sort()
     unexpected_paths.files.sort()
-    unexpected_msgs = Messages([])
+    unexpected_msgs: Messages = []
     unexpected_msgs.extend(
         [f"Unexpected directory: {path}" for path in unexpected_paths.directories]
     )
@@ -531,14 +528,15 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
     )
     if unexpected_paths.files:
         unexpected_msgs.append(
-            "rm " + " ".join([shlex.quote(f) for f in unexpected_paths.files])
+            "rm " + " ".join([shlex.quote(str(f)) for f in unexpected_paths.files])
         )
     if unexpected_paths.directories:
         # Descending sort by length, so that child directories are removed before
         # parent directories.
-        unexpected_paths.directories.sort(key=len, reverse=True)
+        unexpected_paths.directories.sort(key=lambda p: len(str(p)), reverse=True)
         unexpected_msgs.append(
-            "rmdir " + " ".join([shlex.quote(d) for d in unexpected_paths.directories])
+            "rmdir "
+            + " ".join([shlex.quote(str(d)) for d in unexpected_paths.directories])
         )
     return unexpected_msgs
 
@@ -546,12 +544,12 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
 def read_skip_patterns_from_file(*, filename: Path) -> SkipPatterns:
     """Read skip patterns from filename, ignoring comments and empty lines."""
     patterns: list[str] = []
-    with open(filename, encoding="utf8") as pfh:
+    with filename.open(encoding="utf8") as pfh:
         for line in pfh.readlines():
             line = line.strip()
             if line and not line.startswith("#"):
                 patterns.append(line)
-    return SkipPatterns(patterns)
+    return patterns
 
 
 def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
@@ -671,7 +669,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     )
 
     options = options_from_args(argv_parser.parse_args(argv[1:]))
-    messages = Messages([])
+    messages: Messages = []
     if len(options.args) < 2:
         messages.append(usage % {"prog": argv[0]})
     if options.delete_unexpected_files and not options.ignore_unexpected_children:
@@ -691,23 +689,23 @@ def real_main(*, argv: list[str]) -> Messages:
     skip = options.skip[:]
     for filename in options.ignore_file:
         skip.extend(read_skip_patterns_from_file(filename=filename))
-    options.skip = SkipPatterns(skip)
+    options.skip = skip
 
     if options.debug:
         print("DEBUG: options:")
         pprint.pprint(dataclasses.asdict(options), indent=2, width=100)
 
-    all_results = LinkResults(Paths([]), Diffs([]), Messages([]))
-    unexpected_msgs = Messages([])
+    all_results = LinkResults(expected_files=[], diffs=[], errors=[])
+    unexpected_msgs: Messages = []
     # When mutmut mutates these lines the tests take long enough for mutmut to
     # report them as suspicious, so disable mutations.
     dest = Path(options.args.pop().rstrip(os.sep))  # pragma: no mutate
-    if not os.path.isdir(dest):  # pragma: no mutate
-        os.makedirs(dest)
+    if not dest.is_dir():  # pragma: no mutate
+        dest.mkdir(parents=True, exist_ok=True)
 
     for source in options.args:
-        source = Path(source.rstrip(os.sep))
-        all_results.extend(link_dir(source=source, dest=dest, options=options))
+        source_path = Path(source.rstrip(os.sep))
+        all_results.extend(link_dir(source=source_path, dest=dest, options=options))
     if options.report_unexpected_files or options.delete_unexpected_files:
         unexpected_msgs.extend(
             report_unexpected_files(
@@ -717,7 +715,7 @@ def real_main(*, argv: list[str]) -> Messages:
             )
         )
 
-    return Messages(all_results.diffs + all_results.errors + unexpected_msgs)
+    return all_results.diffs + all_results.errors + unexpected_msgs
 
 
 def main(*, argv: list[str]):

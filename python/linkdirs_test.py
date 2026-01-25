@@ -6,6 +6,7 @@ import re
 import stat
 import sys
 import textwrap
+from pathlib import Path
 from typing import override
 import unittest
 from unittest import mock
@@ -763,7 +764,7 @@ class TestMisc(fake_filesystem_unittest.TestCase):
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     def test_safe_unlink_prints(self, mock_stdout: io.StringIO):
         """Integration tests cannot make safe_unlink print for directories."""
-        test_dir = linkdirs.Path("/a/b/c")
+        test_dir = Path("/a/b/c")
         os.makedirs(test_dir)
         linkdirs.safe_unlink(unlink_me=test_dir, dryrun=True)
         self.assertEqual(f"rm -r {test_dir}\n", mock_stdout.getvalue())
@@ -774,11 +775,11 @@ class TestMisc(fake_filesystem_unittest.TestCase):
         mock_islink.return_value = True
         # An exception will be raised if the code doesn't handle the missing file
         # correctly.
-        linkdirs.safe_unlink(unlink_me=linkdirs.Path("/does-not-exist"), dryrun=False)
+        linkdirs.safe_unlink(unlink_me=Path("/does-not-exist"), dryrun=False)
 
     def test_read_skip_patterns(self):
         """Test that patterns are read correctly."""
-        filename = linkdirs.Path("ignore-file")
+        filename = Path("ignore-file")
         contents = textwrap.dedent("""
         # Comments should be skipped.
         foo
