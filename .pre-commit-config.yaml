@@ -31,6 +31,11 @@ repos:
         language: system
         types: [python]
         entry: black --diff --check
+      - id: markdownlint
+        name: Run `markdownlint`
+        language: system
+        types: [markdown]
+        entry: markdownlint
       # Using this instead of a packaged mypy check because the packaged one
       # doesn't find modules in virtualenv.
       - id: mypy
