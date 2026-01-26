@@ -443,21 +443,29 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         {src_dir}/murphy/me_too
         {src_dir}/ignore/subdir-link/test3
         # Everything below here is excluded so should not be linked.
+        # Skipped by ignore-me*
         {src_dir}/harry/ignore-me1
         {src_dir}/harry/ignore-me2
         {src_dir}/harry/ignore-me3
+        # Skipped by pinky
         {src_dir}/harry/pinky
+        # Skipped by the_brain
         {src_dir}/harry/the_brain
+        # Skipped by loki
         {src_dir}/loki/link_me
         {src_dir}/loki/me_too
         {src_dir}/loki/pinky
         {src_dir}/loki/the_brain
+        # Skipped by molly
         {src_dir}/molly/link_me
         {src_dir}/molly/me_too
         {src_dir}/molly/pinky
         {src_dir}/molly/the_brain
+        # Skipped by pinky
         {src_dir}/murphy/pinky
+        # Skipped by the_brain
         {src_dir}/murphy/the_brain
+        # Skipped by ignore/subdir
         {src_dir}/ignore/subdir/test1
         {src_dir}/ignore/subdir/test2
         """
@@ -473,7 +481,6 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         molly
         # Patterns to skip.
         ignore-me*
-        # foo/bar should be ignored
         ignore/subdir
         """
         with open(skip_filename, "w", encoding="utf8") as skip_fh:
