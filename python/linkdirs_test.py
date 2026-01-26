@@ -54,7 +54,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     - Nothing needs to be done.
     - Missing file gets created.
     - File with same contents is replaced with link.
-    - Excluded files/dirs are skipped.
+    - Excluded files/dirs are ignored.
     - Report unexpected files.
     - Delete unexpected files.
     - Report diffs.
@@ -77,7 +77,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Create files in a newline-separated string of files.
 
         Format:
-        - # Comments and empty lines are skipped.
+        - # Comments and empty lines are ignored.
         - file1=file2 => make file2 a hard link to file1.
         - file1->file2 => make file1 a symbolic link to file2.
         - file1 => create file1 with no contents.
@@ -244,7 +244,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             )
             self.assertMultiLineEqual(expected, mock_stdout.getvalue())
 
-    def test_skip_symlinks(self):
+    def test_ignoring_symlinks(self):
         """Symlinks are ignored when requested."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
@@ -259,7 +259,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 argv=["linkdirs", "--ignore_symlinks", src_dir, dest_dir]
             )
             actual = mock_stdout.getvalue()
-            self.assertFalse("Skipping symbolic link" in actual)
+            self.assertFalse("Ignoring symbolic link" in actual)
 
     def test_report_unexpected_files(self):
         """Report unexpected files."""
@@ -280,26 +280,26 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # Ignore this file and directory.
         {dest_dir}/asdf/ignore-some/should-be-ignored/a-file
         {dest_dir}/asdf/delete dir with spaces/delete file with spaces
-        # Symlink that should be skipped
-        {dest_dir}/symlink-to-skip -> /tmp/foo
+        # Symlink that should be ignored
+        {dest_dir}/symlink-to-ignore -> /tmp/foo
         # Symlink that should be reported
         {dest_dir}/asdf/symlink-to-report->/tmp/foo
         """
         self.create_files(files)
 
-        skip_filename = "skip-me"
-        skip_contents = """
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
         ignore-some/should-be-ignored
         """
-        with open(skip_filename, "w", encoding="utf8") as skip_fh:
-            skip_fh.write(skip_contents)
+        with open(ignore_patterns_filename, "w", encoding="utf8") as ignore_patterns_fh:
+            ignore_patterns_fh.write(ignore_patterns_contents)
 
         actual = linkdirs.real_main(
             argv=[
                 "linkdirs",
                 "--report_unexpected_files",
                 "--ignore_unexpected_children",
-                f"--ignore_file={skip_filename}",
+                f"--ignore_file={ignore_patterns_filename}",
                 src_dir,
                 dest_dir,
             ]
@@ -332,8 +332,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         {dest_dir}/the_brain
         # Ensure there is a subdir that should not be reported.
         {dest_dir}/subdir/
-        # Symlink that should be skipped
-        {dest_dir}/symlink-to-skip->/tmp/foo
+        # Symlink that should be ignored
+        {dest_dir}/symlink-to-ignore->/tmp/foo
         # Symlink that should be deleted
         {dest_dir}/asdf/symlink-to-delete->/tmp/foo
         """
@@ -352,7 +352,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # Unexpected files should be deleted.
         self.assertFalse(os.path.exists("/z/y/x/the_brain"))
         self.assertFalse(os.path.exists("/z/y/x/pinky"))
-        self.assertTrue(os.path.lexists("/z/y/x/symlink-to-skip"))
+        self.assertTrue(os.path.lexists("/z/y/x/symlink-to-ignore"))
         self.assertFalse(os.path.lexists("/z/y/x/asdf/symlink-to-delete"))
 
     def test_delete_unexp_keeps_dirs(self):
@@ -434,8 +434,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # And unexpected directories.
         self.assertFalse(os.path.exists("/z/y/x/asdf/delete_me"))
 
-    def test_exclusions_are_skipped(self):
-        """Excluded files/dirs are skipped."""
+    def test_exclusions_are_ignored(self):
+        """Excluded files/dirs are ignored."""
         src_dir = "/a/b/c"
         files = f"""
         {src_dir}/harry/link_me
@@ -444,54 +444,54 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         {src_dir}/murphy/me_too
         {src_dir}/ignore/subdir-link/test3
         # Everything below here is excluded so should not be linked.
-        # Skipped by ignore-me*
+        # Ignored by ignore-me*
         {src_dir}/harry/ignore-me1
         {src_dir}/harry/ignore-me2
         {src_dir}/harry/ignore-me3
-        # Skipped by pinky
+        # Ignored by pinky
         {src_dir}/harry/pinky
-        # Skipped by the_brain
+        # Ignored by the_brain
         {src_dir}/harry/the_brain
-        # Skipped by loki
+        # Ignored by loki
         {src_dir}/loki/link_me
         {src_dir}/loki/me_too
         {src_dir}/loki/pinky
         {src_dir}/loki/the_brain
-        # Skipped by molly
+        # Ignored by molly
         {src_dir}/molly/link_me
         {src_dir}/molly/me_too
         {src_dir}/molly/pinky
         {src_dir}/molly/the_brain
-        # Skipped by pinky
+        # Ignored by pinky
         {src_dir}/murphy/pinky
-        # Skipped by the_brain
+        # Ignored by the_brain
         {src_dir}/murphy/the_brain
-        # Skipped by ignore/subdir
+        # Ignored by ignore/subdir
         {src_dir}/ignore/subdir/test1
         {src_dir}/ignore/subdir/test2
         """
         self.create_files(files)
 
-        skip_filename = "skip-me"
-        skip_contents = """
-        # Files to skip.
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
+        # Files to ignore.
         pinky
         the_brain
-        # Directories to skip.
+        # Directories to ignore.
         loki
         molly
-        # Patterns to skip.
+        # Patterns to ignore.
         ignore-me*
         ignore/subdir
         """
-        with open(skip_filename, "w", encoding="utf8") as skip_fh:
-            skip_fh.write(skip_contents)
+        with open(ignore_patterns_filename, "w", encoding="utf8") as ignore_patterns_fh:
+            ignore_patterns_fh.write(ignore_patterns_contents)
 
         dest_dir = "/z/y/x"
         linkdirs.real_main(
             argv=[
                 "linkdirs",
-                f"--ignore_file={skip_filename}",
+                f"--ignore_file={ignore_patterns_filename}",
                 "--ignore_unexpected_children",
                 src_dir,
                 dest_dir,
@@ -521,19 +521,19 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """
         self.create_files(files)
 
-        skip_filename = "skip-me"
-        skip_contents = """
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
         # This shouldn't have any effect on linking because it's only found in src_dir.
         b
         """
-        with open(skip_filename, "w", encoding="utf8") as skip_fh:
-            skip_fh.write(skip_contents)
+        with open(ignore_patterns_filename, "w", encoding="utf8") as ignore_patterns_fh:
+            ignore_patterns_fh.write(ignore_patterns_contents)
 
         dest_dir = "/z/y/x"
         linkdirs.real_main(
             argv=[
                 "linkdirs",
-                f"--ignore_file={skip_filename}",
+                f"--ignore_file={ignore_patterns_filename}",
                 # Report unexpected files because it exercises more code
                 # paths.
                 "--report_unexpected_files",
@@ -694,8 +694,8 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
                 "/z/y/x/file4: is not a file",
                 "/z/y/x/file5: link count is 2; is this file present in multiple "
                 + "source directories?",
-                "Skipping symbolic link /a/b/c/file6",
-                "Skipping symbolic link /a/b/c/file8",
+                "Ignoring symbolic link /a/b/c/file6",
+                "Ignoring symbolic link /a/b/c/file8",
             ]
             self.assertEqual(expected, messages)
             self.assertFalse(
@@ -823,21 +823,23 @@ class TestMisc(fake_filesystem_unittest.TestCase):
         # correctly.
         linkdirs.safe_unlink(unlink_me=Path("/does-not-exist"), dryrun=False)
 
-    def test_read_skip_patterns(self):
+    def test_read_ignore_patterns(self):
         """Test that patterns are read correctly."""
         filename = Path("ignore-file")
         contents = textwrap.dedent("""
-        # Comments should be skipped.
+        # Comments should be ignored.
         foo
         bar*baz
         dir/subdir
-        # Empty lines should be skipped
+        # Empty lines should be ignored
+
+
         """).strip() + "\n\n"
         self.fs.create_file(  # pyright: ignore [reportUnknownMemberType]
             filename, contents=contents
         )
         expected = ["foo", "bar*baz", "dir/subdir"]
-        actual = linkdirs.read_skip_patterns_from_file(filename=filename)
+        actual = linkdirs.read_ignore_patterns_from_file(filename=filename)
         self.assertEqual(expected, actual)
 
 

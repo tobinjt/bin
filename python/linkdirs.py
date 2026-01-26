@@ -30,8 +30,6 @@ Paths = list[Path]
 Diffs = list[str]
 # Messages to print.
 Messages = list[str]
-# Shell patterns to skip.
-SkipPatterns = list[str]
 
 
 class Error(Exception):
@@ -88,8 +86,8 @@ class Options:
     ignore_symlinks: bool
     ignore_unexpected_children: bool
     report_unexpected_files: bool
-    ignore_file: Paths
-    skip: SkipPatterns
+    ignore_files: Paths
+    ignore_patterns: list[str]
 
 
 def options_from_args(args: argparse.Namespace) -> Options:
@@ -110,8 +108,8 @@ def options_from_args(args: argparse.Namespace) -> Options:
         ignore_symlinks=args.ignore_symlinks,  # pyright: ignore [reportAny]
         ignore_unexpected_children=args.ignore_unexpected_children,  # pyright: ignore [reportAny]
         report_unexpected_files=args.report_unexpected_files,  # pyright: ignore [reportAny]
-        ignore_file=[Path(x) for x in args.ignore_file],  # pyright: ignore [reportAny]
-        skip=args.ignore_pattern,  # pyright: ignore [reportAny]
+        ignore_files=[Path(x) for x in args.ignore_file],  # pyright: ignore [reportAny]
+        ignore_patterns=args.ignore_pattern,  # pyright: ignore [reportAny]
     )
 
 
@@ -197,7 +195,7 @@ def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
             return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
 
 
-def remove_skip_patterns(*, files: Paths, options: Options) -> Paths:
+def remove_ignore_patterns(*, files: Paths, options: Options) -> Paths:
     """Remove any files matching shell patterns.
 
     Args:
@@ -209,11 +207,13 @@ def remove_skip_patterns(*, files: Paths, options: Options) -> Paths:
     """
 
     unmatched: list[Path] = []
-    skip_more = options.skip[:]
-    skip_more.extend([os.sep.join(["*", pattern]) for pattern in options.skip])
-    skip_more.extend([os.sep.join(["*", pattern, "*"]) for pattern in options.skip])
+    ignore = options.ignore_patterns[:]
+    ignore.extend([os.sep.join(["*", pattern]) for pattern in options.ignore_patterns])
+    ignore.extend(
+        [os.sep.join(["*", pattern, "*"]) for pattern in options.ignore_patterns]
+    )
     for filename in files:
-        for pattern in skip_more:
+        for pattern in ignore:
             if fnmatch.fnmatch(str(filename), pattern):
                 break
         else:
@@ -239,10 +239,9 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
     results = LinkResults(expected_files=[], diffs=[], errors=[])
     for directory_str, subdirs, files in os.walk(source):
         directory = Path(directory_str)
-        # Remove skippable subdirs.  Assigning to the slice will prevent os.walk
-        # from descending into the skipped subdirs.
-        # remove_skip_patterns returns list[Path], but we need list[str] for os.walk.
-        filtered_subdirs = remove_skip_patterns(
+        # Remove ignored subdirs.  Assigning to the slice will prevent os.walk
+        # from descending into the ignored subdirs.
+        filtered_subdirs = remove_ignore_patterns(
             files=[Path(s) for s in subdirs], options=options
         )
         subdirs[:] = [str(s) for s in filtered_subdirs]
@@ -309,25 +308,25 @@ def link_files(
         options:   options requested by the user.
 
     Returns:
-        LinkResults.  expected_files will not include files that are skipped.
+        LinkResults.  expected_files will not include files that are ignored.
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
     # Filter on the filename.
-    files = remove_skip_patterns(files=files, options=options)
+    files = remove_ignore_patterns(files=files, options=options)
     # Filter on the full path.
     files = [
         directory / filename
-        for filename in remove_skip_patterns(files=files, options=options)
+        for filename in remove_ignore_patterns(files=files, options=options)
     ]
-    files = remove_skip_patterns(files=files, options=options)
+    files = remove_ignore_patterns(files=files, options=options)
     files.sort()
     for source_filename in files:
         dest_filename = dest / source_filename.relative_to(source)
         results.expected_files.append(dest_filename)
 
         if source_filename.is_symlink():
-            # Skip source symlinks.
+            # Ignore source symlinks.
             if options.ignore_symlinks:
                 # Work around coverage weirdness; this would be more natural:
                 #   if not options.ignore_symlinks:
@@ -337,7 +336,7 @@ def link_files(
                 # false, but it is because the test that requires the log line passes.
                 # Weird :(
                 continue
-            results.errors.append(f"Skipping symbolic link {source_filename}")
+            results.errors.append(f"Ignoring symbolic link {source_filename}")
             continue
 
         if not dest_filename.exists() and not dest_filename.is_symlink():
@@ -429,13 +428,13 @@ def report_unexpected_files(
         directory = Path(directory_str)
         subdirs[:] = [
             str(s.name)
-            for s in remove_skip_patterns(
+            for s in remove_ignore_patterns(
                 files=[Path(s) for s in subdirs], options=options
             )
         ]
         subdirs.sort()
         filtered_files = list(
-            remove_skip_patterns(files=[Path(f) for f in files], options=options)
+            remove_ignore_patterns(files=[Path(f) for f in files], options=options)
         )
         filtered_files.sort()
 
@@ -451,8 +450,8 @@ def report_unexpected_files(
 
         full_subdirs = [directory / entry for entry in subdirs]
         full_files = [directory / entry for entry in filtered_files]
-        full_subdirs = remove_skip_patterns(files=full_subdirs, options=options)
-        full_files = remove_skip_patterns(files=full_files, options=options)
+        full_subdirs = remove_ignore_patterns(files=full_subdirs, options=options)
+        full_files = remove_ignore_patterns(files=full_files, options=options)
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
@@ -541,8 +540,8 @@ def format_unexpected_files(*, unexpected_paths: UnexpectedPaths) -> Messages:
     return unexpected_msgs
 
 
-def read_skip_patterns_from_file(*, filename: Path) -> SkipPatterns:
-    """Read skip patterns from filename, ignoring comments and empty lines."""
+def read_ignore_patterns_from_file(*, filename: Path) -> list[str]:
+    """Read ignore patterns from filename, handling comments and empty lines."""
     patterns: list[str] = []
     with filename.open(encoding="utf8") as pfh:
         for line in pfh.readlines():
@@ -681,10 +680,10 @@ def real_main(*, argv: list[str]) -> Messages:
     options, messages = parse_arguments(argv=argv)
     if messages:
         return messages
-    skip = options.skip[:]
-    for filename in options.ignore_file:
-        skip.extend(read_skip_patterns_from_file(filename=filename))
-    options.skip = skip
+    for filename in options.ignore_files:
+        options.ignore_patterns.extend(
+            read_ignore_patterns_from_file(filename=filename)
+        )
 
     if options.debug:
         print("DEBUG: options:")
