@@ -2,6 +2,7 @@
 
 import io
 import os
+import pytest
 import re
 import stat
 import sys
@@ -491,6 +492,48 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             argv=[
                 "linkdirs",
                 f"--ignore_file={skip_filename}",
+                "--ignore_unexpected_children",
+                src_dir,
+                dest_dir,
+            ]
+        )
+
+        found_files: list[str] = []
+        for dirpath, _unused_x, filenames in os.walk(dest_dir):
+            for filename in filenames:
+                found_files.append(os.path.join(dirpath, filename))
+        expected = [
+            "harry/link_me",
+            "harry/me_too",
+            "ignore/subdir-link/test3",
+            "murphy/link_me",
+            "murphy/me_too",
+        ]
+        expected = [os.path.join(dest_dir, x) for x in expected]
+        self.assertCountEqual(expected, found_files)
+
+    @pytest.mark.skip(reason="This test doesn't pass yet")
+    def test_exclusions_do_not_match_cli_arguments(self):
+        """Excluding `src` shouldn't exclude cli arguments that include `src`"""
+        src_dir = "/a/b/c"
+        files = f"""
+        {src_dir}/harry/link_me
+        """
+        self.create_files(files)
+
+        skip_filename = "skip-me"
+        skip_contents = """
+        # This shouldn't have any effect on linking because it's only found in src_dir.
+        b
+        """
+        with open(skip_filename, "w", encoding="utf8") as skip_fh:
+            skip_fh.write(skip_contents)
+
+        dest_dir = "/z/y/x"
+        linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                f"--ignore_file={skip_filename}",
                 # Report unexpected files because it exercises more code
                 # paths.
                 "--report_unexpected_files",
@@ -509,10 +552,6 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         files.sort()  # pyright: ignore [reportUnknownMemberType]
         expected = [
             "harry/link_me",
-            "harry/me_too",
-            "ignore/subdir-link/test3",
-            "murphy/link_me",
-            "murphy/me_too",
         ]
         expected = [os.path.join(dest_dir, x) for x in expected]
         self.assertEqual(expected, files)
