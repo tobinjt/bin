@@ -197,21 +197,21 @@ def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
             return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
 
 
-def remove_skip_patterns(*, files: Paths, skip: SkipPatterns) -> Paths:
+def remove_skip_patterns(*, files: Paths, options: Options) -> Paths:
     """Remove any files matching shell patterns.
 
     Args:
         files: a list of filenames.
-        skip: a list of shell patterns.
+        options: options requested by the user.
 
     Returns:
         An array of filenames.
     """
 
     unmatched: list[Path] = []
-    skip_more = skip[:]
-    skip_more.extend([os.sep.join(["*", pattern]) for pattern in skip])
-    skip_more.extend([os.sep.join(["*", pattern, "*"]) for pattern in skip])
+    skip_more = options.skip[:]
+    skip_more.extend([os.sep.join(["*", pattern]) for pattern in options.skip])
+    skip_more.extend([os.sep.join(["*", pattern, "*"]) for pattern in options.skip])
     for filename in files:
         for pattern in skip_more:
             if fnmatch.fnmatch(str(filename), pattern):
@@ -243,7 +243,7 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
         # from descending into the skipped subdirs.
         # remove_skip_patterns returns list[Path], but we need list[str] for os.walk.
         filtered_subdirs = remove_skip_patterns(
-            files=[Path(s) for s in subdirs], skip=options.skip
+            files=[Path(s) for s in subdirs], options=options
         )
         subdirs[:] = [str(s) for s in filtered_subdirs]
         subdirs.sort()
@@ -314,13 +314,13 @@ def link_files(
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
     # Filter on the filename.
-    files = remove_skip_patterns(files=files, skip=options.skip)
+    files = remove_skip_patterns(files=files, options=options)
     # Filter on the full path.
     files = [
         directory / filename
-        for filename in remove_skip_patterns(files=files, skip=options.skip)
+        for filename in remove_skip_patterns(files=files, options=options)
     ]
-    files = remove_skip_patterns(files=files, skip=options.skip)
+    files = remove_skip_patterns(files=files, options=options)
     files.sort()
     for source_filename in files:
         dest_filename = dest / source_filename.relative_to(source)
@@ -430,12 +430,12 @@ def report_unexpected_files(
         subdirs[:] = [
             str(s.name)
             for s in remove_skip_patterns(
-                files=[Path(s) for s in subdirs], skip=options.skip
+                files=[Path(s) for s in subdirs], options=options
             )
         ]
         subdirs.sort()
         filtered_files = list(
-            remove_skip_patterns(files=[Path(f) for f in files], skip=options.skip)
+            remove_skip_patterns(files=[Path(f) for f in files], options=options)
         )
         filtered_files.sort()
 
@@ -451,8 +451,8 @@ def report_unexpected_files(
 
         full_subdirs = [directory / entry for entry in subdirs]
         full_files = [directory / entry for entry in filtered_files]
-        full_subdirs = remove_skip_patterns(files=full_subdirs, skip=options.skip)
-        full_files = remove_skip_patterns(files=full_files, skip=options.skip)
+        full_subdirs = remove_skip_patterns(files=full_subdirs, options=options)
+        full_files = remove_skip_patterns(files=full_files, options=options)
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
