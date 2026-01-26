@@ -65,9 +65,6 @@ END_OF_HELP
     esac
   done
 
-  local SKIP_FLAGS=("--ignore_pattern=tags" "--ignore_pattern=*.pyc")
-  SKIP_FLAGS+=("--ignore_pattern=*.spl")
-  readonly SKIP_FLAGS
   local SKIP_FILES=() SOURCE_DIRS=() dir
   for dir in $(dotfiles_sources); do
     SOURCE_DIRS+=("${dir}")
@@ -78,7 +75,6 @@ END_OF_HELP
   readonly SKIP_FILES SOURCE_DIRS
 
   linkdirs \
-    "${SKIP_FLAGS[@]:+${SKIP_FLAGS[@]}}" \
     "${SKIP_FILES[@]:+${SKIP_FILES[@]}}" \
     "${flags[@]:+${flags[@]}}" \
     "${later_flags[@]:+${later_flags[@]}}" \

@@ -607,17 +607,12 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         action="append",
         dest="ignore_pattern",
         metavar="FILENAME",
-        # There is no signal from mutating these constants; I could add tests for
-        # every one, but it doesn't help.
         default=[
-            "CVS",
             ".git",
             ".gitignore",
-            ".gitmodules",  # pragma: no mutate
-            ".hg",
-            ".svn",
-            "*.swp",
-        ],  # pragma: no mutate
+            ".gitmodules",
+            "*.spl",
+        ],
         help=textwrap.fill(
             """Extra shell patterns to ignore (appended to this list: %(default)s).
             To specify multiple filenames, use this option multiple times."""
