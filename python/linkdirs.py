@@ -88,6 +88,40 @@ class Options:
     report_unexpected_files: bool
     ignore_files: Paths
     ignore_patterns: list[str]
+    ignore_set: set[str]
+    ignore_globs: list[str]
+    ignore_full_paths: list[str]
+
+
+def bucket_ignore_patterns(
+    ignore_patterns: list[str],
+) -> tuple[set[str], list[str], list[str]]:
+    """Split ignore patterns into sets and globs.
+
+    We can do simple string comparisons on the sets and must use fnmatch
+    to match against the globs.
+
+    Args:
+        ignore_patterns: a list of patterns to ignore.
+
+    Returns:
+        A tuple:
+            ignore_set: a set of directory or filenames to ignore.
+            ignore_globs: a list of glob patterns to ignore.
+            ignore_full_paths: a list of ignore patterns applying to full paths.
+    """
+    ignore_set: set[str] = set()
+    ignore_globs: list[str] = []
+    ignore_full_paths: list[str] = []
+    metacharacters = ["*", "?", "[", "{"]
+    for pattern in ignore_patterns:
+        if "/" in pattern:
+            ignore_full_paths.append(pattern)
+        elif any(c in pattern for c in metacharacters):
+            ignore_globs.append(pattern)
+        else:
+            ignore_set.add(pattern)
+    return ignore_set, ignore_globs, ignore_full_paths
 
 
 def options_from_args(args: argparse.Namespace) -> Options:
@@ -110,6 +144,9 @@ def options_from_args(args: argparse.Namespace) -> Options:
         report_unexpected_files=args.report_unexpected_files,  # pyright: ignore [reportAny]
         ignore_files=[Path(x) for x in args.ignore_file],  # pyright: ignore [reportAny]
         ignore_patterns=args.ignore_pattern,  # pyright: ignore [reportAny]
+        ignore_set=set(),
+        ignore_globs=[],
+        ignore_full_paths=[],
     )
 
 
@@ -195,7 +232,7 @@ def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
             return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
 
 
-def remove_ignore_patterns(*, files: Paths, options: Options) -> Paths:
+def remove_ignore_file_patterns(*, files: Paths, options: Options) -> Paths:
     """Remove any files matching shell patterns.
 
     Args:
@@ -207,12 +244,35 @@ def remove_ignore_patterns(*, files: Paths, options: Options) -> Paths:
     """
 
     unmatched: list[Path] = []
+    for filename in files:
+        if str(filename) in options.ignore_set:
+            continue
+        for pattern in options.ignore_globs:
+            if fnmatch.fnmatch(str(filename), pattern):
+                break
+        else:
+            unmatched.append(filename)
+    return unmatched
+
+
+def remove_ignore_full_path_patterns(*, paths: Paths, options: Options) -> Paths:
+    """Remove any full paths matching shell patterns.
+
+    Args:
+        paths: a list of paths.
+        options: options requested by the user.
+
+    Returns:
+        An array of paths.
+    """
+
+    unmatched: list[Path] = []
     ignore = options.ignore_patterns[:]
     ignore.extend([os.sep.join(["*", pattern]) for pattern in options.ignore_patterns])
     ignore.extend(
         [os.sep.join(["*", pattern, "*"]) for pattern in options.ignore_patterns]
     )
-    for filename in files:
+    for filename in paths:
         for pattern in ignore:
             if fnmatch.fnmatch(str(filename), pattern):
                 break
@@ -238,14 +298,15 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
     for directory_str, subdirs, files in os.walk(source):
-        directory = Path(directory_str)
         # Remove ignored subdirs.  Assigning to the slice will prevent os.walk
         # from descending into the ignored subdirs.
-        filtered_subdirs = remove_ignore_patterns(
+        filtered_subdirs = remove_ignore_file_patterns(
             files=[Path(s) for s in subdirs], options=options
         )
         subdirs[:] = [str(s) for s in filtered_subdirs]
         subdirs.sort()
+
+        directory = Path(directory_str)
         for subdir in subdirs:
             source_dir = directory / subdir
             dest_dir = dest / source_dir.relative_to(source)
@@ -312,20 +373,19 @@ def link_files(
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
-    # Filter on the filename.
-    files = remove_ignore_patterns(files=files, options=options)
-    # Filter on the full path.
-    files = [
+    # Filter on the filename and convert to full paths.
+    paths = [
         directory / filename
-        for filename in remove_ignore_patterns(files=files, options=options)
+        for filename in remove_ignore_file_patterns(files=files, options=options)
     ]
-    files = remove_ignore_patterns(files=files, options=options)
-    files.sort()
-    for source_filename in files:
-        dest_filename = dest / source_filename.relative_to(source)
-        results.expected_files.append(dest_filename)
+    # Filter on the full path.
+    paths = remove_ignore_full_path_patterns(paths=paths, options=options)
+    paths.sort()
+    for source_path in paths:
+        dest_path = dest / source_path.relative_to(source)
+        results.expected_files.append(dest_path)
 
-        if source_filename.is_symlink():
+        if source_path.is_symlink():
             # Ignore source symlinks.
             if options.ignore_symlinks:
                 # Work around coverage weirdness; this would be more natural:
@@ -336,72 +396,70 @@ def link_files(
                 # false, but it is because the test that requires the log line passes.
                 # Weird :(
                 continue
-            results.errors.append(f"Ignoring symbolic link {source_filename}")
+            results.errors.append(f"Ignoring symbolic link {source_path}")
             continue
 
-        if not dest_filename.exists() and not dest_filename.is_symlink():
+        if not dest_path.exists() and not dest_path.is_symlink():
             # Destination doesn't already exist, and it's not a dangling symlink, so
             # just link it.
             safe_link(
-                source_filename=source_filename,
-                dest_filename=dest_filename,
+                source_filename=source_path,
+                dest_filename=dest_path,
                 dryrun=options.dryrun,
             )
             continue
 
-        if dest_filename.is_symlink() or not dest_filename.is_file():
+        if dest_path.is_symlink() or not dest_path.is_file():
             # Destination exists and is not a file.
             if options.force:
-                safe_unlink(unlink_me=dest_filename, dryrun=options.dryrun)
+                safe_unlink(unlink_me=dest_path, dryrun=options.dryrun)
                 safe_link(
-                    source_filename=source_filename,
-                    dest_filename=dest_filename,
+                    source_filename=source_path,
+                    dest_filename=dest_path,
                     dryrun=options.dryrun,
                 )
             else:
-                results.errors.append(f"{dest_filename}: is not a file")
+                results.errors.append(f"{dest_path}: is not a file")
             continue
 
-        if source_filename.samefile(dest_filename):
+        if source_path.samefile(dest_path):
             # The file is correctly linked.
             continue
 
         if options.force:
             # Don't bother checking anything if --force was used.
-            safe_unlink(unlink_me=dest_filename, dryrun=options.dryrun)
+            safe_unlink(unlink_me=dest_path, dryrun=options.dryrun)
             safe_link(
-                source_filename=source_filename,
-                dest_filename=dest_filename,
+                source_filename=source_path,
+                dest_filename=dest_path,
                 dryrun=options.dryrun,
             )
             continue
 
         # If the destination is already linked don't change it without --force.
-        num_links = dest_filename.stat().st_nlink
+        num_links = dest_path.stat().st_nlink
         if num_links != 1:
             results.errors.append(
-                f"{dest_filename}: link count is {num_links}; is this file present "
+                f"{dest_path}: link count is {num_links}; is this file present "
                 + "in multiple source directories?"
             )
             continue
 
         # Check for diffs.
-        if filecmp.cmp(source_filename, dest_filename, shallow=False):
+        if filecmp.cmp(source_path, dest_path, shallow=False):
             print(
-                f"{source_filename} and {dest_filename} are different files but"
+                f"{source_path} and {dest_path} are different files but"
                 + " have the same contents; deleting and linking"
             )
-            safe_unlink(unlink_me=dest_filename, dryrun=options.dryrun)
+            safe_unlink(unlink_me=dest_path, dryrun=options.dryrun)
             safe_link(
-                source_filename=source_filename,
-                dest_filename=dest_filename,
+                source_filename=source_path,
+                dest_filename=dest_path,
                 dryrun=options.dryrun,
             )
             continue
 
-        results.diffs.extend(
-            diff(old_filename=source_filename, new_filename=dest_filename)
-        )
+        results.diffs.extend(diff(old_filename=source_path, new_filename=dest_path))
 
     return results
 
@@ -428,13 +486,13 @@ def report_unexpected_files(
         directory = Path(directory_str)
         subdirs[:] = [
             str(s.name)
-            for s in remove_ignore_patterns(
+            for s in remove_ignore_file_patterns(
                 files=[Path(s) for s in subdirs], options=options
             )
         ]
         subdirs.sort()
         filtered_files = list(
-            remove_ignore_patterns(files=[Path(f) for f in files], options=options)
+            remove_ignore_file_patterns(files=[Path(f) for f in files], options=options)
         )
         filtered_files.sort()
 
@@ -450,8 +508,10 @@ def report_unexpected_files(
 
         full_subdirs = [directory / entry for entry in subdirs]
         full_files = [directory / entry for entry in filtered_files]
-        full_subdirs = remove_ignore_patterns(files=full_subdirs, options=options)
-        full_files = remove_ignore_patterns(files=full_files, options=options)
+        full_subdirs = remove_ignore_full_path_patterns(
+            paths=full_subdirs, options=options
+        )
+        full_files = remove_ignore_full_path_patterns(paths=full_files, options=options)
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
@@ -684,6 +744,9 @@ def real_main(*, argv: list[str]) -> Messages:
         options.ignore_patterns.extend(
             read_ignore_patterns_from_file(filename=filename)
         )
+    options.ignore_set, options.ignore_globs, options.ignore_full_paths = (
+        bucket_ignore_patterns(options.ignore_patterns)
+    )
 
     if options.debug:
         print("DEBUG: options:")
