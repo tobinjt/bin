@@ -313,14 +313,14 @@ def link_files(
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
+    # Filter on the filename.
     files = remove_skip_patterns(files=files, skip=options.skip)
-    # warnings :(
+    # Filter on the full path.
     files = [
         directory / filename
         for filename in remove_skip_patterns(files=files, skip=options.skip)
     ]
-    skip = [f"*{os.sep}{pattern}" for pattern in options.skip]
-    files = remove_skip_patterns(files=files, skip=skip)
+    files = remove_skip_patterns(files=files, skip=options.skip)
     files.sort()
     for source_filename in files:
         dest_filename = dest / source_filename.relative_to(source)
