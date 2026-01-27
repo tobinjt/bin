@@ -232,7 +232,7 @@ def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
             return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
 
 
-def remove_ignore_file_patterns(*, files: Paths, options: Options) -> Paths:
+def remove_ignore_file_patterns(*, files: list[str], options: Options) -> list[str]:
     """Remove any files matching shell patterns.
 
     Args:
@@ -243,19 +243,21 @@ def remove_ignore_file_patterns(*, files: Paths, options: Options) -> Paths:
         An array of filenames.
     """
 
-    unmatched: list[Path] = []
+    unmatched: list[str] = []
     for filename in files:
-        if str(filename) in options.ignore_set:
+        if filename in options.ignore_set:
             continue
         for pattern in options.ignore_globs:
-            if fnmatch.fnmatch(str(filename), pattern):
+            if fnmatch.fnmatch(filename, pattern):
                 break
         else:
             unmatched.append(filename)
     return unmatched
 
 
-def remove_ignore_full_path_patterns(*, paths: Paths, options: Options) -> Paths:
+def remove_ignore_full_path_patterns(
+    *, paths: list[str], options: Options
+) -> list[str]:
     """Remove any full paths matching shell patterns.
 
     Args:
@@ -266,10 +268,10 @@ def remove_ignore_full_path_patterns(*, paths: Paths, options: Options) -> Paths
         An array of paths.
     """
 
-    unmatched: list[Path] = []
+    unmatched: list[str] = []
     for path in paths:
         for pattern in options.ignore_full_paths:
-            if fnmatch.fnmatch(str(path), pattern):
+            if fnmatch.fnmatch(path, pattern):
                 break
         else:
             unmatched.append(path)
@@ -292,16 +294,12 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
-    for directory_str, subdirs, files in os.walk(source):
-        # Remove ignored subdirs.  Assigning to the slice will prevent os.walk
+    for directory, subdirs, files in source.walk():
+        # Remove ignored subdirs.  Assigning to the slice will prevent source.walk
         # from descending into the ignored subdirs.
-        filtered_subdirs = remove_ignore_file_patterns(
-            files=[Path(s) for s in subdirs], options=options
-        )
-        subdirs[:] = [str(s) for s in filtered_subdirs]
+        subdirs[:] = remove_ignore_file_patterns(files=subdirs, options=options)
         subdirs.sort()
 
-        directory = Path(directory_str)
         for subdir in subdirs:
             source_dir = directory / subdir
             dest_dir = dest / source_dir.relative_to(source)
@@ -338,7 +336,7 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
                 source=source,
                 dest=dest,
                 directory=directory,
-                files=[Path(f) for f in files],
+                files=files,
                 options=options,
             )
         )
@@ -351,7 +349,7 @@ def link_files(
     source: Path,
     dest: Path,
     directory: Path,
-    files: Paths,
+    files: list[str],
     options: Options,
 ) -> LinkResults:
     """Link files from source to dest.
@@ -369,12 +367,15 @@ def link_files(
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
     # Filter on the filename and convert to full paths.
-    paths = [
-        directory / filename
+    full_paths = [
+        str(directory / filename)
         for filename in remove_ignore_file_patterns(files=files, options=options)
     ]
     # Filter on the full path.
-    paths = remove_ignore_full_path_patterns(paths=paths, options=options)
+    paths = [
+        Path(p)
+        for p in remove_ignore_full_path_patterns(paths=full_paths, options=options)
+    ]
     paths.sort()
     for source_path in paths:
         dest_path = dest / source_path.relative_to(source)
@@ -477,18 +478,10 @@ def report_unexpected_files(
     expected_files.add(dest_dir)
 
     unexpected_paths = UnexpectedPaths(files=[], directories=[])
-    for directory_str, subdirs, files in os.walk(dest_dir):
-        directory = Path(directory_str)
-        subdirs[:] = [
-            str(s.name)
-            for s in remove_ignore_file_patterns(
-                files=[Path(s) for s in subdirs], options=options
-            )
-        ]
+    for directory, subdirs, files in dest_dir.walk():
+        subdirs[:] = remove_ignore_file_patterns(files=subdirs, options=options)
         subdirs.sort()
-        filtered_files = list(
-            remove_ignore_file_patterns(files=[Path(f) for f in files], options=options)
-        )
+        filtered_files = remove_ignore_file_patterns(files=files, options=options)
         filtered_files.sort()
 
         if directory == dest_dir and options.ignore_unexpected_children:
@@ -501,22 +494,26 @@ def report_unexpected_files(
             for subdir in unexpected:
                 subdirs.remove(subdir)
 
-        full_subdirs = [directory / entry for entry in subdirs]
-        full_files = [directory / entry for entry in filtered_files]
-        full_subdirs = remove_ignore_full_path_patterns(
+        full_subdirs = [str(directory / entry) for entry in subdirs]
+        full_files = [str(directory / entry) for entry in filtered_files]
+        filtered_subdirs = remove_ignore_full_path_patterns(
             paths=full_subdirs, options=options
         )
-        full_files = remove_ignore_full_path_patterns(paths=full_files, options=options)
+        filtered_files = remove_ignore_full_path_patterns(
+            paths=full_files, options=options
+        )
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
-            symlinks = [file for file in full_files if file.is_symlink()]
-            full_files = list(set(full_files) - set(symlinks))
+            symlinks = [file for file in filtered_files if Path(file).is_symlink()]
+            filtered_files = list(set(filtered_files) - set(symlinks))
 
         unexpected_paths.directories.extend(
-            sorted(set(full_subdirs) - set(expected_files))
+            sorted(set([Path(p) for p in filtered_subdirs]) - set(expected_files))
         )
-        unexpected_paths.files.extend(sorted(set(full_files) - set(expected_files)))
+        unexpected_paths.files.extend(
+            sorted(set([Path(p) for p in filtered_files]) - set(expected_files))
+        )
 
     msgs: Messages = []
     if options.delete_unexpected_files:
