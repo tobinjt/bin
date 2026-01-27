@@ -267,17 +267,12 @@ def remove_ignore_full_path_patterns(*, paths: Paths, options: Options) -> Paths
     """
 
     unmatched: list[Path] = []
-    ignore = options.ignore_patterns[:]
-    ignore.extend([os.sep.join(["*", pattern]) for pattern in options.ignore_patterns])
-    ignore.extend(
-        [os.sep.join(["*", pattern, "*"]) for pattern in options.ignore_patterns]
-    )
-    for filename in paths:
-        for pattern in ignore:
-            if fnmatch.fnmatch(str(filename), pattern):
+    for path in paths:
+        for pattern in options.ignore_full_paths:
+            if fnmatch.fnmatch(str(path), pattern):
                 break
         else:
-            unmatched.append(filename)
+            unmatched.append(path)
     return unmatched
 
 
@@ -740,6 +735,8 @@ def real_main(*, argv: list[str]) -> Messages:
     options, messages = parse_arguments(argv=argv)
     if messages:
         return messages
+
+    # Set up ignore patterns.
     for filename in options.ignore_files:
         options.ignore_patterns.extend(
             read_ignore_patterns_from_file(filename=filename)
@@ -747,6 +744,15 @@ def real_main(*, argv: list[str]) -> Messages:
     options.ignore_set, options.ignore_globs, options.ignore_full_paths = (
         bucket_ignore_patterns(options.ignore_patterns)
     )
+    ignore_full_paths = options.ignore_full_paths[:]
+    # Match */pattern
+    options.ignore_full_paths.extend(os.path.join("*", p) for p in ignore_full_paths)
+    # Match */pattern/*
+    options.ignore_full_paths.extend(
+        os.path.join("*", p, "*") for p in ignore_full_paths
+    )
+    # Nuke ignore_patterns so that I can't accidentally use it anywhere.
+    options.ignore_patterns = []
 
     if options.debug:
         print("DEBUG: options:")
