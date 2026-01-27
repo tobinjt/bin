@@ -298,6 +298,17 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
         # Remove ignored subdirs.  Assigning to the slice will prevent source.walk
         # from descending into the ignored subdirs.
         subdirs[:] = remove_ignore_file_patterns(files=subdirs, options=options)
+
+        # Construct the full path to the subdir, then strip the matching CLI arg to get
+        # a relative path. Filter those relative paths, then take the last component of
+        # each to get the new list of subdirs.
+        relative_dirs = [
+            str((directory / subdir).relative_to(source)) for subdir in subdirs
+        ]
+        filtered_relative_dirs = remove_ignore_full_path_patterns(
+            paths=relative_dirs, options=options
+        )
+        subdirs[:] = [Path(dir).name for dir in filtered_relative_dirs]
         subdirs.sort()
 
         for subdir in subdirs:
@@ -365,16 +376,17 @@ def link_files(
         LinkResults.  expected_files will not include files that are ignored.
     """
 
+    # TODO: carefully check the filtering here. See if I can share code with link_dir.
     results = LinkResults(expected_files=[], diffs=[], errors=[])
-    # Filter on the filename and convert to full paths.
-    full_paths = [
+    # Filter on the filename and convert to paths relative to source and dest.
+    relative_paths = [
         str(directory / filename)
         for filename in remove_ignore_file_patterns(files=files, options=options)
     ]
-    # Filter on the full path.
+    # Filter on the relative path.
     paths = [
         Path(p)
-        for p in remove_ignore_full_path_patterns(paths=full_paths, options=options)
+        for p in remove_ignore_full_path_patterns(paths=relative_paths, options=options)
     ]
     paths.sort()
     for source_path in paths:
