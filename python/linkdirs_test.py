@@ -148,11 +148,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """.git isn't linked, testing that --ignore_pattern works."""
         src_dir = "/a/b/c/dir"
         dest_dir = "/z/y/x/dir"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/.git/config:pretend config
         {dest_dir}/
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         linkdirs.real_main(argv=["linkdirs", src_dir, dest_dir])
         self.assertFalse(os.path.exists(os.path.join(dest_dir, ".git", "config")))
@@ -161,11 +161,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Destination directory perms don't change unnecessarily."""
         src_dir = "/a/b/c/dir"
         dest_dir = "/z/y/x/dir"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/
         {dest_dir}/
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
         mode = int("0755", base=8)
         os.chmod(src_dir, mode)
         os.chmod(dest_dir, mode)
@@ -265,7 +265,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Report unexpected files."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/file
         # 'asdf' subdir exists here, so it will be checked in dest_dir.
         {src_dir}/asdf/file
@@ -285,7 +285,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # Symlink that should be reported
         {dest_dir}/asdf/symlink-to-report->/tmp/foo
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         ignore_patterns_filename = "ignore_patterns"
         ignore_patterns_contents = """
@@ -324,7 +324,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Delete unexpected files."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/file
         # 'asdf' subdir exists here, so it will be checked in dest_dir.
         {src_dir}/asdf/file
@@ -337,7 +337,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # Symlink that should be deleted
         {dest_dir}/asdf/symlink-to-delete->/tmp/foo
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         actual = linkdirs.real_main(
             argv=[
@@ -359,7 +359,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Delete unexpected files but not directories."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/file
         # 'asdf' subdir exists here, so it will be checked in dest_dir.
         {src_dir}/asdf/file
@@ -371,7 +371,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         {dest_dir}/asdf/report_me/
         {dest_dir}/asdf/report_me_too/
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         actual = linkdirs.real_main(
             argv=[
@@ -400,7 +400,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Delete unexpected files and directories with --force."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/file
         # 'asdf' subdir exists here, so it will be checked in dest_dir.
         {src_dir}/asdf/file
@@ -415,7 +415,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # fail to delete the child.
         {dest_dir}/asdf/delete_me/delete_me_too/
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         actual = linkdirs.real_main(
             argv=[
@@ -437,7 +437,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     def test_exclusions_are_ignored(self):
         """Excluded files/dirs are ignored."""
         src_dir = "/a/b/c"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/harry/link_me
         {src_dir}/harry/me_too
         {src_dir}/murphy/link_me
@@ -470,7 +470,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         {src_dir}/ignore/subdir/test1
         {src_dir}/ignore/subdir/test2
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         ignore_patterns_filename = "ignore_patterns"
         ignore_patterns_contents = """
@@ -516,10 +516,10 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
     def test_exclusions_do_not_match_cli_arguments(self):
         """Excluding `src` shouldn't exclude cli arguments that include `src`"""
         src_dir = "/a/b/c"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/harry/link_me
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         ignore_patterns_filename = "ignore_patterns"
         ignore_patterns_contents = """
@@ -543,13 +543,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             ]
         )
 
-        files = []
+        files: list[str] = []
         for dirpath, _unused_x, filenames in os.walk(dest_dir):
             for filename in filenames:
-                files.append(  # pyright: ignore [reportUnknownMemberType]
-                    os.path.join(dirpath, filename)
-                )
-        files.sort()  # pyright: ignore [reportUnknownMemberType]
+                files.append(os.path.join(dirpath, filename))
+        files.sort()
         expected = [
             "harry/link_me",
         ]
@@ -560,11 +558,11 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Report diffs."""
         src_file = "/a/b/c/file"
         dest_file = "/z/y/x/file"
-        files = f"""
+        files_to_create = f"""
         {src_file}:qwerty
         {dest_file}:asdf
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         # Test without --force to generate diffs.
         actual = linkdirs.real_main(
@@ -612,7 +610,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Force deletes existing files and directories."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/file1:qwerty
         {src_dir}/file2:asdf
         {src_dir}/file3:pinky
@@ -623,7 +621,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         # Subdir in src, file in dest.
         {dest_dir}/dir1:pinky
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
 
         with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
             messages = linkdirs.real_main(
@@ -640,7 +638,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Dry-run."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
-        files = f"""
+        files_to_create = f"""
         {src_dir}/file1:qwerty
         {src_dir}/file2:asdf
         {src_dir}/file3:pinky
@@ -669,7 +667,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         {dest_dir}/dir3
         {dest_dir}/dir4
         """
-        self.create_files(files)
+        self.create_files(files_to_create)
         # Set permissions on source directory so they differ from destination directory
         # to check that permissions are reset correctly.
         os.chmod(f"{src_dir}/dir1", 0o700)
