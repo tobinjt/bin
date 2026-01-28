@@ -390,21 +390,14 @@ def link_files(
     ]
     paths.sort()
     for source_path in paths:
+        # TODO: why is this relative to source?
         dest_path = dest / source_path.relative_to(source)
         results.expected_files.append(dest_path)
 
         if source_path.is_symlink():
             # Ignore source symlinks.
-            if options.ignore_symlinks:
-                # Work around coverage weirdness; this would be more natural:
-                #   if not options.ignore_symlinks:
-                #     append warning
-                #   continue
-                # But when I do that coverage reports that the if statement is never
-                # false, but it is because the test that requires the log line passes.
-                # Weird :(
-                continue
-            results.errors.append(f"Ignoring symbolic link {source_path}")
+            if not options.ignore_symlinks:
+                results.errors.append(f"Ignoring symbolic link {source_path}")
             continue
 
         if not dest_path.exists() and not dest_path.is_symlink():
