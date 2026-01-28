@@ -504,14 +504,17 @@ def report_unexpected_files(
         filtered_subdirs = remove_ignore_full_path_patterns(
             paths=full_subdirs, options=options
         )
+        # Don't recurse into ignored subdirs.
+        subdirs[:] = [Path(dir).name for dir in filtered_subdirs]
         filtered_files = remove_ignore_full_path_patterns(
             paths=full_files, options=options
         )
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
-            symlinks = [file for file in filtered_files if Path(file).is_symlink()]
-            filtered_files = list(set(filtered_files) - set(symlinks))
+            filtered_files = [
+                file for file in filtered_files if not Path(file).is_symlink()
+            ]
 
         unexpected_paths.directories.extend(
             sorted(set([Path(p) for p in filtered_subdirs]) - set(expected_files))
