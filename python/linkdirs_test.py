@@ -2,7 +2,6 @@
 
 import io
 import os
-import pytest
 import re
 import stat
 import sys
@@ -512,7 +511,6 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         expected = [os.path.join(dest_dir, x) for x in expected]
         self.assertCountEqual(expected, found_files)
 
-    @pytest.mark.skip(reason="This test doesn't pass yet")
     def test_exclusions_do_not_match_cli_arguments(self):
         """Excluding `src` shouldn't exclude cli arguments that include `src`"""
         src_dir = "/a/b/c"

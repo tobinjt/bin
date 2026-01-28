@@ -376,7 +376,6 @@ def link_files(
         LinkResults.  expected_files will not include files that are ignored.
     """
 
-    # TODO: carefully check the filtering here. See if I can share code with link_dir.
     results = LinkResults(expected_files=[], diffs=[], errors=[])
     # Filter on the filename and convert to paths relative to source and dest.
     relative_paths = [
