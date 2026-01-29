@@ -158,9 +158,9 @@ main() {
   dotfiles
 }
 
-# Make sure $HOME/bin is in $PATH to support running
-#   "ssh foo@bar update-dotfiles-and-bin"
-PATH="${PATH}:${HOME}/bin"
+# Make sure $PATH is set correctly to find the right Python and to support
+# running "ssh foo@bar update-dotfiles-and-bin"
+source "${HOME}/.shellrc"
 export PATH
 # Stop git looking for a commit message when 'git pull' is run.
 GIT_MERGE_AUTOEDIT=no
