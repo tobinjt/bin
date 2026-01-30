@@ -89,6 +89,9 @@ def update_single_host(host: str, users: list[str], command: list[str]) -> None:
             "ssh",
             "-o",
             "ControlMaster=no",
+            "-o",
+            "ForwardAgent=yes",
+            "-t",
             "-t",
             ssh_targets.get(user, f"{user}@{host}"),
         ]
