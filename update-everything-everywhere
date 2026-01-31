@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# Ensure dotfiles and bin are synced first, so that when they get updated on
+# other machines they're fully up to date.
+update-dotfiles-and-bin
+for host in laptop imac hosting; do
+  wrap-command --tmux_window_name "update-everything-${host}" \
+    ssh -o ControlMaster=no -o ForwardAgent=yes -t -t "${host}" \
+      run-everywhere --hosts localhost \
+        update-everything
+done
