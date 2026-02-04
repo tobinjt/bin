@@ -3,6 +3,9 @@
 set -e -f -u -o pipefail
 
 update_one_dir() {
+  if ! type pre-commit >& /dev/null; then
+    return
+  fi
   if [[ ! -f ".pre-commit-config.yaml" ]]; then
     return
   fi
