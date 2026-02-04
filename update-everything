@@ -32,7 +32,6 @@ if type nvim >& /dev/null; then
   retry "Install Mason packages" -- \
     run-nvim-command \
       'lua require("johntobin.functions").RunCommandIfExists("MasonToolsUpdateSync")'
-  retry "Fix vint" -- fix-vint-installation
 fi
 
 if type pre-commit >& /dev/null; then
