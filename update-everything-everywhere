@@ -11,3 +11,4 @@ for host in laptop imac hosting; do
       run-everywhere --hosts localhost \
         update-everything
 done
+echo "Updates are running in new tmux windows"
