@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 FILE_TO_CHECK" >&2
+    echo "Args: $*" >&2
+    return 1
+  fi
+  local FILE_TO_CHECK="$1"
+
+  if ! command -v aspell &> /dev/null; then
+      echo "Spell check requires 'aspell'. Please install it."
+      return 0
+  fi
+
+  echo "Checking spelling in ${FILE_TO_CHECK} ..."
+
+  # Strip comment lines and text in backtics.
+  # The backtics are literal rather than trying command substitution.
+  # shellcheck disable=SC2016
+  misspelled_words="$(sed -e '/^ *#/d' -e 's/`[^`]*`//g' "${FILE_TO_CHECK}" \
+                        | aspell list --mode=email --lang=en)"
+
+  if [[ -z "${misspelled_words}" ]]; then
+    return 0
+  fi
+  echo "Found spelling errors:"
+  echo "${misspelled_words}" | sort | uniq | sed 's/^/  - /'
+  if [[ ! -t 0 ]]; then
+    # When run from lazygit we will always return here. If I skip this check and
+    # start nvim anyway I don't see the UI so I can't interact with it.
+    return 1
+  fi
+
+  local tmpfile
+  tmpfile="$(mktemp -t spelling-errors.XXXXXXXXXXXXXXX)"
+  # I want the variable expansion to happen now, because the variable will have
+  # gone out of scope at exit time.
+  # shellcheck disable=SC2064
+  trap "rm -f \"${tmpfile}\"" EXIT
+  echo "Found spelling errors:" > "${tmpfile}"
+  echo "${misspelled_words}" | sort | uniq | sed 's/^/  - /' >> "${tmpfile}"
+  echo "Starting editor to review file."
+  "${EDITOR}" -O "${FILE_TO_CHECK}" "${tmpfile}"
+  return 0
+}
+
+main "$@"

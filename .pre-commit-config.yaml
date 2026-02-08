@@ -54,6 +54,12 @@ repos:
         language: system
         types: [shell]
         entry: shellcheck
+      - id: spellcheck
+        stages: [commit-msg]
+        name: Check spelling
+        language: system
+        verbose: true
+        entry: spell-check-wrapper
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
