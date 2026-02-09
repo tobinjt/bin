@@ -17,11 +17,24 @@ main() {
 
   echo "Checking spelling in ${FILE_TO_CHECK} ..."
 
+  # Transform the dict into the format aspell expects.
+  # - It needs a magic header.
+  # - Digits are a problem.
+  local dict="${HOME}/.config/nvim/spell/en.utf-8.add"
+  local tmpdict
+  tmpdict="$(mktemp -t spelling-errors.XXXXXXXXXXXXXXX)"
+  # I want the variable expansion to happen now, because the variable will have
+  # gone out of scope at exit time.
+  # shellcheck disable=SC2064
+  trap "rm -f \"${tmpdict}\"" EXIT
+  echo "personal_ws-1.1 en 0" > "${tmpdict}"
+  sed -e '/[0-9]/d' "${dict}" >> "${tmpdict}"
+
   # Strip comment lines and text in backtics.
   # The backtics are literal rather than trying command substitution.
   # shellcheck disable=SC2016
   misspelled_words="$(sed -e '/^ *#/d' -e 's/`[^`]*`//g' "${FILE_TO_CHECK}" \
-                        | aspell list --mode=email --lang=en)"
+                        | aspell list --lang=en --personal="${tmpdict}")"
 
   if [[ -z "${misspelled_words}" ]]; then
     return 0
