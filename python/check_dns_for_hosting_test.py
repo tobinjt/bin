@@ -1,7 +1,6 @@
 import logging
 import time
 import unittest
-from typing import override
 from unittest import mock
 
 import check_dns_for_hosting
@@ -27,10 +26,6 @@ class MockMxRdata:
     def __init__(self, preference: int, exchange: str):
         self.preference: int = preference
         self.exchange: dns.name.Name = dns.name.from_text(exchange)
-
-    @override
-    def __str__(self):
-        return f"{self.preference} {self.exchange}"
 
 
 class MockAnswer:

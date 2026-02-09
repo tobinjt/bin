@@ -7,7 +7,6 @@ import stat
 import sys
 import textwrap
 from pathlib import Path
-from typing import override
 import unittest
 from unittest import mock
 
@@ -66,8 +65,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         """Assert that two files are linked."""
         self.assertTrue(os.path.samefile(file1, file2))
 
-    @override
-    def setUp(self) -> None:
+    def setUp(self) -> None:  # pyright: ignore [reportImplicitOverride]
         # Do not truncate diffs.
         self.maxDiff: int | None = 1000000
         self.setUpPyfakefs()
@@ -799,8 +797,7 @@ class TestUsage(unittest.TestCase):
 class TestMisc(fake_filesystem_unittest.TestCase):
     """Tests for code that can't otherwise be tested."""
 
-    @override
-    def setUp(self):
+    def setUp(self):  # pyright: ignore [reportImplicitOverride]
         self.setUpPyfakefs()
 
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
