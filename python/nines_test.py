@@ -101,7 +101,12 @@ class TestMain(unittest.TestCase):
             "pytest: error: the following arguments are required: "
             "NUMBER_OF_NINES\n"
         )
-        self.assertEqual(expected, mock_stderr.getvalue().replace("pytest-3", "pytest"))
+        self.assertEqual(
+            expected,
+            mock_stderr.getvalue()
+            .replace("pytest-3", "pytest")
+            .replace("nines_test.py", "pytest"),
+        )
         mock_exit.assert_called()
 
     @mock.patch.object(nines, "parse_nines_arg", return_value=99)
@@ -122,7 +127,12 @@ class TestMain(unittest.TestCase):
         ]
         # The position of newlines depends on the width of the terminal, so remove
         # them for consistency.
-        stdout = mock_stdout.getvalue().replace("\n", " ").replace("pytest-3", "pytest")
+        stdout = (
+            mock_stdout.getvalue()
+            .replace("\n", " ")
+            .replace("pytest-3", "pytest")
+            .replace("nines_test.py", "pytest")
+        )
         for substring in substrings:
             with self.subTest(f"Testing -->>{substring}<<--"):
                 self.assertIn(substring, stdout)

@@ -753,7 +753,12 @@ class TestUsage(unittest.TestCase):
             "usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] DESTINATION_DIRECTORY\n"
             "pytest: error: the following arguments are required: DIRECTORIES\n"
         )
-        self.assertEqual(expected, mock_stderr.getvalue().replace("pytest-3", "pytest"))
+        self.assertEqual(
+            expected,
+            mock_stderr.getvalue()
+            .replace("pytest-3", "pytest")
+            .replace("linkdirs_test.py", "pytest"),
+        )
 
     @mock.patch.object(sys, "exit")
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
@@ -779,7 +784,12 @@ class TestUsage(unittest.TestCase):
         ]
         # The position of newlines depends on the width of the terminal, so remove
         # them for consistency.  Likewise spaces.
-        stdout = mock_stdout.getvalue().replace("\n", " ").replace("pytest-3", "pytest")
+        stdout = (
+            mock_stdout.getvalue()
+            .replace("\n", " ")
+            .replace("pytest-3", "pytest")
+            .replace("linkdirs_test.py", "pytest")
+        )
         stdout = re.sub(r"\s+", " ", stdout)
         for substring in substrings:
             with self.subTest(f"Testing -->>{substring}<<--"):
@@ -787,7 +797,7 @@ class TestUsage(unittest.TestCase):
         # Check that the description is set up properly.
         self.assertRegex(
             stdout,
-            r"^usage: pytest .OPTIONS. SOURCE_DIRECTORY ....."
+            r"^usage: .* .OPTIONS. SOURCE_DIRECTORY ....."
             + r" DESTINATION_DIRECTORY Link all files in SOURCE_DIRECTORY"
             + r" .SOURCE_DIRECTORY.... to DESTINATION_DIRECTORY, creating the"
             + r" destination directory hierarchy where",
