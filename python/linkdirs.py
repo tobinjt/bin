@@ -195,7 +195,7 @@ def safe_link(*, source_filename: Path, dest_filename: Path, dryrun: bool) -> No
             f"ln {shlex.quote(str(source_filename))} {shlex.quote(str(dest_filename))}"
         )
     else:
-        dest_filename.hardlink_to(source_filename)
+        os.link(source_filename, dest_filename)
 
 
 def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
@@ -294,8 +294,9 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
-    for directory, subdirs, files in source.walk():
-        # Remove ignored subdirs.  Assigning to the slice will prevent source.walk
+    for directory_str, subdirs, files in os.walk(source):
+        directory = Path(directory_str)
+        # Remove ignored subdirs.  Assigning to the slice will prevent os.walk
         # from descending into the ignored subdirs.
         subdirs[:] = remove_ignore_file_patterns(files=subdirs, options=options)
 
@@ -482,7 +483,8 @@ def report_unexpected_files(
     expected_files.add(dest_dir)
 
     unexpected_paths = UnexpectedPaths(files=[], directories=[])
-    for directory, subdirs, files in dest_dir.walk():
+    for directory_str, subdirs, files in os.walk(dest_dir):
+        directory = Path(directory_str)
         subdirs[:] = remove_ignore_file_patterns(files=subdirs, options=options)
         subdirs.sort()
         filtered_files = remove_ignore_file_patterns(files=files, options=options)
