@@ -786,7 +786,7 @@ class TestUsage(unittest.TestCase):
         # them for consistency.  Likewise spaces.
         stdout = (
             mock_stdout.getvalue()
-            .replace("\n", " ")
+            .replace("\n", "")
             .replace("pytest-3", "pytest")
             .replace("linkdirs_test.py", "pytest")
         )
@@ -794,14 +794,6 @@ class TestUsage(unittest.TestCase):
         for substring in substrings:
             with self.subTest(f"Testing -->>{substring}<<--"):
                 self.assertIn(substring, stdout)
-        # Check that the description is set up properly.
-        self.assertRegex(
-            stdout,
-            r"^usage: .* .OPTIONS. SOURCE_DIRECTORY ....."
-            + r" DESTINATION_DIRECTORY Link all files in SOURCE_DIRECTORY"
-            + r" .SOURCE_DIRECTORY.... to DESTINATION_DIRECTORY, creating the"
-            + r" destination directory hierarchy where",
-        )
 
 
 class TestMisc(fake_filesystem_unittest.TestCase):

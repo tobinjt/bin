@@ -31,6 +31,11 @@ repos:
         language: system
         types: [python]
         entry: black --diff --check
+      - id: linkdirs-system-python-test
+        name: Run `linkdirs_test_with_system_python.sh`
+        language: system
+        files: python/linkdirs.*
+        entry: ./python/linkdirs_test_with_system_python.sh
       - id: markdownlint
         name: Run `markdownlint`
         language: system

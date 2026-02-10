@@ -13,9 +13,11 @@ install_venv() {
 }
 
 main() {
-  local venv_dir="${HOME}/tmp/bin/macos_virtualenv"
+  local venv_dir="${HOME}/tmp/bin/linkdirs_virtualenv"
   (install_venv "${venv_dir}")
   source "${venv_dir}/bin/activate"
+  pip install pyfakefs
+  cd "${HOME}/bin/python"
   python3 linkdirs_test.py
 }
 
