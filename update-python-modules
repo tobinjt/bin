@@ -27,18 +27,16 @@ test_flexget() {
   printf "\\n\\n\\n\\n\\n"
 }
 
-virtualenv_install() {
+venv_install() {
   local destdir="$1" install_individually="$2" test_function="$3"
   shift 3
   local date
   date="$(date +%Y-%m-%d--%H-%M-%S)"
   local destdir_date="${destdir}-${date}"
 
-  mkdir -p "${destdir_date}"
-  # Run virtualenv from the destination directory just in case.
-  cd "${destdir_date}"
-  virtualenv --no-periodic-update "${destdir_date}"
-  # virtualenv sometimes deletes the destination directory so cd there again.
+  mkdir -p "${destdir}"
+  cd "${destdir}"
+  python3 -m venv "${destdir_date}"
   cd "${destdir_date}"
   source bin/activate
 
@@ -98,14 +96,12 @@ main() {
   # Let Python write bytecode.
   unset PYTHONPYCACHEPREFIX PYTHONDONTWRITEBYTECODE
   if type brew >&/dev/null; then
-    # Update all existing Homebrew packages rather than partially upgrading when
-    # installing python and virtualenv.
+    # Update all existing Homebrew packages so that if I'm using Homebrew Python
+    # the venv will point at the right Python.
     brew-update-brew-cleanup
-    # Install Python and virtualenv, just in case.
-    brew install python virtualenv
   fi
   if is_linux && type apt >&/dev/null; then
-    sudo apt install python3 python3-pip virtualenv
+    sudo apt install python3 python3-pip
   fi
 
   # Environment values needed by activate scripts.
@@ -115,17 +111,17 @@ main() {
   # mix of Python versions and tools not finding modules so I reverted to using
   # Pip for everything.
 
-  local virtualenv_dir="${HOME}/tmp/bin/virtualenv"
-  readonly virtualenv_dir
-  mkdir -p "${virtualenv_dir}"
+  local venv_dir="${HOME}/tmp/bin/virtualenv"
+  readonly venv_dir
+  mkdir -p "${venv_dir}"
 
-  # Install all Python development tools in a single virtualenv so all the
+  # Install all Python development tools in a single venv so all the
   # modules are easily available at the same time, particularly debugpy.
   # https://pypi.org/project/python-lsp-server/ - install all supported plugins.
   if [[ "${skip_python}" -eq 0 ]]; then
-    local python_dir="${virtualenv_dir}/python"
+    local python_dir="${venv_dir}/python"
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${python_dir}" "${install_individually}" test_python \
+    (venv_install "${python_dir}" "${install_individually}" test_python \
       black \
       debugpy \
       dnspython \
@@ -150,7 +146,7 @@ main() {
   # Flexget.  Only install and test on machines where I normally run flexget.
   if [[ "${skip_flexget}" -eq 0 && -d "${HOME}/tmp/logs/flexget" ]]; then
     # Run in a subshell because it changes directory.
-    (virtualenv_install "${virtualenv_dir}/flexget" "${install_individually}" \
+    (venv_install "${venv_dir}/flexget" "${install_individually}" \
       test_flexget \
       "flexget" \
       "legacy-cgi" \

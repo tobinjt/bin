@@ -138,8 +138,6 @@ main() {
   brew install busted
   # PHP; there's more config later.
   brew install composer php phpunit
-  # Python.
-  brew install virtualenv
   # Rust.
   brew install rustup
   # Create the cargo directory so that `install-extra-development-tools` will
