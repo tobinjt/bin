@@ -4,8 +4,8 @@ set -e -f -u -o pipefail
 
 # shellcheck disable=SC2207
 processes=($(pgrep "Google Drive" || true))
-if [[ "${#processes[@]}" -lt 3 ]]; then
-  printf "%s: expecting >= 3 processes, found %s\\n" "$0" "${#processes[@]}"
+if [[ "${#processes[@]}" -lt 2 ]]; then
+  printf "%s: expecting >= 2 processes, found %s\\n" "$0" "${#processes[@]}"
   if [[ "${#processes[@]}" -gt 0 ]]; then
     ps -fp "${processes[@]}"
   fi
