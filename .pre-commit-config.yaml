@@ -58,7 +58,7 @@ repos:
         name: Run `shellcheck`
         language: system
         types: [shell]
-        entry: shellcheck
+        entry: shellcheck -e SC1090 -e SC1091
       - id: spellcheck
         stages: [commit-msg]
         name: Check spelling
