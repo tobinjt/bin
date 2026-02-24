@@ -125,9 +125,8 @@ main() {
   # Create the npm directory so that `install-extra-development-tools` will
   # install packages.
   mkdir -p "${HOME}/tmp/bin/node_modules"
-  # My website.  I install mdformat from Homebrew rather than Mason so it
-  # doesn't conflict with a different mdformat tool in work.
-  brew install hugo markdown mdformat
+  # My website. mdformat is installed by update-python-modules.
+  brew install hugo markdown
 
   # Golang.
   brew install go govulncheck graphviz

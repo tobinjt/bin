@@ -130,6 +130,9 @@ main() {
       debugpy \
       dnspython \
       identify \
+      mdformat \
+      mdformat-config \
+      mdformat-myst \
       mypy \
       pudb \
       pydantic \
