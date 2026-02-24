@@ -108,13 +108,6 @@ HOSTS_TO_CHECK = [
         mx=GOOGLE_MX_RECORDS,
         check_www=True,
     ),
-    HostConfig(
-        name="nakedmetalsmith.com",
-        ipv4=HETZNER_IPV4,
-        ipv6=HETZNER_IPV6,
-        mx=GOOGLE_MX_RECORDS,
-        check_www=True,
-    ),
 ]
 
 

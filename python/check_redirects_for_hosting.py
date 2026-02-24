@@ -85,10 +85,6 @@ def main() -> int:
         "https://metalatwork.com/",
         "http://www.metalatwork.com/",
         "https://www.metalatwork.com/",
-        "http://nakedmetalsmith.com/",
-        "https://nakedmetalsmith.com/",
-        "http://www.nakedmetalsmith.com/",
-        "https://www.nakedmetalsmith.com/",
     )
 
     if error_messages:
