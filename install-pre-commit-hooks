@@ -32,9 +32,6 @@ main() {
       pre-commit install --hook-type commit-msg
     fi
   fi
-  # Unconditionally install hooks; this is a quiet no-op if hooks are already
-  # installed.
-  pre-commit install-hooks
   return 0
 }
 
