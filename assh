@@ -17,7 +17,7 @@ main() {
   #   -c: Run the command/function 'tmux_attach'
   #
   # shellcheck disable=SC2016
-  autossh -M 0 -t "$@" '${SHELL}' -l -c tmux_attach
+  exec autossh -M 0 -t "$@" '${SHELL}' -l -c tmux_attach
 }
 
 main "$@"
