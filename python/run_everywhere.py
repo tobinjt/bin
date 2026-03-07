@@ -21,6 +21,10 @@ import sys
 logger = logging.getLogger("run_everywhere")
 
 
+class UsageError(Exception):
+    """Exception raised for invalid usage."""
+
+
 @dataclasses.dataclass
 class Config:
     command: list[str]
@@ -28,8 +32,18 @@ class Config:
     users: list[str]
 
 
-def parse_args(argv: list[str]) -> Config | None:
-    """Parse command line arguments."""
+def parse_args(argv: list[str]) -> Config:
+    """Parse command line arguments.
+
+    Args:
+        argv: Command line arguments.
+
+    Returns:
+        The parsed configuration.
+
+    Raises:
+        UsageError: If the command is missing.
+    """
     parser = argparse.ArgumentParser(
         description="Executes a command on multiple hosts.",
         epilog=(
@@ -60,7 +74,7 @@ def parse_args(argv: list[str]) -> Config | None:
         config.command = config.command[1:]
     if not config.command:
         parser.print_help(file=sys.stderr)
-        return None
+        raise UsageError("No command specified.")
     return config
 
 
@@ -111,8 +125,9 @@ def main(argv: list[str]) -> int:
     Returns:
         An exit code, 0 for success.
     """
-    config = parse_args(argv)
-    if not config:
+    try:
+        config = parse_args(argv)
+    except UsageError:
         return 1
 
     for host in config.hosts:

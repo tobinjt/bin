@@ -36,6 +36,11 @@ repos:
         language: system
         files: python/linkdirs.*
         entry: ./python/linkdirs_test_with_system_python.sh
+      - id: run-everywhere-system-python-test
+        name: Run `run_everywhere_test_with_system_python.sh`
+        language: system
+        files: python/run_everywhere.*
+        entry: ./python/run_everywhere_test_with_system_python.sh
       - id: markdownlint
         name: Run `markdownlint`
         language: system

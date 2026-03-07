@@ -115,6 +115,10 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main([])
         self.assertEqual(return_code, 1)
 
+    def test_parse_args_no_args_raises(self) -> None:
+        with self.assertRaisesRegex(run_everywhere.UsageError, "No command specified"):
+            run_everywhere.parse_args([])
+
     @mock.patch.object(
         run_everywhere.shutil, "which", return_value="/usr/bin/caffeinate"
     )
