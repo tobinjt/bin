@@ -20,6 +20,7 @@ repos:
       - id: trailing-whitespace
   - repo: local
     hooks:
+      # keep-sorted start
       # Using this instead of a packaged black check because it's trivial.
       - id: basedpyright
         name: Run `basedpyright`
@@ -36,11 +37,6 @@ repos:
         language: system
         files: python/linkdirs.*
         entry: ./python/linkdirs_test_with_system_python.sh
-      - id: run-everywhere-system-python-test
-        name: Run `run_everywhere_test_with_system_python.sh`
-        language: system
-        files: python/run_everywhere.*
-        entry: ./python/run_everywhere_test_with_system_python.sh
       - id: markdownlint
         name: Run `markdownlint`
         language: system
@@ -59,6 +55,11 @@ repos:
         pass_filenames: false
         types: [python]
         entry: pytest
+      - id: run-everywhere-system-python-test
+        name: Run `run_everywhere_test_with_system_python.sh`
+        language: system
+        files: python/run_everywhere.*
+        entry: ./python/run_everywhere_test_with_system_python.sh
       - id: shellcheck
         name: Run `shellcheck`
         language: system
@@ -70,6 +71,7 @@ repos:
         language: system
         verbose: true
         entry: spell-check-wrapper
+      # keep-sorted end
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
