@@ -671,6 +671,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
             ".git",
             ".gitignore",
             ".gitmodules",
+            ".jj",
             "*.spl",
         ],
         help=textwrap.fill(

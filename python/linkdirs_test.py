@@ -775,7 +775,7 @@ class TestUsage(unittest.TestCase):
             "--force, --no-force Remove existing files if necessary (default: False)",
             "--ignore_file FILENAME File containing shell patterns to ignore.",
             "--ignore_pattern FILENAME Extra shell patterns to ignore",
-            "['.git', '.gitignore', '.gitmodules', '*.spl']",
+            "['.git', '.gitignore', '.gitmodules', '.jj', '*.spl']",
             "--ignore_unexpected_children, --no-ignore_unexpected_children When checking for unexpected files or",
             "--report_unexpected_files, --no-report_unexpected_files Report unexpected files in"
             + " DESTINATION_DIRECTORY (default: False)",
