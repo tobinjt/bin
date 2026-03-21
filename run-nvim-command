@@ -11,4 +11,4 @@ fi
 # when tmux is focused on a different pane.
 nvim --headless \
   --cmd 'let g:loaded_TmuxSetWindowName=1' \
-  -c "$@" -c "qa" > /dev/null
+  -c "$@" -c "qa"
