@@ -18,6 +18,7 @@ class Rule:
     priority: int
     toolName: str
     commandPrefix: list[str] = field(default_factory=list)
+    deny_message: str | None = None
 
 
 def parse_rules(file_path: str) -> list[Rule]:
@@ -40,6 +41,7 @@ def parse_rules(file_path: str) -> list[Rule]:
                 priority=cast(int, r_dict["priority"]),
                 toolName=cast(str, r_dict["toolName"]),
                 commandPrefix=cast(list[str], r_dict.get("commandPrefix", [])),
+                deny_message=cast(str | None, r_dict.get("deny_message")),
             )
         )
     return rules
@@ -54,17 +56,18 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
     Returns:
         The processed and sorted list of rules.
     """
-    combined_shell_rules: dict[tuple[str, int], Rule] = {}
+    combined_shell_rules: dict[tuple[str, int, str | None], Rule] = {}
     other_rules: list[Rule] = []
 
     for rule in rules:
         if rule.toolName == "run_shell_command":
-            key = (rule.decision, rule.priority)
+            key = (rule.decision, rule.priority, rule.deny_message)
             if key not in combined_shell_rules:
                 combined_shell_rules[key] = Rule(
                     toolName="run_shell_command",
                     decision=rule.decision,
                     priority=rule.priority,
+                    deny_message=rule.deny_message,
                 )
             for prefix in rule.commandPrefix:
                 if prefix not in combined_shell_rules[key].commandPrefix:
@@ -77,8 +80,8 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
 
     all_rules = list(combined_shell_rules.values()) + other_rules
 
-    def sort_key(r: Rule) -> tuple[str, str, int]:
-        return (r.toolName, r.decision, r.priority)
+    def sort_key(r: Rule) -> tuple[str, str, int, str | None]:
+        return (r.toolName, r.decision, r.priority, r.deny_message)
 
     all_rules.sort(key=sort_key)
     return all_rules
@@ -101,6 +104,8 @@ def format_rules(rules: list[Rule]) -> str:
         output.append(f'toolName = "{rule.toolName}"')
         output.append(f'decision = "{rule.decision}"')
         output.append(f"priority = {rule.priority}")
+        if rule.deny_message:
+            output.append(f'deny_message = "{rule.deny_message}"')
         if rule.commandPrefix:
             prefixes = ", ".join(f'"{p}"' for p in rule.commandPrefix)
             output.append(f"commandPrefix = [ {prefixes} ]")

@@ -23,6 +23,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         toolName = "read_file"
         decision = "deny"
         priority = 20
+        deny_message = "Reading files is not allowed."
         """
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(toml_content)
@@ -35,11 +36,13 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             self.assertEqual(rules[0].decision, "approve")
             self.assertEqual(rules[0].priority, 10)
             self.assertEqual(rules[0].commandPrefix, ["ls", "cat"])
+            self.assertIsNone(rules[0].deny_message)
 
             self.assertEqual(rules[1].toolName, "read_file")
             self.assertEqual(rules[1].decision, "deny")
             self.assertEqual(rules[1].priority, 20)
             self.assertEqual(rules[1].commandPrefix, [])
+            self.assertEqual(rules[1].deny_message, "Reading files is not allowed.")
         finally:
             os.remove(temp_file_name)
 
@@ -53,7 +56,10 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
                 commandPrefix=["ls"],
             ),
             cleanup_gemini_policies.Rule(
-                toolName="read_file", decision="deny", priority=20
+                toolName="read_file",
+                decision="deny",
+                priority=20,
+                deny_message="Msg1",
             ),
             cleanup_gemini_policies.Rule(
                 toolName="run_shell_command",
@@ -66,6 +72,14 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
                 decision="deny",
                 priority=5,
                 commandPrefix=["rm"],
+                deny_message="Msg2",
+            ),
+            cleanup_gemini_policies.Rule(
+                toolName="run_shell_command",
+                decision="deny",
+                priority=5,
+                commandPrefix=["shred"],
+                deny_message="Msg2",
             ),
         ]
 
@@ -73,14 +87,15 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
 
         self.assertEqual(len(processed), 3)
 
-        # Expected sorting key: (toolName, decision, priority)
-        # 1. read_file, deny, 20
-        # 2. run_shell_command, approve, 10
-        # 3. run_shell_command, deny, 5
+        # Expected sorting key: (toolName, decision, priority, deny_message)
+        # 1. read_file, deny, 20, Msg1
+        # 2. run_shell_command, approve, 10, None
+        # 3. run_shell_command, deny, 5, Msg2
 
         self.assertEqual(processed[0].toolName, "read_file")
         self.assertEqual(processed[0].decision, "deny")
         self.assertEqual(processed[0].priority, 20)
+        self.assertEqual(processed[0].deny_message, "Msg1")
 
         self.assertEqual(processed[1].toolName, "run_shell_command")
         self.assertEqual(processed[1].decision, "approve")
@@ -88,17 +103,22 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         self.assertEqual(
             processed[1].commandPrefix, ["cat", "ls"]
         )  # Combined and sorted
+        self.assertIsNone(processed[1].deny_message)
 
         self.assertEqual(processed[2].toolName, "run_shell_command")
         self.assertEqual(processed[2].decision, "deny")
         self.assertEqual(processed[2].priority, 5)
-        self.assertEqual(processed[2].commandPrefix, ["rm"])
+        self.assertEqual(processed[2].commandPrefix, ["rm", "shred"])
+        self.assertEqual(processed[2].deny_message, "Msg2")
 
     def test_format_rules(self):
         """Tests that rules are formatted into correct TOML strings."""
         rules = [
             cleanup_gemini_policies.Rule(
-                toolName="read_file", decision="deny", priority=20
+                toolName="read_file",
+                decision="deny",
+                priority=20,
+                deny_message="Msg1",
             ),
             cleanup_gemini_policies.Rule(
                 toolName="run_shell_command",
@@ -113,6 +133,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             'toolName = "read_file"\n'
             'decision = "deny"\n'
             "priority = 20\n"
+            'deny_message = "Msg1"\n'
             "\n"
             "[[rule]]\n"
             'toolName = "run_shell_command"\n'
@@ -168,6 +189,7 @@ class TestMainIntegration(fake_filesystem_unittest.TestCase):
         toolName = "read_file"
         decision = "deny"
         priority = 20
+        deny_message = "Denied read"
 
         [[rule]]
         toolName = "run_shell_command"
@@ -181,6 +203,7 @@ class TestMainIntegration(fake_filesystem_unittest.TestCase):
             'toolName = "read_file"\n'
             'decision = "deny"\n'
             "priority = 20\n"
+            'deny_message = "Denied read"\n'
             "\n"
             "[[rule]]\n"
             'toolName = "run_shell_command"\n'
