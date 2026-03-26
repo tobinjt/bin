@@ -140,8 +140,8 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             'decision = "approve"\n'
             "priority = 10\n"
             "commandPrefix = [\n"
-            '    "cat",\n'
-            '    "ls",\n'
+            '  "cat",\n'
+            '  "ls",\n'
             "]\n"
         )
 

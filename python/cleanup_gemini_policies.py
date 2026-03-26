@@ -109,7 +109,7 @@ def format_rules(rules: list[Rule]) -> str:
         if rule.commandPrefix:
             output.append("commandPrefix = [")
             for prefix in rule.commandPrefix:
-                output.append(f'    "{prefix}",')
+                output.append(f'  "{prefix}",')
             output.append("]")
     return "\n".join(output) + "\n"
 
