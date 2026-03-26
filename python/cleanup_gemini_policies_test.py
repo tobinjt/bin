@@ -139,7 +139,10 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             'toolName = "run_shell_command"\n'
             'decision = "approve"\n'
             "priority = 10\n"
-            'commandPrefix = [ "cat", "ls" ]\n'
+            "commandPrefix = [\n"
+            '    "cat",\n'
+            '    "ls",\n'
+            "]\n"
         )
 
         output = cleanup_gemini_policies.format_rules(rules)
@@ -209,7 +212,10 @@ class TestMainIntegration(fake_filesystem_unittest.TestCase):
             'toolName = "run_shell_command"\n'
             'decision = "approve"\n'
             "priority = 10\n"
-            'commandPrefix = [ "cat", "ls" ]\n'
+            "commandPrefix = [\n"
+            '    "cat",\n'
+            '    "ls",\n'
+            "]\n"
         )
 
         file_path = "/fake/dir/policies.toml"

@@ -107,8 +107,10 @@ def format_rules(rules: list[Rule]) -> str:
         if rule.deny_message:
             output.append(f'deny_message = "{rule.deny_message}"')
         if rule.commandPrefix:
-            prefixes = ", ".join(f'"{p}"' for p in rule.commandPrefix)
-            output.append(f"commandPrefix = [ {prefixes} ]")
+            output.append("commandPrefix = [")
+            for prefix in rule.commandPrefix:
+                output.append(f'    "{prefix}",')
+            output.append("]")
     return "\n".join(output) + "\n"
 
 
