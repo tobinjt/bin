@@ -1,8 +1,12 @@
 import io
+import os
 import sys
 import unittest
 from contextlib import redirect_stdout
+from typing import override
 from unittest import mock
+
+from pyfakefs import fake_filesystem_unittest
 
 import make_rust_github_workflow
 
@@ -12,6 +16,11 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(program_name)
+
+        # Check for shebang
+        self.assertTrue(
+            content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
+        )
 
         # Check for key sections and program name replacement
         self.assertIn("name: Release", content)
@@ -39,6 +48,14 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             program_name, output_shell_completion=True
         )
 
+        # Check for shebang with flag
+        self.assertTrue(
+            content.startswith(
+                "#!/usr/bin/env -S make_rust_github_workflow.py testapp "
+                + "--output_shell_completion"
+            )
+        )
+
         # Check for shell completion block
         self.assertIn("# 1.1 Generate shell completions", content)
         self.assertIn(
@@ -59,6 +76,11 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         with io.StringIO() as buf, redirect_stdout(buf):
             make_rust_github_workflow.main()
             output = buf.getvalue()
+            self.assertTrue(
+                output.startswith(
+                    "#!/usr/bin/env -S make_rust_github_workflow.py cliapp"
+                )
+            )
             self.assertIn("name: Release", output)
             self.assertIn("bin: cliapp", output)
             self.assertNotIn("Generate shell completions", output)
@@ -77,9 +99,52 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         with io.StringIO() as buf, redirect_stdout(buf):
             make_rust_github_workflow.main()
             output = buf.getvalue()
+            self.assertTrue(
+                output.startswith(
+                    "#!/usr/bin/env -S make_rust_github_workflow.py cliapp "
+                    + "--output_shell_completion"
+                )
+            )
             self.assertIn("name: Release", output)
             self.assertIn("bin: cliapp", output)
             self.assertIn("Generate shell completions", output)
+
+
+class TestMainWithFile(fake_filesystem_unittest.TestCase):
+    @override
+    def setUp(self) -> None:
+        self.setUpPyfakefs()
+
+    @mock.patch.object(
+        sys, "argv", ["make_rust_github_workflow.py", "cliapp", "workflow.yml"]
+    )
+    def test_main_with_file(self) -> None:
+        """Tests that main correctly writes to a file and makes it executable."""
+        # Ensure the template file exists in the fake filesystem
+        template_dir = os.path.dirname(
+            os.path.abspath(make_rust_github_workflow.__file__)
+        )
+        template_path = os.path.join(template_dir, "rust_release_workflow.template")
+        self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]
+            template_path
+        )
+
+        make_rust_github_workflow.main()
+
+        self.assertTrue(os.path.exists("workflow.yml"))
+        with open("workflow.yml", "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertTrue(
+                content.startswith(
+                    "#!/usr/bin/env -S make_rust_github_workflow.py cliapp"
+                )
+            )
+            self.assertIn("name: Release", content)
+            self.assertIn("bin: cliapp", content)
+
+        # Check permissions
+        mode = os.stat("workflow.yml").st_mode
+        self.assertTrue(mode & 0o111)  # Executable
 
 
 if __name__ == "__main__":

@@ -20,6 +20,12 @@ def generate_workflow(program_name: str, output_shell_completion: bool = False) 
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
+    shebang = f"#!/usr/bin/env -S {os.path.basename(__file__)} {{program_name}}"
+    if output_shell_completion:
+        shebang += " --output_shell_completion"
+
+    template = shebang + "\n" + template
+
     if output_shell_completion:
         completion_steps = """
           # 1.1 Generate shell completions
@@ -54,18 +60,32 @@ def main() -> None:
     )
     parser.add_argument("program_name", help="The name of the program to release.")
     parser.add_argument(
+        "output_file",
+        nargs="?",
+        help="Optional output file to write to (will be made executable).",
+    )
+    parser.add_argument(
         "--output_shell_completion",
         action="store_true",
         help="Include steps to generate shell completions.",
     )
     args = parser.parse_args()
 
-    print(
-        generate_workflow(
-            args.program_name,  # pyright: ignore [reportAny]
-            args.output_shell_completion,  # pyright: ignore [reportAny]
-        )
+    workflow_content = generate_workflow(
+        args.program_name,  # pyright: ignore [reportAny]
+        args.output_shell_completion,  # pyright: ignore [reportAny]
     )
+
+    if args.output_file:  # pyright: ignore [reportAny]
+        with open(
+            args.output_file,  # pyright: ignore [reportAny]
+            "w",
+            encoding="utf-8",
+        ) as f:
+            f.write(workflow_content + "\n")
+        os.chmod(args.output_file, 0o755)  # pyright: ignore [reportAny]
+    else:
+        print(workflow_content)
 
 
 if __name__ == "__main__":
