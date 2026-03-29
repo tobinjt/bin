@@ -15,7 +15,7 @@ def generate_workflow(program_name: str, output_shell_completion: bool = False) 
     Returns:
         The generated YAML content as a string.
     """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = os.path.dirname(os.path.realpath(__file__))
     template_path = os.path.join(script_dir, "rust_release_workflow.template")
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()

@@ -122,7 +122,7 @@ class TestMainWithFile(fake_filesystem_unittest.TestCase):
         """Tests that main correctly writes to a file and makes it executable."""
         # Ensure the template file exists in the fake filesystem
         template_dir = os.path.dirname(
-            os.path.abspath(make_rust_github_workflow.__file__)
+            os.path.realpath(make_rust_github_workflow.__file__)
         )
         template_path = os.path.join(template_dir, "rust_release_workflow.template")
         self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]
