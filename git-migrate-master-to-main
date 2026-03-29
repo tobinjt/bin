@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local DRY_RUN=false
+  while getopts "d" opt; do
+    case "${opt}" in
+      d)
+        DRY_RUN=true
+        echo "--- DRY RUN MODE: No changes will be made ---"
+        ;;
+      \?)
+        echo "Usage: $0 [-d (dry-run)]" >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  git check-local-copy-is-clean
+
+  # 1. Check if 'origin' exists
+  if ! git remote | grep -q "origin"; then
+      echo "No remote 'origin' found. Skipping."
+      exit 0
+  fi
+
+  # 2. Query the remote for the default branch name
+  local REMOTE_DEFAULT
+  REMOTE_DEFAULT="$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)"
+
+  if [ "${REMOTE_DEFAULT}" != "main" ]; then
+      echo "Remote default is still '${REMOTE_DEFAULT}'. Skipping migration."
+      exit 0
+  fi
+
+  echo "Remote default is 'main'. Proceeding..."
+
+  # 3. Local Rename Logic
+  if git show-ref --verify --quiet refs/heads/master; then
+      if ! git show-ref --verify --quiet refs/heads/main; then
+          echo "[ACTION] Would rename local master to main"
+          [[ "${DRY_RUN}" == false ]] && git branch -m master main
+      else
+          echo "[ACTION] Both exist. Would delete local master"
+          [[ "${DRY_RUN}" == false ]] && git branch -D master
+      fi
+  fi
+
+  # 4. Sync and Link
+  echo "[ACTION] Would fetch and prune origin"
+  [[ "${DRY_RUN}" == false ]] && git fetch origin --prune
+
+  echo "[ACTION] Would ensure local branch is 'main' and tracking 'origin/main'"
+  if [[ "${DRY_RUN}" == false ]]; then
+      git checkout main 2>/dev/null || git checkout -b main origin/main
+      git branch -u origin/main main
+      git remote set-head origin -a
+  fi
+
+  echo "Finished check."
+}
+
+main "$@"
