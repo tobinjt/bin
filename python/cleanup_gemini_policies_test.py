@@ -134,7 +134,8 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             ),
         ]
 
-        expected_output = (
+        # Default wrap_limit is 3
+        expected_output_default = (
             "[[rule]]\n"
             'toolName = "read_file"\n'
             'decision = "deny"\n'
@@ -160,7 +161,61 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         )
 
         output = cleanup_gemini_policies.format_rules(rules)
-        self.assertEqual(output, expected_output)
+        self.assertEqual(output, expected_output_default)
+
+        # Test wrap_limit = 1
+        expected_output_limit_1 = (
+            "[[rule]]\n"
+            'toolName = "read_file"\n'
+            'decision = "deny"\n'
+            "priority = 20\n"
+            'deny_message = "Msg1"\n'
+            "\n"
+            "[[rule]]\n"
+            'toolName = "run_shell_command"\n'
+            'decision = "approve"\n'
+            "priority = 10\n"
+            "commandPrefix = [\n"
+            '  "cat",\n'
+            '  "ls",\n'
+            "]\n"
+            "\n"
+            "[[rule]]\n"
+            'toolName = "run_shell_command"\n'
+            'decision = "deny"\n'
+            "priority = 5\n"
+            "commandPrefix = [\n"
+            '  "rm",\n'
+            '  "shred",\n'
+            '  "mv",\n'
+            '  "cp",\n'
+            "]\n"
+        )
+        output = cleanup_gemini_policies.format_rules(rules, wrap_limit=1)
+        self.assertEqual(output, expected_output_limit_1)
+
+        # Test wrap_limit = 5
+        expected_output_limit_5 = (
+            "[[rule]]\n"
+            'toolName = "read_file"\n'
+            'decision = "deny"\n'
+            "priority = 20\n"
+            'deny_message = "Msg1"\n'
+            "\n"
+            "[[rule]]\n"
+            'toolName = "run_shell_command"\n'
+            'decision = "approve"\n'
+            "priority = 10\n"
+            'commandPrefix = ["cat", "ls"]\n'
+            "\n"
+            "[[rule]]\n"
+            'toolName = "run_shell_command"\n'
+            'decision = "deny"\n'
+            "priority = 5\n"
+            'commandPrefix = ["rm", "shred", "mv", "cp"]\n'
+        )
+        output = cleanup_gemini_policies.format_rules(rules, wrap_limit=5)
+        self.assertEqual(output, expected_output_limit_5)
 
     @mock.patch.object(cleanup_gemini_policies, "parse_rules")
     @mock.patch.object(cleanup_gemini_policies, "process_rules")
@@ -176,12 +231,15 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         with tempfile.NamedTemporaryFile(delete=True) as f:
             temp_file_name = f.name
 
-            with mock.patch("sys.argv", ["cleanup_gemini_policies.py", temp_file_name]):
+            with mock.patch(
+                "sys.argv",
+                ["cleanup_gemini_policies.py", temp_file_name, "--wrap-limit", "5"],
+            ):
                 cleanup_gemini_policies.main()
 
             mock_parse.assert_called_once_with(temp_file_name)
             mock_process.assert_called_once_with([])
-            mock_format.assert_called_once_with([])
+            mock_format.assert_called_once_with([], wrap_limit=5)
 
             with open(temp_file_name, "r") as read_handle:
                 content = read_handle.read()

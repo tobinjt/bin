@@ -8,6 +8,7 @@ from typing import cast
 
 class Args(argparse.Namespace):
     file: str = ""
+    wrap_limit: int = 3
 
 
 @dataclass
@@ -87,11 +88,12 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
     return all_rules
 
 
-def format_rules(rules: list[Rule]) -> str:
+def format_rules(rules: list[Rule], wrap_limit: int = 3) -> str:
     """Formats rules into a TOML string.
 
     Args:
         rules: The list of rules to format.
+        wrap_limit: The number of items in commandPrefix before wrapping.
 
     Returns:
         The formatted TOML content as a string.
@@ -107,7 +109,7 @@ def format_rules(rules: list[Rule]) -> str:
         if rule.deny_message:
             output.append(f'deny_message = "{rule.deny_message}"')
         if rule.commandPrefix:
-            if len(rule.commandPrefix) > 3:
+            if len(rule.commandPrefix) > wrap_limit:
                 output.append("commandPrefix = [")
                 for prefix in rule.commandPrefix:
                     output.append(f'  "{prefix}",')
@@ -122,11 +124,17 @@ def main() -> None:
     """Main execution entry point."""
     parser = argparse.ArgumentParser(description="Cleanup and sort TOML rules.")
     _ = parser.add_argument("file", type=str, help="Path to the TOML file to process")
+    _ = parser.add_argument(
+        "--wrap-limit",
+        type=int,
+        default=3,
+        help="Number of items in commandPrefix before wrapping (default: 3)",
+    )
     args = parser.parse_args(namespace=Args())
 
     rules = parse_rules(args.file)
     processed_rules = process_rules(rules)
-    content = format_rules(processed_rules)
+    content = format_rules(processed_rules, wrap_limit=args.wrap_limit)
 
     with open(args.file, "w", encoding="utf-8") as f:
         _ = f.write(content)
