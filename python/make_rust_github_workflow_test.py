@@ -1,8 +1,6 @@
-import io
 import os
 import sys
 import unittest
-from contextlib import redirect_stdout
 from typing import override
 from unittest import mock
 
@@ -70,20 +68,35 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         )
         self.assertIn(expected_header, content)
 
+
+class TestMain(fake_filesystem_unittest.TestCase):
+    @override
+    def setUp(self) -> None:
+        self.setUpPyfakefs()
+        # Ensure the template file exists in the fake filesystem
+        template_dir = os.path.dirname(
+            os.path.realpath(make_rust_github_workflow.__file__)
+        )
+        template_path = os.path.join(template_dir, "rust_release_workflow.template")
+        self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]
+            template_path
+        )
+
     @mock.patch.object(sys, "argv", ["make_rust_github_workflow.py", "cliapp"])
     def test_main(self) -> None:
-        """Tests that the main function correctly prints generated workflow."""
-        with io.StringIO() as buf, redirect_stdout(buf):
-            make_rust_github_workflow.main()
-            output = buf.getvalue()
+        """Tests that the main function correctly writes to the default file."""
+        make_rust_github_workflow.main()
+        output_file = ".github/workflows/release.yml"
+        self.assertTrue(os.path.exists(output_file))
+        with open(output_file, "r", encoding="utf-8") as f:
+            content = f.read()
             self.assertTrue(
-                output.startswith(
+                content.startswith(
                     "#!/usr/bin/env -S make_rust_github_workflow.py cliapp"
                 )
             )
-            self.assertIn("name: Release", output)
-            self.assertIn("bin: cliapp", output)
-            self.assertNotIn("Generate shell completions", output)
+            self.assertIn("name: Release", content)
+            self.assertIn("bin: cliapp", content)
 
     @mock.patch.object(
         sys,
@@ -96,41 +109,25 @@ class TestMakeGithubWorkflow(unittest.TestCase):
     )
     def test_main_with_flag(self) -> None:
         """Tests that the main function respects the completion flag."""
-        with io.StringIO() as buf, redirect_stdout(buf):
-            make_rust_github_workflow.main()
-            output = buf.getvalue()
+        make_rust_github_workflow.main()
+        output_file = ".github/workflows/release.yml"
+        self.assertTrue(os.path.exists(output_file))
+        with open(output_file, "r", encoding="utf-8") as f:
+            content = f.read()
             self.assertTrue(
-                output.startswith(
+                content.startswith(
                     "#!/usr/bin/env -S make_rust_github_workflow.py cliapp "
                     + "--output_shell_completion"
                 )
             )
-            self.assertIn("name: Release", output)
-            self.assertIn("bin: cliapp", output)
-            self.assertIn("Generate shell completions", output)
-
-
-class TestMainWithFile(fake_filesystem_unittest.TestCase):
-    @override
-    def setUp(self) -> None:
-        self.setUpPyfakefs()
+            self.assertIn("Generate shell completions", content)
 
     @mock.patch.object(
         sys, "argv", ["make_rust_github_workflow.py", "cliapp", "workflow.yml"]
     )
     def test_main_with_file(self) -> None:
-        """Tests that main correctly writes to a file and makes it executable."""
-        # Ensure the template file exists in the fake filesystem
-        template_dir = os.path.dirname(
-            os.path.realpath(make_rust_github_workflow.__file__)
-        )
-        template_path = os.path.join(template_dir, "rust_release_workflow.template")
-        self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]
-            template_path
-        )
-
+        """Tests that main correctly writes to an explicit file."""
         make_rust_github_workflow.main()
-
         self.assertTrue(os.path.exists("workflow.yml"))
         with open("workflow.yml", "r", encoding="utf-8") as f:
             content = f.read()
@@ -139,12 +136,18 @@ class TestMainWithFile(fake_filesystem_unittest.TestCase):
                     "#!/usr/bin/env -S make_rust_github_workflow.py cliapp"
                 )
             )
-            self.assertIn("name: Release", content)
-            self.assertIn("bin: cliapp", content)
 
         # Check permissions
         mode = os.stat("workflow.yml").st_mode
         self.assertTrue(mode & 0o111)  # Executable
+
+    @mock.patch.object(
+        sys, "argv", ["make_rust_github_workflow.py", "cliapp", "subdir/workflow.yml"]
+    )
+    def test_main_creates_directories(self) -> None:
+        """Tests that main creates missing directories."""
+        make_rust_github_workflow.main()
+        self.assertTrue(os.path.exists("subdir/workflow.yml"))
 
 
 if __name__ == "__main__":

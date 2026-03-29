@@ -62,7 +62,8 @@ def main() -> None:
     parser.add_argument(
         "output_file",
         nargs="?",
-        help="Optional output file to write to (will be made executable).",
+        default=".github/workflows/release.yml",
+        help="Output file to write to (will be made executable). Defaults to .github/workflows/release.yml",
     )
     parser.add_argument(
         "--output_shell_completion",
@@ -76,16 +77,14 @@ def main() -> None:
         args.output_shell_completion,  # pyright: ignore [reportAny]
     )
 
-    if args.output_file:  # pyright: ignore [reportAny]
-        with open(
-            args.output_file,  # pyright: ignore [reportAny]
-            "w",
-            encoding="utf-8",
-        ) as f:
-            f.write(workflow_content + "\n")
-        os.chmod(args.output_file, 0o755)  # pyright: ignore [reportAny]
-    else:
-        print(workflow_content)
+    output_file: str = args.output_file  # pyright: ignore [reportAny]
+    output_dir = os.path.dirname(output_file)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(workflow_content + "\n")
+    os.chmod(output_file, 0o755)
 
 
 if __name__ == "__main__":
