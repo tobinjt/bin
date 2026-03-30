@@ -5,6 +5,14 @@ import argparse
 import os
 
 
+class Args(argparse.Namespace):
+    """Arguments for the script."""
+
+    program_name: str = ""
+    output_file: str = ".github/workflows/release.yml"
+    output_shell_completion: bool = False
+
+
 def generate_workflow(
     program_name: str, template_name: str, output_shell_completion: bool = False
 ) -> str:
@@ -23,7 +31,7 @@ def generate_workflow(
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
-    shebang = f"#!/usr/bin/env -S {os.path.basename(__file__)} {{program_name}}"
+    shebang = f"#!/usr/bin/env -S {os.path.basename(__file__)} {program_name}"
     if output_shell_completion:
         shebang += " --output_shell_completion"
 
@@ -82,27 +90,27 @@ def main() -> None:
         action="store_true",
         help="Include steps to generate shell completions in the release workflow.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     # 1. Generate and write the release workflow
     release_content = generate_workflow(
-        args.program_name,  # pyright: ignore [reportAny]
+        args.program_name,
         "rust_release_workflow.template",
-        args.output_shell_completion,  # pyright: ignore [reportAny]
+        args.output_shell_completion,
     )
     write_workflow(
-        args.output_file,  # pyright: ignore [reportAny]
+        args.output_file,
         release_content,
     )
 
     # 2. Generate and write the publish workflow
     publish_content = generate_workflow(
-        args.program_name,  # pyright: ignore [reportAny]
+        args.program_name,
         "rust_publish_workflow.template",
-        args.output_shell_completion,  # pyright: ignore [reportAny]
+        args.output_shell_completion,
     )
     publish_output = os.path.join(
-        os.path.dirname(args.output_file),  # pyright: ignore [reportAny]
+        os.path.dirname(args.output_file),
         "publish.yml",
     )
     write_workflow(publish_output, publish_content)
