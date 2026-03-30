@@ -1,0 +1,28 @@
+name: CI and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # Job 1: Run Tests
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run cargo test
+        run: cargo test --all-features
+
+  # Job 2: Publish (Only runs if 'test' passes)
+  publish:
+    name: Publish to Crates.io
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cargo Publish
+        run: cargo publish --token ${ { secrets.CRATES_IO_TOKEN } }
