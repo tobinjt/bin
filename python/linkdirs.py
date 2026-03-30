@@ -19,6 +19,7 @@ import stat
 import sys
 import textwrap
 import time
+import typing
 from pathlib import Path
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
@@ -74,23 +75,74 @@ class LinkResults:
         self.errors.extend(other.errors)
 
 
-@dataclasses.dataclass
-class Options:
-    """Commandline options."""
+DEFAULT_IGNORE_PATTERNS = [
+    ".git",
+    ".gitignore",
+    ".gitmodules",
+    ".jj",
+    "*.spl",
+]
 
-    args: list[str]
-    debug: bool
-    delete_unexpected_files: bool
-    dryrun: bool
-    force: bool
-    ignore_symlinks: bool
-    ignore_unexpected_children: bool
-    report_unexpected_files: bool
-    ignore_files: Paths
-    ignore_patterns: list[str]
-    ignore_set: set[str]
-    ignore_globs: list[str]
-    ignore_full_paths: list[str]
+
+@typing.final
+class Options(argparse.Namespace):
+    """Command line options."""
+
+    def __init__(
+        self,
+        *,
+        # MacOS Python 3.9 doesn't support 'foo | None' so I need to use
+        # typing.Optional.
+        args: typing.Optional[list[str]] = None,  # pyright: ignore[reportDeprecated]
+        debug: bool = False,
+        delete_unexpected_files: bool = False,
+        dryrun: bool = False,
+        force: bool = False,
+        ignore_file: typing.Optional[  # pyright: ignore[reportDeprecated]
+            list[str]
+        ] = None,
+        ignore_pattern: typing.Optional[  # pyright: ignore[reportDeprecated]
+            list[str]
+        ] = None,
+        ignore_symlinks: bool = False,
+        ignore_unexpected_children: bool = False,
+        report_unexpected_files: bool = False,
+    ):
+        """Initialize Options with instance-specific ignore patterns.
+
+        Args:
+            args: Positional arguments (directories).
+            debug: Enable debug output.
+            delete_unexpected_files: Delete unexpected files.
+            dryrun: Perform a trial run.
+            force: Remove existing files if necessary.
+            ignore_file: File containing shell patterns to ignore.
+            ignore_pattern: Extra shell patterns to ignore.
+            ignore_symlinks: Ignore symlinks.
+            ignore_unexpected_children: Ignore unexpected child directories.
+            report_unexpected_files: Report unexpected files.
+        """
+        super().__init__()
+        self.args = list(args) if args is not None else []
+        self.debug = debug
+        self.delete_unexpected_files = delete_unexpected_files
+        self.dryrun = dryrun
+        self.force = force
+        self.ignore_file = list(ignore_file) if ignore_file is not None else []
+        self.ignore_pattern = (
+            list(ignore_pattern)
+            if ignore_pattern is not None
+            else list(DEFAULT_IGNORE_PATTERNS)
+        )
+        self.ignore_symlinks = ignore_symlinks
+        self.ignore_unexpected_children = ignore_unexpected_children
+        self.report_unexpected_files = report_unexpected_files
+
+        self.ignore_files: list[Path] = []
+        self.ignore_patterns: list[str] = []
+        self.ignore_set: set[str] = set()
+        self.ignore_globs: list[str] = []
+        self.ignore_full_paths: list[str] = []
 
 
 def bucket_ignore_patterns(
@@ -124,30 +176,21 @@ def bucket_ignore_patterns(
     return ignore_set, ignore_globs, ignore_full_paths
 
 
-def options_from_args(args: argparse.Namespace) -> Options:
-    """Parse command line arguments into an Options object.
+def options_from_args(args: Options) -> Options:
+    """Finish parsing command line arguments into an Args object.
 
     Args:
-        args: command line arguments, not including argv[0].
+        args: parsed command line arguments.
 
     Returns:
-        Options.
+        Args.
     """
-    return Options(
-        args=args.args,  # pyright: ignore [reportAny]
-        debug=args.debug,  # pyright: ignore [reportAny]
-        delete_unexpected_files=args.delete_unexpected_files,  # pyright: ignore [reportAny]
-        dryrun=args.dryrun,  # pyright: ignore [reportAny]
-        force=args.force,  # pyright: ignore [reportAny]
-        ignore_symlinks=args.ignore_symlinks,  # pyright: ignore [reportAny]
-        ignore_unexpected_children=args.ignore_unexpected_children,  # pyright: ignore [reportAny]
-        report_unexpected_files=args.report_unexpected_files,  # pyright: ignore [reportAny]
-        ignore_files=[Path(x) for x in args.ignore_file],  # pyright: ignore [reportAny]
-        ignore_patterns=args.ignore_pattern,  # pyright: ignore [reportAny]
-        ignore_set=set(),
-        ignore_globs=[],
-        ignore_full_paths=[],
-    )
+    args.ignore_files = [Path(x) for x in args.ignore_file]
+    args.ignore_patterns = args.ignore_pattern
+    args.ignore_set = set()
+    args.ignore_globs = []
+    args.ignore_full_paths = []
+    return args
 
 
 def safe_unlink(*, unlink_me: Path, dryrun: bool) -> None:
@@ -667,13 +710,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         action="append",
         dest="ignore_pattern",
         metavar="FILENAME",
-        default=[
-            ".git",
-            ".gitignore",
-            ".gitmodules",
-            ".jj",
-            "*.spl",
-        ],
+        default=DEFAULT_IGNORE_PATTERNS,
         help=textwrap.fill(
             """Extra shell patterns to ignore (appended to this list: %(default)s).
             To specify multiple filenames, use this option multiple times."""
@@ -724,7 +761,12 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         help="See usage for details",
     )
 
-    options = options_from_args(argv_parser.parse_args(argv[1:]))
+    options = options_from_args(
+        argv_parser.parse_args(
+            argv[1:],
+            namespace=Options(),
+        )
+    )
     messages: Messages = []
     if len(options.args) < 2:
         messages.append(usage % {"prog": argv[0]})
@@ -763,7 +805,7 @@ def real_main(*, argv: list[str]) -> Messages:
 
     if options.debug:
         print("DEBUG: options:")
-        pprint.pprint(dataclasses.asdict(options), indent=2, width=100)
+        pprint.pprint(vars(options), indent=2, width=100)
 
     all_results = LinkResults(expected_files=[], diffs=[], errors=[])
     unexpected_msgs: Messages = []

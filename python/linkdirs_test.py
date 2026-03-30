@@ -7,6 +7,7 @@ import stat
 import sys
 import textwrap
 from pathlib import Path
+import typing
 import unittest
 from unittest import mock
 
@@ -67,7 +68,9 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
     def setUp(self) -> None:  # pyright: ignore [reportImplicitOverride]
         # Do not truncate diffs.
-        self.maxDiff: int | None = 1000000
+        self.maxDiff: typing.Optional[int] = (  # pyright: ignore[reportDeprecated]
+            1000000
+        )
         self.setUpPyfakefs()
 
     def create_files(self, string: str):
@@ -840,3 +843,61 @@ class TestMisc(fake_filesystem_unittest.TestCase):
 
 if __name__ == "__main__":  # pragma: no mutate
     unittest.main()
+
+
+class TestOptions(unittest.TestCase):
+    """Tests for the Options class."""
+
+    def test_options_init(self):
+        """Test Options initialization with and without arguments."""
+        # Test defaults
+        opts = linkdirs.Options()
+        self.assertEqual(opts.args, [])
+        self.assertFalse(opts.debug)
+        self.assertFalse(opts.delete_unexpected_files)
+        self.assertFalse(opts.dryrun)
+        self.assertFalse(opts.force)
+        self.assertEqual(opts.ignore_file, [])
+        self.assertEqual(
+            opts.ignore_pattern,
+            [
+                ".git",
+                ".gitignore",
+                ".gitmodules",
+                ".jj",
+                "*.spl",
+            ],
+        )
+        self.assertFalse(opts.ignore_symlinks)
+        self.assertFalse(opts.ignore_unexpected_children)
+        self.assertFalse(opts.report_unexpected_files)
+
+        self.assertEqual(opts.ignore_files, [])
+        self.assertEqual(opts.ignore_patterns, [])
+        self.assertEqual(opts.ignore_set, set())
+        self.assertEqual(opts.ignore_globs, [])
+        self.assertEqual(opts.ignore_full_paths, [])
+
+        # Test setting values
+        opts2 = linkdirs.Options(
+            args=["a"],
+            debug=True,
+            delete_unexpected_files=True,
+            dryrun=True,
+            force=True,
+            ignore_file=["b"],
+            ignore_pattern=["c"],
+            ignore_symlinks=True,
+            ignore_unexpected_children=True,
+            report_unexpected_files=True,
+        )
+        self.assertEqual(opts2.args, ["a"])
+        self.assertTrue(opts2.debug)
+        self.assertTrue(opts2.delete_unexpected_files)
+        self.assertTrue(opts2.dryrun)
+        self.assertTrue(opts2.force)
+        self.assertEqual(opts2.ignore_file, ["b"])
+        self.assertEqual(opts2.ignore_pattern, ["c"])
+        self.assertTrue(opts2.ignore_symlinks)
+        self.assertTrue(opts2.ignore_unexpected_children)
+        self.assertTrue(opts2.report_unexpected_files)
