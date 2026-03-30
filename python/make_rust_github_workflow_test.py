@@ -96,13 +96,17 @@ class TestMain(fake_filesystem_unittest.TestCase):
             self.assertIn("name: CI and Release", content)
 
     @mock.patch.object(
-        sys, "argv", ["make_rust_github_workflow.py", "cliapp", "workflow.yml"]
+        sys,
+        "argv",
+        ["make_rust_github_workflow.py", "cliapp", "--output_shell_completion"],
     )
-    def test_main_with_explicit_release_file(self) -> None:
-        """Tests that main respects explicit file and puts publish in the same dir."""
+    def test_main_with_completions(self) -> None:
+        """Tests that main correctly handles the --output_shell_completion flag."""
         make_rust_github_workflow.main()
-        self.assertTrue(os.path.exists("workflow.yml"))
-        self.assertTrue(os.path.exists("publish.yml"))
+        release_file = ".github/workflows/release.yml"
+        with open(release_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("# 1.1 Generate shell completions", content)
 
 
 if __name__ == "__main__":

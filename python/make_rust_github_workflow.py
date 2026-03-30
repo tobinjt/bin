@@ -9,7 +9,6 @@ class Args(argparse.Namespace):
     """Arguments for the script."""
 
     program_name: str = ""
-    output_file: str = ".github/workflows/release.yml"
     output_shell_completion: bool = False
 
 
@@ -65,8 +64,7 @@ def write_workflow(output_file: str, content: str) -> None:
         content: The content to write.
     """
     output_dir = os.path.dirname(output_file)
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(content + "\n")
@@ -80,12 +78,6 @@ def main() -> None:
     )
     parser.add_argument("program_name", help="The name of the program to release.")
     parser.add_argument(
-        "output_file",
-        nargs="?",
-        default=".github/workflows/release.yml",
-        help="Output file for the release workflow. Defaults to .github/workflows/release.yml",
-    )
-    parser.add_argument(
         "--output_shell_completion",
         action="store_true",
         help="Include steps to generate shell completions in the release workflow.",
@@ -98,8 +90,9 @@ def main() -> None:
         "rust_release_workflow.template",
         args.output_shell_completion,
     )
+    release_output = ".github/workflows/release.yml"
     write_workflow(
-        args.output_file,
+        release_output,
         release_content,
     )
 
@@ -109,10 +102,7 @@ def main() -> None:
         "rust_publish_workflow.template",
         args.output_shell_completion,
     )
-    publish_output = os.path.join(
-        os.path.dirname(args.output_file),
-        "publish.yml",
-    )
+    publish_output = ".github/workflows/publish.yml"
     write_workflow(publish_output, publish_content)
 
 
