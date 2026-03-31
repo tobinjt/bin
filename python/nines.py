@@ -22,6 +22,13 @@ __author__ = "johntobin@johntobin.ie (John Tobin)"
 PERCENT_THRESHOLD = 20
 
 
+class Args(argparse.Namespace):
+    """Command-line arguments for nines."""
+
+    nines: float = 0.0
+    days: float = 365.0
+
+
 def strip_trailing_zeros(*, number: float) -> str:
     """Strip unnecessary trailing zeros from a number.
 
@@ -134,6 +141,11 @@ def nines(*, num_nines: float, days: float) -> str:
 
 
 def main(*, argv: list[str]) -> None:
+    """Main function.
+
+    Args:
+        argv: Command-line arguments.
+    """
     usage, description = str(__doc__).split("\n", maxsplit=1)
     description = description % {
         "PT": PERCENT_THRESHOLD,
@@ -150,10 +162,10 @@ def main(*, argv: list[str]) -> None:
         type=float,
         help="See usage for details",
     )
-    options = argv_parser.parse_args(argv[1:])
+    args = argv_parser.parse_args(argv[1:], namespace=Args())
 
-    num_nines = parse_nines_arg(num_nines=options.nines)  # pyright: ignore [reportAny]
-    print(nines(num_nines=num_nines, days=options.days))  # pyright: ignore [reportAny]
+    num_nines = parse_nines_arg(num_nines=args.nines)
+    print(nines(num_nines=num_nines, days=args.days))
 
 
 if __name__ == "__main__":  # pragma: no mutate
