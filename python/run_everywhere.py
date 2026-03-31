@@ -25,8 +25,18 @@ class UsageError(Exception):
     """Exception raised for invalid usage."""
 
 
+class Args(argparse.Namespace):
+    """Command-line arguments."""
+
+    hosts: str = "laptop,imac,hosting"
+    users: str = "johntobin,root,arianetobin"
+    command: list[str] = []
+
+
 @dataclasses.dataclass
 class Config:
+    """Configuration for running the command."""
+
     command: list[str]
     hosts: list[str]
     users: list[str]
@@ -64,11 +74,11 @@ def parse_args(argv: list[str]) -> Config:
     )
     parser.add_argument("command", nargs=argparse.REMAINDER, help="The command to run.")
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(argv, namespace=Args())
     config = Config(
-        command=args.command,  # pyright: ignore [reportAny]
-        hosts=[h.strip() for h in args.hosts.split(",")],  # pyright: ignore [reportAny]
-        users=[u.strip() for u in args.users.split(",")],  # pyright: ignore [reportAny]
+        command=args.command,
+        hosts=[h.strip() for h in args.hosts.split(",")],
+        users=[u.strip() for u in args.users.split(",")],
     )
     if config.command and config.command[0] == "--":
         config.command = config.command[1:]
