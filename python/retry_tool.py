@@ -16,6 +16,13 @@ from collections.abc import Sequence
 logger = logging.getLogger("retry_tool")
 
 
+class Args(argparse.Namespace):
+    """Command-line arguments for retry_tool."""
+
+    message: str = ""
+    command_args: list[str] = []
+
+
 def main(argv: Sequence[str]) -> int:
     """
     Main function to parse arguments and execute the retry logic.
@@ -37,28 +44,23 @@ def main(argv: Sequence[str]) -> int:
         help="Command and arguments.",
     )
 
-    # Appease basedpyright by making copies of the flags etc. to ensure they are
-    # correctly typed. If we don't do this, then pyright incorrectly types everything
-    # as "Any" objects.
-    args = parser.parse_args(argv)
-    if not args.command_args:  # pyright: ignore [reportAny]
+    args = parser.parse_args(argv, namespace=Args())
+    if not args.command_args:
         parser.print_usage()
         return 2
-    command_args = [str(a) for a in args.command_args]  # pyright: ignore [reportAny]
-    message = str(args.message)  # pyright: ignore [reportAny]
 
     while True:
-        logger.info(f"Running: {command_args}")
-        result = subprocess.run(command_args, check=False)
+        logger.info(f"Running: {args.command_args}")
+        result = subprocess.run(args.command_args, check=False)
         if result.returncode == 0:
             return 0
 
         logger.info(f"Exit status: {result.returncode}")
-        logger.warning(f"Command failed. Retrying {message}")
+        logger.warning(f"Command failed. Retrying {args.message}")
 
         input("Press Enter to retry: ")
 
-        logger.info(f"Retrying {message}")
+        logger.info(f"Retrying {args.message}")
 
 
 if __name__ == "__main__":
