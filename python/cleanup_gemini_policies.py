@@ -116,7 +116,7 @@ def format_rules(rules: list[Rule], wrap_limit: int = 3) -> str:
                 output.append("]")
             else:
                 prefixes = ", ".join(f'"{p}"' for p in rule.commandPrefix)
-                output.append(f"commandPrefix = [{prefixes}]")
+                output.append(f"commandPrefix = [ {prefixes} ]")
     return "\n".join(output) + "\n"
 
 
