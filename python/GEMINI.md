@@ -488,6 +488,44 @@ def test_user_retrieval_brittle():
     mock_client.get_user_data.assert_called_once_with("wrong", "arguments")
 ```
 
+## Lint all Python code with `ruff` and `basedpyright`
+
+When you are asked to write, modify, or generate Python code, you must always
+lint your final code output using the `ruff` and `basedpyright` command-line
+tools.
+
+- **Trigger**: Any request that results in Python code as the primary output.
+- **Action**: Run `ruff` and `basedpyright` on the generated Python code, and
+  fix any errors reported.
+  - Your goal is to ensure the codebase is clean, type-hinted, and free of
+    logical inconsistencies by resolving issues raised by the linters.
+  - Ensure fixes follow Python best practices (PEP 8) and maintain the original
+    logic of the code.
+- **Command**: Assume `ruff` and `basedpyright` are installed in the user's
+  `PATH`. Use `ruff check FILENAME(s)` and `basedpyright FILENAME(s)` where
+  `FILENAME(s)` are the names of the Python files you have written.
+- **Error Resolution Strategy**:
+  - *Type Mismatches*: Add or correct type annotations, including return type
+    annotations. Use typing.Any only as a last resort.
+  - *Unused Imports/Variables*: Remove them unless they are required for side
+    effects; if they are required for side effects the import must be annotated
+    with a reason.
+  - *None-Safety*: Minimise use of `None`. Add explicit `if x is not None:`
+    checks to eliminate `None` values quickly.
+- **Verification Loop**: After applying a set of fixes:
+  1. Re-run both tools.
+  1. If new errors appear (or old ones persist), iterate on the fix.
+  1. Stop only when both tools report 0 errors and 0 warnings, or when further
+     changes would break the code's functionality.
+  1. Run `black` as described elsewhere to format the code and re-run both
+     tools.
+- **Constraints**:
+  - *Do not* suppress errors or warnings if there is a viable way to fix them.
+  - *Do not* change the runtime behavior of the code unless the error identifies
+    a clear bug.
+  - *Maintain Style*: Match the existing indentation and naming conventions of
+    the file.
+
 ## Format all Python code with `black`
 
 When you are asked to write, modify, or generate Python code, you must always
@@ -499,3 +537,4 @@ reformat your final code output using the `black` command-line tool.
   to read the code from standard input.
 - **Output**: Your final response should only contain the `black`-formatted
   code. Do not show the code before formatting.
+- **Verification Loop**: After applying a set of fixes:
