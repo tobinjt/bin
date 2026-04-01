@@ -311,6 +311,48 @@ def find_user(username: str) -> Optional[dict]:
     return None
 ```
 
+## Use a subclass of `argparse.Namespace` when processing command line arguments
+
+By default, the fields in the object returned by `argparse` aren't typed,
+causing problems for type checking. The solution is to use a subclass of
+`argparse.Namespace` when parsing command line arguments. This enables type
+checkers to correctly check types, and enables IDEs to perform completion.
+
+**Implementation**:
+
+- Define a subclass of `argparse.Namespace` named `Args`.
+
+- The `__init__` method:
+
+  - Must have a typed parameter for each command line argument.
+
+  - The default value for each non-mutable parameter (`int`, `bool`, `str`, ...)
+    must be the default value for the command line argument.
+
+  - Mutable types (e.g. `list`, `dict`) must be typed as `list | None = None`,
+    because `list = []` is dangerous - the default is shared across instances.
+
+  - Each field must be assigned the corresponding parameter.
+
+    - Where a parameter is `None` the default value of the command line option
+      must be substituted, using:
+
+      ```python
+      self.foo = list(foo) if foo is not None else []
+      ```
+
+      `list(foo)` is used rather than simply `foo` so that the list isn't shared
+      between the new instance and the creator of the new instance.
+
+- When parsing command line arguments use a new instance of the `Args` class:
+
+  ```python
+  parser = argparse.ArgumentParser(...)
+  _ = parser.add_argument(...)
+  ...
+  args = parser.parse_args(namespace=Args())
+  ```
+
 ## Tests must use the `unittest` framework
 
 When you are asked to write Python test code, you **must** use the built-in
