@@ -52,8 +52,8 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         # Check for shebang with flag
         self.assertTrue(
             content.startswith(
-                "#!/usr/bin/env -S make_rust_github_workflow.py testapp "
-                + "--output_shell_completion"
+                "#!/usr/bin/env -S make_rust_github_workflow.py "
+                + "--output_shell_completion testapp"
             )
         )
 

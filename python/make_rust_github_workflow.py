@@ -30,9 +30,8 @@ def generate_workflow(
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
-    shebang = f"#!/usr/bin/env -S {os.path.basename(__file__)} {program_name}"
-    if output_shell_completion:
-        shebang += " --output_shell_completion"
+    flags = " --output_shell_completion" if output_shell_completion else ""
+    shebang = f"#!/usr/bin/env -S {os.path.basename(__file__)}{flags} {program_name}"
 
     template = shebang + "\n" + template
 
