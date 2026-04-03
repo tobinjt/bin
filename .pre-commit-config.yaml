@@ -46,6 +46,12 @@ repos:
         language: system
         types: [python]
         entry: mypy --ignore-missing-imports --scripts-are-modules
+      - id: pytest - triggered by rust templates changing
+        name: Run `pytest` when rust templates change
+        language: system
+        pass_filenames: false
+        files: python/.*.template
+        entry: pytest
       - id: pytest
         name: Run `pytest`
         language: system
