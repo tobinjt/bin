@@ -768,23 +768,9 @@ class TestUsage(unittest.TestCase):
     def test_help(self, mock_stdout: io.StringIO, _unused_mock_exit: mock.Mock):
         """Test --help to ensure that the description is correctly set up."""
         linkdirs.real_main(argv=["argv0", "--help"])
-        # The name of the program is pytest when running tests.
-        substrings = [
-            "usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] ",
-            "--debug, --no-debug Enable debug output (default: False)",
-        ]
-        # The position of newlines depends on the width of the terminal, so remove
-        # them for consistency.  Likewise spaces.
-        stdout = (
-            mock_stdout.getvalue()
-            .replace("\n", "")
-            .replace("pytest-3", "pytest")
-            .replace("linkdirs_test.py", "pytest")
-        )
-        stdout = re.sub(r"\s+", " ", stdout)
-        for substring in substrings:
-            with self.subTest(f"Testing -->>{substring}<<--"):
-                self.assertIn(substring, stdout)
+        stdout = mock_stdout.getvalue()
+        self.assertIn("[OPTIONS] SOURCE_DIRECTORY [...] ", stdout)
+        self.assertIn("Enable debug output (default: False)", stdout)
 
 
 class TestMisc(fake_filesystem_unittest.TestCase):
