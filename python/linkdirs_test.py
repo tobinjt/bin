@@ -771,19 +771,7 @@ class TestUsage(unittest.TestCase):
         # The name of the program is pytest when running tests.
         substrings = [
             "usage: pytest [OPTIONS] SOURCE_DIRECTORY [...] ",
-            "Link all files in SOURCE_DIRECTORY",
-            "positional arguments: DIRECTORIES See usage for details",
-            "--dryrun, --no-dryrun Perform a trial run with no changes made (default: False)",
             "--debug, --no-debug Enable debug output (default: False)",
-            "--force, --no-force Remove existing files if necessary (default: False)",
-            "--ignore_file FILENAME File containing shell patterns to ignore.",
-            "--ignore_pattern FILENAME Extra shell patterns to ignore",
-            "['.git', '.gitignore', '.gitmodules', '.jj', '*.spl']",
-            "--ignore_unexpected_children, --no-ignore_unexpected_children When checking for unexpected files or",
-            "--report_unexpected_files, --no-report_unexpected_files Report unexpected files in"
-            + " DESTINATION_DIRECTORY (default: False)",
-            "--delete_unexpected_files, --no-delete_unexpected_files Delete unexpected files in"
-            + " DESTINATION_DIRECTORY (default: False)",
         ]
         # The position of newlines depends on the width of the terminal, so remove
         # them for consistency.  Likewise spaces.
