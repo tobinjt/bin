@@ -105,7 +105,7 @@ main() {
   # Everything needed for backups.
   brew install autorestic coreutils rsync
   # Basics.
-  brew install fd less neovim ripgrep tmux
+  brew install fd less neovim ripgrep tmux tree-sitter-cli
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
