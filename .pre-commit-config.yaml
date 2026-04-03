@@ -30,7 +30,7 @@ repos:
         name: Run `black`
         language: system
         types: [python]
-        entry: black --diff --check
+        entry: black
       - id: linkdirs-system-python-test
         name: Run `linkdirs_test_with_system_python.sh`
         language: system
