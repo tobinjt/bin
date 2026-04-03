@@ -23,7 +23,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         )
 
         # Check for key sections and program name replacement
-        self.assertIn("name: Release", content)
+        self.assertIn("name: Build binaries", content)
         self.assertIn(f"bin: {program_name}", content)
 
     def test_generate_publish_workflow(self) -> None:
@@ -39,7 +39,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         )
 
         # Check for key sections (from rust_publish_workflow.template)
-        self.assertIn("name: CI and Release", content)
+        self.assertIn("name: Publish to crates.io if tests pass.", content)
         self.assertIn("name: Publish to Crates.io", content)
 
     def test_generate_workflow_with_completions(self) -> None:
@@ -89,11 +89,11 @@ class TestMain(fake_filesystem_unittest.TestCase):
 
         with open(release_file, "r", encoding="utf-8") as f:
             content = f.read()
-            self.assertIn("name: Release", content)
+            self.assertIn("name: Build binaries", content)
 
         with open(publish_file, "r", encoding="utf-8") as f:
             content = f.read()
-            self.assertIn("name: CI and Release", content)
+            self.assertIn("name: Publish to crates.io if tests pass.", content)
 
     @mock.patch.object(
         sys,
