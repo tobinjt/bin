@@ -21,7 +21,6 @@ repos:
   - repo: local
     hooks:
       # keep-sorted start
-      # Using this instead of a packaged black check because it's trivial.
       - id: basedpyright
         name: Run `basedpyright`
         language: system
@@ -42,8 +41,6 @@ repos:
         language: system
         types: [markdown]
         entry: markdownlint
-      # Using this instead of a packaged mypy check because the packaged one
-      # doesn't find modules in virtualenv.
       - id: mypy
         name: Run `mypy`
         language: system
