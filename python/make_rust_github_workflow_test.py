@@ -42,6 +42,22 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         self.assertIn("name: Publish to crates.io if tests pass.", content)
         self.assertIn("name: Publish to Crates.io", content)
 
+    def test_generate_dependabot_workflow(self) -> None:
+        """Tests that the dependabot workflow generation produces expected content."""
+        program_name = "testapp"
+        content = make_rust_github_workflow.generate_workflow(
+            program_name, "rust_dependabot.template"
+        )
+
+        # Check for shebang
+        self.assertTrue(
+            content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
+        )
+
+        # Check for key sections (from rust_dependabot.template)
+        self.assertIn('package-ecosystem: "github-actions"', content)
+        self.assertIn('package-ecosystem: "cargo"', content)
+
     def test_generate_workflow_with_completions(self) -> None:
         """Tests that shell completions are included when requested for release."""
         program_name = "testapp"
@@ -72,6 +88,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
         for template in [
             "rust_release_workflow.template",
             "rust_publish_workflow.template",
+            "rust_dependabot.template",
         ]:
             template_path = os.path.join(template_dir, template)
             self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]
@@ -80,12 +97,14 @@ class TestMain(fake_filesystem_unittest.TestCase):
 
     @mock.patch.object(sys, "argv", ["make_rust_github_workflow.py", "cliapp"])
     def test_main(self) -> None:
-        """Tests that the main function correctly writes both files."""
+        """Tests that the main function correctly writes all files."""
         make_rust_github_workflow.main()
         release_file = ".github/workflows/release.yml"
         publish_file = ".github/workflows/publish.yml"
+        dependabot_file = ".github/dependabot.yml"
         self.assertTrue(os.path.exists(release_file))
         self.assertTrue(os.path.exists(publish_file))
+        self.assertTrue(os.path.exists(dependabot_file))
 
         with open(release_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -94,6 +113,11 @@ class TestMain(fake_filesystem_unittest.TestCase):
         with open(publish_file, "r", encoding="utf-8") as f:
             content = f.read()
             self.assertIn("name: Publish to crates.io if tests pass.", content)
+
+        with open(dependabot_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn('package-ecosystem: "github-actions"', content)
+            self.assertIn('package-ecosystem: "cargo"', content)
 
     @mock.patch.object(
         sys,

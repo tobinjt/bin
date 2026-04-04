@@ -128,6 +128,15 @@ def main() -> None:
     publish_output = ".github/workflows/publish.yml"
     write_workflow(publish_output, publish_content)
 
+    # 3. Generate and write the dependabot configuration
+    dependabot_content = generate_workflow(
+        args.program_name,
+        "rust_dependabot.template",
+        args.output_shell_completion,
+    )
+    dependabot_output = ".github/dependabot.yml"
+    write_workflow(dependabot_output, dependabot_content)
+
 
 if __name__ == "__main__":
     main()
