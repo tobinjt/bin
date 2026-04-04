@@ -8,8 +8,27 @@ import os
 class Args(argparse.Namespace):
     """Arguments for the script."""
 
-    program_name: str = ""
-    output_shell_completion: bool = False
+    program_name: str
+    output_shell_completion: bool
+    ignored_filename: str | None
+
+    def __init__(
+        self,
+        program_name: str = "",
+        output_shell_completion: bool = False,
+        ignored_filename: str | None = None,
+    ) -> None:
+        """Initializes the arguments.
+
+        Args:
+            program_name: The name of the program to release.
+            output_shell_completion: Whether to include steps to generate shell completions.
+            ignored_filename: An optional filename that is ignored.
+        """
+        super().__init__()
+        self.program_name = program_name
+        self.output_shell_completion = output_shell_completion
+        self.ignored_filename = ignored_filename
 
 
 def generate_workflow(
@@ -80,6 +99,11 @@ def main() -> None:
         "--output_shell_completion",
         action="store_true",
         help="Include steps to generate shell completions in the release workflow.",
+    )
+    parser.add_argument(
+        "ignored_filename",
+        nargs="?",
+        help="An optional filename that is ignored (used when invoked via shebang).",
     )
     args = parser.parse_args(namespace=Args())
 

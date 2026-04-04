@@ -108,6 +108,17 @@ class TestMain(fake_filesystem_unittest.TestCase):
             content = f.read()
             self.assertIn("# 1.1 Generate shell completions", content)
 
+    @mock.patch.object(
+        sys,
+        "argv",
+        ["make_rust_github_workflow.py", "cliapp", "extra_ignored_arg"],
+    )
+    def test_main_with_ignored_arg(self) -> None:
+        """Tests that an extra argument is ignored and doesn't cause an error."""
+        make_rust_github_workflow.main()
+        release_file = ".github/workflows/release.yml"
+        self.assertTrue(os.path.exists(release_file))
+
 
 if __name__ == "__main__":
     unittest.main()
