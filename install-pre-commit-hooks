@@ -17,6 +17,12 @@ check_existing_hooks() {
   return 0
 }
 
+find_hooks() {
+  local hooks_dir="$1"
+  find "${hooks_dir}" -maxdepth 1 -type f \
+    ! -name "*.sample" ! -name "*.legacy" -print0
+}
+
 main() {
   if ! type pre-commit >& /dev/null; then
     return 0
@@ -30,12 +36,19 @@ main() {
     return 0
   fi
 
-  local hook_file=".git/hooks/pre-commit"
-  if ! check_existing_hooks "${hook_file}"; then
-    return 1
+  local hooks_dir=".git/hooks"
+  if [[ -d "${hooks_dir}" ]]; then
+    # Use find to bypass noglob (set -f) and handle filenames correctly.
+    # We check every file that isn't a sample or a legacy file.
+    while IFS= read -r -d '' hook_path; do
+      if ! check_existing_hooks "${hook_path}"; then
+        return 1
+      fi
+    done < <(find_hooks "${hooks_dir}")
   fi
 
-  if [[ "${config_file}" -nt "${hook_file}" ]]; then
+  local pre_commit_hook="${hooks_dir}/pre-commit"
+  if [[ "${config_file}" -nt "${pre_commit_hook}" ]]; then
     printf "Installing pre-commit in %s\n" "${PWD}"
     pre-commit install --install-hooks
     pre-commit install --install-hooks --hook-type commit-msg
