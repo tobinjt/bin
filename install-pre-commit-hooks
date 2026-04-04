@@ -28,10 +28,8 @@ main() {
   if [[ "${config_file}" -nt "${hook_file}" ]]; then
     printf "Installing pre-commit in %s\n" "${PWD}"
     pre-commit install --install-hooks
-    pre-commit install --hook-type pre-push
-    if grep -q -F 'stages: [commit-msg]' "${config_file}"; then
-      pre-commit install --hook-type commit-msg
-    fi
+    pre-commit install --install-hooks --hook-type commit-msg
+    pre-commit install --install-hooks --hook-type pre-push
   fi
   return 0
 }
