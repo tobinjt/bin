@@ -1,10 +1,10 @@
 import os
 import tempfile
+import typing
 import unittest
-from typing import override
 from unittest import mock
 
-from pyfakefs import fake_filesystem_unittest
+import pyfakefs.fake_filesystem_unittest
 
 import cleanup_gemini_policies
 
@@ -26,7 +26,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         deny_message = "Reading files is not allowed."
         """
         with tempfile.NamedTemporaryFile(delete=False) as f:
-            f.write(toml_content)
+            _ = f.write(toml_content)
             temp_file_name = f.name
 
         try:
@@ -134,8 +134,36 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             ),
         ]
 
-        # Default wrap_limit is 3
+        # Default line_length_limit is 80
+        # "commandPrefix = [ \"cat\", \"ls\" ]" is 32 chars
+        # "commandPrefix = [ \"rm\", \"shred\", \"mv\", \"cp\" ]" is 46 chars
         expected_output_default = (
+            "[[rule]]\n"
+            'toolName = "read_file"\n'
+            'decision = "deny"\n'
+            "priority = 20\n"
+            'deny_message = "Msg1"\n'
+            "\n"
+            "[[rule]]\n"
+            'toolName = "run_shell_command"\n'
+            'decision = "approve"\n'
+            "priority = 10\n"
+            'commandPrefix = [ "cat", "ls" ]\n'
+            "\n"
+            "[[rule]]\n"
+            'toolName = "run_shell_command"\n'
+            'decision = "deny"\n'
+            "priority = 5\n"
+            'commandPrefix = [ "rm", "shred", "mv", "cp" ]\n'
+        )
+
+        output = cleanup_gemini_policies.format_rules(rules)
+        self.assertEqual(output, expected_output_default)
+
+        # Test line_length_limit = 40
+        # "commandPrefix = [ \"cat\", \"ls\" ]" is 32 chars (<= 40)
+        # "commandPrefix = [ \"rm\", \"shred\", \"mv\", \"cp\" ]" is 46 chars (> 40)
+        expected_output_limit_40 = (
             "[[rule]]\n"
             'toolName = "read_file"\n'
             'decision = "deny"\n'
@@ -159,12 +187,12 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             '  "cp",\n'
             "]\n"
         )
+        output = cleanup_gemini_policies.format_rules(rules, line_length_limit=40)
+        self.assertEqual(output, expected_output_limit_40)
 
-        output = cleanup_gemini_policies.format_rules(rules)
-        self.assertEqual(output, expected_output_default)
-
-        # Test wrap_limit = 1
-        expected_output_limit_1 = (
+        # Test line_length_limit = 20
+        # "commandPrefix = [ \"cat\", \"ls\" ]" is 32 chars (> 20)
+        expected_output_limit_20 = (
             "[[rule]]\n"
             'toolName = "read_file"\n'
             'decision = "deny"\n'
@@ -191,37 +219,17 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             '  "cp",\n'
             "]\n"
         )
-        output = cleanup_gemini_policies.format_rules(rules, wrap_limit=1)
-        self.assertEqual(output, expected_output_limit_1)
-
-        # Test wrap_limit = 5
-        expected_output_limit_5 = (
-            "[[rule]]\n"
-            'toolName = "read_file"\n'
-            'decision = "deny"\n'
-            "priority = 20\n"
-            'deny_message = "Msg1"\n'
-            "\n"
-            "[[rule]]\n"
-            'toolName = "run_shell_command"\n'
-            'decision = "approve"\n'
-            "priority = 10\n"
-            'commandPrefix = [ "cat", "ls" ]\n'
-            "\n"
-            "[[rule]]\n"
-            'toolName = "run_shell_command"\n'
-            'decision = "deny"\n'
-            "priority = 5\n"
-            'commandPrefix = [ "rm", "shred", "mv", "cp" ]\n'
-        )
-        output = cleanup_gemini_policies.format_rules(rules, wrap_limit=5)
-        self.assertEqual(output, expected_output_limit_5)
+        output = cleanup_gemini_policies.format_rules(rules, line_length_limit=20)
+        self.assertEqual(output, expected_output_limit_20)
 
     @mock.patch.object(cleanup_gemini_policies, "parse_rules")
     @mock.patch.object(cleanup_gemini_policies, "process_rules")
     @mock.patch.object(cleanup_gemini_policies, "format_rules")
     def test_main(
-        self, mock_format: mock.Mock, mock_process: mock.Mock, mock_parse: mock.Mock
+        self,
+        mock_format: mock.Mock,
+        mock_process: mock.Mock,
+        mock_parse: mock.Mock,
     ):
         """Tests the main execution function."""
         mock_parse.return_value = []
@@ -233,21 +241,26 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
 
             with mock.patch(
                 "sys.argv",
-                ["cleanup_gemini_policies.py", temp_file_name, "--wrap-limit", "5"],
+                [
+                    "cleanup_gemini_policies.py",
+                    temp_file_name,
+                    "--line-length-limit",
+                    "40",
+                ],
             ):
                 cleanup_gemini_policies.main()
 
             mock_parse.assert_called_once_with(temp_file_name)
             mock_process.assert_called_once_with([])
-            mock_format.assert_called_once_with([], wrap_limit=5)
+            mock_format.assert_called_once_with([], line_length_limit=40)
 
             with open(temp_file_name, "r") as read_handle:
                 content = read_handle.read()
             self.assertEqual(content, "formatted_toml\n")
 
 
-class TestMainIntegration(fake_filesystem_unittest.TestCase):
-    @override
+class TestMainIntegration(pyfakefs.fake_filesystem_unittest.TestCase):
+    @typing.override
     def setUp(self):
         self.setUpPyfakefs()
 

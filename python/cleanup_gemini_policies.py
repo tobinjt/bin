@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
+import dataclasses
 import tomllib
-from dataclasses import dataclass, field
-from typing import cast
+import typing
 
 
 class Args(argparse.Namespace):
     file: str = ""
-    wrap_limit: int = 3
+    line_length_limit: int = 80
 
 
-@dataclass
+@dataclasses.dataclass
 class Rule:
     """Represents a rule parsed from the TOML file."""
 
     decision: str
     priority: int
     toolName: str
-    commandPrefix: list[str] = field(default_factory=list)
+    commandPrefix: list[str] = dataclasses.field(default_factory=list)
     deny_message: str | None = None
 
 
@@ -35,14 +35,16 @@ def parse_rules(file_path: str) -> list[Rule]:
         data = tomllib.load(f)
 
     rules: list[Rule] = []
-    for r_dict in cast(list[dict[str, int | str | list[str]]], data.get("rule", [])):
+    for r_dict in typing.cast(
+        list[dict[str, int | str | list[str]]], data.get("rule", [])
+    ):
         rules.append(
             Rule(
-                decision=cast(str, r_dict["decision"]),
-                priority=cast(int, r_dict["priority"]),
-                toolName=cast(str, r_dict["toolName"]),
-                commandPrefix=cast(list[str], r_dict.get("commandPrefix", [])),
-                deny_message=cast(str | None, r_dict.get("deny_message")),
+                decision=typing.cast(str, r_dict["decision"]),
+                priority=typing.cast(int, r_dict["priority"]),
+                toolName=typing.cast(str, r_dict["toolName"]),
+                commandPrefix=typing.cast(list[str], r_dict.get("commandPrefix", [])),
+                deny_message=typing.cast(str | None, r_dict.get("deny_message")),
             )
         )
     return rules
@@ -88,12 +90,12 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
     return all_rules
 
 
-def format_rules(rules: list[Rule], wrap_limit: int = 3) -> str:
+def format_rules(rules: list[Rule], line_length_limit: int = 80) -> str:
     """Formats rules into a TOML string.
 
     Args:
         rules: The list of rules to format.
-        wrap_limit: The number of items in commandPrefix before wrapping.
+        line_length_limit: The maximum line length for commandPrefix before wrapping.
 
     Returns:
         The formatted TOML content as a string.
@@ -109,14 +111,15 @@ def format_rules(rules: list[Rule], wrap_limit: int = 3) -> str:
         if rule.deny_message:
             output.append(f'deny_message = "{rule.deny_message}"')
         if rule.commandPrefix:
-            if len(rule.commandPrefix) > wrap_limit:
+            prefixes = ", ".join(f'"{p}"' for p in rule.commandPrefix)
+            single_line = f"commandPrefix = [ {prefixes} ]"
+            if len(single_line) > line_length_limit:
                 output.append("commandPrefix = [")
                 for prefix in rule.commandPrefix:
                     output.append(f'  "{prefix}",')
                 output.append("]")
             else:
-                prefixes = ", ".join(f'"{p}"' for p in rule.commandPrefix)
-                output.append(f"commandPrefix = [ {prefixes} ]")
+                output.append(single_line)
     return "\n".join(output) + "\n"
 
 
@@ -125,16 +128,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Cleanup and sort TOML rules.")
     _ = parser.add_argument("file", type=str, help="Path to the TOML file to process")
     _ = parser.add_argument(
-        "--wrap-limit",
+        "--line-length-limit",
         type=int,
-        default=3,
-        help="Number of items in commandPrefix before wrapping (default: 3)",
+        default=80,
+        help="Maximum line length for commandPrefix before wrapping (default: 80)",
     )
     args = parser.parse_args(namespace=Args())
 
     rules = parse_rules(args.file)
     processed_rules = process_rules(rules)
-    content = format_rules(processed_rules, wrap_limit=args.wrap_limit)
+    content = format_rules(processed_rules, line_length_limit=args.line_length_limit)
 
     with open(args.file, "w", encoding="utf-8") as f:
         _ = f.write(content)
