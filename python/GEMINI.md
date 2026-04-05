@@ -52,10 +52,19 @@ python3 cron_to_plist.py [arguments]
 The project uses `pytest` for testing. Each script typically has a corresponding
 `_test.py` file (e.g., `linkdirs.py` -> `linkdirs_test.py`).
 
+**`pytest`** is the preferred way to run tests; *do not* run tests using
+`python3 FILENAME`.
+
 To run all tests with coverage:
 
 ```bash
 pytest
+```
+
+To run a single test with coverage:
+
+```bash
+pytest FILENAME
 ```
 
 Configuration is handled in `pytest.ini`, which sets default options (e.g.,
