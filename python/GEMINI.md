@@ -94,8 +94,8 @@ Configuration is handled in `pytest.ini`, which sets default options (e.g.,
 
 ## Import Modules, Not Classes or Functions
 
-When writing Python code, you **must** import entire modules rather than
-specific classes or functions from within those modules.
+When writing Python code, you **must** import entire modules or submodules
+rather than specific classes or functions from within those modules.
 
 ______________________________________________________________________
 
@@ -137,6 +137,26 @@ def initialize_app():
     db_conn = DatabaseConnection()
     data = load_initial_data()
     # ... more code
+```
+
+______________________________________________________________________
+
+#### ✅ Correct Usage: importing a sub-module: from unitest import mock
+
+This is preferred because 1) it's importing a sub-module rather than a class or
+function, 2) the shorter import paths are easier to read, and 3) if we ever
+import the module from somewhere else only the import line needs to change, not
+every reference.
+
+```python
+import sys
+import unittest
+from unittest import mock
+
+class TestMain(unittest.TestCase):
+    @mock.patch.object(sys, "exit")
+    def test_success(self, mock_sys_exit: mock.Mock) -> None:
+        ...
 ```
 
 ## Docstrings are required
