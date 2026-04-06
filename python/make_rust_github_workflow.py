@@ -47,54 +47,23 @@ def main() -> None:
     )
     args = parser.parse_args(namespace=github_workflow_utils.Args())
 
-    # 1. Generate and write the release workflow
-    release_content = generate_workflow(
-        args.program_name,
-        "rust_release_workflow.template",
-        args.output_shell_completion,
-    )
-    github_workflow_utils.write_workflow(
-        ".github/workflows/release.yml",
-        release_content,
-    )
+    workflows = [
+        # keep-sorted start
+        ("rust_dependabot.template", ".github/dependabot.yml"),
+        ("rust_publish_workflow.template", ".github/workflows/publish.yml"),
+        ("rust_pull_request_workflow.template", ".github/workflows/pull_request.yml"),
+        ("rust_release_workflow.template", ".github/workflows/release.yml"),
+        ("rust_security_audit.template", ".github/workflows/security_audit.yml"),
+        # keep-sorted end
+    ]
 
-    # 2. Generate and write the publish workflow
-    publish_content = generate_workflow(
-        args.program_name,
-        "rust_publish_workflow.template",
-        args.output_shell_completion,
-    )
-    github_workflow_utils.write_workflow(
-        ".github/workflows/publish.yml", publish_content
-    )
-
-    # 3. Generate and write the dependabot configuration
-    dependabot_content = generate_workflow(
-        args.program_name,
-        "rust_dependabot.template",
-        args.output_shell_completion,
-    )
-    github_workflow_utils.write_workflow(".github/dependabot.yml", dependabot_content)
-
-    # 4. Generate and write the pull request workflow
-    pull_request_content = generate_workflow(
-        args.program_name,
-        "rust_pull_request_workflow.template",
-        args.output_shell_completion,
-    )
-    github_workflow_utils.write_workflow(
-        ".github/workflows/pull_request.yml", pull_request_content
-    )
-
-    # 5. Generate and write the security audit workflow
-    security_audit_content = generate_workflow(
-        args.program_name,
-        "rust_security_audit.template",
-        args.output_shell_completion,
-    )
-    github_workflow_utils.write_workflow(
-        ".github/workflows/security_audit.yml", security_audit_content
-    )
+    for template, output_file in workflows:
+        content = generate_workflow(
+            args.program_name,
+            template,
+            args.output_shell_completion,
+        )
+        github_workflow_utils.write_workflow(output_file, content)
 
 
 if __name__ == "__main__":
