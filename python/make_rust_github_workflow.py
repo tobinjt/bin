@@ -137,6 +137,15 @@ def main() -> None:
     dependabot_output = ".github/dependabot.yml"
     write_workflow(dependabot_output, dependabot_content)
 
+    # 4. Generate and write the pull request workflow
+    pull_request_content = generate_workflow(
+        args.program_name,
+        "rust_pull_request_workflow.template",
+        args.output_shell_completion,
+    )
+    pull_request_output = ".github/workflows/pull_request.yml"
+    write_workflow(pull_request_output, pull_request_content)
+
 
 if __name__ == "__main__":
     main()

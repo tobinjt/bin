@@ -58,6 +58,23 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         self.assertIn('package-ecosystem: "github-actions"', content)
         self.assertIn('package-ecosystem: "cargo"', content)
 
+    def test_generate_pull_request_workflow(self) -> None:
+        """Tests that the PR workflow generation produces expected content."""
+        program_name = "testapp"
+        content = make_rust_github_workflow.generate_workflow(
+            program_name, "rust_pull_request_workflow.template"
+        )
+
+        # Check for shebang
+        self.assertTrue(
+            content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
+        )
+
+        # Check for key sections (from rust_pull_request_workflow.template)
+        self.assertIn("name: Code Quality", content)
+        self.assertIn("on:", content)
+        self.assertIn("pull_request:", content)
+
     def test_generate_workflow_with_completions(self) -> None:
         """Tests that shell completions are included when requested for release."""
         program_name = "testapp"
@@ -89,6 +106,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
             "rust_release_workflow.template",
             "rust_publish_workflow.template",
             "rust_dependabot.template",
+            "rust_pull_request_workflow.template",
         ]:
             template_path = os.path.join(template_dir, template)
             self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]
@@ -102,9 +120,11 @@ class TestMain(fake_filesystem_unittest.TestCase):
         release_file = ".github/workflows/release.yml"
         publish_file = ".github/workflows/publish.yml"
         dependabot_file = ".github/dependabot.yml"
+        pull_request_file = ".github/workflows/pull_request.yml"
         self.assertTrue(os.path.exists(release_file))
         self.assertTrue(os.path.exists(publish_file))
         self.assertTrue(os.path.exists(dependabot_file))
+        self.assertTrue(os.path.exists(pull_request_file))
 
         with open(release_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -118,6 +138,10 @@ class TestMain(fake_filesystem_unittest.TestCase):
             content = f.read()
             self.assertIn('package-ecosystem: "github-actions"', content)
             self.assertIn('package-ecosystem: "cargo"', content)
+
+        with open(pull_request_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("name: Code Quality", content)
 
     @mock.patch.object(
         sys,
