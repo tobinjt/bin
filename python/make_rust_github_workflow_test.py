@@ -46,7 +46,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the dependabot workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_dependabot.template"
+            program_name, "generic_dependabot.template"
         )
 
         # Check for shebang
@@ -54,7 +54,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from rust_dependabot.template)
+        # Check for key sections (from generic_dependabot.template)
         self.assertIn('package-ecosystem: "github-actions"', content)
         self.assertIn('package-ecosystem: "cargo"', content)
 
@@ -119,11 +119,13 @@ class TestMain(fake_filesystem_unittest.TestCase):
             os.path.realpath(make_rust_github_workflow.__file__)
         )
         for template in [
-            "rust_release_workflow.template",
+            # keep-sorted start
+            "generic_dependabot.template",
             "rust_publish_workflow.template",
-            "rust_dependabot.template",
             "rust_pull_request_workflow.template",
+            "rust_release_workflow.template",
             "rust_security_audit.template",
+            # keep-sorted end
         ]:
             template_path = os.path.join(template_dir, template)
             self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]

@@ -21,3 +21,15 @@ updates:
       - "go"
     # Ensure it updates the go.sum file correctly
     versioning-strategy: increase
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Group updates to reduce PR noise
+    groups:
+      cargo-dependencies:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "rust"
