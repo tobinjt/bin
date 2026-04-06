@@ -75,6 +75,22 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         self.assertIn("on:", content)
         self.assertIn("pull_request:", content)
 
+    def test_generate_security_audit_workflow(self) -> None:
+        """Tests that the security audit workflow generation produces expected content."""
+        program_name = "testapp"
+        content = make_rust_github_workflow.generate_workflow(
+            program_name, "rust_security_audit.template"
+        )
+
+        # Check for shebang
+        self.assertTrue(
+            content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
+        )
+
+        # Check for key sections (from rust_security_audit.template)
+        self.assertIn("name: Security Audit", content)
+        self.assertIn("uses: rustsec/audit-check@v2.0.0", content)
+
     def test_generate_workflow_with_completions(self) -> None:
         """Tests that shell completions are included when requested for release."""
         program_name = "testapp"
@@ -107,6 +123,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
             "rust_publish_workflow.template",
             "rust_dependabot.template",
             "rust_pull_request_workflow.template",
+            "rust_security_audit.template",
         ]:
             template_path = os.path.join(template_dir, template)
             self.fs.add_real_file(  # pyright: ignore [reportUnknownMemberType]
@@ -121,10 +138,12 @@ class TestMain(fake_filesystem_unittest.TestCase):
         publish_file = ".github/workflows/publish.yml"
         dependabot_file = ".github/dependabot.yml"
         pull_request_file = ".github/workflows/pull_request.yml"
+        security_audit_file = ".github/workflows/security_audit.yml"
         self.assertTrue(os.path.exists(release_file))
         self.assertTrue(os.path.exists(publish_file))
         self.assertTrue(os.path.exists(dependabot_file))
         self.assertTrue(os.path.exists(pull_request_file))
+        self.assertTrue(os.path.exists(security_audit_file))
 
         with open(release_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -142,6 +161,10 @@ class TestMain(fake_filesystem_unittest.TestCase):
         with open(pull_request_file, "r", encoding="utf-8") as f:
             content = f.read()
             self.assertIn("name: Code Quality", content)
+
+        with open(security_audit_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("name: Security Audit", content)
 
     @mock.patch.object(
         sys,

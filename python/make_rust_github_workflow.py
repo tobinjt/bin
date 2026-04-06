@@ -146,6 +146,15 @@ def main() -> None:
     pull_request_output = ".github/workflows/pull_request.yml"
     write_workflow(pull_request_output, pull_request_content)
 
+    # 5. Generate and write the security audit workflow
+    security_audit_content = generate_workflow(
+        args.program_name,
+        "rust_security_audit.template",
+        args.output_shell_completion,
+    )
+    security_audit_output = ".github/workflows/security_audit.yml"
+    write_workflow(security_audit_output, security_audit_content)
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,23 @@
+name: Security Audit
+
+on:
+  # Scan on push to main and for all Pull Requests
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  # Scan every day at midnight to catch new advisories
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run cargo-audit
+        uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
