@@ -1,34 +1,7 @@
 #!/usr/bin/env python3
 """Script to generate GitHub Actions workflows for a Rust project."""
 
-import argparse
-import os
-
-
-class Args(argparse.Namespace):
-    """Arguments for the script."""
-
-    program_name: str
-    output_shell_completion: bool
-    ignored_filename: str | None
-
-    def __init__(
-        self,
-        program_name: str = "",
-        output_shell_completion: bool = False,
-        ignored_filename: str | None = None,
-    ) -> None:
-        """Initializes the arguments.
-
-        Args:
-            program_name: The name of the program to release.
-            output_shell_completion: Whether to include steps to generate shell completions.
-            ignored_filename: An optional filename that is ignored.
-        """
-        super().__init__()
-        self.program_name = program_name
-        self.output_shell_completion = output_shell_completion
-        self.ignored_filename = ignored_filename
+import github_workflow_utils
 
 
 def generate_workflow(
@@ -44,18 +17,7 @@ def generate_workflow(
     Returns:
         The generated YAML content as a string.
     """
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    template_path = os.path.join(script_dir, template_name)
-    with open(template_path, "r", encoding="utf-8") as f:
-        template = f.read()
-
-    flags = " --output_shell_completion" if output_shell_completion else ""
-    shebang = f"#!/usr/bin/env -S {os.path.basename(__file__)}{flags} {program_name}"
-
-    template = shebang + "\n" + template
-
-    if output_shell_completion:
-        completion_steps = """
+    completion_steps = """
           # 1.1 Generate shell completions
           mkdir -p staging/completions
           BIN="target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}"
@@ -66,46 +28,24 @@ def generate_workflow(
           $BIN --output_shell_completion powershell > staging/completions/_{program_name}.ps1
           $BIN --output_shell_completion zsh        > staging/completions/_{program_name}
 """
-        insertion_point = "cp LICENSE staging/ || true"
-        template = template.replace(
-            insertion_point, insertion_point + "\n" + completion_steps
-        )
+    insertion_point = "cp LICENSE staging/ || true"
 
-    return template.replace("{program_name}", program_name).rstrip()
-
-
-def write_workflow(output_file: str, content: str) -> None:
-    """Writes the workflow content to a file and makes it executable.
-
-    Args:
-        output_file: The path to the file to write.
-        content: The content to write.
-    """
-    output_dir = os.path.dirname(output_file)
-    os.makedirs(output_dir, exist_ok=True)
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write(content + "\n")
-    os.chmod(output_file, 0o755)
+    return github_workflow_utils.generate_workflow(
+        program_name,
+        template_name,
+        __file__,
+        output_shell_completion,
+        completion_steps,
+        insertion_point,
+    )
 
 
 def main() -> None:
     """Parses arguments and generates the workflows."""
-    parser = argparse.ArgumentParser(
+    parser = github_workflow_utils.get_parser(
         description="Generate GitHub Actions workflows for a Rust project."
     )
-    parser.add_argument("program_name", help="The name of the program to release.")
-    parser.add_argument(
-        "--output_shell_completion",
-        action="store_true",
-        help="Include steps to generate shell completions in the release workflow.",
-    )
-    parser.add_argument(
-        "ignored_filename",
-        nargs="?",
-        help="An optional filename that is ignored (used when invoked via shebang).",
-    )
-    args = parser.parse_args(namespace=Args())
+    args = parser.parse_args(namespace=github_workflow_utils.Args())
 
     # 1. Generate and write the release workflow
     release_content = generate_workflow(
@@ -113,9 +53,8 @@ def main() -> None:
         "rust_release_workflow.template",
         args.output_shell_completion,
     )
-    release_output = ".github/workflows/release.yml"
-    write_workflow(
-        release_output,
+    github_workflow_utils.write_workflow(
+        ".github/workflows/release.yml",
         release_content,
     )
 
@@ -125,8 +64,9 @@ def main() -> None:
         "rust_publish_workflow.template",
         args.output_shell_completion,
     )
-    publish_output = ".github/workflows/publish.yml"
-    write_workflow(publish_output, publish_content)
+    github_workflow_utils.write_workflow(
+        ".github/workflows/publish.yml", publish_content
+    )
 
     # 3. Generate and write the dependabot configuration
     dependabot_content = generate_workflow(
@@ -134,8 +74,7 @@ def main() -> None:
         "rust_dependabot.template",
         args.output_shell_completion,
     )
-    dependabot_output = ".github/dependabot.yml"
-    write_workflow(dependabot_output, dependabot_content)
+    github_workflow_utils.write_workflow(".github/dependabot.yml", dependabot_content)
 
     # 4. Generate and write the pull request workflow
     pull_request_content = generate_workflow(
@@ -143,8 +82,9 @@ def main() -> None:
         "rust_pull_request_workflow.template",
         args.output_shell_completion,
     )
-    pull_request_output = ".github/workflows/pull_request.yml"
-    write_workflow(pull_request_output, pull_request_content)
+    github_workflow_utils.write_workflow(
+        ".github/workflows/pull_request.yml", pull_request_content
+    )
 
     # 5. Generate and write the security audit workflow
     security_audit_content = generate_workflow(
@@ -152,8 +92,9 @@ def main() -> None:
         "rust_security_audit.template",
         args.output_shell_completion,
     )
-    security_audit_output = ".github/workflows/security_audit.yml"
-    write_workflow(security_audit_output, security_audit_content)
+    github_workflow_utils.write_workflow(
+        ".github/workflows/security_audit.yml", security_audit_content
+    )
 
 
 if __name__ == "__main__":
