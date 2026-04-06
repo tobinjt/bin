@@ -40,6 +40,8 @@ if type rustup >& /dev/null && [[ -d "${HOME}/.cargo" ]]; then
   rustup component add clippy rust-analyzer rust-src
   # https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#from-source
   cargo +stable install --locked cargo-llvm-cov
+
+  # keep-sorted start
   # https://crates.io/crates/cargo-binutils
   cargo install --locked cargo-binutils
   # https://github.com/dtolnay/cargo-edit
@@ -52,8 +54,12 @@ if type rustup >& /dev/null && [[ -d "${HOME}/.cargo" ]]; then
   cargo install --locked cargo-nextest
   # https://crates.io/crates/cargo-outdated
   cargo install --locked cargo-outdated
+  # https://crates.io/crates/cargo-release
+  cargo install --locked cargo-release
   # https://crates.io/crates/cargo-watch
   cargo install --locked cargo-watch
+  # keep-sorted end
+
   # Tooling I wrote :)
   cargo install colx
   cargo install path-parents
