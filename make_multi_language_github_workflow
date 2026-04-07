@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  if [[ "$#" -ne 1 && "$#" -ne 2 ]]; then
+    echo "Usage: $0 program-name [ignored-filename]" >&2
+    return 1
+  fi
+
+  local name="$1"
+  readonly name
+  if [[ -f "go.mod" ]]; then
+    make_go_github_workflow "${name}"
+  fi
+  if [[ -f "src/main.rs" ]]; then
+    make_rust_github_workflow "${name}"
+  fi
+  sed -i '' -e "1s/make_.*_github_workflow/$(basename "$0")/" \
+    .github/dependabot.yml
+}
+
+main "$@"
