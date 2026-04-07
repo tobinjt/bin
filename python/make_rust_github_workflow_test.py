@@ -136,11 +136,11 @@ class TestMain(fake_filesystem_unittest.TestCase):
     def test_main(self) -> None:
         """Tests that the main function correctly writes all files."""
         make_rust_github_workflow.main()
-        release_file = ".github/workflows/release.yml"
-        publish_file = ".github/workflows/publish.yml"
+        release_file = ".github/workflows/rust_release.yml"
+        publish_file = ".github/workflows/rust_publish.yml"
         dependabot_file = ".github/dependabot.yml"
-        pull_request_file = ".github/workflows/pull_request.yml"
-        security_audit_file = ".github/workflows/security_audit.yml"
+        pull_request_file = ".github/workflows/rust_pull_request.yml"
+        security_audit_file = ".github/workflows/rust_security_audit.yml"
         self.assertTrue(os.path.exists(release_file))
         self.assertTrue(os.path.exists(publish_file))
         self.assertTrue(os.path.exists(dependabot_file))
@@ -176,7 +176,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
     def test_main_with_completions(self) -> None:
         """Tests that main correctly handles the --output_shell_completion flag."""
         make_rust_github_workflow.main()
-        release_file = ".github/workflows/release.yml"
+        release_file = ".github/workflows/rust_release.yml"
         with open(release_file, "r", encoding="utf-8") as f:
             content = f.read()
             self.assertIn("# 1.1 Generate shell completions", content)
@@ -189,7 +189,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
     def test_main_with_ignored_arg(self) -> None:
         """Tests that an extra argument is ignored and doesn't cause an error."""
         make_rust_github_workflow.main()
-        release_file = ".github/workflows/release.yml"
+        release_file = ".github/workflows/rust_release.yml"
         self.assertTrue(os.path.exists(release_file))
 
 

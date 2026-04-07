@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Script to generate GitHub Actions workflows for a Rust project."""
 
+import os
+
 import github_workflow_utils
 
 
@@ -49,11 +51,11 @@ def main() -> None:
 
     workflows = [
         # keep-sorted start
-        ("generic_dependabot.template", ".github/dependabot.yml"),
-        ("rust_publish_workflow.template", ".github/workflows/publish.yml"),
-        ("rust_pull_request_workflow.template", ".github/workflows/pull_request.yml"),
-        ("rust_release_workflow.template", ".github/workflows/release.yml"),
-        ("rust_security_audit.template", ".github/workflows/security_audit.yml"),
+        ("generic_dependabot.template", "dependabot.yml"),
+        ("rust_publish_workflow.template", "workflows/rust_publish.yml"),
+        ("rust_pull_request_workflow.template", "workflows/rust_pull_request.yml"),
+        ("rust_release_workflow.template", "workflows/rust_release.yml"),
+        ("rust_security_audit.template", "workflows/rust_security_audit.yml"),
         # keep-sorted end
     ]
 
@@ -63,7 +65,9 @@ def main() -> None:
             template,
             args.output_shell_completion,
         )
-        github_workflow_utils.write_workflow(output_file, content)
+        github_workflow_utils.write_workflow(
+            os.path.join(".github", output_file), content
+        )
 
 
 if __name__ == "__main__":
