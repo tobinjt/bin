@@ -14,7 +14,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the release workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_release_workflow.template"
+            program_name, "rust_release_workflow.yml"
         )
 
         # Check for shebang
@@ -30,7 +30,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the publish workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_publish_workflow.template"
+            program_name, "rust_publish_workflow.yml"
         )
 
         # Check for shebang
@@ -38,7 +38,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from rust_publish_workflow.template)
+        # Check for key sections (from rust_publish_workflow.yml)
         self.assertIn("name: Publish to crates.io if tests pass.", content)
         self.assertIn("name: Publish to Crates.io", content)
 
@@ -46,7 +46,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the dependabot workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "generic_dependabot.template"
+            program_name, "generic_dependabot.yml"
         )
 
         # Check for shebang
@@ -54,7 +54,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from generic_dependabot.template)
+        # Check for key sections (from generic_dependabot.yml)
         self.assertIn('package-ecosystem: "github-actions"', content)
         self.assertIn('package-ecosystem: "cargo"', content)
 
@@ -62,7 +62,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the PR workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_pull_request_workflow.template"
+            program_name, "rust_pull_request_workflow.yml"
         )
 
         # Check for shebang
@@ -70,7 +70,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from rust_pull_request_workflow.template)
+        # Check for key sections (from rust_pull_request_workflow.yml)
         self.assertIn("name: Code Quality", content)
         self.assertIn("on:", content)
         self.assertIn("pull_request:", content)
@@ -79,7 +79,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the security audit workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_security_audit.template"
+            program_name, "rust_security_audit.yml"
         )
 
         # Check for shebang
@@ -87,7 +87,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from rust_security_audit.template)
+        # Check for key sections (from rust_security_audit.yml)
         self.assertIn("name: Security Audit", content)
         self.assertIn("uses: rustsec/audit-check@v2.0.0", content)
 
@@ -95,7 +95,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that shell completions are included when requested for release."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_release_workflow.template", output_shell_completion=True
+            program_name, "rust_release_workflow.yml", output_shell_completion=True
         )
 
         # Check for shebang with flag
@@ -120,11 +120,11 @@ class TestMain(fake_filesystem_unittest.TestCase):
         )
         for template in [
             # keep-sorted start
-            "generic_dependabot.template",
-            "rust_publish_workflow.template",
-            "rust_pull_request_workflow.template",
-            "rust_release_workflow.template",
-            "rust_security_audit.template",
+            "generic_dependabot.yml",
+            "rust_publish_workflow.yml",
+            "rust_pull_request_workflow.yml",
+            "rust_release_workflow.yml",
+            "rust_security_audit.yml",
             # keep-sorted end
         ]:
             template_path = os.path.join(template_dir, template)

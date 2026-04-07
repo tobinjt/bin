@@ -13,8 +13,8 @@ def main() -> None:
 
     workflows = [
         # keep-sorted start
-        ("generic_dependabot.template", ".github/dependabot.yml"),
-        ("golang_workflow.template", ".github/workflows/golang_pre-commit.yml"),
+        ("generic_dependabot.yml", ".github/dependabot.yml"),
+        ("golang_workflow.yml", ".github/workflows/golang_pre-commit.yml"),
         # keep-sorted end
     ]
 
