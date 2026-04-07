@@ -31,7 +31,7 @@ jobs:
           git diff --exit-code
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
 
       - name: Govulncheck
         uses: golang/govulncheck-action@v1
