@@ -184,7 +184,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             '  "rm",\n'
             '  "shred",\n'
             '  "mv",\n'
-            '  "cp",\n'
+            '  "cp"\n'
             "]\n"
         )
         output = cleanup_gemini_policies.format_rules(rules, line_length_limit=40)
@@ -205,7 +205,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             "priority = 10\n"
             "commandPrefix = [\n"
             '  "cat",\n'
-            '  "ls",\n'
+            '  "ls"\n'
             "]\n"
             "\n"
             "[[rule]]\n"
@@ -216,7 +216,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             '  "rm",\n'
             '  "shred",\n'
             '  "mv",\n'
-            '  "cp",\n'
+            '  "cp"\n'
             "]\n"
         )
         output = cleanup_gemini_policies.format_rules(rules, line_length_limit=20)

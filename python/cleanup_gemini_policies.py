@@ -115,8 +115,9 @@ def format_rules(rules: list[Rule], line_length_limit: int = 80) -> str:
             single_line = f"commandPrefix = [ {prefixes} ]"
             if len(single_line) > line_length_limit:
                 output.append("commandPrefix = [")
-                for prefix in rule.commandPrefix:
-                    output.append(f'  "{prefix}",')
+                for j, prefix in enumerate(rule.commandPrefix):
+                    comma = "," if j < len(rule.commandPrefix) - 1 else ""
+                    output.append(f'  "{prefix}"{comma}')
                 output.append("]")
             else:
                 output.append(single_line)
