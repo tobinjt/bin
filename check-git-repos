@@ -35,7 +35,6 @@ check_single_repo() {
   # Pull to start with so that unpulled changes don't cause failures.
   git_pull_and_push_if_possible
   git check-local-copy-is-clean
-  install-pre-commit-hooks
 }
 
 main() {
