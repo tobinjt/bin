@@ -4,12 +4,20 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          # Ensure we are on the PR branch, not a detached head
+          ref: ${{ github.head_ref }}
+          # Required to push new commits.
+          persist-credentials: true
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -24,7 +32,13 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Check formatting (rustfmt)
-        run: cargo fmt --all -- --check
+        run: cargo fmt --all
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "style: automatic rustfmt fixes"
+          file_pattern: 'src/**/*.rs'
 
       - name: Run Lints (clippy)
         run: cargo clippy -- -D warnings
