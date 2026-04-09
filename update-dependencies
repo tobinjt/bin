@@ -1,0 +1,75 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+commit_if_necessary() {
+  local message="$1"
+  if ! git check-local-copy-is-clean; then
+    git commit -a -m "chore: ${message}"
+  fi
+}
+
+main() {
+  if [[ "$#" -ne 0 ]]; then
+    echo "Usage: $0" >&2
+    echo "Updates dependencies for Golang, Rust." >&2
+    return 1
+  fi
+
+  if git transport-is-https; then
+    return
+  fi
+  # Skip forked repos, I should not be updating anything there.
+  if git remote show | grep -q upstream; then
+    return
+  fi
+  check-git-repos "$(pwd)"
+
+  if [[ -f "go.mod" ]]; then
+    go get -u ./...
+    go mod tidy
+    commit_if_necessary "updating Go dependencies"
+  fi
+
+  if [[ -f "src/main.rs" ]]; then
+    cargo update
+    commit_if_necessary "cargo update"
+    cargo upgrade
+    cargo update
+    commit_if_necessary "cargo upgrade"
+  fi
+
+  if [[ -f "composer.json" ]]; then
+    composer update
+    commit_if_necessary "composer update"
+
+    # Composer refuses to perform major upgrades because they're usually
+    # incompatible.
+    local major_updates
+    major_updates="$(composer outdated --major-only)"
+    if [[ -n "${major_updates}" ]]; then
+      echo "Major updates available" >&2
+      echo "Use 'composer require PACKAGE:^VERSION' to upgrade" >&2
+      echo "${major_updates}" >&2
+      return 1
+    fi
+  fi
+
+  if [[ -f "package.json" ]]; then
+    npm update
+    commit_if_necessary "npm update"
+
+    # NPM refuses to perform major upgrades because they're usually
+    # incompatible.
+    local major_updates
+    major_updates="$(npm outdated)"
+    if [[ -n "${major_updates}" ]]; then
+      echo "Major updates available" >&2
+      echo "TODO: document how to upgrade." >&2
+      echo "${major_updates}" >&2
+      return 1
+    fi
+  fi
+}
+
+main "$@"
