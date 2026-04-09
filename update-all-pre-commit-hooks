@@ -17,8 +17,6 @@ dirs_to_update() {
 
 update-dotfiles-and-bin
 for dir in $(dirs_to_update); do
-  if [[ -f "${dir}/.pre-commit-config.yaml" ]]; then
-    (cd "${dir}" && retry "${dir}" -- update-pre-commit-hooks)
-    printf "\n\n\n"
-  fi
+  (cd "${dir}" && retry "${dir}" -- update-pre-commit-hooks)
+  printf "\n\n\n"
 done
