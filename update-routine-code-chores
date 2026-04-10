@@ -17,6 +17,9 @@ dirs_to_update() {
 
 update-dotfiles-and-bin
 for dir in $(dirs_to_update); do
+  if [[ ! -d "${dir}" ]]; then
+    continue
+  fi
   (cd "${dir}" && retry "update-pre-commit-hooks: ${dir}" \
     -- update-pre-commit-hooks)
   (cd "${dir}" && retry "update-dependencies: ${dir}" \
