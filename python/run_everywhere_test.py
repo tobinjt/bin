@@ -78,6 +78,44 @@ class RunEverywhereTest(unittest.TestCase):
 
         mock_subprocess_run.assert_has_calls(expected_calls, any_order=False)
 
+    @mock.patch.object(run_everywhere.subprocess, "run")
+    def test_update_single_host_localhost(self, mock_subprocess_run: mock.Mock) -> None:
+        """
+        Tests that SSH is not used when host is localhost.
+        """
+        host = "localhost"
+        command = ["my-command", "--arg1"]
+        users = ["johntobin", "root"]
+        run_everywhere.update_single_host(host, users, command)
+
+        self.assertEqual(mock_subprocess_run.call_count, 2)
+
+        # Expected calls for johntobin and root on localhost
+        expected_calls = [
+            mock.call(
+                [
+                    "retry",
+                    "johntobin@localhost",
+                    "my-command",
+                    "--arg1",
+                ],
+                check=False,
+            ),
+            mock.call(
+                [
+                    "retry",
+                    "root@localhost",
+                    "sudo",
+                    "--login",
+                    "my-command",
+                    "--arg1",
+                ],
+                check=False,
+            ),
+        ]
+
+        mock_subprocess_run.assert_has_calls(expected_calls, any_order=False)
+
     @mock.patch.object(run_everywhere, "update_single_host")
     def test_main(self, mock_update_single_host: mock.Mock) -> None:
         argv = ["do-something", "arg"]

@@ -107,19 +107,29 @@ def update_single_host(host: str, users: list[str], command: list[str]) -> None:
     for user in users:
         logger.info(f"{user}@{host}")
 
-        retry_command = [
-            "retry",
-            f"{user}@{host}",
-            "ssh",
-            "-o",
-            "ControlMaster=no",
-            "-o",
-            "ForwardAgent=yes",
-            "-t",
-            "-t",
-            ssh_targets.get(user, f"{user}@{host}"),
-        ]
-        full_command = retry_command + sudo_commands.get(user, []) + command
+        ssh_command = (
+            []
+            if host == "localhost"
+            else [
+                "ssh",
+                "-o",
+                "ControlMaster=no",
+                "-o",
+                "ForwardAgent=yes",
+                "-t",
+                "-t",
+                ssh_targets.get(user, f"{user}@{host}"),
+            ]
+        )
+        full_command = (
+            [
+                "retry",
+                f"{user}@{host}",
+            ]
+            + ssh_command
+            + sudo_commands.get(user, [])
+            + command
+        )
 
         logger.info(f"Will run: {full_command}")
         subprocess.run(full_command, check=False)
