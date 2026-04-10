@@ -2,6 +2,14 @@
 
 set -e -f -u -o pipefail
 
+should_try_updating() {
+  local binary="$1" config_file="$2"
+  if ! type "${binary}" >& /dev/null; then
+    return 1
+  fi
+  should_try_updating "" "${config_file}"
+}
+
 commit_if_necessary() {
   local message="$1"
   if ! git check-local-copy-is-clean; then
@@ -25,13 +33,13 @@ main() {
   fi
   check-git-repos "$(pwd)"
 
-  if [[ -f "go.mod" ]]; then
+  if should_try_updating "go" "go.mod"; then
     go get -u ./...
     go mod tidy
     commit_if_necessary "updating Go dependencies"
   fi
 
-  if [[ -f "src/main.rs" ]]; then
+  if should_try_updating "cargo" "src/main.rs"; then
     cargo update
     commit_if_necessary "cargo update"
     cargo upgrade
@@ -39,7 +47,7 @@ main() {
     commit_if_necessary "cargo upgrade"
   fi
 
-  if [[ -f "composer.json" ]]; then
+  if should_try_updating "composer" "composer.json"; then
     composer update
     commit_if_necessary "composer update"
 
@@ -55,7 +63,7 @@ main() {
     fi
   fi
 
-  if [[ -f "package.json" ]]; then
+  if should_try_updating "npm" "package.json"; then
     npm update
     commit_if_necessary "npm update"
 
