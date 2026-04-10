@@ -5,7 +5,7 @@ set -e -f -u -o pipefail
 main() {
   local tty
   tty="$(basename "$(tty)")"
-  ps -ef | rg ' ttys00[0-9]' | rg -v -w "${tty}"
+  ps -ef | rg -e ' ttys00[0-9]' -e ' pts/[0-9]' | rg -v -w "${tty}"
 }
 
 main "$@"
