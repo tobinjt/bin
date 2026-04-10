@@ -35,12 +35,15 @@ if type nvim >& /dev/null; then
       'lua require("johntobin.functions").RunCommandIfExists("MasonToolsUpdateSync")'
 fi
 
-if type pre-commit >& /dev/null; then
-  echo "Updating pre-commit hooks"
-  retry update-all-pre-commit-hooks -- update-all-pre-commit-hooks
-fi
 echo "Installing extra development tools"
 retry install-extra-development-tools -- install-extra-development-tools
+
+# Using the presence of pre-commit as a proxy for whether to perform routine
+# code maintainence chores.
+if type pre-commit >& /dev/null; then
+  echo "Performing routine code maintainence chores"
+  retry update-routine-code-chores -- update-routine-code-chores
+fi
 
 if [[ -f "/Applications/AdGuardHome/AdGuardHome" ]]; then
   retry AdGuard -- update-adguard
