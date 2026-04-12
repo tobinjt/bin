@@ -31,7 +31,7 @@ for dir in $(dirs_to_update); do
     -- update-pre-commit-hooks)
   (cd "${dir}" && retry "update-dependencies: ${dir}" \
     -- update-dependencies)
-  if [[ -f "${dir}/.github/dependabot.yml" ]]; then
+  if [[ -x "${dir}/.github/dependabot.yml" ]]; then
     (cd "${dir}" && update_workflows)
   fi
   (cd "${dir}" && git push)
