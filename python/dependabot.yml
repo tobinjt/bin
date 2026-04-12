@@ -7,6 +7,8 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
@@ -21,6 +23,8 @@ updates:
       - "go"
     # Ensure it updates the go.sum file correctly
     versioning-strategy: increase
+    cooldown:
+      default-days: 7
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
@@ -33,3 +37,5 @@ updates:
     labels:
       - "dependencies"
       - "rust"
+    cooldown:
+      default-days: 7
