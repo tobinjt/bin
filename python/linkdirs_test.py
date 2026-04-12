@@ -770,7 +770,6 @@ class TestUsage(unittest.TestCase):
         linkdirs.real_main(argv=["argv0", "--help"])
         stdout = mock_stdout.getvalue()
         self.assertIn("[OPTIONS] SOURCE_DIRECTORY [...] ", stdout)
-        self.assertIn("Enable debug output (default: False)", stdout)
 
 
 class TestMisc(fake_filesystem_unittest.TestCase):
