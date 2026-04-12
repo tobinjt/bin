@@ -15,6 +15,13 @@ dirs_to_update() {
   set -f
 }
 
+update_workflows() {
+  retry "update Github workflows: ${PWD}" -- ./.github/dependabot.yml
+  if ! git check-local-copy-is-clean; then
+    git commit -a -m "chore: update Github workflows"
+  fi
+}
+
 update-dotfiles-and-bin
 for dir in $(dirs_to_update); do
   if [[ ! -d "${dir}" ]]; then
@@ -24,5 +31,9 @@ for dir in $(dirs_to_update); do
     -- update-pre-commit-hooks)
   (cd "${dir}" && retry "update-dependencies: ${dir}" \
     -- update-dependencies)
+  if [[ -f "${dir}/.github/dependabot.yml" ]]; then
+    (cd "${dir}" && update_workflows)
+  fi
+  git push
   printf "\n\n\n"
 done
