@@ -46,7 +46,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the dependabot workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "generic_dependabot.yml"
+            program_name, "dependabot.yml"
         )
 
         # Check for shebang
@@ -54,7 +54,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from generic_dependabot.yml)
+        # Check for key sections (from dependabot.yml)
         self.assertIn('package-ecosystem: "github-actions"', content)
         self.assertIn('package-ecosystem: "cargo"', content)
 
@@ -120,7 +120,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
         )
         for template in [
             # keep-sorted start
-            "generic_dependabot.yml",
+            "dependabot.yml",
             "rust_publish_workflow.yml",
             "rust_pull_request_workflow.yml",
             "rust_release_workflow.yml",

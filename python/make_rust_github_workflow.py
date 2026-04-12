@@ -51,7 +51,7 @@ def main() -> None:
 
     workflows = [
         # keep-sorted start
-        ("generic_dependabot.yml", "dependabot.yml"),
+        ("dependabot.yml", "dependabot.yml"),
         ("rust_publish_workflow.yml", "workflows/rust_publish.yml"),
         ("rust_pull_request_workflow.yml", "workflows/rust_pull_request.yml"),
         ("rust_release_workflow.yml", "workflows/rust_release.yml"),
