@@ -6,39 +6,20 @@ import os
 import github_workflow_utils
 
 
-def generate_workflow(
-    program_name: str, template_name: str, output_shell_completion: bool = False
-) -> str:
+def generate_workflow(program_name: str, template_name: str) -> str:
     """Generates a GitHub Actions workflow from a template.
 
     Args:
         program_name: The name of the program/binary.
         template_name: The filename of the template to use.
-        output_shell_completion: Whether to include steps to generate shell completions.
 
     Returns:
         The generated YAML content as a string.
     """
-    completion_steps = """
-          # 1.1 Generate shell completions
-          mkdir -p staging/completions
-          BIN="target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}"
-
-          $BIN --output_shell_completion bash       > staging/completions/PROGRAM_NAME.bash
-          $BIN --output_shell_completion elvish     > staging/completions/PROGRAM_NAME.elv
-          $BIN --output_shell_completion fish       > staging/completions/PROGRAM_NAME.fish
-          $BIN --output_shell_completion powershell > staging/completions/_PROGRAM_NAME.ps1
-          $BIN --output_shell_completion zsh        > staging/completions/_PROGRAM_NAME
-"""
-    insertion_point = "cp LICENSE staging/ || true"
-
     return github_workflow_utils.generate_workflow(
         program_name,
         template_name,
         __file__,
-        output_shell_completion,
-        completion_steps,
-        insertion_point,
     )
 
 
@@ -54,7 +35,6 @@ def main() -> None:
         ("dependabot.yml", "dependabot.yml"),
         ("rust_publish_workflow.yml", "workflows/rust_publish.yml"),
         ("rust_pull_request_workflow.yml", "workflows/rust_pull_request.yml"),
-        ("rust_release_workflow.yml", "workflows/rust_release.yml"),
         ("rust_security_audit.yml", "workflows/rust_security_audit.yml"),
         # keep-sorted end
     ]
@@ -63,7 +43,6 @@ def main() -> None:
         content = generate_workflow(
             args.program_name,
             template,
-            args.output_shell_completion,
         )
         github_workflow_utils.write_workflow(
             os.path.join(".github", output_file), content

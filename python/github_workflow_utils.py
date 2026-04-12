@@ -8,25 +8,21 @@ class Args(argparse.Namespace):
     """Arguments for the workflow generation scripts."""
 
     program_name: str
-    output_shell_completion: bool
     ignored_filename: str | None
 
     def __init__(
         self,
         program_name: str = "",
-        output_shell_completion: bool = False,
         ignored_filename: str | None = None,
     ) -> None:
         """Initializes the arguments.
 
         Args:
             program_name: The name of the program to release.
-            output_shell_completion: Whether to include steps to generate shell completions.
             ignored_filename: An optional filename that is ignored.
         """
         super().__init__()
         self.program_name = program_name
-        self.output_shell_completion = output_shell_completion
         self.ignored_filename = ignored_filename
 
 
@@ -34,9 +30,6 @@ def generate_workflow(
     program_name: str,
     template_name: str,
     script_file: str,
-    output_shell_completion: bool = False,
-    completion_script: str | None = None,
-    insertion_point: str | None = None,
 ) -> str:
     """Generates a GitHub Actions workflow from a template.
 
@@ -44,9 +37,6 @@ def generate_workflow(
         program_name: The name of the program/binary.
         template_name: The filename of the template to use.
         script_file: The path to the script calling this function (used for shebang and template location).
-        output_shell_completion: Whether to include steps to generate shell completions.
-        completion_script: The shell completion script to insert.
-        insertion_point: The string in the template after which to insert the completion script.
 
     Returns:
         The generated YAML content as a string.
@@ -56,15 +46,9 @@ def generate_workflow(
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
-    flags = " --output_shell_completion" if output_shell_completion else ""
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}{flags} PROGRAM_NAME"
+    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)} PROGRAM_NAME"
 
     template = shebang + "\n" + template
-
-    if output_shell_completion and completion_script and insertion_point:
-        template = template.replace(
-            insertion_point, insertion_point + "\n" + completion_script
-        )
 
     return template.replace("PROGRAM_NAME", program_name).rstrip()
 
@@ -95,11 +79,6 @@ def get_parser(description: str) -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("program_name", help="The name of the program to release.")
-    parser.add_argument(
-        "--output_shell_completion",
-        action="store_true",
-        help="Include steps to generate shell completions in the release workflow.",
-    )
     parser.add_argument(
         "ignored_filename",
         nargs="?",

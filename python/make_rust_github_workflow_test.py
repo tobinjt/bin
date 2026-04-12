@@ -10,22 +10,6 @@ import make_rust_github_workflow
 
 
 class TestMakeGithubWorkflow(unittest.TestCase):
-    def test_generate_release_workflow(self) -> None:
-        """Tests that the release workflow generation produces expected content."""
-        program_name = "testapp"
-        content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_release_workflow.yml"
-        )
-
-        # Check for shebang
-        self.assertTrue(
-            content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
-        )
-
-        # Check for key sections and program name replacement
-        self.assertIn("name: Build binaries", content)
-        self.assertIn(f"bin: {program_name}", content)
-
     def test_generate_publish_workflow(self) -> None:
         """Tests that the publish workflow generation produces expected content."""
         program_name = "testapp"
@@ -91,24 +75,6 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         self.assertIn("name: Security Audit", content)
         self.assertIn("uses: rustsec/audit-check@v2.0.0", content)
 
-    def test_generate_workflow_with_completions(self) -> None:
-        """Tests that shell completions are included when requested for release."""
-        program_name = "testapp"
-        content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_release_workflow.yml", output_shell_completion=True
-        )
-
-        # Check for shebang with flag
-        self.assertTrue(
-            content.startswith(
-                "#!/usr/bin/env -S make_rust_github_workflow.py "
-                + "--output_shell_completion testapp"
-            )
-        )
-
-        # Check for shell completion block
-        self.assertIn("# 1.1 Generate shell completions", content)
-
 
 class TestMain(fake_filesystem_unittest.TestCase):
     @override
@@ -123,7 +89,6 @@ class TestMain(fake_filesystem_unittest.TestCase):
             "dependabot.yml",
             "rust_publish_workflow.yml",
             "rust_pull_request_workflow.yml",
-            "rust_release_workflow.yml",
             "rust_security_audit.yml",
             # keep-sorted end
         ]:
@@ -136,20 +101,14 @@ class TestMain(fake_filesystem_unittest.TestCase):
     def test_main(self) -> None:
         """Tests that the main function correctly writes all files."""
         make_rust_github_workflow.main()
-        release_file = ".github/workflows/rust_release.yml"
         publish_file = ".github/workflows/rust_publish.yml"
         dependabot_file = ".github/dependabot.yml"
         pull_request_file = ".github/workflows/rust_pull_request.yml"
         security_audit_file = ".github/workflows/rust_security_audit.yml"
-        self.assertTrue(os.path.exists(release_file))
         self.assertTrue(os.path.exists(publish_file))
         self.assertTrue(os.path.exists(dependabot_file))
         self.assertTrue(os.path.exists(pull_request_file))
         self.assertTrue(os.path.exists(security_audit_file))
-
-        with open(release_file, "r", encoding="utf-8") as f:
-            content = f.read()
-            self.assertIn("name: Build binaries", content)
 
         with open(publish_file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -171,26 +130,13 @@ class TestMain(fake_filesystem_unittest.TestCase):
     @mock.patch.object(
         sys,
         "argv",
-        ["make_rust_github_workflow.py", "cliapp", "--output_shell_completion"],
-    )
-    def test_main_with_completions(self) -> None:
-        """Tests that main correctly handles the --output_shell_completion flag."""
-        make_rust_github_workflow.main()
-        release_file = ".github/workflows/rust_release.yml"
-        with open(release_file, "r", encoding="utf-8") as f:
-            content = f.read()
-            self.assertIn("# 1.1 Generate shell completions", content)
-
-    @mock.patch.object(
-        sys,
-        "argv",
         ["make_rust_github_workflow.py", "cliapp", "extra_ignored_arg"],
     )
     def test_main_with_ignored_arg(self) -> None:
         """Tests that an extra argument is ignored and doesn't cause an error."""
         make_rust_github_workflow.main()
-        release_file = ".github/workflows/rust_release.yml"
-        self.assertTrue(os.path.exists(release_file))
+        publish_file = ".github/workflows/rust_publish.yml"
+        self.assertTrue(os.path.exists(publish_file))
 
 
 if __name__ == "__main__":

@@ -23,7 +23,6 @@ def main() -> None:
             args.program_name,
             template,
             __file__,
-            False,
         )
         github_workflow_utils.write_workflow(output_file, content)
 
