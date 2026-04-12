@@ -5,11 +5,18 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions: {}
+
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Ensure we are on the PR branch, not a detached head
+          ref: ${{ github.head_ref }}
+          # Required to push new commits.
+          persist-credentials: true
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -23,12 +30,18 @@ jobs:
       - name: Check Imports
         run: |
           goimports .
-          git diff --exit-code
 
       - name: Check Formatting
         run: |
           go fmt .
-          git diff --exit-code
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        permissions:
+          contents: write
+        with:
+          commit_message: "style: automatic fixes"
+          file_pattern: '*.go'
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
