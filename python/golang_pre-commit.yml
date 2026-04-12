@@ -10,6 +10,8 @@ permissions: {}
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -37,8 +39,6 @@ jobs:
 
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v7
-        permissions:
-          contents: write
         with:
           commit_message: "style: automatic fixes"
           file_pattern: '*.go'
