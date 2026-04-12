@@ -57,7 +57,7 @@ def generate_workflow(
         template = f.read()
 
     flags = " --output_shell_completion" if output_shell_completion else ""
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}{flags} {program_name}"
+    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}{flags} PROGRAM_NAME"
 
     template = shebang + "\n" + template
 
@@ -66,7 +66,7 @@ def generate_workflow(
             insertion_point, insertion_point + "\n" + completion_script
         )
 
-    return template.replace("{program_name}", program_name).rstrip()
+    return template.replace("PROGRAM_NAME", program_name).rstrip()
 
 
 def write_workflow(output_file: str, content: str) -> None:

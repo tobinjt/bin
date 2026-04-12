@@ -40,7 +40,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
 
         # Check for key sections (from rust_publish_workflow.yml)
         self.assertIn("name: Publish to crates.io if tests pass.", content)
-        self.assertIn("name: Publish to Crates.io", content)
+        self.assertIn("name: Cargo Publish", content)
 
     def test_generate_dependabot_workflow(self) -> None:
         """Tests that the dependabot workflow generation produces expected content."""

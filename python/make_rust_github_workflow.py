@@ -24,11 +24,11 @@ def generate_workflow(
           mkdir -p staging/completions
           BIN="target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}"
 
-          $BIN --output_shell_completion bash       > staging/completions/{program_name}.bash
-          $BIN --output_shell_completion elvish     > staging/completions/{program_name}.elv
-          $BIN --output_shell_completion fish       > staging/completions/{program_name}.fish
-          $BIN --output_shell_completion powershell > staging/completions/_{program_name}.ps1
-          $BIN --output_shell_completion zsh        > staging/completions/_{program_name}
+          $BIN --output_shell_completion bash       > staging/completions/PROGRAM_NAME.bash
+          $BIN --output_shell_completion elvish     > staging/completions/PROGRAM_NAME.elv
+          $BIN --output_shell_completion fish       > staging/completions/PROGRAM_NAME.fish
+          $BIN --output_shell_completion powershell > staging/completions/_PROGRAM_NAME.ps1
+          $BIN --output_shell_completion zsh        > staging/completions/_PROGRAM_NAME
 """
     insertion_point = "cp LICENSE staging/ || true"
 

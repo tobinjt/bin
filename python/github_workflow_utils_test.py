@@ -61,7 +61,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         template_path = os.path.join(script_dir, template_name)
 
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            template_path, contents="Hello {program_name}!\nINSERT_HERE\nGoodbye."
+            template_path, contents="Hello PROGRAM_NAME!\nINSERT_HERE\nGoodbye."
         )
 
         content = github_workflow_utils.generate_workflow(
@@ -82,7 +82,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         template_path = os.path.join(script_dir, template_name)
 
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            template_path, contents="Hello {program_name}!\nINSERT_HERE\nGoodbye."
+            template_path, contents="Hello PROGRAM_NAME!\nINSERT_HERE\nGoodbye."
         )
 
         content = github_workflow_utils.generate_workflow(
