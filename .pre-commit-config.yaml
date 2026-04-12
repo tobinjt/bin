@@ -21,6 +21,12 @@ repos:
   - repo: local
     hooks:
       # keep-sorted start
+      - id: actionlint
+        name: Run `actionlint`
+        language: system
+        types: [yaml]
+        exclude: dependabot.yml|.*.yaml$
+        entry: actionlint
       - id: basedpyright
         name: Run `basedpyright`
         language: system
@@ -50,7 +56,7 @@ repos:
         name: Run `pytest` when Github workflows change
         language: system
         pass_filenames: false
-        files: python/.*.yml
+        types: [yaml]
         entry: pytest
       - id: pytest
         name: Run `pytest`
