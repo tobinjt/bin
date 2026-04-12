@@ -34,6 +34,6 @@ for dir in $(dirs_to_update); do
   if [[ -f "${dir}/.github/dependabot.yml" ]]; then
     (cd "${dir}" && update_workflows)
   fi
-  git push
+  (cd "${dir}" && git push)
   printf "\n\n\n"
 done
