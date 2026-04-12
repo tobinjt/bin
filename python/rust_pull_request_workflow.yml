@@ -20,28 +20,27 @@ jobs:
           persist-credentials: true
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      # Caching between runs, unclear if I really need this.
-      - name: Install Rust Cache
-        uses: Swatinem/rust-cache@v2
-
+        run: rustup toolchain install --component clippy
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Check formatting (rustfmt)
-        run: cargo fmt --all
+      # keep-sorted start block=true
+      - name: Run cargo build
+        run: cargo build --all-features
+      - name: Run cargo check
+        run: cargo check
+      - name: Run cargo clippy
+        run: cargo clippy -- --deny warnings
+      - name: Run cargo fmt
+        run: cargo fmt
+      - name: Run cargo llvm-cov test
+        run: cargo llvm-cov test
+      - name: Run cargo test
+        run: cargo test --all-features
+      # keep-sorted end
 
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "style: automatic rustfmt fixes"
           file_pattern: 'src/**/*.rs'
-
-      - name: Run Lints (clippy)
-        run: cargo clippy -- -D warnings
-
-      - name: Generate Code Coverage
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
