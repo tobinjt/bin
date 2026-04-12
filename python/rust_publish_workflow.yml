@@ -5,24 +5,31 @@ on:
     tags:
       - 'v*'
 
+permissions: {}
+
 jobs:
-  # Job 1: Run Tests
-  test:
-    name: Run Tests
+  check_and_publish:
+    name: Perform tests and publish to crates.io.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # Ensure we are on the PR branch, not a detached head
+          ref: ${{ github.head_ref }}
+          persist-credentials: false
+      - name: Install Rust toolchain
+        run: rustup toolchain install --component clippy
+      # keep-sorted start block=true
+      - name: Run cargo build
+        run: cargo build --all-features
+      - name: Run cargo check
+        run: cargo check
+      - name: Run cargo clippy
+        run: cargo clippy -- --deny warnings
+      - name: Run cargo fmt
+        run: cargo fmt --check
       - name: Run cargo test
         run: cargo test --all-features
-
-  # Job 2: Publish (Only runs if 'test' passes)
-  publish:
-    name: Publish to Crates.io
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      # keep-sorted end
       - name: Cargo Publish
         run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
