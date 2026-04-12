@@ -14,7 +14,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the publish workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_publish_workflow.yml"
+            program_name, "rust_publish.yml"
         )
 
         # Check for shebang
@@ -22,7 +22,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from rust_publish_workflow.yml)
+        # Check for key sections (from rust_publish.yml)
         self.assertIn("name: Publish to crates.io if tests pass.", content)
         self.assertIn("name: Cargo Publish", content)
 
@@ -46,7 +46,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
         """Tests that the PR workflow generation produces expected content."""
         program_name = "testapp"
         content = make_rust_github_workflow.generate_workflow(
-            program_name, "rust_pull_request_workflow.yml"
+            program_name, "rust_pull_request.yml"
         )
 
         # Check for shebang
@@ -54,7 +54,7 @@ class TestMakeGithubWorkflow(unittest.TestCase):
             content.startswith("#!/usr/bin/env -S make_rust_github_workflow.py testapp")
         )
 
-        # Check for key sections (from rust_pull_request_workflow.yml)
+        # Check for key sections (from rust_pull_request.yml)
         self.assertIn("name: Code Quality", content)
         self.assertIn("on:", content)
         self.assertIn("pull_request:", content)
@@ -87,8 +87,8 @@ class TestMain(fake_filesystem_unittest.TestCase):
         for template in [
             # keep-sorted start
             "dependabot.yml",
-            "rust_publish_workflow.yml",
-            "rust_pull_request_workflow.yml",
+            "rust_publish.yml",
+            "rust_pull_request.yml",
             "rust_security_audit.yml",
             # keep-sorted end
         ]:
