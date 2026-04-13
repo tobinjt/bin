@@ -7,7 +7,10 @@ should_try_updating() {
   if ! type "${binary}" >& /dev/null; then
     return 1
   fi
-  should_try_updating "" "${config_file}"
+  if [[ ! -f "${config_file}" ]]; then
+    return 1
+  fi
+  return 0
 }
 
 commit_if_necessary() {
