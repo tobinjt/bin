@@ -51,11 +51,14 @@ def main(argv: Sequence[str]) -> int:
 
     while True:
         logger.info(f"Running: {args.command_args}")
-        result = subprocess.run(args.command_args, check=False)
-        if result.returncode == 0:
-            return 0
+        try:
+            result = subprocess.run(args.command_args, check=False)
+            if result.returncode == 0:
+                return 0
+            logger.info(f"Exit status: {result.returncode}")
+        except OSError as e:
+            logger.warning(f"Failed to run command: {e}")
 
-        logger.info(f"Exit status: {result.returncode}")
         logger.warning(f"Command failed. Retrying {args.message}")
 
         input("Press Enter to retry: ")

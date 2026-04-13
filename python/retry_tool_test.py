@@ -47,6 +47,27 @@ class RetryMainTest(unittest.TestCase):
         )
         mock_input.assert_called_once_with("Press Enter to retry: ")
 
+    @mock.patch.object(retry_tool.subprocess, "run")
+    @mock.patch("builtins.input", return_value="")
+    def test_command_raises_oserror_then_succeeds(
+        self,
+        mock_input: mock.Mock,
+        mock_subprocess_run: mock.Mock,
+    ) -> None:
+        mock_subprocess_run.side_effect = [
+            OSError("Permission denied"),
+            mock.create_autospec(
+                retry_tool.subprocess.CompletedProcess, instance=True, returncode=0
+            ),
+        ]
+
+        argv = ["retrying...", "--", "my-command"]
+        return_code = retry_tool.main(argv)
+
+        self.assertEqual(return_code, 0)
+        self.assertEqual(mock_subprocess_run.call_count, 2)
+        mock_input.assert_called_once_with("Press Enter to retry: ")
+
     @mock.patch.object(sys, "exit")
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     def test_not_enough_arguments(
