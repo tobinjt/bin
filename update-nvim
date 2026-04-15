@@ -44,6 +44,8 @@ main() {
     "${extraction_dir}/usr/bin/nvim" --version
     ln -s -f -n "${extraction_dir}" nvim
   fi
+  # Run this in case it does anything to the Neovim installation.
+  "${HOME}/src/dotfiles/.dotfiles.d/30-neovim-updates.sh"
 }
 
 main "$@"
