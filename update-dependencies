@@ -72,13 +72,13 @@ main() {
 
     # NPM refuses to perform major upgrades because they're usually
     # incompatible.
-    local major_updates
-    major_updates="$(npm outdated)"
-    if [[ -n "${major_updates}" ]]; then
-      echo "Major updates available" >&2
-      echo "TODO: document how to upgrade." >&2
-      echo "${major_updates}" >&2
-      return 1
+    if ! npm outdated; then
+      cat << 'END_OF_MESSAGE'
+Major updates available:
+- Perform those manually with `npx npm-check-updates -u`
+  followed by `npm install`.
+- I needed to use Gemini to fix the installation failures.
+END_OF_MESSAGE
     fi
   fi
 }
