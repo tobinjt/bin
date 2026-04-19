@@ -6,11 +6,12 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
-    # Group updates to reduce PR noise
+    # Group updates into one PR.
     groups:
       go-dependencies:
         patterns:
@@ -19,11 +20,12 @@ updates:
     versioning-strategy: increase
     cooldown:
       default-days: 7
+
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "weekly"
-    # Group updates to reduce PR noise
+    # Group updates into one PR.
     groups:
       cargo-dependencies:
         patterns:

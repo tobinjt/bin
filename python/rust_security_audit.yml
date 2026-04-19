@@ -14,8 +14,12 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  audit-dependencies:
     runs-on: ubuntu-latest
+    name: Runs `cargo audit`.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

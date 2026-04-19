@@ -5,11 +5,20 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  quality:
+  pre-commit-checks:
+    name: |
+      Runs `cargo build`, `cargo check`, `cargo clippy`, `cargo fmt`,
+      `cargo llvm-cov test`, and `cargo test`,
+      Commits any changes made by `cargo fmt`.
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push new commits.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
