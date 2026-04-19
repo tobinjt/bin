@@ -1,4 +1,4 @@
-name: Go CI
+name: Go pre-commit checks.
 on:
   push:
     branches: [ "main" ]
@@ -9,10 +9,17 @@ permissions:
   contents: read
 
 jobs:
-  test-and-lint:
+  pre-commit-checks:
+    name: |
+      Run `goimports`, `golangci-lint`, `govulncheck`, and `go test`.
+      Commits any changes made by `goimports` or `gofmt`.
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Required to push new commits.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+
     steps:
       - uses: actions/checkout@v6
         with:
@@ -30,18 +37,13 @@ jobs:
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports@latest
 
-      - name: Check Imports
-        run: |
-          goimports .
-
-      - name: Check Formatting
-        run: |
-          go fmt .
+      - name: Check imports and formatting
+        run: goimports .
 
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: "style: automatic fixes"
+          commit_message: "style: automatic fixes by `goimports`"
           file_pattern: '*.go'
 
       - name: golangci-lint
