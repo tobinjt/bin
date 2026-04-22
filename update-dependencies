@@ -20,6 +20,60 @@ commit_if_necessary() {
   fi
 }
 
+update_go() {
+  if should_try_updating "go" "go.mod"; then
+    go get -u ./...
+    go mod tidy
+    commit_if_necessary "updating Go dependencies"
+  fi
+}
+
+update_rust() {
+  if should_try_updating "cargo" "src/main.rs"; then
+    cargo update
+    commit_if_necessary "cargo update"
+    cargo upgrade
+    cargo update
+    commit_if_necessary "cargo upgrade"
+  fi
+}
+
+update_composer() {
+  if should_try_updating "composer" "composer.json"; then
+    composer update
+    commit_if_necessary "composer update"
+
+    # Composer refuses to perform major upgrades because they're usually
+    # incompatible.
+    local major_updates
+    major_updates="$(composer outdated --major-only)"
+    if [[ -n "${major_updates}" ]]; then
+      echo "Major updates available" >&2
+      echo "Use 'composer require PACKAGE:^VERSION' to upgrade" >&2
+      echo "${major_updates}" >&2
+      return 1
+    fi
+  fi
+}
+
+update_npm() {
+  if should_try_updating "npm" "package.json"; then
+    npm update
+    commit_if_necessary "npm update"
+
+    # NPM refuses to perform major upgrades because they're usually
+    # incompatible.
+    if ! npm outdated; then
+      cat << 'END_OF_MESSAGE'
+Major updates available:
+- Perform those manually with `npx npm-check-updates -u`
+  followed by `npm install`.
+- I needed to use Gemini to fix the installation failures.
+END_OF_MESSAGE
+    fi
+  fi
+}
+
 main() {
   if [[ "$#" -ne 0 ]]; then
     echo "Usage: $0" >&2
@@ -36,51 +90,10 @@ main() {
   fi
   check-git-repos "$(pwd)"
 
-  if should_try_updating "go" "go.mod"; then
-    go get -u ./...
-    go mod tidy
-    commit_if_necessary "updating Go dependencies"
-  fi
-
-  if should_try_updating "cargo" "src/main.rs"; then
-    cargo update
-    commit_if_necessary "cargo update"
-    cargo upgrade
-    cargo update
-    commit_if_necessary "cargo upgrade"
-  fi
-
-  if should_try_updating "composer" "composer.json"; then
-    composer update
-    commit_if_necessary "composer update"
-
-    # Composer refuses to perform major upgrades because they're usually
-    # incompatible.
-    local major_updates
-    major_updates="$(composer outdated --major-only)"
-    if [[ -n "${major_updates}" ]]; then
-      echo "Major updates available" >&2
-      echo "Use 'composer require PACKAGE:^VERSION' to upgrade" >&2
-      echo "${major_updates}" >&2
-      return 1
-    fi
-  fi
-
-  if should_try_updating "npm" "package.json"; then
-    npm update
-    commit_if_necessary "npm update"
-
-    # NPM refuses to perform major upgrades because they're usually
-    # incompatible.
-    if ! npm outdated; then
-      cat << 'END_OF_MESSAGE'
-Major updates available:
-- Perform those manually with `npx npm-check-updates -u`
-  followed by `npm install`.
-- I needed to use Gemini to fix the installation failures.
-END_OF_MESSAGE
-    fi
-  fi
+  update_go
+  update_rust
+  update_composer
+  update_npm
 }
 
 main "$@"
