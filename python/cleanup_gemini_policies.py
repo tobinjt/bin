@@ -30,14 +30,25 @@ def parse_rules(file_path: str) -> list[Rule]:
 
     Returns:
         A list of parsed Rule objects.
+
+    Raises:
+        ValueError: If an unsupported field is found in a rule.
     """
     with open(file_path, "rb") as f:
         data = tomllib.load(f)
 
+    allowed_fields = {f.name for f in dataclasses.fields(Rule)}
+
     rules: list[Rule] = []
-    for r_dict in typing.cast(
-        list[dict[str, int | str | list[str]]], data.get("rule", [])
+    errors: list[str] = []
+    for i, r_dict in enumerate(
+        typing.cast(list[dict[str, int | str | list[str]]], data.get("rule", []))
     ):
+        unsupported = [f for f in r_dict if f not in allowed_fields]
+        if unsupported:
+            errors.append(f"Rule {i} has unsupported fields: {', '.join(unsupported)}")
+            continue
+
         rules.append(
             Rule(
                 decision=typing.cast(str, r_dict["decision"]),
@@ -47,6 +58,10 @@ def parse_rules(file_path: str) -> list[Rule]:
                 deny_message=typing.cast(str | None, r_dict.get("deny_message")),
             )
         )
+
+    if errors:
+        raise ValueError("\n".join(errors))
+
     return rules
 
 

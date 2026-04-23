@@ -46,6 +46,38 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         finally:
             os.remove(temp_file_name)
 
+    def test_parse_rules_unsupported_field(self):
+        """Tests that parse_rules reports all unsupported fields across rules."""
+        toml_content = b"""
+        [[rule]]
+        toolName = "run_shell_command"
+        decision = "approve"
+        priority = 10
+        badField1 = "value"
+        badField2 = "value"
+
+        [[rule]]
+        toolName = "read_file"
+        decision = "deny"
+        priority = 20
+        extraField = "value"
+        """
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            _ = f.write(toml_content)
+            temp_file_name = f.name
+
+        try:
+            with self.assertRaises(ValueError) as cm:
+                _ = cleanup_gemini_policies.parse_rules(temp_file_name)
+
+            error_msg = str(cm.exception)
+            self.assertIn(
+                "Rule 0 has unsupported fields: badField1, badField2", error_msg
+            )
+            self.assertIn("Rule 1 has unsupported fields: extraField", error_msg)
+        finally:
+            os.remove(temp_file_name)
+
     def test_process_rules(self):
         """Tests that rules are correctly combined and sorted."""
         rules = [
