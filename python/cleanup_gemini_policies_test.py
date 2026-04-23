@@ -18,12 +18,19 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         decision = "approve"
         priority = 10
         commandPrefix = ["ls", "cat"]
+        modes = ["default"]
 
         [[rule]]
         toolName = "read_file"
         decision = "deny"
         priority = 20
         deny_message = "Reading files is not allowed."
+
+        [[rule]]
+        toolName = "render_issue"
+        mcpName = "Buganizer"
+        decision = "allow"
+        priority = 950
         """
         with tempfile.NamedTemporaryFile(delete=False) as f:
             _ = f.write(toml_content)
@@ -31,11 +38,12 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
 
         try:
             rules = cleanup_gemini_policies.parse_rules(temp_file_name)
-            self.assertEqual(len(rules), 2)
+            self.assertEqual(len(rules), 3)
             self.assertEqual(rules[0].toolName, "run_shell_command")
             self.assertEqual(rules[0].decision, "approve")
             self.assertEqual(rules[0].priority, 10)
             self.assertEqual(rules[0].commandPrefix, ["ls", "cat"])
+            self.assertEqual(rules[0].modes, ["default"])
             self.assertIsNone(rules[0].deny_message)
 
             self.assertEqual(rules[1].toolName, "read_file")
@@ -43,6 +51,11 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             self.assertEqual(rules[1].priority, 20)
             self.assertEqual(rules[1].commandPrefix, [])
             self.assertEqual(rules[1].deny_message, "Reading files is not allowed.")
+
+            self.assertEqual(rules[2].toolName, "render_issue")
+            self.assertEqual(rules[2].mcpName, "Buganizer")
+            self.assertEqual(rules[2].decision, "allow")
+            self.assertEqual(rules[2].priority, 950)
         finally:
             os.remove(temp_file_name)
 
@@ -86,6 +99,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
                 decision="approve",
                 priority=10,
                 commandPrefix=["ls"],
+                modes=["default"],
             ),
             cleanup_gemini_policies.Rule(
                 toolName="read_file",
@@ -98,6 +112,7 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
                 decision="approve",
                 priority=10,
                 commandPrefix=["cat", "ls"],
+                modes=["default"],
             ),
             cleanup_gemini_policies.Rule(
                 toolName="run_shell_command",
@@ -113,16 +128,24 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
                 commandPrefix=["shred"],
                 deny_message="Msg2",
             ),
+            cleanup_gemini_policies.Rule(
+                toolName="run_shell_command",
+                decision="approve",
+                priority=10,
+                commandPrefix=["grep"],
+                modes=["yolo"],
+            ),
         ]
 
         processed = cleanup_gemini_policies.process_rules(rules)
 
-        self.assertEqual(len(processed), 3)
+        self.assertEqual(len(processed), 4)
 
-        # Expected sorting key: (toolName, decision, priority, deny_message)
-        # 1. read_file, deny, 20, Msg1
-        # 2. run_shell_command, approve, 10, None
-        # 3. run_shell_command, deny, 5, Msg2
+        # Expected sorting key: (toolName, decision, priority, deny_message, modes, mcpName)
+        # 1. read_file, deny, 20, Msg1, [], None
+        # 2. run_shell_command, approve, 10, None, [default], None
+        # 3. run_shell_command, approve, 10, None, [yolo], None
+        # 4. run_shell_command, deny, 5, Msg2, [], None
 
         self.assertEqual(processed[0].toolName, "read_file")
         self.assertEqual(processed[0].decision, "deny")
@@ -132,16 +155,20 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
         self.assertEqual(processed[1].toolName, "run_shell_command")
         self.assertEqual(processed[1].decision, "approve")
         self.assertEqual(processed[1].priority, 10)
-        self.assertEqual(
-            processed[1].commandPrefix, ["cat", "ls"]
-        )  # Combined and sorted
-        self.assertIsNone(processed[1].deny_message)
+        self.assertEqual(processed[1].modes, ["default"])
+        self.assertEqual(processed[1].commandPrefix, ["cat", "ls"])
 
         self.assertEqual(processed[2].toolName, "run_shell_command")
-        self.assertEqual(processed[2].decision, "deny")
-        self.assertEqual(processed[2].priority, 5)
-        self.assertEqual(processed[2].commandPrefix, ["rm", "shred"])
-        self.assertEqual(processed[2].deny_message, "Msg2")
+        self.assertEqual(processed[2].decision, "approve")
+        self.assertEqual(processed[2].priority, 10)
+        self.assertEqual(processed[2].modes, ["yolo"])
+        self.assertEqual(processed[2].commandPrefix, ["grep"])
+
+        self.assertEqual(processed[3].toolName, "run_shell_command")
+        self.assertEqual(processed[3].decision, "deny")
+        self.assertEqual(processed[3].priority, 5)
+        self.assertEqual(processed[3].commandPrefix, ["rm", "shred"])
+        self.assertEqual(processed[3].deny_message, "Msg2")
 
     def test_format_rules(self):
         """Tests that rules are formatted into correct TOML strings."""
@@ -157,18 +184,16 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
                 decision="approve",
                 priority=10,
                 commandPrefix=["cat", "ls"],
+                modes=["default", "yolo"],
             ),
             cleanup_gemini_policies.Rule(
-                toolName="run_shell_command",
-                decision="deny",
-                priority=5,
-                commandPrefix=["rm", "shred", "mv", "cp"],
+                toolName="render_issue",
+                mcpName="Buganizer",
+                decision="allow",
+                priority=950,
             ),
         ]
 
-        # Default line_length_limit is 80
-        # "commandPrefix = [ \"cat\", \"ls\" ]" is 32 chars
-        # "commandPrefix = [ \"rm\", \"shred\", \"mv\", \"cp\" ]" is 46 chars
         expected_output_default = (
             "[[rule]]\n"
             'toolName = "read_file"\n'
@@ -180,49 +205,20 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             'toolName = "run_shell_command"\n'
             'decision = "approve"\n'
             "priority = 10\n"
+            'modes = [ "default", "yolo" ]\n'
             'commandPrefix = [ "cat", "ls" ]\n'
             "\n"
             "[[rule]]\n"
-            'toolName = "run_shell_command"\n'
-            'decision = "deny"\n'
-            "priority = 5\n"
-            'commandPrefix = [ "rm", "shred", "mv", "cp" ]\n'
+            'toolName = "render_issue"\n'
+            'mcpName = "Buganizer"\n'
+            'decision = "allow"\n'
+            "priority = 950\n"
         )
 
         output = cleanup_gemini_policies.format_rules(rules)
         self.assertEqual(output, expected_output_default)
 
-        # Test line_length_limit = 40
-        # "commandPrefix = [ \"cat\", \"ls\" ]" is 32 chars (<= 40)
-        # "commandPrefix = [ \"rm\", \"shred\", \"mv\", \"cp\" ]" is 46 chars (> 40)
-        expected_output_limit_40 = (
-            "[[rule]]\n"
-            'toolName = "read_file"\n'
-            'decision = "deny"\n'
-            "priority = 20\n"
-            'deny_message = "Msg1"\n'
-            "\n"
-            "[[rule]]\n"
-            'toolName = "run_shell_command"\n'
-            'decision = "approve"\n'
-            "priority = 10\n"
-            'commandPrefix = [ "cat", "ls" ]\n'
-            "\n"
-            "[[rule]]\n"
-            'toolName = "run_shell_command"\n'
-            'decision = "deny"\n'
-            "priority = 5\n"
-            "commandPrefix = [\n"
-            '  "rm",\n'
-            '  "shred",\n'
-            '  "mv",\n'
-            '  "cp"\n'
-            "]\n"
-        )
-        output = cleanup_gemini_policies.format_rules(rules, line_length_limit=40)
-        self.assertEqual(output, expected_output_limit_40)
-
-        # Test line_length_limit = 20
+        # Test line_length_limit = 20 to trigger wrapping
         # "commandPrefix = [ \"cat\", \"ls\" ]" is 32 chars (> 20)
         expected_output_limit_20 = (
             "[[rule]]\n"
@@ -235,21 +231,17 @@ class TestCleanupGeminiPolicies(unittest.TestCase):
             'toolName = "run_shell_command"\n'
             'decision = "approve"\n'
             "priority = 10\n"
+            'modes = [ "default", "yolo" ]\n'
             "commandPrefix = [\n"
             '  "cat",\n'
             '  "ls"\n'
             "]\n"
             "\n"
             "[[rule]]\n"
-            'toolName = "run_shell_command"\n'
-            'decision = "deny"\n'
-            "priority = 5\n"
-            "commandPrefix = [\n"
-            '  "rm",\n'
-            '  "shred",\n'
-            '  "mv",\n'
-            '  "cp"\n'
-            "]\n"
+            'toolName = "render_issue"\n'
+            'mcpName = "Buganizer"\n'
+            'decision = "allow"\n'
+            "priority = 950\n"
         )
         output = cleanup_gemini_policies.format_rules(rules, line_length_limit=20)
         self.assertEqual(output, expected_output_limit_20)

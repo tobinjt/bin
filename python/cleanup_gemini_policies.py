@@ -20,6 +20,8 @@ class Rule:
     toolName: str
     commandPrefix: list[str] = dataclasses.field(default_factory=list)
     deny_message: str | None = None
+    modes: list[str] = dataclasses.field(default_factory=list)
+    mcpName: str | None = None
 
 
 def parse_rules(file_path: str) -> list[Rule]:
@@ -56,6 +58,8 @@ def parse_rules(file_path: str) -> list[Rule]:
                 toolName=typing.cast(str, r_dict["toolName"]),
                 commandPrefix=typing.cast(list[str], r_dict.get("commandPrefix", [])),
                 deny_message=typing.cast(str | None, r_dict.get("deny_message")),
+                modes=typing.cast(list[str], r_dict.get("modes", [])),
+                mcpName=typing.cast(str | None, r_dict.get("mcpName")),
             )
         )
 
@@ -74,18 +78,30 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
     Returns:
         The processed and sorted list of rules.
     """
-    combined_shell_rules: dict[tuple[str, int, str | None], Rule] = {}
+    # Key for combining: (decision, priority, deny_message, modes, mcpName)
+    combined_shell_rules: dict[
+        tuple[str, int, str | None, tuple[str, ...], str | None], Rule
+    ] = {}
     other_rules: list[Rule] = []
 
     for rule in rules:
         if rule.toolName == "run_shell_command":
-            key = (rule.decision, rule.priority, rule.deny_message)
+            modes_tuple = tuple(sorted(rule.modes))
+            key = (
+                rule.decision,
+                rule.priority,
+                rule.deny_message,
+                modes_tuple,
+                rule.mcpName,
+            )
             if key not in combined_shell_rules:
                 combined_shell_rules[key] = Rule(
                     toolName="run_shell_command",
                     decision=rule.decision,
                     priority=rule.priority,
                     deny_message=rule.deny_message,
+                    modes=list(modes_tuple),
+                    mcpName=rule.mcpName,
                 )
             for prefix in rule.commandPrefix:
                 if prefix not in combined_shell_rules[key].commandPrefix:
@@ -98,8 +114,17 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
 
     all_rules = list(combined_shell_rules.values()) + other_rules
 
-    def sort_key(r: Rule) -> tuple[str, str, int, str | None]:
-        return (r.toolName, r.decision, r.priority, r.deny_message)
+    def sort_key(
+        r: Rule,
+    ) -> tuple[str, str, int, str | None, tuple[str, ...], str | None]:
+        return (
+            r.toolName,
+            r.decision,
+            r.priority,
+            r.deny_message,
+            tuple(sorted(r.modes)),
+            r.mcpName or "",
+        )
 
     all_rules.sort(key=sort_key)
     return all_rules
@@ -121,10 +146,15 @@ def format_rules(rules: list[Rule], line_length_limit: int = 80) -> str:
             output.append("")
         output.append("[[rule]]")
         output.append(f'toolName = "{rule.toolName}"')
+        if rule.mcpName:
+            output.append(f'mcpName = "{rule.mcpName}"')
         output.append(f'decision = "{rule.decision}"')
         output.append(f"priority = {rule.priority}")
         if rule.deny_message:
             output.append(f'deny_message = "{rule.deny_message}"')
+        if rule.modes:
+            modes_str = ", ".join(f'"{m}"' for m in sorted(rule.modes))
+            output.append(f"modes = [ {modes_str} ]")
         if rule.commandPrefix:
             prefixes = ", ".join(f'"{p}"' for p in rule.commandPrefix)
             single_line = f"commandPrefix = [ {prefixes} ]"
