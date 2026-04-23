@@ -38,8 +38,7 @@ venv_install() {
   date="$(date +%Y-%m-%d--%H-%M-%S)"
   local destdir_date="${destdir}-${date}"
 
-  mkdir -p "${destdir}"
-  cd "${destdir}"
+  mkdir -p "${destdir_date}"
   python3 -m venv "${destdir_date}"
   cd "${destdir_date}"
   source bin/activate
