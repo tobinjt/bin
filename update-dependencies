@@ -75,6 +75,7 @@ END_OF_MESSAGE
 }
 
 main() {
+  set -x
   if [[ "$#" -ne 0 ]]; then
     echo "Usage: $0" >&2
     echo "Updates dependencies for Golang, Rust." >&2
