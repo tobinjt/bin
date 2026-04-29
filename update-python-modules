@@ -134,7 +134,6 @@ main() {
       mdformat-myst \
       mypy \
       pudb \
-      pydantic \
       pyfakefs \
       pytest \
       pytest-cov \
