@@ -127,7 +127,6 @@ main() {
     (venv_install "${python_dir}" "${install_individually}" test_python \
       black \
       debugpy \
-      dnspython \
       identify \
       mdformat \
       mdformat-config \
@@ -140,11 +139,7 @@ main() {
       pytest-flakefinder \
       pytest-timeout \
       pyyaml \
-      requests \
-      retry \
       types-PyYAML\
-      types-requests \
-      types-retry \
     )
   fi
 
