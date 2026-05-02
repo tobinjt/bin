@@ -6,23 +6,6 @@ import os
 import github_workflow_utils
 
 
-def generate_workflow(program_name: str, template_name: str) -> str:
-    """Generates a GitHub Actions workflow from a template.
-
-    Args:
-        program_name: The name of the program/binary.
-        template_name: The filename of the template to use.
-
-    Returns:
-        The generated YAML content as a string.
-    """
-    return github_workflow_utils.generate_workflow(
-        program_name,
-        template_name,
-        __file__,
-    )
-
-
 def main() -> None:
     """Parses arguments and generates the workflows."""
     parser = github_workflow_utils.get_parser(
@@ -40,9 +23,10 @@ def main() -> None:
     ]
 
     for template, output_file in workflows:
-        content = generate_workflow(
+        content = github_workflow_utils.generate_workflow(
             args.program_name,
             template,
+            script_file=__file__,
         )
         github_workflow_utils.write_workflow(
             os.path.join(".github", output_file), content
