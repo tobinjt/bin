@@ -85,3 +85,27 @@ def get_parser(description: str) -> argparse.ArgumentParser:
         help="An optional filename that is ignored (used when invoked via shebang).",
     )
     return parser
+
+
+def run_main(
+    description: str,
+    workflows: list[tuple[str, str]],
+    script_file: str,
+) -> None:
+    """Parses arguments and generates the workflows.
+
+    Args:
+        description: The description for the argument parser.
+        workflows: A list of tuples containing (template_name, output_file_path).
+        script_file: The path to the script calling this function.
+    """
+    parser = get_parser(description=description)
+    args = parser.parse_args(namespace=Args())
+
+    for template, output_file in workflows:
+        content = generate_workflow(
+            args.program_name,
+            template,
+            script_file,
+        )
+        write_workflow(output_file, content)

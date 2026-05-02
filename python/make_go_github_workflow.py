@@ -6,11 +6,6 @@ import github_workflow_utils
 
 def main() -> None:
     """Parses arguments and generates the workflows."""
-    parser = github_workflow_utils.get_parser(
-        description="Generate GitHub Actions workflows for a Golang project."
-    )
-    args = parser.parse_args(namespace=github_workflow_utils.Args())
-
     workflows = [
         # keep-sorted start
         ("dependabot.yml", ".github/dependabot.yml"),
@@ -18,13 +13,11 @@ def main() -> None:
         # keep-sorted end
     ]
 
-    for template, output_file in workflows:
-        content = github_workflow_utils.generate_workflow(
-            args.program_name,
-            template,
-            __file__,
-        )
-        github_workflow_utils.write_workflow(output_file, content)
+    github_workflow_utils.run_main(
+        description="Generate GitHub Actions workflows for a Golang project.",
+        workflows=workflows,
+        script_file=__file__,
+    )
 
 
 if __name__ == "__main__":
