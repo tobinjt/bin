@@ -1,4 +1,3 @@
-#!/usr/bin/env -S make_python_github_workflow hosting-probers
 version: 2
 updates:
   - package-ecosystem: github-actions

@@ -134,18 +134,25 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         )
         self.assertIn("package-ecosystem: pip", content)
 
-    def test_run_main(self) -> None:
-        """Tests the run_main orchestration function."""
-        script_file = "/fake/script.py"
+    def test_main(self) -> None:
+        """Tests the main orchestration function."""
+        script_file = github_workflow_utils.__file__
         script_dir = os.path.dirname(script_file)
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             os.path.join(script_dir, "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "other.template"),
-            contents="OTHER_CONTENT",
+            os.path.join(script_dir, "dependabot_validation.yml"),
+            contents="VALIDATION_CONTENT",
         )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "golang_pre-commit.yml"),
+            contents="GOLANG_CONTENT",
+        )
+
+        # Create a trigger file to activate Go language
+        self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
 
         with (
             mock.patch.object(
@@ -157,20 +164,96 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
                 github_workflow_utils, "write_workflow"
             ) as mock_write_workflow,
         ):
-            github_workflow_utils.run_main(
-                description="Test",
-                workflows=[
-                    ("dependabot.yml", ".github/dependabot.yml"),
-                    ("other.template", ".github/workflows/other.yml"),
-                ],
-                script_file=script_file,
+            github_workflow_utils.main()
+
+            # Check that write_workflow was called for:
+            # 1. .github/dependabot.yml
+            # 2. .github/workflows/dependabot_validation.yml
+            # 3. .github/workflows/golang_pre-commit.yml
+            self.assertEqual(mock_write_workflow.call_count, 3)
+            mock_write_workflow.assert_any_call(".github/dependabot.yml", mock.ANY)
+            mock_write_workflow.assert_any_call(
+                ".github/workflows/dependabot_validation.yml", mock.ANY
+            )
+            mock_write_workflow.assert_any_call(
+                ".github/workflows/golang_pre-commit.yml", mock.ANY
             )
 
-            # Check that write_workflow was called for both dependabot and other.yml
-            # dependabot.yml is handled specially (it skips the loop but is called explicitly).
-            self.assertEqual(mock_write_workflow.call_count, 2)
-            mock_write_workflow.assert_any_call(".github/dependabot.yml", mock.ANY)
-            mock_write_workflow.assert_any_call(".github/workflows/other.yml", mock.ANY)
+    def test_main_multiple_languages(self) -> None:
+        """Tests the main orchestration function with multiple languages."""
+        script_file = github_workflow_utils.__file__
+        script_dir = os.path.dirname(script_file)
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "dependabot_validation.yml"),
+            contents="VALIDATION_CONTENT",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "golang_pre-commit.yml"),
+            contents="GOLANG_CONTENT",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "rust_publish.yml"),
+            contents="RUST_PUBLISH_CONTENT",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "rust_pull_request.yml"),
+            contents="RUST_PR_CONTENT",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "rust_security_audit.yml"),
+            contents="RUST_AUDIT_CONTENT",
+        )
+
+        # Activate Go and Rust
+        self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
+        self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
+
+        with (
+            mock.patch.object(
+                github_workflow_utils.argparse.ArgumentParser,
+                "parse_args",
+                return_value=github_workflow_utils.Args(program_name="my_app"),
+            ),
+            mock.patch.object(
+                github_workflow_utils, "write_workflow"
+            ) as mock_write_workflow,
+        ):
+            github_workflow_utils.main()
+
+            # write_workflow should be called for:
+            # 1. .github/dependabot.yml
+            # 2. .github/workflows/dependabot_validation.yml (shared)
+            # 3. .github/workflows/golang_pre-commit.yml
+            # 4. .github/workflows/rust_publish.yml
+            # 5. .github/workflows/rust_pull_request.yml
+            # 6. .github/workflows/rust_security_audit.yml
+            self.assertEqual(mock_write_workflow.call_count, 6)
+
+    def test_generate_dependabot_config_unknown_ecosystem(self) -> None:
+        """Tests dependabot config generation with an unknown ecosystem."""
+        script_dir = "/fake/path"
+        script_file = os.path.join(script_dir, "my_script.py")
+        template_path = os.path.join(script_dir, "dependabot.yml")
+
+        dependabot_template = {
+            "version": 2,
+            "updates": [
+                {"package-ecosystem": "unknown"},
+            ],
+        }
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            template_path, contents=github_workflow_utils.yaml.dump(dependabot_template)
+        )
+
+        content = github_workflow_utils.generate_dependabot_config(
+            program_name="my_app", script_file=script_file
+        )
+        # unknown should be filtered out
+        self.assertNotIn("package-ecosystem: unknown", content)
 
 
 if __name__ == "__main__":

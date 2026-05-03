@@ -1,11 +1,73 @@
 """Utility module for generating GitHub Actions workflows."""
 
 import argparse as argparse
+import dataclasses
 import os
 import yaml as yaml
 from typing import cast, override, TypeAlias
 
 UpdateStanza: TypeAlias = dict[str, str | dict[str, str] | dict[str, int]]
+
+
+@dataclasses.dataclass(frozen=True)
+class Workflow:
+    """A GitHub Actions workflow."""
+
+    template: str
+    output: str
+
+
+@dataclasses.dataclass(frozen=True)
+class LanguageConfig:
+    """Configuration for a specific language ecosystem."""
+
+    ecosystem: str
+    trigger_files: list[str]
+    workflows: list[Workflow]
+
+
+LANGUAGE_CONFIGS = [
+    LanguageConfig(
+        ecosystem="gomod",
+        trigger_files=["go.mod"],
+        workflows=[
+            Workflow(
+                "dependabot_validation.yml",
+                ".github/workflows/dependabot_validation.yml",
+            ),
+            Workflow(
+                "golang_pre-commit.yml", ".github/workflows/golang_pre-commit.yml"
+            ),
+        ],
+    ),
+    LanguageConfig(
+        ecosystem="cargo",
+        trigger_files=["Cargo.toml"],
+        workflows=[
+            Workflow(
+                "dependabot_validation.yml",
+                ".github/workflows/dependabot_validation.yml",
+            ),
+            Workflow("rust_publish.yml", ".github/workflows/rust_publish.yml"),
+            Workflow(
+                "rust_pull_request.yml", ".github/workflows/rust_pull_request.yml"
+            ),
+            Workflow(
+                "rust_security_audit.yml", ".github/workflows/rust_security_audit.yml"
+            ),
+        ],
+    ),
+    LanguageConfig(
+        ecosystem="pip",
+        trigger_files=["requirements.txt", "pyproject.toml", "setup.py", "Pipfile"],
+        workflows=[
+            Workflow(
+                "dependabot_validation.yml",
+                ".github/workflows/dependabot_validation.yml",
+            ),
+        ],
+    ),
+]
 
 
 class IndentDumper(yaml.SafeDumper):
@@ -53,12 +115,6 @@ def generate_dependabot_config(program_name: str, script_file: str) -> str:
     with open(template_path, "r", encoding="utf-8") as f:
         template = cast(dict[str, int | list[UpdateStanza]], yaml.safe_load(f))
 
-    ecosystems = {
-        "gomod": ["go.mod"],
-        "cargo": ["Cargo.toml"],
-        "pip": ["requirements.txt", "pyproject.toml", "setup.py", "Pipfile"],
-    }
-
     filtered_updates: list[UpdateStanza] = []
     # cast to object first to appease basedpyright.
     updates = cast(list[UpdateStanza], cast(object, template["updates"]))
@@ -68,8 +124,8 @@ def generate_dependabot_config(program_name: str, script_file: str) -> str:
             filtered_updates.append(update)
             continue
 
-        trigger_files = ecosystems[ecosystem]
-        if any(os.path.exists(f) for f in trigger_files):
+        config = next((c for c in LANGUAGE_CONFIGS if c.ecosystem == ecosystem), None)
+        if config and any(os.path.exists(f) for f in config.trigger_files):
             filtered_updates.append(update)
 
     template["updates"] = filtered_updates
@@ -145,31 +201,32 @@ def get_parser(description: str) -> argparse.ArgumentParser:
     return parser
 
 
-def run_main(
-    description: str,
-    workflows: list[tuple[str, str]],
-    script_file: str,
-) -> None:
-    """Parses arguments and generates the workflows.
-
-    Args:
-        description: The description for the argument parser.
-        workflows: A list of tuples containing (template_name, output_file_path).
-        script_file: The path to the script calling this function.
-    """
+def main() -> None:
+    """Parses arguments and generates the workflows."""
+    description = "Generate GitHub Actions workflows for a project."
     parser = get_parser(description=description)
     args = parser.parse_args(namespace=Args())
+
+    script_file = __file__
 
     # Generate dependabot.yml automatically.
     dependabot_content = generate_dependabot_config(args.program_name, script_file)
     write_workflow(".github/dependabot.yml", dependabot_content)
 
-    for template, output_file in workflows:
-        if template == "dependabot.yml":
-            continue
+    workflows_to_generate: set[tuple[str, str]] = set()
+    for config in LANGUAGE_CONFIGS:
+        if any(os.path.exists(f) for f in config.trigger_files):
+            for workflow in config.workflows:
+                workflows_to_generate.add((workflow.template, workflow.output))
+
+    for template, output_file in sorted(workflows_to_generate):
         content = generate_workflow(
             args.program_name,
             template,
             script_file,
         )
         write_workflow(output_file, content)
+
+
+if __name__ == "__main__":
+    main()
