@@ -20,6 +20,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
         for template in [
             # keep-sorted start
             "dependabot.yml",
+            "dependabot_validation.yml",
             "golang_pre-commit.yml",
             # keep-sorted end
         ]:
@@ -33,14 +34,21 @@ class TestMain(fake_filesystem_unittest.TestCase):
         """Tests that the main function correctly writes all files."""
         make_go_github_workflow.main()
         dependabot_file = ".github/dependabot.yml"
+        dependabot_validation_file = ".github/workflows/dependabot_validation.yml"
         pre_commit_file = ".github/workflows/golang_pre-commit.yml"
         self.assertTrue(os.path.exists(dependabot_file))
+        self.assertTrue(os.path.exists(dependabot_validation_file))
         self.assertTrue(os.path.exists(pre_commit_file))
 
         with open(dependabot_file, "r", encoding="utf-8") as f:
             content = f.read()
             self.assertIn("mygoapp", content)
             self.assertIn('package-ecosystem: "github-actions"', content)
+
+        with open(dependabot_validation_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("mygoapp", content)
+            self.assertIn("name: Validate Dependabot Config", content)
 
         with open(pre_commit_file, "r", encoding="utf-8") as f:
             content = f.read()

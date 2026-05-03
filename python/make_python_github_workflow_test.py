@@ -20,6 +20,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
         for template in [
             # keep-sorted start
             "dependabot.yml",
+            "dependabot_validation.yml",
             # keep-sorted end
         ]:
             template_path = os.path.join(template_dir, template)
@@ -32,12 +33,19 @@ class TestMain(fake_filesystem_unittest.TestCase):
         """Tests that the main function correctly writes all files."""
         make_python_github_workflow.main()
         dependabot_file = ".github/dependabot.yml"
+        dependabot_validation_file = ".github/workflows/dependabot_validation.yml"
         self.assertTrue(os.path.exists(dependabot_file))
+        self.assertTrue(os.path.exists(dependabot_validation_file))
 
         with open(dependabot_file, "r", encoding="utf-8") as f:
             content = f.read()
             self.assertIn("mypyapp", content)
             self.assertIn('package-ecosystem: "github-actions"', content)
+
+        with open(dependabot_validation_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("mypyapp", content)
+            self.assertIn("name: Validate Dependabot Config", content)
 
     @mock.patch.object(
         sys,

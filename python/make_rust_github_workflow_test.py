@@ -20,6 +20,7 @@ class TestMain(fake_filesystem_unittest.TestCase):
         for template in [
             # keep-sorted start
             "dependabot.yml",
+            "dependabot_validation.yml",
             "rust_publish.yml",
             "rust_pull_request.yml",
             "rust_security_audit.yml",
@@ -36,10 +37,12 @@ class TestMain(fake_filesystem_unittest.TestCase):
         make_rust_github_workflow.main()
         publish_file = ".github/workflows/rust_publish.yml"
         dependabot_file = ".github/dependabot.yml"
+        dependabot_validation_file = ".github/workflows/dependabot_validation.yml"
         pull_request_file = ".github/workflows/rust_pull_request.yml"
         security_audit_file = ".github/workflows/rust_security_audit.yml"
         self.assertTrue(os.path.exists(publish_file))
         self.assertTrue(os.path.exists(dependabot_file))
+        self.assertTrue(os.path.exists(dependabot_validation_file))
         self.assertTrue(os.path.exists(pull_request_file))
         self.assertTrue(os.path.exists(security_audit_file))
 
@@ -51,6 +54,11 @@ class TestMain(fake_filesystem_unittest.TestCase):
             content = f.read()
             self.assertIn('package-ecosystem: "github-actions"', content)
             self.assertIn('package-ecosystem: "cargo"', content)
+
+        with open(dependabot_validation_file, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("cliapp", content)
+            self.assertIn("name: Validate Dependabot Config", content)
 
         with open(pull_request_file, "r", encoding="utf-8") as f:
             content = f.read()

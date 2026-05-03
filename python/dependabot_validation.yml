@@ -1,0 +1,30 @@
+name: Validate Dependabot Config
+
+on:
+  push:
+    paths:
+      - '.github/dependabot.yml'
+      - '.github/workflows/dependabot_validation.yml'
+  pull_request:
+    paths:
+      - '.github/dependabot.yml'
+      - '.github/workflows/dependabot_validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Dependabot Config
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Ensure we are on the PR branch, not a detached head
+          ref: ${{ github.head_ref }}
+          persist-credentials: false
+      - name: Validate Dependabot config
+        uses: marocchino/validate-dependabot@v3
