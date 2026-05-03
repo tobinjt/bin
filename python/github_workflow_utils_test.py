@@ -16,16 +16,13 @@ class TestArgs(unittest.TestCase):
     def test_init_defaults(self) -> None:
         """Tests that Args initializes with correct defaults."""
         args = github_workflow_utils.Args()
-        self.assertEqual(args.program_name, "")
         self.assertIsNone(args.ignored_filename)
 
     def test_init_custom(self) -> None:
         """Tests that Args initializes with provided values."""
         args = github_workflow_utils.Args(
-            program_name="foo",
             ignored_filename="bar.py",
         )
-        self.assertEqual(args.program_name, "foo")
         self.assertEqual(args.ignored_filename, "bar.py")
 
 
@@ -36,10 +33,9 @@ class TestGetParser(unittest.TestCase):
         """Tests that get_parser returns a properly configured parser."""
         parser = github_workflow_utils.get_parser("Test description")
         args = parser.parse_args(
-            ["myprog", "ignoreme.py"],
+            ["ignoreme.py"],
             namespace=github_workflow_utils.Args(),
         )
-        self.assertEqual(args.program_name, "myprog")
         self.assertEqual(args.ignored_filename, "ignoreme.py")
 
 
@@ -58,18 +54,16 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         template_path = os.path.join(script_dir, "workflows", template_name)
 
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            template_path, contents="Hello PROGRAM_NAME!\nINSERT_HERE\nGoodbye."
+            template_path, contents="Hello!\nINSERT_HERE\nGoodbye."
         )
 
         content = github_workflow_utils.generate_workflow(
-            program_name="my_app",
             template_name=template_name,
             script_file=script_file,
         )
 
-        self.assertTrue(content.startswith("#!/usr/bin/env -S my_script.py my_app\n"))
-        self.assertIn("Hello my_app!", content)
-        self.assertNotIn("completion_script", content)
+        self.assertTrue(content.startswith("#!/usr/bin/env -S my_script.py\n"))
+        self.assertIn("Hello!", content)
 
     def test_write_workflow(self) -> None:
         """Tests that write_workflow creates directories and sets permissions."""
@@ -104,7 +98,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
         # 1. No trigger files exist. Only github-actions should be present.
         content = github_workflow_utils.generate_dependabot_config(
-            program_name="my_app", script_file=script_file
+            script_file=script_file
         )
         self.assertIn("package-ecosystem: github-actions", content)
         self.assertNotIn("package-ecosystem: gomod", content)
@@ -114,14 +108,14 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         # 2. Add go.mod. gomod should now be included.
         self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
         content = github_workflow_utils.generate_dependabot_config(
-            program_name="my_app", script_file=script_file
+            script_file=script_file
         )
         self.assertIn("package-ecosystem: gomod", content)
 
         # 3. Add Cargo.toml. cargo should now be included.
         self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
         content = github_workflow_utils.generate_dependabot_config(
-            program_name="my_app", script_file=script_file
+            script_file=script_file
         )
         self.assertIn("package-ecosystem: cargo", content)
 
@@ -130,7 +124,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             "requirements.txt"
         )
         content = github_workflow_utils.generate_dependabot_config(
-            program_name="my_app", script_file=script_file
+            script_file=script_file
         )
         self.assertIn("package-ecosystem: pip", content)
 
@@ -158,7 +152,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             mock.patch.object(
                 github_workflow_utils.argparse.ArgumentParser,
                 "parse_args",
-                return_value=github_workflow_utils.Args(program_name="my_app"),
+                return_value=github_workflow_utils.Args(),
             ),
             mock.patch.object(
                 github_workflow_utils, "write_workflow"
@@ -216,7 +210,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             mock.patch.object(
                 github_workflow_utils.argparse.ArgumentParser,
                 "parse_args",
-                return_value=github_workflow_utils.Args(program_name="my_app"),
+                return_value=github_workflow_utils.Args(),
             ),
             mock.patch.object(
                 github_workflow_utils, "write_workflow"
@@ -250,7 +244,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         )
 
         content = github_workflow_utils.generate_dependabot_config(
-            program_name="my_app", script_file=script_file
+            script_file=script_file
         )
         # unknown should be filtered out
         self.assertNotIn("package-ecosystem: unknown", content)

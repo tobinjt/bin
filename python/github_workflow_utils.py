@@ -80,30 +80,25 @@ class IndentDumper(yaml.SafeDumper):
 class Args(argparse.Namespace):
     """Arguments for the workflow generation scripts."""
 
-    program_name: str
     ignored_filename: str | None
 
     def __init__(
         self,
-        program_name: str = "",
         ignored_filename: str | None = None,
     ) -> None:
         """Initializes the arguments.
 
         Args:
-            program_name: The name of the program to release.
             ignored_filename: An optional filename that is ignored.
         """
         super().__init__()
-        self.program_name = program_name
         self.ignored_filename = ignored_filename
 
 
-def generate_dependabot_config(program_name: str, script_file: str) -> str:
+def generate_dependabot_config(script_file: str) -> str:
     """Generates the dependabot.yml content based on the project files.
 
     Args:
-        program_name: The name of the program to release.
         script_file: The path to the script calling this function.
 
     Returns:
@@ -136,19 +131,17 @@ def generate_dependabot_config(program_name: str, script_file: str) -> str:
     # Ensure there is a newline between list items for better readability
     yaml_content = yaml_content.replace("\n  - ", "\n\n  - ")
 
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)} {program_name}"
+    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}"
     return shebang + "\n" + yaml_content.rstrip()
 
 
 def generate_workflow(
-    program_name: str,
     template_name: str,
     script_file: str,
 ) -> str:
     """Generates a GitHub Actions workflow from a template.
 
     Args:
-        program_name: The name of the program/binary.
         template_name: The filename of the template to use.
         script_file: The path to the script calling this function (used for shebang and template location).
 
@@ -160,11 +153,9 @@ def generate_workflow(
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)} PROGRAM_NAME"
+    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}"
 
-    template = shebang + "\n" + template
-
-    return template.replace("PROGRAM_NAME", program_name).rstrip()
+    return shebang + "\n" + template.rstrip()
 
 
 def write_workflow(output_file: str, content: str) -> None:
@@ -192,7 +183,6 @@ def get_parser(description: str) -> argparse.ArgumentParser:
         The configured ArgumentParser object.
     """
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("program_name", help="The name of the program to release.")
     parser.add_argument(
         "ignored_filename",
         nargs="?",
@@ -205,12 +195,12 @@ def main() -> None:
     """Parses arguments and generates the workflows."""
     description = "Generate GitHub Actions workflows for a project."
     parser = get_parser(description=description)
-    args = parser.parse_args(namespace=Args())
+    _ = parser.parse_args(namespace=Args())
 
     script_file = __file__
 
     # Generate dependabot.yml automatically.
-    dependabot_content = generate_dependabot_config(args.program_name, script_file)
+    dependabot_content = generate_dependabot_config(script_file)
     write_workflow(".github/dependabot.yml", dependabot_content)
 
     workflows_to_generate: set[tuple[str, str]] = set()
@@ -221,7 +211,6 @@ def main() -> None:
 
     for template, output_file in sorted(workflows_to_generate):
         content = generate_workflow(
-            args.program_name,
             template,
             script_file,
         )
