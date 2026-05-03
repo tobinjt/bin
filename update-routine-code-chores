@@ -18,7 +18,8 @@ dirs_to_update() {
 update_workflows() {
   retry "update Github workflows: ${PWD}" -- ./.github/dependabot.yml
   if ! git check-local-copy-is-clean; then
-    git commit -a -m "chore: update Github workflows"
+    git add --all .
+    git commit --quiet --message "chore: update Github workflows"
   fi
 }
 
