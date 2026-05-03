@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Utility module for generating GitHub Actions workflows."""
 
 import argparse as argparse

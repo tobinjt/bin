@@ -1,4 +1,4 @@
-"""Tests for github_workflow_utils.py."""
+"""Tests for make_github_workflows.py."""
 
 import os
 import unittest
@@ -7,7 +7,7 @@ from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
 
-import github_workflow_utils
+import make_github_workflows
 
 
 class TestArgs(unittest.TestCase):
@@ -15,12 +15,12 @@ class TestArgs(unittest.TestCase):
 
     def test_init_defaults(self) -> None:
         """Tests that Args initializes with correct defaults."""
-        args = github_workflow_utils.Args()
+        args = make_github_workflows.Args()
         self.assertIsNone(args.ignored_filename)
 
     def test_init_custom(self) -> None:
         """Tests that Args initializes with provided values."""
-        args = github_workflow_utils.Args(
+        args = make_github_workflows.Args(
             ignored_filename="bar.py",
         )
         self.assertEqual(args.ignored_filename, "bar.py")
@@ -31,10 +31,10 @@ class TestGetParser(unittest.TestCase):
 
     def test_get_parser(self) -> None:
         """Tests that get_parser returns a properly configured parser."""
-        parser = github_workflow_utils.get_parser("Test description")
+        parser = make_github_workflows.get_parser("Test description")
         args = parser.parse_args(
             ["ignoreme.py"],
-            namespace=github_workflow_utils.Args(),
+            namespace=make_github_workflows.Args(),
         )
         self.assertEqual(args.ignored_filename, "ignoreme.py")
 
@@ -57,7 +57,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             template_path, contents="Hello!\nINSERT_HERE\nGoodbye."
         )
 
-        content = github_workflow_utils.generate_workflow(
+        content = make_github_workflows.generate_workflow(
             template_name=template_name,
             script_file=script_file,
         )
@@ -68,7 +68,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_write_workflow(self) -> None:
         """Tests that write_workflow creates directories and sets permissions."""
         output_file = "/fake/out/dir/workflow.yml"
-        github_workflow_utils.write_workflow(output_file, "content")
+        make_github_workflows.write_workflow(output_file, "content")
 
         self.assertTrue(os.path.exists(output_file))
         with open(output_file, "r", encoding="utf-8") as f:
@@ -93,11 +93,11 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             ],
         }
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            template_path, contents=github_workflow_utils.yaml.dump(dependabot_template)
+            template_path, contents=make_github_workflows.yaml.dump(dependabot_template)
         )
 
         # 1. No trigger files exist. Only github-actions should be present.
-        content = github_workflow_utils.generate_dependabot_config(
+        content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         self.assertIn("package-ecosystem: github-actions", content)
@@ -107,14 +107,14 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
         # 2. Add go.mod. gomod should now be included.
         self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
-        content = github_workflow_utils.generate_dependabot_config(
+        content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         self.assertIn("package-ecosystem: gomod", content)
 
         # 3. Add Cargo.toml. cargo should now be included.
         self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
-        content = github_workflow_utils.generate_dependabot_config(
+        content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         self.assertIn("package-ecosystem: cargo", content)
@@ -123,14 +123,14 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             "requirements.txt"
         )
-        content = github_workflow_utils.generate_dependabot_config(
+        content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         self.assertIn("package-ecosystem: pip", content)
 
     def test_main(self) -> None:
         """Tests the main orchestration function."""
-        script_file = github_workflow_utils.__file__
+        script_file = make_github_workflows.__file__
         script_dir = os.path.dirname(script_file)
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             os.path.join(script_dir, "workflows", "dependabot.yml"),
@@ -150,15 +150,15 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
         with (
             mock.patch.object(
-                github_workflow_utils.argparse.ArgumentParser,
+                make_github_workflows.argparse.ArgumentParser,
                 "parse_args",
-                return_value=github_workflow_utils.Args(),
+                return_value=make_github_workflows.Args(),
             ),
             mock.patch.object(
-                github_workflow_utils, "write_workflow"
+                make_github_workflows, "write_workflow"
             ) as mock_write_workflow,
         ):
-            github_workflow_utils.main()
+            make_github_workflows.main()
 
             # Check that write_workflow was called for:
             # 1. .github/dependabot.yml
@@ -175,7 +175,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
     def test_main_multiple_languages(self) -> None:
         """Tests the main orchestration function with multiple languages."""
-        script_file = github_workflow_utils.__file__
+        script_file = make_github_workflows.__file__
         script_dir = os.path.dirname(script_file)
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             os.path.join(script_dir, "workflows", "dependabot.yml"),
@@ -208,15 +208,15 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
         with (
             mock.patch.object(
-                github_workflow_utils.argparse.ArgumentParser,
+                make_github_workflows.argparse.ArgumentParser,
                 "parse_args",
-                return_value=github_workflow_utils.Args(),
+                return_value=make_github_workflows.Args(),
             ),
             mock.patch.object(
-                github_workflow_utils, "write_workflow"
+                make_github_workflows, "write_workflow"
             ) as mock_write_workflow,
         ):
-            github_workflow_utils.main()
+            make_github_workflows.main()
 
             # write_workflow should be called for:
             # 1. .github/dependabot.yml
@@ -240,10 +240,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             ],
         }
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            template_path, contents=github_workflow_utils.yaml.dump(dependabot_template)
+            template_path, contents=make_github_workflows.yaml.dump(dependabot_template)
         )
 
-        content = github_workflow_utils.generate_dependabot_config(
+        content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         # unknown should be filtered out
