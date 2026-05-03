@@ -22,18 +22,22 @@ update_workflows() {
   fi
 }
 
+update_everything() {
+  retry "update-pre-commit-hooks: ${dir}" -- update-pre-commit-hooks
+  retry "update-dependencies: ${dir}" -- update-dependencies
+  if [[ -x "${dir}/.github/dependabot.yml" ]]; then
+    update_workflows
+  fi
+  if git config remote.origin.url >& /dev/null; then
+    git push
+  fi
+}
+
 update-dotfiles-and-bin
 for dir in $(dirs_to_update); do
   if [[ ! -d "${dir}" ]]; then
     continue
   fi
-  (cd "${dir}" && retry "update-pre-commit-hooks: ${dir}" \
-    -- update-pre-commit-hooks)
-  (cd "${dir}" && retry "update-dependencies: ${dir}" \
-    -- update-dependencies)
-  if [[ -x "${dir}/.github/dependabot.yml" ]]; then
-    (cd "${dir}" && update_workflows)
-  fi
-  (cd "${dir}" && git push)
+  (cd "${dir}" && update_everything)
   printf "\n\n\n"
 done
