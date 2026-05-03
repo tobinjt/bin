@@ -110,7 +110,7 @@ def generate_dependabot_config(program_name: str, script_file: str) -> str:
         The generated YAML content as a string.
     """
     script_dir = os.path.dirname(os.path.realpath(script_file))
-    template_path = os.path.join(script_dir, "dependabot.yml")
+    template_path = os.path.join(script_dir, "workflows", "dependabot.yml")
 
     with open(template_path, "r", encoding="utf-8") as f:
         template = cast(dict[str, int | list[UpdateStanza]], yaml.safe_load(f))
@@ -156,7 +156,7 @@ def generate_workflow(
         The generated YAML content as a string.
     """
     script_dir = os.path.dirname(os.path.realpath(script_file))
-    template_path = os.path.join(script_dir, template_name)
+    template_path = os.path.join(script_dir, "workflows", template_name)
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 

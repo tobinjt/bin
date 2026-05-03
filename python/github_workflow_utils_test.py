@@ -55,7 +55,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         script_dir = "/fake/path"
         script_file = os.path.join(script_dir, "my_script.py")
         template_name = "test.template"
-        template_path = os.path.join(script_dir, template_name)
+        template_path = os.path.join(script_dir, "workflows", template_name)
 
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             template_path, contents="Hello PROGRAM_NAME!\nINSERT_HERE\nGoodbye."
@@ -87,7 +87,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         """Tests dependabot config generation with various ecosystems."""
         script_dir = "/fake/path"
         script_file = os.path.join(script_dir, "my_script.py")
-        template_path = os.path.join(script_dir, "dependabot.yml")
+        template_path = os.path.join(script_dir, "workflows", "dependabot.yml")
 
         dependabot_template = {
             "version": 2,
@@ -139,15 +139,15 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         script_file = github_workflow_utils.__file__
         script_dir = os.path.dirname(script_file)
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "dependabot.yml"),
+            os.path.join(script_dir, "workflows", "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "dependabot_validation.yml"),
+            os.path.join(script_dir, "workflows", "dependabot_validation.yml"),
             contents="VALIDATION_CONTENT",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "golang_pre-commit.yml"),
+            os.path.join(script_dir, "workflows", "golang_pre-commit.yml"),
             contents="GOLANG_CONTENT",
         )
 
@@ -184,27 +184,27 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         script_file = github_workflow_utils.__file__
         script_dir = os.path.dirname(script_file)
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "dependabot.yml"),
+            os.path.join(script_dir, "workflows", "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "dependabot_validation.yml"),
+            os.path.join(script_dir, "workflows", "dependabot_validation.yml"),
             contents="VALIDATION_CONTENT",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "golang_pre-commit.yml"),
+            os.path.join(script_dir, "workflows", "golang_pre-commit.yml"),
             contents="GOLANG_CONTENT",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "rust_publish.yml"),
+            os.path.join(script_dir, "workflows", "rust_publish.yml"),
             contents="RUST_PUBLISH_CONTENT",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "rust_pull_request.yml"),
+            os.path.join(script_dir, "workflows", "rust_pull_request.yml"),
             contents="RUST_PR_CONTENT",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "rust_security_audit.yml"),
+            os.path.join(script_dir, "workflows", "rust_security_audit.yml"),
             contents="RUST_AUDIT_CONTENT",
         )
 
@@ -237,7 +237,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         """Tests dependabot config generation with an unknown ecosystem."""
         script_dir = "/fake/path"
         script_file = os.path.join(script_dir, "my_script.py")
-        template_path = os.path.join(script_dir, "dependabot.yml")
+        template_path = os.path.join(script_dir, "workflows", "dependabot.yml")
 
         dependabot_template = {
             "version": 2,
