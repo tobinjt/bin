@@ -1,7 +1,18 @@
 """Utility module for generating GitHub Actions workflows."""
 
-import argparse
+import argparse as argparse
 import os
+import yaml as yaml
+from typing import cast, override, TypeAlias
+
+UpdateStanza: TypeAlias = dict[str, str | dict[str, str] | dict[str, int]]
+
+
+class IndentDumper(yaml.SafeDumper):
+    @override
+    def increase_indent(self, flow: bool = False, indentless: bool = False):
+        # The magic happens here: we force indentless to be False
+        return super(IndentDumper, self).increase_indent(flow, False)
 
 
 class Args(argparse.Namespace):
@@ -24,6 +35,53 @@ class Args(argparse.Namespace):
         super().__init__()
         self.program_name = program_name
         self.ignored_filename = ignored_filename
+
+
+def generate_dependabot_config(program_name: str, script_file: str) -> str:
+    """Generates the dependabot.yml content based on the project files.
+
+    Args:
+        program_name: The name of the program to release.
+        script_file: The path to the script calling this function.
+
+    Returns:
+        The generated YAML content as a string.
+    """
+    script_dir = os.path.dirname(os.path.realpath(script_file))
+    template_path = os.path.join(script_dir, "dependabot.yml")
+
+    with open(template_path, "r", encoding="utf-8") as f:
+        template = cast(dict[str, int | list[UpdateStanza]], yaml.safe_load(f))
+
+    ecosystems = {
+        "gomod": ["go.mod"],
+        "cargo": ["Cargo.toml"],
+        "pip": ["requirements.txt", "pyproject.toml", "setup.py", "Pipfile"],
+    }
+
+    filtered_updates: list[UpdateStanza] = []
+    # cast to object first to appease basedpyright.
+    updates = cast(list[UpdateStanza], cast(object, template["updates"]))
+    for update in updates:
+        ecosystem = cast(str, update["package-ecosystem"])
+        if ecosystem == "github-actions":
+            filtered_updates.append(update)
+            continue
+
+        trigger_files = ecosystems[ecosystem]
+        if any(os.path.exists(f) for f in trigger_files):
+            filtered_updates.append(update)
+
+    template["updates"] = filtered_updates
+
+    yaml_content = yaml.dump(
+        template, Dumper=IndentDumper, sort_keys=False, default_flow_style=False
+    )
+    # Ensure there is a newline between list items for better readability
+    yaml_content = yaml_content.replace("\n  - ", "\n\n  - ")
+
+    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)} {program_name}"
+    return shebang + "\n" + yaml_content.rstrip()
 
 
 def generate_workflow(
@@ -102,7 +160,13 @@ def run_main(
     parser = get_parser(description=description)
     args = parser.parse_args(namespace=Args())
 
+    # Generate dependabot.yml automatically.
+    dependabot_content = generate_dependabot_config(args.program_name, script_file)
+    write_workflow(".github/dependabot.yml", dependabot_content)
+
     for template, output_file in workflows:
+        if template == "dependabot.yml":
+            continue
         content = generate_workflow(
             args.program_name,
             template,

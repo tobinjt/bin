@@ -3,6 +3,7 @@
 import os
 import unittest
 from typing import override
+from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
 
@@ -81,6 +82,95 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
         st = os.stat(output_file)
         self.assertEqual(st.st_mode & 0o777, 0o755)
+
+    def test_generate_dependabot_config(self) -> None:
+        """Tests dependabot config generation with various ecosystems."""
+        script_dir = "/fake/path"
+        script_file = os.path.join(script_dir, "my_script.py")
+        template_path = os.path.join(script_dir, "dependabot.yml")
+
+        dependabot_template = {
+            "version": 2,
+            "updates": [
+                {"package-ecosystem": "github-actions"},
+                {"package-ecosystem": "gomod"},
+                {"package-ecosystem": "cargo"},
+                {"package-ecosystem": "pip"},
+            ],
+        }
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            template_path, contents=github_workflow_utils.yaml.dump(dependabot_template)
+        )
+
+        # 1. No trigger files exist. Only github-actions should be present.
+        content = github_workflow_utils.generate_dependabot_config(
+            program_name="my_app", script_file=script_file
+        )
+        self.assertIn("package-ecosystem: github-actions", content)
+        self.assertNotIn("package-ecosystem: gomod", content)
+        self.assertNotIn("package-ecosystem: cargo", content)
+        self.assertNotIn("package-ecosystem: pip", content)
+
+        # 2. Add go.mod. gomod should now be included.
+        self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
+        content = github_workflow_utils.generate_dependabot_config(
+            program_name="my_app", script_file=script_file
+        )
+        self.assertIn("package-ecosystem: gomod", content)
+
+        # 3. Add Cargo.toml. cargo should now be included.
+        self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
+        content = github_workflow_utils.generate_dependabot_config(
+            program_name="my_app", script_file=script_file
+        )
+        self.assertIn("package-ecosystem: cargo", content)
+
+        # 4. Add requirements.txt. pip should now be included.
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            "requirements.txt"
+        )
+        content = github_workflow_utils.generate_dependabot_config(
+            program_name="my_app", script_file=script_file
+        )
+        self.assertIn("package-ecosystem: pip", content)
+
+    def test_run_main(self) -> None:
+        """Tests the run_main orchestration function."""
+        script_file = "/fake/script.py"
+        script_dir = os.path.dirname(script_file)
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "other.template"),
+            contents="OTHER_CONTENT",
+        )
+
+        with (
+            mock.patch.object(
+                github_workflow_utils.argparse.ArgumentParser,
+                "parse_args",
+                return_value=github_workflow_utils.Args(program_name="my_app"),
+            ),
+            mock.patch.object(
+                github_workflow_utils, "write_workflow"
+            ) as mock_write_workflow,
+        ):
+            github_workflow_utils.run_main(
+                description="Test",
+                workflows=[
+                    ("dependabot.yml", ".github/dependabot.yml"),
+                    ("other.template", ".github/workflows/other.yml"),
+                ],
+                script_file=script_file,
+            )
+
+            # Check that write_workflow was called for both dependabot and other.yml
+            # dependabot.yml is handled specially (it skips the loop but is called explicitly).
+            self.assertEqual(mock_write_workflow.call_count, 2)
+            mock_write_workflow.assert_any_call(".github/dependabot.yml", mock.ANY)
+            mock_write_workflow.assert_any_call(".github/workflows/other.yml", mock.ANY)
 
 
 if __name__ == "__main__":

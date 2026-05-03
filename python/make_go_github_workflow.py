@@ -8,7 +8,6 @@ def main() -> None:
     """Parses arguments and generates the workflows."""
     workflows = [
         # keep-sorted start
-        ("dependabot.yml", ".github/dependabot.yml"),
         ("dependabot_validation.yml", ".github/workflows/dependabot_validation.yml"),
         ("golang_pre-commit.yml", ".github/workflows/golang_pre-commit.yml"),
         # keep-sorted end

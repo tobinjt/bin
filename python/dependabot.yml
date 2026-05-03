@@ -1,44 +1,45 @@
+#!/usr/bin/env -S make_python_github_workflow hosting-probers
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     cooldown:
       default-days: 7
 
-  - package-ecosystem: "gomod"
-    directory: "/"
+  - package-ecosystem: gomod
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     # Group updates into one PR.
     groups:
       go-dependencies:
         patterns:
-          - "*"
+          - '*'
     cooldown:
       default-days: 7
 
-  - package-ecosystem: "cargo"
-    directory: "/"
+  - package-ecosystem: cargo
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     # Group updates into one PR.
     groups:
       cargo-dependencies:
         patterns:
-          - "*"
+          - '*'
     cooldown:
       default-days: 7
 
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: pip
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     # Group updates into one PR.
     groups:
       pip-dependencies:
         patterns:
-          - "*"
+          - '*'
     cooldown:
       default-days: 7
