@@ -16,8 +16,6 @@ updates:
       go-dependencies:
         patterns:
           - "*"
-    # Ensure it updates the go.sum file correctly
-    versioning-strategy: increase
     cooldown:
       default-days: 7
 
@@ -39,7 +37,7 @@ updates:
       interval: "weekly"
     # Group updates into one PR.
     groups:
-      cargo-dependencies:
+      pip-dependencies:
         patterns:
           - "*"
     cooldown:
