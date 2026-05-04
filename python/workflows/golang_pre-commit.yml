@@ -2,8 +2,16 @@ name: Go pre-commit checks.
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
 
 permissions:
   contents: read
@@ -12,7 +20,7 @@ jobs:
   pre-commit-checks:
     name: |
       Run `goimports`, `golangci-lint`, `govulncheck`, and `go test`.
-      Commits any changes made by `goimports` or `gofmt`.
+      Commits any changes made by `goimports`.
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required to push new commits.
