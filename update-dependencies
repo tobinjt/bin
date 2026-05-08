@@ -15,7 +15,7 @@ should_try_updating() {
 
 commit_if_necessary() {
   local message="$1"
-  if ! git check-local-copy-is-clean; then
+  if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
     git commit -a -m "chore: ${message}"
   fi
 }
