@@ -139,7 +139,7 @@ main() {
       pytest-flakefinder \
       pytest-timeout \
       pyyaml \
-      types-PyYAML\
+      types-PyYAML \
     )
   fi
 
