@@ -1,0 +1,11 @@
+- repo: https://github.com/tobinjt/rust-pre-commit-checks
+  rev: v1.2.0
+  hooks:
+  - id: cargo-check
+  - id: cargo-clippy
+  - id: cargo-fmt
+  - id: cargo-llvm-cov
+    args:
+    - --quiet
+    - --show-missing-lines
+  - id: cargo-test
