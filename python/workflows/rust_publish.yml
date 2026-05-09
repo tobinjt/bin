@@ -16,13 +16,17 @@ jobs:
       group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
           # Ensure we are on the PR branch, not a detached head
           ref: ${{ github.head_ref }}
           persist-credentials: false
       - name: Install Rust toolchain
         run: rustup toolchain install --component clippy
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
       # keep-sorted start block=true
       - name: Run cargo build
         run: cargo build --all-features
@@ -32,6 +36,8 @@ jobs:
         run: cargo clippy -- --deny warnings
       - name: Run cargo fmt
         run: cargo fmt --check
+      - name: Run cargo llvm-cov test
+        run: cargo llvm-cov test
       - name: Run cargo test
         run: cargo test --all-features
       # keep-sorted end
