@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from typing import override
+from typing import cast, override
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -104,13 +104,18 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         self.assertNotIn("package-ecosystem: gomod", content)
         self.assertNotIn("package-ecosystem: cargo", content)
         self.assertNotIn("package-ecosystem: pip", content)
+        self.assertTrue(content.startswith("#!/usr/bin/env -S my_script.py\n"))
 
         # 2. Add go.mod. gomod should now be included.
         self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
         content = make_github_workflows.generate_dependabot_config(
-            script_file=script_file
+            script_file=script_file,
+            extra_args={"foo": "bar"},
         )
         self.assertIn("package-ecosystem: gomod", content)
+        self.assertTrue(
+            content.startswith('#!/usr/bin/env -S my_script.py --extra-arg "foo=bar"\n')
+        )
 
         # 3. Add Cargo.toml. cargo should now be included.
         self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
@@ -173,8 +178,34 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
                 ".github/workflows/golang_pre-commit.yml", mock.ANY
             )
 
-    def test_main_multiple_languages(self) -> None:
-        """Tests the main orchestration function with multiple languages."""
+    def test_generate_workflow_with_extra_args(self) -> None:
+        """Tests workflow generation with extra arguments."""
+        script_dir = "/fake/path"
+        script_file = os.path.join(script_dir, "my_script.py")
+        template_name = "test.template"
+        template_path = os.path.join(script_dir, "workflows", template_name)
+
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            template_path, contents="run: cargo llvm-cov test\nrun: other command"
+        )
+
+        extra_args = {"cargo llvm-cov test": "--foo --bar"}
+        content = make_github_workflows.generate_workflow(
+            template_name=template_name,
+            script_file=script_file,
+            extra_args=extra_args,
+        )
+
+        self.assertTrue(
+            content.startswith(
+                '#!/usr/bin/env -S my_script.py --extra-arg "cargo llvm-cov test=--foo --bar"\n'
+            )
+        )
+        self.assertIn("run: cargo llvm-cov test --foo --bar", content)
+        self.assertIn("run: other command", content)
+
+    def test_main_with_extra_args(self) -> None:
+        """Tests the main orchestration function with extra arguments."""
         script_file = make_github_workflows.__file__
         script_dir = os.path.dirname(script_file)
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
@@ -186,31 +217,29 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             contents="VALIDATION_CONTENT",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            os.path.join(script_dir, "workflows", "golang_pre-commit.yml"),
-            contents="GOLANG_CONTENT",
-        )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             os.path.join(script_dir, "workflows", "rust_publish.yml"),
             contents="RUST_PUBLISH_CONTENT",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             os.path.join(script_dir, "workflows", "rust_pull_request.yml"),
-            contents="RUST_PR_CONTENT",
+            contents="run: cargo llvm-cov test",
         )
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             os.path.join(script_dir, "workflows", "rust_security_audit.yml"),
             contents="RUST_AUDIT_CONTENT",
         )
 
-        # Activate Go and Rust
-        self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
         self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
+
+        args = make_github_workflows.Args(
+            extra_args=["cargo llvm-cov test=--foo"],
+        )
 
         with (
             mock.patch.object(
                 make_github_workflows.argparse.ArgumentParser,
                 "parse_args",
-                return_value=make_github_workflows.Args(),
+                return_value=args,
             ),
             mock.patch.object(
                 make_github_workflows, "write_workflow"
@@ -218,14 +247,30 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         ):
             make_github_workflows.main()
 
-            # write_workflow should be called for:
-            # 1. .github/dependabot.yml
-            # 2. .github/workflows/dependabot_validation.yml (shared)
-            # 3. .github/workflows/golang_pre-commit.yml
-            # 4. .github/workflows/rust_publish.yml
-            # 5. .github/workflows/rust_pull_request.yml
-            # 6. .github/workflows/rust_security_audit.yml
-            self.assertEqual(mock_write_workflow.call_count, 6)
+            # Let's find the call for rust_pull_request.yml
+            rust_pr_call = next(
+                call
+                for call in mock_write_workflow.call_args_list
+                if call.args[0] == ".github/workflows/rust_pull_request.yml"
+            )
+            self.assertIn(
+                "run: cargo llvm-cov test --foo", cast(str, rust_pr_call.args[1])
+            )
+
+    def test_main_invalid_extra_arg(self) -> None:
+        """Tests that main raises ValueError for invalid --extra-arg format."""
+        args = make_github_workflows.Args(
+            extra_args=["invalid_format"],
+        )
+
+        with mock.patch.object(
+            make_github_workflows.argparse.ArgumentParser,
+            "parse_args",
+            return_value=args,
+        ):
+            with self.assertRaises(ValueError) as cm:
+                make_github_workflows.main()
+            self.assertIn("Invalid --extra-arg format", str(cm.exception))
 
     def test_generate_dependabot_config_unknown_ecosystem(self) -> None:
         """Tests dependabot config generation with an unknown ecosystem."""

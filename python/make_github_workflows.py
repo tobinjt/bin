@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Utility module for generating GitHub Actions workflows."""
+"""Tool for generating GitHub Actions workflows."""
 
 import argparse as argparse
 import dataclasses
 import os
+import re
 import yaml as yaml
 from typing import cast, override, TypeAlias
 
@@ -82,25 +83,51 @@ class Args(argparse.Namespace):
     """Arguments for the workflow generation scripts."""
 
     ignored_filename: str | None
+    extra_args: list[str] | None
 
     def __init__(
         self,
         ignored_filename: str | None = None,
+        extra_args: list[str] | None = None,
     ) -> None:
         """Initializes the arguments.
 
         Args:
             ignored_filename: An optional filename that is ignored.
+            extra_args: Extra arguments for a command, in the format 'command=args'.
         """
         super().__init__()
         self.ignored_filename = ignored_filename
+        self.extra_args = list(extra_args) if extra_args is not None else []
 
 
-def generate_dependabot_config(script_file: str) -> str:
+def build_shebang_args(extra_args: dict[str, str] | None) -> str:
+    """Builds the argument string for the shebang.
+
+    Args:
+        extra_args: The dictionary of extra arguments.
+
+    Returns:
+        The string of extra arguments formatted for the shebang.
+    """
+    if not extra_args:
+        return ""
+
+    args_str = ""
+    for cmd, args in sorted(extra_args.items()):
+        args_str += f' --extra-arg "{cmd}={args}"'
+    return args_str
+
+
+def generate_dependabot_config(
+    script_file: str,
+    extra_args: dict[str, str] | None = None,
+) -> str:
     """Generates the dependabot.yml content based on the project files.
 
     Args:
         script_file: The path to the script calling this function.
+        extra_args: An optional dictionary mapping commands to extra arguments.
 
     Returns:
         The generated YAML content as a string.
@@ -125,26 +152,28 @@ def generate_dependabot_config(script_file: str) -> str:
             filtered_updates.append(update)
 
     template["updates"] = filtered_updates
-
     yaml_content = yaml.dump(
         template, Dumper=IndentDumper, sort_keys=False, default_flow_style=False
     )
     # Ensure there is a newline between list items for better readability
     yaml_content = yaml_content.replace("\n  - ", "\n\n  - ")
 
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}"
+    shebang_args = build_shebang_args(extra_args)
+    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}{shebang_args}"
     return shebang + "\n" + yaml_content.rstrip()
 
 
 def generate_workflow(
     template_name: str,
     script_file: str,
+    extra_args: dict[str, str] | None = None,
 ) -> str:
     """Generates a GitHub Actions workflow from a template.
 
     Args:
         template_name: The filename of the template to use.
         script_file: The path to the script calling this function (used for shebang and template location).
+        extra_args: An optional dictionary mapping commands to extra arguments to append.
 
     Returns:
         The generated YAML content as a string.
@@ -154,7 +183,17 @@ def generate_workflow(
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}"
+    if extra_args:
+        for command, extra in extra_args.items():
+            # Match 'run: <command>' (possibly with spaces) and append extra args.
+            # We use regex to ensure we only replace in 'run:' lines.
+            pattern = re.compile(
+                rf"^(\s*run:\s*{re.escape(command)})(\s*)$", re.MULTILINE
+            )
+            template = pattern.sub(rf"\1 {extra}\2", template)
+
+    shebang_args = build_shebang_args(extra_args)
+    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}{shebang_args}"
 
     return shebang + "\n" + template.rstrip()
 
@@ -166,8 +205,7 @@ def write_workflow(output_file: str, content: str) -> None:
         output_file: The path to the file to write.
         content: The content to write.
     """
-    output_dir = os.path.dirname(output_file)
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(content + "\n")
@@ -189,6 +227,12 @@ def get_parser(description: str) -> argparse.ArgumentParser:
         nargs="?",
         help="An optional filename that is ignored (used when invoked via shebang).",
     )
+    parser.add_argument(
+        "--extra-arg",
+        dest="extra_args",
+        action="append",
+        help="Extra arguments for a command, in the format 'command=args' (e.g. --extra-arg 'cargo test=-- --nocapture').",
+    )
     return parser
 
 
@@ -196,12 +240,24 @@ def main() -> None:
     """Parses arguments and generates the workflows."""
     description = "Generate GitHub Actions workflows for a project."
     parser = get_parser(description=description)
-    _ = parser.parse_args(namespace=Args())
+    args = parser.parse_args(namespace=Args())
+
+    command_to_extra_args: dict[str, str] = {}
+    for item in args.extra_args or []:
+        if "=" not in item:
+            raise ValueError(
+                f"Invalid --extra-arg format: '{item}'. Expected 'command=args'."
+            )
+        command, extra = item.split("=", 1)
+        command_to_extra_args[command.strip()] = extra.strip()
 
     script_file = __file__
 
     # Generate dependabot.yml automatically.
-    dependabot_content = generate_dependabot_config(script_file)
+    dependabot_content = generate_dependabot_config(
+        script_file,
+        extra_args=command_to_extra_args,
+    )
     write_workflow(".github/dependabot.yml", dependabot_content)
 
     workflows_to_generate: set[tuple[str, str]] = set()
@@ -214,6 +270,7 @@ def main() -> None:
         content = generate_workflow(
             template,
             script_file,
+            extra_args=command_to_extra_args,
         )
         write_workflow(output_file, content)
 
