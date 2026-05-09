@@ -101,6 +101,22 @@ class Args(argparse.Namespace):
         self.extra_args = list(extra_args) if extra_args is not None else []
 
 
+def escape_for_env_s(text: str) -> str:
+    r"""Escapes a string for use within an env -S shebang.
+
+    Replace spaces with \_ for env -S compatibility in shebangs.
+    env -S will treat \_ as a space when inside quotes.
+    We also need to escape double quotes and backslashes.
+
+    Args:
+        text: The string to escape.
+
+    Returns:
+        The escaped string.
+    """
+    return text.replace("\\", "\\\\").replace(" ", r"\_").replace('"', r"\"")
+
+
 def build_shebang_args(extra_args: dict[str, str] | None) -> str:
     """Builds the argument string for the shebang.
 
@@ -115,7 +131,9 @@ def build_shebang_args(extra_args: dict[str, str] | None) -> str:
 
     args_str = ""
     for cmd, args in sorted(extra_args.items()):
-        args_str += f' --extra-arg "{cmd}={args}"'
+        escaped_cmd = escape_for_env_s(cmd)
+        escaped_args = escape_for_env_s(args)
+        args_str += f'\\_--extra-arg\\_"{escaped_cmd}={escaped_args}"'
     return args_str
 
 
@@ -159,7 +177,8 @@ def generate_dependabot_config(
     yaml_content = yaml_content.replace("\n  - ", "\n\n  - ")
 
     shebang_args = build_shebang_args(extra_args)
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}{shebang_args}"
+    script_name = escape_for_env_s(os.path.basename(script_file))
+    shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}'
     return shebang + "\n" + yaml_content.rstrip()
 
 
@@ -193,7 +212,8 @@ def generate_workflow(
             template = pattern.sub(rf"\1 {extra}\2", template)
 
     shebang_args = build_shebang_args(extra_args)
-    shebang = f"#!/usr/bin/env -S {os.path.basename(script_file)}{shebang_args}"
+    script_name = escape_for_env_s(os.path.basename(script_file))
+    shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}'
 
     return shebang + "\n" + template.rstrip()
 

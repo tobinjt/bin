@@ -62,7 +62,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             script_file=script_file,
         )
 
-        self.assertTrue(content.startswith("#!/usr/bin/env -S my_script.py\n"))
+        self.assertTrue(content.startswith('#!/usr/bin/env -S "my_script.py"\n'))
         self.assertIn("Hello!", content)
 
     def test_write_workflow(self) -> None:
@@ -104,7 +104,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         self.assertNotIn("package-ecosystem: gomod", content)
         self.assertNotIn("package-ecosystem: cargo", content)
         self.assertNotIn("package-ecosystem: pip", content)
-        self.assertTrue(content.startswith("#!/usr/bin/env -S my_script.py\n"))
+        self.assertTrue(content.startswith('#!/usr/bin/env -S "my_script.py"\n'))
 
         # 2. Add go.mod. gomod should now be included.
         self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
@@ -114,7 +114,9 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         )
         self.assertIn("package-ecosystem: gomod", content)
         self.assertTrue(
-            content.startswith('#!/usr/bin/env -S my_script.py --extra-arg "foo=bar"\n')
+            content.startswith(
+                '#!/usr/bin/env -S "my_script.py"\\_--extra-arg\\_"foo=bar"\n'
+            )
         )
 
         # 3. Add Cargo.toml. cargo should now be included.
@@ -198,7 +200,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
         self.assertTrue(
             content.startswith(
-                '#!/usr/bin/env -S my_script.py --extra-arg "cargo llvm-cov test=--foo --bar"\n'
+                '#!/usr/bin/env -S "my_script.py"\\_--extra-arg\\_"cargo\\_llvm-cov\\_test=--foo\\_--bar"\n'
             )
         )
         self.assertIn("run: cargo llvm-cov test --foo --bar", content)
