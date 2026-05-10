@@ -1,19 +1,129 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
+  # managed-by-populate-pre-commit start: conventional-pre-commit.yaml
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+    - id: conventional-pre-commit
+      stages:
+      - commit-msg
+      args:
+      - --verbose
+  # managed-by-populate-pre-commit end: conventional-pre-commit.yaml
+  # managed-by-populate-pre-commit start: keep-sorted.yaml
+  - repo: https://github.com/google/keep-sorted
+    rev: v0.8.0
+    hooks:
+    - id: keep-sorted
+  # managed-by-populate-pre-commit end: keep-sorted.yaml
+  # managed-by-populate-pre-commit start: local-basedpyright.yaml
+  - repo: local
+    hooks:
+    - id: basedpyright
+      name: Run `basedpyright`
+      language: system
+      types:
+      - python
+      entry: basedpyright
+  # managed-by-populate-pre-commit end: local-basedpyright.yaml
+  # managed-by-populate-pre-commit start: local-black.yaml
+  - repo: local
+    hooks:
+    - id: black
+      name: Run `black`
+      language: system
+      types:
+      - python
+      entry: black
+  # managed-by-populate-pre-commit end: local-black.yaml
+  # managed-by-populate-pre-commit start: local-markdownlint.yaml
+  - repo: local
+    hooks:
+    - id: markdownlint
+      name: Run `markdownlint`
+      language: system
+      types:
+      - markdown
+      entry: markdownlint
+  # managed-by-populate-pre-commit end: local-markdownlint.yaml
+  # managed-by-populate-pre-commit start: local-mypy.yaml
+  - repo: local
+    hooks:
+    - id: mypy
+      name: Run `mypy`
+      language: system
+      types:
+      - python
+      entry: mypy --ignore-missing-imports --scripts-are-modules
+  # managed-by-populate-pre-commit end: local-mypy.yaml
+  # managed-by-populate-pre-commit start: local-pytest.yaml
+  - repo: local
+    hooks:
+    - id: pytest
+      name: Run `pytest`
+      language: system
+      pass_filenames: false
+      types:
+      - python
+      entry: pytest
+  # managed-by-populate-pre-commit end: local-pytest.yaml
+  # managed-by-populate-pre-commit start: local-shellcheck.yaml
+  - repo: local
+    hooks:
+    - id: shellcheck
+      name: Run `shellcheck`
+      language: system
+      types:
+      - shell
+      entry: shellcheck -e SC1090 -e SC1091
+  # managed-by-populate-pre-commit end: local-shellcheck.yaml
+  # managed-by-populate-pre-commit start: local-spellcheck.yaml
+  - repo: local
+    hooks:
+    - id: spellcheck
+      stages:
+      - commit-msg
+      name: Check spelling
+      language: system
+      verbose: true
+      entry: spell-check-wrapper
+  # managed-by-populate-pre-commit end: local-spellcheck.yaml
+  # managed-by-populate-pre-commit start: meta.yaml
+  - repo: meta
+    hooks:
+    - id: check-hooks-apply
+    - id: check-useless-excludes
+  # managed-by-populate-pre-commit end: meta.yaml
+  # managed-by-populate-pre-commit start: pre-commit-hooks.yaml
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: check-case-conflict
+    - id: check-merge-conflict
+    - id: check-vcs-permalinks
+  # managed-by-populate-pre-commit end: pre-commit-hooks.yaml
+  # managed-by-populate-pre-commit start: pygrep-hooks.yaml
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+    - id: python-check-blanket-noqa
+    - id: python-check-blanket-type-ignore
+    - id: python-check-mock-methods
+    - id: python-no-eval
+    - id: python-no-log-warn
+    - id: python-use-type-annotations
+  # managed-by-populate-pre-commit end: pygrep-hooks.yaml
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-builtin-literals
         files: python/.*\.py$
-      - id: check-case-conflict
       - id: check-docstring-first
         files: python/.*\.py$
       - id: check-executables-have-shebangs
-      - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
       - id: check-symlinks
-      - id: check-vcs-permalinks
       - id: debug-statements
         files: python/.*\.py$
       - id: end-of-file-fixer
@@ -27,76 +137,20 @@ repos:
         types: [yaml]
         exclude: dependabot.yml|.*.yaml$
         entry: actionlint
-      - id: basedpyright
-        name: Run `basedpyright`
-        language: system
-        types: [python]
-        entry: basedpyright
-      - id: black
-        name: Run `black`
-        language: system
-        types: [python]
-        entry: black
       - id: linkdirs-system-python-test
         name: Run `linkdirs_test_with_system_python.sh`
         language: system
         files: python/linkdirs.*
         entry: ./python/linkdirs_test_with_system_python.sh
-      - id: markdownlint
-        name: Run `markdownlint`
-        language: system
-        types: [markdown]
-        entry: markdownlint
-      - id: mypy
-        name: Run `mypy`
-        language: system
-        types: [python]
-        entry: mypy --ignore-missing-imports --scripts-are-modules
       - id: pytest - triggered by Github workflows changing
         name: Run `pytest` when Github workflows change
         language: system
         pass_filenames: false
         types: [yaml]
         entry: pytest
-      - id: pytest
-        name: Run `pytest`
-        language: system
-        pass_filenames: false
-        types: [python]
-        entry: pytest
       - id: run-everywhere-system-python-test
         name: Run `run_everywhere_test_with_system_python.sh`
         language: system
         files: python/run_everywhere.*
         entry: ./python/run_everywhere_test_with_system_python.sh
-      - id: shellcheck
-        name: Run `shellcheck`
-        language: system
-        types: [shell]
-        entry: shellcheck -e SC1090 -e SC1091
-      - id: spellcheck
-        stages: [commit-msg]
-        name: Check spelling
-        language: system
-        verbose: true
-        entry: spell-check-wrapper
       # keep-sorted end
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-      - id: python-check-blanket-noqa
-      - id: python-check-blanket-type-ignore
-      - id: python-check-mock-methods
-      - id: python-no-eval
-      - id: python-no-log-warn
-      - id: python-use-type-annotations
-  - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.4.0
-    hooks:
-      - id: conventional-pre-commit
-        stages: [commit-msg]
-        args: [--verbose]
-  - repo: meta
-    hooks:
-      - id: check-hooks-apply
-      - id: check-useless-excludes
