@@ -59,7 +59,8 @@ update_composer() {
 update_npm() {
   if should_try_updating "npm" "package.json"; then
     npm update
-    commit_if_necessary "npm update"
+    # shellcheck disable=SC2016
+    commit_if_necessary '`npm` update'
 
     # NPM refuses to perform major upgrades because they're usually
     # incompatible.
