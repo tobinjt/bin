@@ -161,7 +161,7 @@ def generate_dependabot_config(
     updates = cast(list[UpdateStanza], cast(object, template["updates"]))
     for update in updates:
         ecosystem = cast(str, update["package-ecosystem"])
-        if ecosystem == "github-actions":
+        if ecosystem in ("github-actions", "pre-commit"):
             filtered_updates.append(update)
             continue
 
