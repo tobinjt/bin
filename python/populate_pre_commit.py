@@ -6,33 +6,111 @@ corresponding pre-commit hooks from a central snippets directory. It uses
 markers to identify and update managed sections in .pre-commit-config.yaml.
 """
 
-# Prompt that generated this program:
-# I extensively use pre-commit.com for my Git repositories. I want to write a
-# program to manage my `.pre-commit-config.yaml` files so that maintaining them is
-# easier. All of the configs I currently have are in @pre-commit-configs/.
-#
-# - Please analyse all of those files, extract any piece of config that's used
-#   twice or more into @pre-commit-snippets/ for reuse.
-# - Please write a Python program named @populate-pre-commit.py that will:
-#   - Be run in the root of a Git repo.
-#   - Check the files present in the repo to determine which snippets to include
-#     in `.pre-commit-config.yaml` from @pre-commit-snippets/
-#   - Update `.pre-commit-config.yaml`, replacing snippets the program previously
-#     added, adding missing snippets when new files are added to the repo,
-#     *without* changing other config in the file, and keeping the output order
-#     consistent to minimise diffs between runs.
-#   - For the initial migration of an existing `.pre-commit-config.yaml`, it's
-#     fine for the program to add config snippets that are effectively duplicates
-#     of existing config, I will manually edit the `.pre-commit-config.yaml`
-#     before committing it.
-
+import argparse
 import glob
 import os
+import yaml
+from typing import cast, TypedDict
 
 # Path to the directory containing pre-commit snippets.
 SNIPPETS_DIR = os.path.expanduser("~/bin/python/pre-commit-snippets")
 # The pre-commit configuration file to update.
 CONFIG_FILE = ".pre-commit-config.yaml"
+
+
+class Hook(TypedDict):
+    """Represents a single hook in a config snippet."""
+
+    id: str
+    stages: list[str]
+    args: list[str]
+
+
+class RepoEntry(TypedDict):
+    """Represents a single repo entry from a config snippet."""
+
+    repo: str
+    rev: str
+    hooks: list[Hook]
+
+
+# A full config snippet.
+PreCommitConfig = list[RepoEntry]
+
+
+class Args(argparse.Namespace):
+    """Arguments for the pre-commit population script."""
+
+    ignored_filename: str | None
+    extra_args: list[str]
+
+    def __init__(
+        self,
+        ignored_filename: str | None = None,
+        extra_args: list[str] | None = None,
+    ) -> None:
+        """Initializes the arguments.
+
+        Args:
+            ignored_filename: An optional filename that is ignored.
+            extra_args: Extra arguments for a hook, in the format 'hook_id=args'.
+        """
+        super().__init__()
+        self.ignored_filename = ignored_filename
+        self.extra_args = list(extra_args) if extra_args is not None else []
+
+
+def escape_for_env_s(text: str) -> str:
+    r"""Escapes a string for use within an env -S shebang.
+
+    Replace spaces with \_ for env -S compatibility in shebangs.
+    env -S will treat \_ as a space when inside quotes.
+    We also need to escape double quotes and backslashes.
+
+    Args:
+        text: The string to escape.
+
+    Returns:
+        The escaped string.
+    """
+    return text.replace("\\", "\\\\").replace(" ", r"\_").replace('"', r"\"")
+
+
+def build_shebang_args(extra_args: dict[str, str]) -> str:
+    """Builds the argument string for the shebang.
+
+    Args:
+        extra_args: The dictionary of extra arguments.
+
+    Returns:
+        The string of extra arguments formatted for the shebang.
+    """
+    args_str = ""
+    for cmd, args in sorted(extra_args.items()):
+        escaped_cmd = escape_for_env_s(cmd)
+        escaped_args = escape_for_env_s(args)
+        args_str += f'\\_--extra-arg\\_"{escaped_cmd}={escaped_args}"'
+    return args_str
+
+
+def apply_extra_args(content: str, extra_args: dict[str, str]) -> str:
+    """Appends extra arguments to specific hooks in the snippet content.
+
+    Args:
+        content: The YAML content of the snippet.
+        extra_args: A dictionary mapping hook IDs to extra argument strings.
+
+    Returns:
+        The modified YAML content.
+    """
+    config_snippet = cast(PreCommitConfig, yaml.safe_load(content))
+    for repo in config_snippet:
+        for hook in repo["hooks"]:
+            hook_id = hook["id"]
+            if hook_id in extra_args:
+                # Append extra flags so they can override existing flags.
+                hook["args"].extend(extra_args[hook_id].split())
+    return yaml.dump(config_snippet, sort_keys=False, default_flow_style=False)
 
 
 def should_include_actionlint() -> bool:
@@ -115,8 +193,13 @@ SNIPPETS = (
 )
 
 
-def populate_pre_commit() -> None:
-    """Updates .pre-commit-config.yaml with detected snippets."""
+def populate_pre_commit(*, extra_args: dict[str, str], script_file: str) -> None:
+    """Updates .pre-commit-config.yaml with detected snippets.
+
+    Args:
+        extra_args: A dictionary mapping hook IDs to extra arguments.
+        script_file: The path to the script calling this function (used for shebang).
+    """
     lines: list[str] = []
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
@@ -130,10 +213,12 @@ def populate_pre_commit() -> None:
         if detector():
             to_include.append(snippet_name)
 
-    # 1. Remove all existing managed blocks.
+    # 1. Remove all existing managed blocks AND the shebang.
     new_lines: list[str] = []
     skip: bool = False
-    for line in lines:
+    for i, line in enumerate(lines):
+        if i == 0 and line.startswith("#!"):
+            continue
         if line.strip().startswith("# managed-by-populate-pre-commit start:"):
             skip = True
             continue
@@ -159,22 +244,17 @@ def populate_pre_commit() -> None:
     snippet_lines: list[str] = []
     for snippet_name in to_include:
         snippet_path: str = os.path.join(SNIPPETS_DIR, snippet_name)
-        if not os.path.exists(snippet_path):
-            print(f"Warning: Snippet {snippet_name} not found at {snippet_path}")
-            continue
-
         with open(snippet_path, "r") as f:
             content: str = f.read()
+        if not content.strip():
+            raise ValueError(f"config snippet {snippet_path} is empty")
 
         snippet_lines.append(
             f"  # managed-by-populate-pre-commit start: {snippet_name}\n"
         )
-        # Indent content by 2 spaces.
-        for line in content.splitlines():
-            if line.strip():
-                snippet_lines.append(f"  {line}\n")
-            else:
-                snippet_lines.append("\n")
+        snippet_content = apply_extra_args(content, extra_args)
+        for line in snippet_content.splitlines():
+            snippet_lines.append(f"  {line}\n")
         snippet_lines.append(
             f"  # managed-by-populate-pre-commit end: {snippet_name}\n"
         )
@@ -185,12 +265,48 @@ def populate_pre_commit() -> None:
         new_lines[:insert_pos] + snippet_lines + new_lines[insert_pos:]
     )
 
-    # 5. Write back to file.
+    # 5. Write back to file with shebang.
+    shebang_args = build_shebang_args(extra_args)
+    script_name = escape_for_env_s(os.path.basename(script_file))
+    shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}\n'
+
     with open(CONFIG_FILE, "w") as f:
+        f.write(shebang)
         f.writelines(final_lines)
+    os.chmod(CONFIG_FILE, 0o755)
 
     print(f"Updated {CONFIG_FILE} with {len(to_include)} snippets.")
 
 
+def main() -> None:
+    """Parses arguments and populates the pre-commit config."""
+    parser = argparse.ArgumentParser(
+        description="Populate .pre-commit-config.yaml with managed snippets."
+    )
+    parser.add_argument(
+        "ignored_filename",
+        nargs="?",
+        help="An optional filename that is ignored (used when invoked via shebang).",
+    )
+    parser.add_argument(
+        "--extra-arg",
+        dest="extra_args",
+        action="append",
+        help="Extra arguments for a hook, in the format 'hook_id=args'.",
+    )
+    args = parser.parse_args(namespace=Args())
+
+    command_to_extra_args: dict[str, str] = {}
+    for item in args.extra_args:
+        if "=" not in item:
+            raise ValueError(
+                f"Invalid --extra-arg format: '{item}'. Expected 'hook_id=args'."
+            )
+        hook_id, extra = item.split("=", 1)
+        command_to_extra_args[hook_id.strip()] = extra.strip()
+
+    populate_pre_commit(extra_args=command_to_extra_args, script_file=__file__)
+
+
 if __name__ == "__main__":
-    populate_pre_commit()
+    main()
