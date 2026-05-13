@@ -172,23 +172,23 @@ def should_include_rust() -> bool:
 # Define snippets and their detection logic in the desired output order.
 SNIPPETS = (
     # keep-sorted start
+    ("actionlint.yaml", should_include_actionlint),
+    ("basedpyright.yaml", should_include_python),
+    ("black.yaml", should_include_python),
     ("conventional-pre-commit.yaml", lambda: True),
+    ("golang-coverage-check.yaml", should_include_golang),
+    ("golang.yaml", should_include_golang),
+    ("golangci-lint.yaml", should_include_golang),
+    ("hooks.yaml", lambda: True),
     ("keep-sorted.yaml", lambda: True),
-    ("local-actionlint.yaml", should_include_actionlint),
-    ("local-basedpyright.yaml", should_include_python),
-    ("local-black.yaml", should_include_python),
-    ("local-markdownlint.yaml", should_include_markdownlint),
-    ("local-mypy.yaml", should_include_python),
-    ("local-pytest.yaml", should_include_python),
-    ("local-shellcheck.yaml", should_include_shellcheck),
-    ("local-spellcheck.yaml", lambda: True),
+    ("markdownlint.yaml", should_include_markdownlint),
     ("meta.yaml", lambda: True),
-    ("pre-commit-golang-coverage-check.yaml", should_include_golang),
-    ("pre-commit-golang.yaml", should_include_golang),
-    ("pre-commit-golangci-lint.yaml", should_include_golang),
-    ("pre-commit-hooks.yaml", lambda: True),
+    ("mypy.yaml", should_include_python),
     ("pygrep-hooks.yaml", should_include_python),
-    ("rust-pre-commit-checks.yaml", should_include_rust),
+    ("pytest.yaml", should_include_python),
+    ("rust.yaml", should_include_rust),
+    ("shellcheck.yaml", should_include_shellcheck),
+    ("spellcheck.yaml", lambda: True),
     # keep-sorted end
 )
 

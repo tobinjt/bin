@@ -85,7 +85,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             contents="- repo: meta\n  hooks: []\n",
         )
         self.create_file(
-            os.path.join(snippets_dir, "local-python.yaml"),
+            os.path.join(snippets_dir, "python.yaml"),
             contents="- repo: local\n  hooks:\n  - id: fake-python\n    args: []\n",
         )
 
@@ -97,8 +97,8 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         mock_snippets = (
             # keep-sorted start
             ("ignored.yaml", lambda: False),
-            ("local-python.yaml", lambda: True),
             ("meta.yaml", lambda: True),
+            ("python.yaml", lambda: True),
             # keep-sorted end
         )
         self.enterContext(
@@ -123,16 +123,16 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         expected = textwrap.dedent("""\
             #!/usr/bin/env -S "populate_pre_commit_test.py"
             repos:
-              # managed-by-populate-pre-commit start: local-python.yaml
-              - repo: local
-                hooks:
-                - id: fake-python
-                  args: []
-              # managed-by-populate-pre-commit end: local-python.yaml
               # managed-by-populate-pre-commit start: meta.yaml
               - repo: meta
                 hooks: []
               # managed-by-populate-pre-commit end: meta.yaml
+              # managed-by-populate-pre-commit start: python.yaml
+              - repo: local
+                hooks:
+                - id: fake-python
+                  args: []
+              # managed-by-populate-pre-commit end: python.yaml
             """)
         self.assertEqual(content, expected)
 
@@ -362,7 +362,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_multiple_snippets_with_extra_args(self) -> None:
         """Tests multiple snippets with extra arguments."""
         mock_snippets = [
-            ("local-python.yaml", lambda: True),
+            ("python.yaml", lambda: True),
             ("meta.yaml", lambda: True),
         ]
         extra_args = {"fake-python": "--flag1", "meta-hook": "--flag2"}
