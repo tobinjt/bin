@@ -24,6 +24,18 @@ updates:
     cooldown:
       default-days: 7
 
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    # Group updates into one PR.
+    groups:
+      php-dependencies:
+        patterns:
+          - '*'
+    cooldown:
+      default-days: 7
+
   - package-ecosystem: gomod
     directory: /
     schedule:

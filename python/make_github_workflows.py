@@ -69,6 +69,16 @@ LANGUAGE_CONFIGS = [
             ),
         ],
     ),
+    LanguageConfig(
+        ecosystem="composer",
+        trigger_files=["composer.json"],
+        workflows=[
+            Workflow(
+                "dependabot_validation.yml",
+                ".github/workflows/dependabot_validation.yml",
+            ),
+        ],
+    ),
 ]
 
 

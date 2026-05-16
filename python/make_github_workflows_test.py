@@ -90,6 +90,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
                 {"package-ecosystem": "gomod"},
                 {"package-ecosystem": "cargo"},
                 {"package-ecosystem": "pip"},
+                {"package-ecosystem": "composer"},
             ],
         }
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
@@ -104,6 +105,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         self.assertNotIn("package-ecosystem: gomod", content)
         self.assertNotIn("package-ecosystem: cargo", content)
         self.assertNotIn("package-ecosystem: pip", content)
+        self.assertNotIn("package-ecosystem: composer", content)
         self.assertTrue(content.startswith('#!/usr/bin/env -S "my_script.py"\n'))
 
         # 2. Add go.mod. gomod should now be included.
@@ -134,6 +136,13 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             script_file=script_file
         )
         self.assertIn("package-ecosystem: pip", content)
+
+        # 5. Add composer.json. composer should now be included.
+        self.fs.create_file("composer.json")  # pyright: ignore[reportUnknownMemberType]
+        content = make_github_workflows.generate_dependabot_config(
+            script_file=script_file
+        )
+        self.assertIn("package-ecosystem: composer", content)
 
     def test_main(self) -> None:
         """Tests the main orchestration function."""
