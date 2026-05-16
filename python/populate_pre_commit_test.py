@@ -1,8 +1,9 @@
 """Tests for populate_pre_commit.py."""
 
 import os
+import subprocess
 import textwrap
-from typing import override
+from typing import cast, override
 import unittest
 from unittest import mock
 
@@ -24,49 +25,44 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         )
 
     def test_should_include_actionlint(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_actionlint())
-        self.create_file(".github/workflows/ci.yaml")
-        self.assertTrue(populate_pre_commit.should_include_actionlint())
+        self.assertFalse(populate_pre_commit.should_include_actionlint(set()))
+        self.assertTrue(
+            populate_pre_commit.should_include_actionlint({".github/workflows/ci.yaml"})
+        )
 
     def test_should_include_actionlint_yml(self) -> None:
         """Tests should_include_actionlint with .yml files."""
-        self.create_file(".github/workflows/ci.yml")
-        self.assertTrue(populate_pre_commit.should_include_actionlint())
+        self.assertTrue(
+            populate_pre_commit.should_include_actionlint({".github/workflows/ci.yml"})
+        )
 
     def test_should_include_markdownlint(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_markdownlint())
-        self.create_file("README.md")
-        self.assertTrue(populate_pre_commit.should_include_markdownlint())
+        self.assertFalse(populate_pre_commit.should_include_markdownlint(set()))
+        self.assertTrue(populate_pre_commit.should_include_markdownlint({"README.md"}))
 
     def test_should_include_shellcheck(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_shellcheck())
-        self.create_file("script.sh")
-        self.assertTrue(populate_pre_commit.should_include_shellcheck())
+        self.assertFalse(populate_pre_commit.should_include_shellcheck(set()))
+        self.assertTrue(populate_pre_commit.should_include_shellcheck({"script.sh"}))
 
     def test_should_include_python(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_python())
-        self.create_file("main.py")
-        self.assertTrue(populate_pre_commit.should_include_python())
+        self.assertFalse(populate_pre_commit.should_include_python(set()))
+        self.assertTrue(populate_pre_commit.should_include_python({"main.py"}))
 
     def test_should_include_golang_files(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_golang())
-        self.create_file("main.go")
-        self.assertTrue(populate_pre_commit.should_include_golang())
+        self.assertFalse(populate_pre_commit.should_include_golang(set()))
+        self.assertTrue(populate_pre_commit.should_include_golang({"main.go"}))
 
     def test_should_include_golang_mod(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_golang())
-        self.create_file("go.mod")
-        self.assertTrue(populate_pre_commit.should_include_golang())
+        self.assertFalse(populate_pre_commit.should_include_golang(set()))
+        self.assertTrue(populate_pre_commit.should_include_golang({"go.mod"}))
 
     def test_should_include_rust_files(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_rust())
-        self.create_file("src/main.rs")
-        self.assertTrue(populate_pre_commit.should_include_rust())
+        self.assertFalse(populate_pre_commit.should_include_rust(set()))
+        self.assertTrue(populate_pre_commit.should_include_rust({"src/main.rs"}))
 
     def test_should_include_rust_toml(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_rust())
-        self.create_file("Cargo.toml")
-        self.assertTrue(populate_pre_commit.should_include_rust())
+        self.assertFalse(populate_pre_commit.should_include_rust(set()))
+        self.assertTrue(populate_pre_commit.should_include_rust({"Cargo.toml"}))
 
 
 class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
@@ -93,14 +89,19 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.enterContext(
             mock.patch.object(populate_pre_commit, "SNIPPETS_DIR", snippets_dir)
         )
-
-        mock_snippets = (
-            # keep-sorted start
-            ("ignored.yaml", lambda: False),
-            ("meta.yaml", lambda: True),
-            ("python.yaml", lambda: True),
-            # keep-sorted end
+        self.enterContext(
+            mock.patch.object(
+                populate_pre_commit, "get_non_ignored_files", return_value=set()
+            )
         )
+
+        mock_snippets: list[tuple[str, populate_pre_commit.DetectorFunc]] = [
+            # keep-sorted start
+            ("ignored.yaml", lambda _files: False),
+            ("meta.yaml", populate_pre_commit.return_true),
+            ("python.yaml", populate_pre_commit.return_true),
+            # keep-sorted end
+        ]
         self.enterContext(
             mock.patch.object(populate_pre_commit, "SNIPPETS", mock_snippets)
         )
@@ -146,7 +147,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
 
         with mock.patch.object(
-            populate_pre_commit, "SNIPPETS", [("meta.yaml", lambda: True)]
+            populate_pre_commit,
+            "SNIPPETS",
+            [("meta.yaml", populate_pre_commit.return_true)],
         ):
             populate_pre_commit.populate_pre_commit(
                 extra_args={}, script_file="populate_pre_commit_test.py"
@@ -179,7 +182,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
 
         with mock.patch.object(
-            populate_pre_commit, "SNIPPETS", [("meta.yaml", lambda: True)]
+            populate_pre_commit,
+            "SNIPPETS",
+            [("meta.yaml", populate_pre_commit.return_true)],
         ):
             populate_pre_commit.populate_pre_commit(
                 extra_args={}, script_file="populate_pre_commit_test.py"
@@ -203,7 +208,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.create_file(".pre-commit-config.yaml", contents="# Just a comment\n")
 
         with mock.patch.object(
-            populate_pre_commit, "SNIPPETS", [("meta.yaml", lambda: True)]
+            populate_pre_commit,
+            "SNIPPETS",
+            [("meta.yaml", populate_pre_commit.return_true)],
         ):
             populate_pre_commit.populate_pre_commit(
                 extra_args={}, script_file="populate_pre_commit_test.py"
@@ -228,7 +235,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.create_file(".pre-commit-config.yaml", contents="repos:\n")
 
         with mock.patch.object(
-            populate_pre_commit, "SNIPPETS", [("empty.yaml", lambda: True)]
+            populate_pre_commit,
+            "SNIPPETS",
+            [("empty.yaml", populate_pre_commit.return_true)],
         ):
             self.create_file(
                 os.path.join(populate_pre_commit.SNIPPETS_DIR, "empty.yaml"),
@@ -246,7 +255,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.create_file(".pre-commit-config.yaml", contents="repos:\n")
 
         with mock.patch.object(
-            populate_pre_commit, "SNIPPETS", [("really_missing.yaml", lambda: True)]
+            populate_pre_commit,
+            "SNIPPETS",
+            [("really_missing.yaml", populate_pre_commit.return_true)],
         ):
             with self.assertRaisesRegex(OSError, "really_missing.yaml"):
                 populate_pre_commit.populate_pre_commit(
@@ -362,8 +373,8 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_multiple_snippets_with_extra_args(self) -> None:
         """Tests multiple snippets with extra arguments."""
         mock_snippets = [
-            ("python.yaml", lambda: True),
-            ("meta.yaml", lambda: True),
+            ("python.yaml", populate_pre_commit.return_true),
+            ("meta.yaml", populate_pre_commit.return_true),
         ]
         extra_args = {"fake-python": "--flag1", "meta-hook": "--flag2"}
         with mock.patch.object(populate_pre_commit, "SNIPPETS", mock_snippets):
@@ -400,7 +411,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             """)
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
         with mock.patch.object(
-            populate_pre_commit, "SNIPPETS", [("meta.yaml", lambda: True)]
+            populate_pre_commit,
+            "SNIPPETS",
+            [("meta.yaml", populate_pre_commit.return_true)],
         ):
             populate_pre_commit.populate_pre_commit(
                 extra_args={}, script_file="populate_pre_commit_test.py"
@@ -413,3 +426,78 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
+    """Tests for get_non_ignored_files."""
+
+    @override
+    def setUp(self) -> None:
+        self.setUpPyfakefs()
+
+    def create_file(self, file_path: str, contents: str = "") -> None:
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            file_path, contents=contents
+        )
+
+    def test_basic_files(self) -> None:
+        self.create_file("file1.txt")
+        self.create_file("dir1/file2.txt")
+        with mock.patch.object(subprocess, "run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(1, "git")
+            files = populate_pre_commit.get_non_ignored_files()
+        self.assertEqual(files, {"file1.txt", "dir1/file2.txt"})
+
+    def test_local_gitignore(self) -> None:
+        self.create_file(".gitignore", contents="ignored.txt\n")
+        self.create_file("file1.txt")
+        self.create_file("ignored.txt")
+        with mock.patch.object(subprocess, "run") as mock_run:
+            mock_run.side_effect = FileNotFoundError()
+            files = populate_pre_commit.get_non_ignored_files()
+        self.assertEqual(files, {".gitignore", "file1.txt"})
+
+    def test_git_info_exclude(self) -> None:
+        self.create_file(".git/info/exclude", contents="*.log\n")
+        self.create_file("test.log")
+        self.create_file("test.txt")
+        with mock.patch.object(subprocess, "run") as mock_run:
+            mock_run.side_effect = FileNotFoundError()
+            files = populate_pre_commit.get_non_ignored_files()
+        self.assertEqual(files, {"test.txt"})
+
+    def test_global_ignore(self) -> None:
+        home_ignore = os.path.expanduser("~/.gitignore.global")
+        self.create_file(home_ignore, contents="venv/\n")
+        self.create_file("venv/bin/python")
+        self.create_file("main.py")
+        mock_ret = cast(
+            mock.MagicMock,
+            mock.create_autospec(subprocess.CompletedProcess, instance=True),
+        )
+        mock_ret.stdout = "~/.gitignore.global\n"
+        with mock.patch.object(subprocess, "run") as mock_run:
+            mock_run.return_value = mock_ret
+            files = populate_pre_commit.get_non_ignored_files()
+        self.assertIn("main.py", files)
+
+    def test_global_ignore_fallback(self) -> None:
+        home_ignore = os.path.expanduser("~/.config/git/ignore")
+        self.create_file(home_ignore, contents="build/\n")
+        self.create_file("build/output.o")
+        self.create_file("src/main.c")
+        with mock.patch.object(subprocess, "run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(1, "git")
+            files = populate_pre_commit.get_non_ignored_files()
+        self.assertIn("src/main.c", files)
+        self.assertNotIn("build/output.o", files)
+
+    def test_pruning_directories(self) -> None:
+        self.create_file(".gitignore", contents="node_modules/\n")
+        self.create_file("node_modules/pkg/index.js")
+        self.create_file("src/index.js")
+        with mock.patch.object(subprocess, "run") as mock_run:
+            mock_run.side_effect = FileNotFoundError()
+            files = populate_pre_commit.get_non_ignored_files()
+        self.assertIn("src/index.js", files)
+        self.assertNotIn("node_modules/pkg/index.js", files)

@@ -53,7 +53,8 @@ The project uses `pytest` for testing. Each script typically has a corresponding
 `_test.py` file (e.g., `linkdirs.py` -> `linkdirs_test.py`).
 
 **`pytest`** is the preferred way to run tests; *do not* run tests using
-`python3 FILENAME`.
+`python3 FILENAME` or `python3 -m pytest FILENAME`; `pytest` is allowlisted for
+you to use.
 
 To run all tests with coverage:
 
@@ -74,14 +75,14 @@ Configuration is handled in `pytest.ini`, which sets default options (e.g.,
 
 - **Language:** Python 3 (specifically compatible with 3.14 based on
   `.mypy_cache`).
-- **Typing:** Strong typing is used throughout. `mypy` is likely used for static
-  analysis (inferred from `.mypy_cache`). Use of `typing` module and built-in
-  collection types (PEP 585) is observed.
+- **Typing:** Strong typing is used throughout. `mypy` is used for static
+  analysis. Use of `typing` module and built-in collection types (PEP 585) is
+  observed.
 - **Data Structures:** `dataclasses` are preferred over dictionaries for
   structured data.
 - **Documentation:** All modules and functions include docstrings. Module-level
   docstrings provide a high-level summary and usage examples.
-- **Formatting:** Code is consistent and clean, likely formatted with `black`.
+- **Formatting:** Code is consistent and clean, formatted with `black`.
 - **Dependencies:** Standard library is heavily utilized, but some scripts
   import external modules (e.g., `dns` in `check_dns_for_hosting.py`, `pyfakefs`
   in tests).

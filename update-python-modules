@@ -132,6 +132,7 @@ main() {
       mdformat-config \
       mdformat-myst \
       mypy \
+      pathspec \
       pudb \
       pyfakefs \
       pytest \

@@ -7,10 +7,11 @@ markers to identify and update managed sections in .pre-commit-config.yaml.
 """
 
 import argparse
-import glob
 import os
+import subprocess
+import pathspec
 import yaml
-from typing import cast, TypedDict
+from typing import cast, Callable, TypedDict
 
 # Path to the directory containing pre-commit snippets.
 SNIPPETS_DIR = os.path.expanduser("~/bin/python/pre-commit-snippets")
@@ -36,6 +37,9 @@ class RepoEntry(TypedDict):
 
 # A full config snippet.
 PreCommitConfig = list[RepoEntry]
+
+# Type definition for snippet detection function.
+DetectorFunc = Callable[[set[str]], bool]
 
 
 class Args(argparse.Namespace):
@@ -113,82 +117,172 @@ def apply_extra_args(content: str, extra_args: dict[str, str]) -> str:
     return yaml.dump(config_snippet, sort_keys=False, default_flow_style=False)
 
 
-def should_include_actionlint() -> bool:
+def get_non_ignored_files() -> set[str]:
+    """Returns a set of all non-ignored files in the repository.
+
+    Reads from local and global .gitignore files and prunes ignored
+    directories efficiently.
+
+    Returns:
+        A set of relative file paths.
+    """
+    patterns: list[str] = []
+
+    # Local ignores
+    if os.path.exists(".gitignore"):
+        with open(".gitignore", "r") as f:
+            patterns.extend(f.readlines())
+    if os.path.exists(".git/info/exclude"):
+        with open(".git/info/exclude", "r") as f:
+            patterns.extend(f.readlines())
+
+    # Global ignores
+    try:
+        ret = subprocess.run(
+            ["git", "config", "--get", "core.excludesfile"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        global_ignore_path = os.path.expanduser("~/.config/git/ignore")
+    else:
+        global_ignore_path = os.path.expanduser(str(ret.stdout).strip())
+
+    if global_ignore_path and os.path.exists(global_ignore_path):
+        with open(global_ignore_path, "r") as f:
+            patterns.extend(f.readlines())
+
+    spec = pathspec.PathSpec.from_lines("gitignore", patterns)
+    all_files: set[str] = set()
+
+    for root, dirs, files in os.walk("."):
+        # Prune ignored directories in-place
+        dirs_to_keep: list[str] = []
+        for d in dirs:
+            if d == ".git":
+                continue
+            rel_dir = os.path.relpath(os.path.join(root, d), ".")
+            # Check directory against pathspec (trailing slash required for some
+            # director patterns)
+            if not spec.match_file(rel_dir) and not spec.match_file(rel_dir + "/"):
+                dirs_to_keep.append(d)
+        dirs[:] = dirs_to_keep
+
+        # Add non-ignored files
+        for filename in files:
+            rel_file = os.path.relpath(os.path.join(root, filename), ".")
+            if not spec.match_file(rel_file):
+                all_files.add(rel_file)
+
+    return all_files
+
+
+def should_include_actionlint(files: set[str]) -> bool:
     """Checks if GitHub Actions workflows exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
 
     Returns:
         True if any .yaml or .yml files exist in .github/workflows/.
     """
-    return bool(
-        glob.glob(".github/workflows/*.yaml") or glob.glob(".github/workflows/*.yml")
+    return any(
+        f.startswith(".github/workflows/")
+        and (f.endswith(".yaml") or f.endswith(".yml"))
+        for f in files
     )
 
 
-def should_include_markdownlint() -> bool:
+def should_include_markdownlint(files: set[str]) -> bool:
     """Checks if Markdown files exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
 
     Returns:
         True if any .md files exist in the repository.
     """
-    return bool(glob.glob("**/*.md", recursive=True))
+    return any(f.endswith(".md") for f in files)
 
 
-def should_include_shellcheck() -> bool:
+def should_include_shellcheck(files: set[str]) -> bool:
     """Checks if Shell scripts exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
 
     Returns:
         True if any .sh files exist in the repository.
     """
-    return bool(glob.glob("**/*.sh", recursive=True))
+    return any(f.endswith(".sh") for f in files)
 
 
-def should_include_python() -> bool:
+def should_include_python(files: set[str]) -> bool:
     """Checks if Python files exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
 
     Returns:
         True if any .py files exist in the repository.
     """
-    return bool(glob.glob("**/*.py", recursive=True))
+    return any(f.endswith(".py") for f in files)
 
 
-def should_include_golang() -> bool:
+def should_include_golang(files: set[str]) -> bool:
     """Checks if Go files or a go.mod file exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
 
     Returns:
         True if any .go files or a go.mod file exist.
     """
-    return bool(glob.glob("**/*.go", recursive=True) or os.path.exists("go.mod"))
+    return "go.mod" in files or any(
+        f.endswith(".go") or os.path.basename(f) == "go.mod" for f in files
+    )
 
 
-def should_include_rust() -> bool:
+def should_include_rust(files: set[str]) -> bool:
     """Checks if Rust files or a Cargo.toml file exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
 
     Returns:
         True if any .rs files or a Cargo.toml file exist.
     """
-    return bool(glob.glob("**/*.rs", recursive=True) or os.path.exists("Cargo.toml"))
+    return "Cargo.toml" in files or any(
+        f.endswith(".rs") or os.path.basename(f) == "Cargo.toml" for f in files
+    )
+
+
+def return_true(files: set[str]) -> bool:
+    del files
+    return True
 
 
 # Define snippets and their detection logic in the desired output order.
-SNIPPETS = (
+SNIPPETS: tuple[tuple[str, DetectorFunc], ...] = (
     # keep-sorted start
     ("actionlint.yaml", should_include_actionlint),
     ("basedpyright.yaml", should_include_python),
     ("black.yaml", should_include_python),
-    ("conventional-pre-commit.yaml", lambda: True),
+    ("conventional-pre-commit.yaml", return_true),
     ("golang-coverage-check.yaml", should_include_golang),
     ("golang.yaml", should_include_golang),
     ("golangci-lint.yaml", should_include_golang),
-    ("hooks.yaml", lambda: True),
-    ("keep-sorted.yaml", lambda: True),
+    ("hooks.yaml", return_true),
+    ("keep-sorted.yaml", return_true),
     ("markdownlint.yaml", should_include_markdownlint),
-    ("meta.yaml", lambda: True),
+    ("meta.yaml", return_true),
     ("mypy.yaml", should_include_python),
     ("pygrep-hooks.yaml", should_include_python),
     ("pytest.yaml", should_include_python),
     ("rust.yaml", should_include_rust),
     ("shellcheck.yaml", should_include_shellcheck),
-    ("spellcheck.yaml", lambda: True),
+    ("spellcheck.yaml", return_true),
     # keep-sorted end
 )
 
@@ -208,9 +302,10 @@ def populate_pre_commit(*, extra_args: dict[str, str], script_file: str) -> None
         lines = ["repos:\n"]
 
     # Determine which snippets to include.
+    all_files = get_non_ignored_files()
     to_include: list[str] = []
     for snippet_name, detector in SNIPPETS:
-        if detector():
+        if detector(all_files):
             to_include.append(snippet_name)
 
     # 1. Remove all existing managed blocks AND the shebang.
