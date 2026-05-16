@@ -79,6 +79,16 @@ LANGUAGE_CONFIGS = [
             ),
         ],
     ),
+    LanguageConfig(
+        ecosystem="npm",
+        trigger_files=["package.json"],
+        workflows=[
+            Workflow(
+                "dependabot_validation.yml",
+                ".github/workflows/dependabot_validation.yml",
+            ),
+        ],
+    ),
 ]
 
 

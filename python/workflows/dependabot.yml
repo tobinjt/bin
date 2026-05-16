@@ -71,3 +71,15 @@ updates:
           - '*'
     cooldown:
       default-days: 7
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # Group updates into one PR.
+    groups:
+      npm-dependencies:
+        patterns:
+          - '*'
+    cooldown:
+      default-days: 7
