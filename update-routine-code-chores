@@ -43,7 +43,6 @@ update_everything() {
     return
   fi
 
-  retry "update-dependencies: ${dir}" -- update-dependencies
   if [[ -x ".github/dependabot.yml" ]]; then
     update_workflows
   fi
