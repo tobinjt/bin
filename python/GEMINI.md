@@ -264,6 +264,64 @@ def fetch_user_dict(user_id: int) -> dict | None:
 
 ______________________________________________________________________
 
+## Strict Type Safety for Structured Configuration Parsers (YAML, TOML, JSON)
+
+### Standard
+
+When loading, parsing, or manipulation data from structured
+configuration/serialization files (including YAML, TOML, and JSON), you **must
+not** leave the resulting data typed as a generic `dict`, `dict[str, Any]`, or
+`Any`.
+
+You must define an explicit subclass of `typing.TypedDict` that mirrors the
+exact schema of the expected parsed structure. All downstream functions handling
+this configuration must type-hint against this `TypedDict` subclass to guarantee
+robust static analysis and prevent runtime `KeyError` attributes.
+
+### Rationale
+
+- **Type Checking:** Generic dictionaries obscure the shape of your data,
+  rendering type checkers (like `mypy` or `pyright`) blind to structural
+  mismatch or missing keys.
+- **Maintainability:** A `TypedDict` serves as self-documenting code, explicitly
+  laying out what keys are required, optional, or nested.
+- **Autocompletion:** IDEs and LLM agents can leverage the `TypedDict`
+  definition to provide reliable code completion and refactoring safely.
+
+### Example Implementation
+
+````python
+from typing import TypedDict, NotRequired
+import tomllib  # Or yaml / json
+
+# 1. Define the structural schema explicitly
+class DatabaseConfig(TypedDict):
+    host: str
+    port: int
+    timeout: NotRequired[float]
+
+class AppConfig(TypedDict):
+    environment: str
+    database: DatabaseConfig
+    debug_mode: bool
+
+# 2. Parse and cast to the explicit TypedDict
+def load_configuration(filepath: str) -> AppConfig:
+    with open(filepath, "rb") as f:
+        # tomllib.load returns dict[str, Any] natively; cast it immediately
+        raw_data = tomllib.load(f)
+
+    # Cast or validate into our explicit structure
+    config: AppConfig = raw_data
+    return config
+
+# 3. Downstream consumption remains fully type-safe
+def initialize_service(config: AppConfig) -> None:
+    # Type checkers will throw an error here if "host" is misspelled
+    # or if we try to treat "port" as a string.
+    db_host = config["database"]["host"]
+    print(f"Connecting to {db_host}...")
+
 ## Python Typing Conventions
 
 You are instructed to follow modern Python type hinting standards (PEP 585 and
@@ -295,7 +353,7 @@ from typing import List, Dict, Union, Optional
 
 def get_user(id: Union[int, str]) -> Optional[Dict[str, str]]: ...
     ...
-```
+````
 
 **Correct:**
 

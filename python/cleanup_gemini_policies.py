@@ -3,7 +3,22 @@
 import argparse
 import dataclasses
 import tomllib
-import typing
+from typing import cast, TypedDict, NotRequired, TypeAlias
+
+
+class RuleConfig(TypedDict):
+    toolName: str
+    decision: str
+    priority: int
+    modes: NotRequired[list[str]]
+    allowRedirection: NotRequired[bool]
+    commandPrefix: NotRequired[list[str]]
+    deny_message: NotRequired[str]
+    mcpName: NotRequired[str]
+
+
+RuleKey: TypeAlias = tuple[str, int, str | None, tuple[str, ...], str | None, bool]
+SortKey: TypeAlias = tuple[str, str, int, str | None, tuple[str, ...], str | None, bool]
 
 
 class Args(argparse.Namespace):
@@ -33,43 +48,25 @@ def parse_rules(file_path: str) -> list[Rule]:
 
     Returns:
         A list of parsed Rule objects.
-
-    Raises:
-        ValueError: If an unsupported field is found in a rule.
     """
     with open(file_path, "rb") as f:
         data = tomllib.load(f)
 
-    allowed_fields = {f.name for f in dataclasses.fields(Rule)}
-
+    source_rules = cast(list[RuleConfig], data.get("rule", []))
     rules: list[Rule] = []
-    errors: list[str] = []
-    for i, r_dict in enumerate(
-        typing.cast(list[dict[str, bool | int | str | list[str]]], data.get("rule", []))
-    ):
-        unsupported = [f for f in r_dict if f not in allowed_fields]
-        if unsupported:
-            errors.append(f"Rule {i} has unsupported fields: {', '.join(unsupported)}")
-            continue
-
+    for r_dict in source_rules:
         rules.append(
             Rule(
-                decision=typing.cast(str, r_dict["decision"]),
-                priority=typing.cast(int, r_dict["priority"]),
-                toolName=typing.cast(str, r_dict["toolName"]),
-                commandPrefix=typing.cast(list[str], r_dict.get("commandPrefix", [])),
-                deny_message=typing.cast(str | None, r_dict.get("deny_message")),
-                modes=typing.cast(list[str], r_dict.get("modes", [])),
-                mcpName=typing.cast(str | None, r_dict.get("mcpName")),
-                allowRedirection=typing.cast(
-                    bool, r_dict.get("allowRedirection", False)
-                ),
+                decision=r_dict["decision"],
+                priority=r_dict["priority"],
+                toolName=r_dict["toolName"],
+                commandPrefix=r_dict.get("commandPrefix", []),
+                deny_message=r_dict.get("deny_message"),
+                modes=r_dict.get("modes", []),
+                mcpName=r_dict.get("mcpName"),
+                allowRedirection=r_dict.get("allowRedirection", False),
             )
         )
-
-    if errors:
-        raise ValueError("\n".join(errors))
-
     return rules
 
 
@@ -83,9 +80,7 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
         The processed and sorted list of rules.
     """
     # Key for combining: (decision, priority, deny_message, modes, mcpName, allowRedirection)
-    combined_shell_rules: dict[
-        tuple[str, int, str | None, tuple[str, ...], str | None, bool], Rule
-    ] = {}
+    combined_shell_rules: dict[RuleKey, Rule] = {}
     other_rules: list[Rule] = []
 
     for rule in rules:
@@ -120,9 +115,7 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
 
     all_rules = list(combined_shell_rules.values()) + other_rules
 
-    def sort_key(
-        r: Rule,
-    ) -> tuple[str, str, int, str | None, tuple[str, ...], str | None, bool]:
+    def sort_key(r: Rule) -> SortKey:
         return (
             r.toolName,
             r.decision,
