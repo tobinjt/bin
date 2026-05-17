@@ -19,7 +19,7 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
-    def create_file(self, file_path: str, contents: str = "") -> None:
+    def create_file(self, file_path: str, contents: str | bytes = "") -> None:
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             file_path, contents=contents
         )
@@ -43,6 +43,36 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_should_include_shellcheck(self) -> None:
         self.assertFalse(populate_pre_commit.should_include_shellcheck(set()))
         self.assertTrue(populate_pre_commit.should_include_shellcheck({"script.sh"}))
+
+    def test_should_include_shellcheck_shebang(self) -> None:
+        """Tests should_include_shellcheck with extension-less shell scripts."""
+        self.create_file("deploy", contents="#!/bin/bash\necho hello\n")
+        self.assertTrue(populate_pre_commit.should_include_shellcheck({"deploy"}))
+
+    def test_should_include_shellcheck_non_shell_shebang(self) -> None:
+        """Tests should_include_shellcheck with non-shell shebang."""
+        self.create_file("main", contents="#!/usr/bin/env python3\nprint('hi')\n")
+        self.assertFalse(populate_pre_commit.should_include_shellcheck({"main"}))
+
+    def test_is_shell_script_not_file(self) -> None:
+        """Tests is_shell_script with a directory path."""
+        os.mkdir("dir")
+        self.assertFalse(populate_pre_commit.is_shell_script("dir"))
+
+    def test_is_shell_script_no_shebang(self) -> None:
+        """Tests is_shell_script with a file that has no shebang."""
+        self.create_file("plain", contents="no shebang here\n")
+        self.assertFalse(populate_pre_commit.is_shell_script("plain"))
+
+    def test_is_shell_script_unicode_error(self) -> None:
+        """Tests is_shell_script with a binary file that triggers UnicodeDecodeError."""
+        self.create_file("binary", contents=b"\xff\xfe\xfd")
+        self.assertFalse(populate_pre_commit.is_shell_script("binary"))
+
+    def test_shebang_present_but_dot_in_filename(self) -> None:
+        """Tests should_include_shellcheck with non-shell shebang."""
+        self.create_file("main.txt", contents="#!/bin/sh\necho foo\n")
+        self.assertFalse(populate_pre_commit.should_include_shellcheck({"main.txt"}))
 
     def test_should_include_python(self) -> None:
         self.assertFalse(populate_pre_commit.should_include_python(set()))

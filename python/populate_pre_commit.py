@@ -206,6 +206,38 @@ def should_include_markdownlint(files: set[str]) -> bool:
     return any(f.endswith(".md") for f in files)
 
 
+def is_shell_script(filepath: str) -> bool:
+    """Checks if a file is a shell script by inspecting its shebang.
+
+    Args:
+        filepath: The path to the file to check.
+
+    Returns:
+        True if the file starts with a shell shebang.
+    """
+    if not os.path.isfile(filepath):
+        return False
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            first_line = f.readline()
+    except (UnicodeDecodeError, PermissionError, OSError):
+        return False
+
+    if not first_line.startswith("#!"):
+        return False
+    # Common shell shebangs
+    return any(
+        shell in first_line
+        for shell in [
+            "/bin/sh",
+            "/bin/bash",
+            "/bin/dash",
+            "/bin/ksh",
+            "/bin/zsh",
+        ]
+    )
+
+
 def should_include_shellcheck(files: set[str]) -> bool:
     """Checks if Shell scripts exist.
 
@@ -213,9 +245,15 @@ def should_include_shellcheck(files: set[str]) -> bool:
         files: A set of all non-ignored file paths in the repository.
 
     Returns:
-        True if any .sh files exist in the repository.
+        True if any .sh files exist or any extension-less files are shell scripts.
     """
-    return any(f.endswith(".sh") for f in files)
+    if any(f.endswith(".sh") for f in files):
+        return True
+
+    for f in files:
+        if "." not in os.path.basename(f) and is_shell_script(f):
+            return True
+    return False
 
 
 def should_include_python(files: set[str]) -> bool:
