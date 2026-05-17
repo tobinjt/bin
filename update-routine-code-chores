@@ -23,11 +23,23 @@ update_workflows() {
   fi
 }
 
+update_pre_commit() {
+  retry "update pre-commit config: ${PWD}" -- ./.pre-commit-config.yaml
+  if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
+    pre-commit run --all-files
+    git add --all .
+    git commit --quiet --message "chore: update pre-commit configuration"
+    install-pre-commit-hooks
+  fi
+}
+
 update_everything() {
-  retry "update-pre-commit-hooks: ${dir}" -- update-pre-commit-hooks
   retry "update-dependencies: ${dir}" -- update-dependencies
-  if [[ -x "${dir}/.github/dependabot.yml" ]]; then
+  if [[ -x ".github/dependabot.yml" ]]; then
     update_workflows
+  fi
+  if [[ -x ".pre-commit-config.yaml" ]]; then
+    update_pre_commit
   fi
   if git config remote.origin.url >& /dev/null; then
     git push
