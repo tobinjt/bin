@@ -239,9 +239,7 @@ def should_include_golang(files: set[str]) -> bool:
     Returns:
         True if any .go files or a go.mod file exist.
     """
-    return "go.mod" in files or any(
-        f.endswith(".go") or os.path.basename(f) == "go.mod" for f in files
-    )
+    return "go.mod" in files or any(f.endswith(".go") for f in files)
 
 
 def should_include_rust(files: set[str]) -> bool:
