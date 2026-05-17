@@ -54,7 +54,6 @@ update_everything() {
   fi
 }
 
-update-dotfiles-and-bin
 for dir in $(dirs_to_update); do
   if [[ ! -d "${dir}" ]]; then
     continue
