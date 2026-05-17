@@ -22,6 +22,7 @@ class Rule:
     deny_message: str | None = None
     modes: list[str] = dataclasses.field(default_factory=list)
     mcpName: str | None = None
+    allowRedirection: bool = False
 
 
 def parse_rules(file_path: str) -> list[Rule]:
@@ -44,7 +45,7 @@ def parse_rules(file_path: str) -> list[Rule]:
     rules: list[Rule] = []
     errors: list[str] = []
     for i, r_dict in enumerate(
-        typing.cast(list[dict[str, int | str | list[str]]], data.get("rule", []))
+        typing.cast(list[dict[str, bool | int | str | list[str]]], data.get("rule", []))
     ):
         unsupported = [f for f in r_dict if f not in allowed_fields]
         if unsupported:
@@ -60,6 +61,9 @@ def parse_rules(file_path: str) -> list[Rule]:
                 deny_message=typing.cast(str | None, r_dict.get("deny_message")),
                 modes=typing.cast(list[str], r_dict.get("modes", [])),
                 mcpName=typing.cast(str | None, r_dict.get("mcpName")),
+                allowRedirection=typing.cast(
+                    bool, r_dict.get("allowRedirection", False)
+                ),
             )
         )
 
@@ -78,9 +82,9 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
     Returns:
         The processed and sorted list of rules.
     """
-    # Key for combining: (decision, priority, deny_message, modes, mcpName)
+    # Key for combining: (decision, priority, deny_message, modes, mcpName, allowRedirection)
     combined_shell_rules: dict[
-        tuple[str, int, str | None, tuple[str, ...], str | None], Rule
+        tuple[str, int, str | None, tuple[str, ...], str | None, bool], Rule
     ] = {}
     other_rules: list[Rule] = []
 
@@ -93,6 +97,7 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
                 rule.deny_message,
                 modes_tuple,
                 rule.mcpName,
+                rule.allowRedirection,
             )
             if key not in combined_shell_rules:
                 combined_shell_rules[key] = Rule(
@@ -102,6 +107,7 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
                     deny_message=rule.deny_message,
                     modes=list(modes_tuple),
                     mcpName=rule.mcpName,
+                    allowRedirection=rule.allowRedirection,
                 )
             for prefix in rule.commandPrefix:
                 if prefix not in combined_shell_rules[key].commandPrefix:
@@ -116,7 +122,7 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
 
     def sort_key(
         r: Rule,
-    ) -> tuple[str, str, int, str | None, tuple[str, ...], str | None]:
+    ) -> tuple[str, str, int, str | None, tuple[str, ...], str | None, bool]:
         return (
             r.toolName,
             r.decision,
@@ -124,6 +130,7 @@ def process_rules(rules: list[Rule]) -> list[Rule]:
             r.deny_message,
             tuple(sorted(r.modes)),
             r.mcpName or "",
+            r.allowRedirection,
         )
 
     all_rules.sort(key=sort_key)
@@ -155,6 +162,8 @@ def format_rules(rules: list[Rule], line_length_limit: int = 80) -> str:
         if rule.modes:
             modes_str = ", ".join(f'"{m}"' for m in sorted(rule.modes))
             output.append(f"modes = [ {modes_str} ]")
+        if rule.allowRedirection:
+            output.append("allowRedirection = true")
         if rule.commandPrefix:
             prefixes = ", ".join(f'"{p}"' for p in rule.commandPrefix)
             single_line = f"commandPrefix = [ {prefixes} ]"
