@@ -55,7 +55,7 @@ jobs:
           file_pattern: '*.go'
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@v9.2.0
 
       - name: Govulncheck
         uses: golang/govulncheck-action@v1
