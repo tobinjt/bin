@@ -7,6 +7,7 @@ markers to identify and update managed sections in .pre-commit-config.yaml.
 """
 
 import argparse
+import functools
 import os
 import subprocess
 import pathspec
@@ -114,7 +115,7 @@ def apply_extra_args(content: str, extra_args: dict[str, str]) -> str:
     return yaml.dump(config_snippet, sort_keys=False, default_flow_style=False)
 
 
-def get_non_ignored_files() -> set[str]:
+def get_non_ignored_files() -> frozenset[str]:
     """Returns a set of all non-ignored files in the repository.
 
     Reads from local and global .gitignore files and prunes ignored
@@ -172,10 +173,11 @@ def get_non_ignored_files() -> set[str]:
             if not spec.match_file(rel_file):
                 all_files.add(rel_file)
 
-    return all_files
+    return frozenset(all_files)
 
 
-def has_extension(files: set[str], extension: str) -> bool:
+@functools.cache
+def has_extension(files: frozenset[str], extension: str) -> bool:
     """Checks if any file in the set has the given extension.
 
     Args:
@@ -220,7 +222,8 @@ def is_shell_script(filepath: str) -> bool:
     )
 
 
-def should_include_actionlint(files: set[str]) -> bool:
+@functools.cache
+def should_include_actionlint(files: frozenset[str]) -> bool:
     """Checks if GitHub Actions workflows exist.
 
     Args:
@@ -236,7 +239,8 @@ def should_include_actionlint(files: set[str]) -> bool:
     )
 
 
-def should_include_golang(files: set[str]) -> bool:
+@functools.cache
+def should_include_golang(files: frozenset[str]) -> bool:
     """Checks if Go files or a go.mod file exist.
 
     Args:
@@ -248,7 +252,8 @@ def should_include_golang(files: set[str]) -> bool:
     return "go.mod" in files or has_extension(files, ".go")
 
 
-def should_include_rust(files: set[str]) -> bool:
+@functools.cache
+def should_include_rust(files: frozenset[str]) -> bool:
     """Checks if Rust files or a Cargo.toml file exist.
 
     Args:
@@ -260,7 +265,8 @@ def should_include_rust(files: set[str]) -> bool:
     return "Cargo.toml" in files or has_extension(files, ".rs")
 
 
-def should_include_shellcheck(files: set[str]) -> bool:
+@functools.cache
+def should_include_shellcheck(files: frozenset[str]) -> bool:
     """Checks if Shell scripts exist.
 
     Args:

@@ -25,39 +25,63 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         )
 
     def test_should_include_actionlint(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_actionlint(set()))
+        self.assertFalse(
+            populate_pre_commit.should_include_actionlint(frozenset[str]())
+        )
         self.assertTrue(
-            populate_pre_commit.should_include_actionlint({".github/workflows/ci.yaml"})
+            populate_pre_commit.should_include_actionlint(
+                frozenset[str]({".github/workflows/ci.yaml"})
+            )
         )
 
     def test_should_include_actionlint_yml(self) -> None:
         """Tests should_include_actionlint with .yml files."""
         self.assertTrue(
-            populate_pre_commit.should_include_actionlint({".github/workflows/ci.yml"})
+            populate_pre_commit.should_include_actionlint(
+                frozenset[str]({".github/workflows/ci.yml"})
+            )
         )
 
     def test_has_extension(self) -> None:
         """Tests the has_extension function."""
-        self.assertFalse(populate_pre_commit.has_extension(set(), ".md"))
-        self.assertTrue(populate_pre_commit.has_extension({"README.md"}, ".md"))
-        self.assertFalse(populate_pre_commit.has_extension({"README.txt"}, ".md"))
-        self.assertTrue(populate_pre_commit.has_extension({"main.py"}, ".py"))
-        self.assertTrue(populate_pre_commit.has_extension({"data.json"}, ".json"))
-        self.assertTrue(populate_pre_commit.has_extension({"config.toml"}, ".toml"))
+        self.assertFalse(populate_pre_commit.has_extension(frozenset[str](), ".md"))
+        self.assertTrue(
+            populate_pre_commit.has_extension(frozenset[str]({"README.md"}), ".md")
+        )
+        self.assertFalse(
+            populate_pre_commit.has_extension(frozenset[str]({"README.txt"}), ".md")
+        )
+        self.assertTrue(
+            populate_pre_commit.has_extension(frozenset[str]({"main.py"}), ".py")
+        )
+        self.assertTrue(
+            populate_pre_commit.has_extension(frozenset[str]({"data.json"}), ".json")
+        )
+        self.assertTrue(
+            populate_pre_commit.has_extension(frozenset[str]({"config.toml"}), ".toml")
+        )
 
     def test_should_include_shellcheck(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_shellcheck(set()))
-        self.assertTrue(populate_pre_commit.should_include_shellcheck({"script.sh"}))
+        self.assertFalse(
+            populate_pre_commit.should_include_shellcheck(frozenset[str]())
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_shellcheck(frozenset[str]({"script.sh"}))
+        )
 
     def test_should_include_shellcheck_shebang(self) -> None:
         """Tests should_include_shellcheck with extension-less shell scripts."""
         self.create_file("deploy", contents="#!/bin/bash\necho hello\n")
-        self.assertTrue(populate_pre_commit.should_include_shellcheck({"deploy"}))
+        self.assertTrue(
+            populate_pre_commit.should_include_shellcheck(frozenset[str]({"deploy"}))
+        )
 
     def test_should_include_shellcheck_non_shell_shebang(self) -> None:
         """Tests should_include_shellcheck with non-shell shebang."""
         self.create_file("main", contents="#!/usr/bin/env python3\nprint('hi')\n")
-        self.assertFalse(populate_pre_commit.should_include_shellcheck({"main"}))
+        self.assertFalse(
+            populate_pre_commit.should_include_shellcheck(frozenset[str]({"main"}))
+        )
 
     def test_is_shell_script_not_file(self) -> None:
         """Tests is_shell_script with a directory path."""
@@ -77,23 +101,33 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_shebang_present_but_dot_in_filename(self) -> None:
         """Tests should_include_shellcheck with non-shell shebang."""
         self.create_file("main.txt", contents="#!/bin/sh\necho foo\n")
-        self.assertFalse(populate_pre_commit.should_include_shellcheck({"main.txt"}))
+        self.assertFalse(
+            populate_pre_commit.should_include_shellcheck(frozenset[str]({"main.txt"}))
+        )
 
     def test_should_include_golang_files(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_golang(set()))
-        self.assertTrue(populate_pre_commit.should_include_golang({"main.go"}))
+        self.assertFalse(populate_pre_commit.should_include_golang(frozenset[str]()))
+        self.assertTrue(
+            populate_pre_commit.should_include_golang(frozenset[str]({"main.go"}))
+        )
 
     def test_should_include_golang_mod(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_golang(set()))
-        self.assertTrue(populate_pre_commit.should_include_golang({"go.mod"}))
+        self.assertFalse(populate_pre_commit.should_include_golang(frozenset[str]()))
+        self.assertTrue(
+            populate_pre_commit.should_include_golang(frozenset[str]({"go.mod"}))
+        )
 
     def test_should_include_rust_files(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_rust(set()))
-        self.assertTrue(populate_pre_commit.should_include_rust({"src/main.rs"}))
+        self.assertFalse(populate_pre_commit.should_include_rust(frozenset[str]()))
+        self.assertTrue(
+            populate_pre_commit.should_include_rust(frozenset[str]({"src/main.rs"}))
+        )
 
     def test_should_include_rust_toml(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_rust(set()))
-        self.assertTrue(populate_pre_commit.should_include_rust({"Cargo.toml"}))
+        self.assertFalse(populate_pre_commit.should_include_rust(frozenset[str]()))
+        self.assertTrue(
+            populate_pre_commit.should_include_rust(frozenset[str]({"Cargo.toml"}))
+        )
 
 
 class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
@@ -124,7 +158,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         )
         self.enterContext(
             mock.patch.object(
-                populate_pre_commit, "get_non_ignored_files", return_value=set()
+                populate_pre_commit,
+                "get_non_ignored_files",
+                return_value=frozenset[str](),
             )
         )
 
@@ -469,7 +505,7 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
         with mock.patch.object(subprocess, "run") as mock_run:
             mock_run.side_effect = subprocess.CalledProcessError(1, "git")
             files = populate_pre_commit.get_non_ignored_files()
-        self.assertEqual(files, {"file1.txt", "dir1/file2.txt"})
+        self.assertEqual(files, frozenset[str]({"file1.txt", "dir1/file2.txt"}))
 
     def test_local_gitignore(self) -> None:
         self.create_file(".gitignore", contents="ignored.txt\n")
@@ -478,7 +514,7 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
         with mock.patch.object(subprocess, "run") as mock_run:
             mock_run.side_effect = FileNotFoundError()
             files = populate_pre_commit.get_non_ignored_files()
-        self.assertEqual(files, {".gitignore", "file1.txt"})
+        self.assertEqual(files, frozenset[str]({".gitignore", "file1.txt"}))
 
     def test_git_info_exclude(self) -> None:
         self.create_file(".git/info/exclude", contents="*.log\n")
@@ -487,7 +523,7 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
         with mock.patch.object(subprocess, "run") as mock_run:
             mock_run.side_effect = FileNotFoundError()
             files = populate_pre_commit.get_non_ignored_files()
-        self.assertEqual(files, {"test.txt"})
+        self.assertEqual(files, frozenset[str]({"test.txt"}))
 
     def test_global_ignore(self) -> None:
         home_ignore = os.path.expanduser("~/.gitignore.global")
