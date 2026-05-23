@@ -36,9 +36,14 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
             populate_pre_commit.should_include_actionlint({".github/workflows/ci.yml"})
         )
 
-    def test_should_include_markdownlint(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_markdownlint(set()))
-        self.assertTrue(populate_pre_commit.should_include_markdownlint({"README.md"}))
+    def test_has_extension(self) -> None:
+        """Tests the has_extension function."""
+        self.assertFalse(populate_pre_commit.has_extension(set(), ".md"))
+        self.assertTrue(populate_pre_commit.has_extension({"README.md"}, ".md"))
+        self.assertFalse(populate_pre_commit.has_extension({"README.txt"}, ".md"))
+        self.assertTrue(populate_pre_commit.has_extension({"main.py"}, ".py"))
+        self.assertTrue(populate_pre_commit.has_extension({"data.json"}, ".json"))
+        self.assertTrue(populate_pre_commit.has_extension({"config.toml"}, ".toml"))
 
     def test_should_include_shellcheck(self) -> None:
         self.assertFalse(populate_pre_commit.should_include_shellcheck(set()))
@@ -74,10 +79,6 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         self.create_file("main.txt", contents="#!/bin/sh\necho foo\n")
         self.assertFalse(populate_pre_commit.should_include_shellcheck({"main.txt"}))
 
-    def test_should_include_python(self) -> None:
-        self.assertFalse(populate_pre_commit.should_include_python(set()))
-        self.assertTrue(populate_pre_commit.should_include_python({"main.py"}))
-
     def test_should_include_golang_files(self) -> None:
         self.assertFalse(populate_pre_commit.should_include_golang(set()))
         self.assertTrue(populate_pre_commit.should_include_golang({"main.go"}))
@@ -97,6 +98,8 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
 
 class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     """Tests for the main populate_pre_commit function."""
+
+    mock_snippets: list[tuple[str, bool]] = []
 
     @override
     def setUp(self) -> None:
@@ -125,16 +128,13 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             )
         )
 
-        mock_snippets: list[tuple[str, populate_pre_commit.DetectorFunc]] = [
+        self.mock_snippets = [
             # keep-sorted start
-            ("ignored.yaml", lambda _files: False),
-            ("meta.yaml", populate_pre_commit.return_true),
-            ("python.yaml", populate_pre_commit.return_true),
+            ("ignored.yaml", False),
+            ("meta.yaml", True),
+            ("python.yaml", True),
             # keep-sorted end
         ]
-        self.enterContext(
-            mock.patch.object(populate_pre_commit, "SNIPPETS", mock_snippets)
-        )
 
     def create_file(self, file_path: str, contents: str = "") -> None:
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
@@ -144,7 +144,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_creates_new_file(self) -> None:
         self.assertFalse(os.path.exists(".pre-commit-config.yaml"))
         populate_pre_commit.populate_pre_commit(
-            extra_args={}, script_file="populate_pre_commit_test.py"
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=self.mock_snippets,
         )
         self.assertTrue(os.path.exists(".pre-commit-config.yaml"))
 
@@ -176,14 +178,11 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             """)
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
 
-        with mock.patch.object(
-            populate_pre_commit,
-            "SNIPPETS",
-            [("meta.yaml", populate_pre_commit.return_true)],
-        ):
-            populate_pre_commit.populate_pre_commit(
-                extra_args={}, script_file="populate_pre_commit_test.py"
-            )
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("meta.yaml", True)],
+        )
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
@@ -211,14 +210,11 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             """)
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
 
-        with mock.patch.object(
-            populate_pre_commit,
-            "SNIPPETS",
-            [("meta.yaml", populate_pre_commit.return_true)],
-        ):
-            populate_pre_commit.populate_pre_commit(
-                extra_args={}, script_file="populate_pre_commit_test.py"
-            )
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("meta.yaml", True)],
+        )
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
@@ -237,14 +233,11 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_adds_repos_if_missing(self) -> None:
         self.create_file(".pre-commit-config.yaml", contents="# Just a comment\n")
 
-        with mock.patch.object(
-            populate_pre_commit,
-            "SNIPPETS",
-            [("meta.yaml", populate_pre_commit.return_true)],
-        ):
-            populate_pre_commit.populate_pre_commit(
-                extra_args={}, script_file="populate_pre_commit_test.py"
-            )
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("meta.yaml", True)],
+        )
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
@@ -264,41 +257,37 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that an empty snippet file crashes the program."""
         self.create_file(".pre-commit-config.yaml", contents="repos:\n")
 
-        with mock.patch.object(
-            populate_pre_commit,
-            "SNIPPETS",
-            [("empty.yaml", populate_pre_commit.return_true)],
+        self.create_file(
+            os.path.join(populate_pre_commit.SNIPPETS_DIR, "empty.yaml"),
+            contents="",
+        )
+        with self.assertRaisesRegex(
+            ValueError, "config snippet /fake/snippets/empty.yaml is empty"
         ):
-            self.create_file(
-                os.path.join(populate_pre_commit.SNIPPETS_DIR, "empty.yaml"),
-                contents="",
+            populate_pre_commit.populate_pre_commit(
+                extra_args={},
+                script_file="populate_pre_commit_test.py",
+                snippets=[("empty.yaml", True)],
             )
-            with self.assertRaisesRegex(
-                ValueError, "config snippet /fake/snippets/empty.yaml is empty"
-            ):
-                populate_pre_commit.populate_pre_commit(
-                    extra_args={}, script_file="populate_pre_commit_test.py"
-                )
 
     def test_missing_snippet_file_crashes(self) -> None:
         """Tests that a missing snippet file crashes the program."""
         self.create_file(".pre-commit-config.yaml", contents="repos:\n")
 
-        with mock.patch.object(
-            populate_pre_commit,
-            "SNIPPETS",
-            [("really_missing.yaml", populate_pre_commit.return_true)],
-        ):
-            with self.assertRaisesRegex(OSError, "really_missing.yaml"):
-                populate_pre_commit.populate_pre_commit(
-                    extra_args={}, script_file="populate_pre_commit_test.py"
-                )
+        with self.assertRaisesRegex(OSError, "really_missing.yaml"):
+            populate_pre_commit.populate_pre_commit(
+                extra_args={},
+                script_file="populate_pre_commit_test.py",
+                snippets=[("really_missing.yaml", True)],
+            )
 
     def test_extra_args_injection(self) -> None:
         """Tests that extra arguments are correctly injected into snippets."""
         extra_args = {"fake-python": "--flag1 --flag2"}
         populate_pre_commit.populate_pre_commit(
-            extra_args=extra_args, script_file="populate_pre_commit_test.py"
+            extra_args=extra_args,
+            script_file="populate_pre_commit_test.py",
+            snippets=self.mock_snippets,
         )
 
         with open(".pre-commit-config.yaml", "r") as f:
@@ -313,7 +302,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that the shebang line is correctly generated."""
         extra_args = {"hook1": "val1"}
         populate_pre_commit.populate_pre_commit(
-            extra_args=extra_args, script_file="populate_pre_commit.py"
+            extra_args=extra_args,
+            script_file="populate_pre_commit.py",
+            snippets=self.mock_snippets,
         )
 
         with open(".pre-commit-config.yaml", "r") as f:
@@ -326,7 +317,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that spaces in extra arguments are correctly escaped in the shebang."""
         extra_args = {"hook 1": "val 1"}
         populate_pre_commit.populate_pre_commit(
-            extra_args=extra_args, script_file="populate_pre_commit.py"
+            extra_args=extra_args,
+            script_file="populate_pre_commit.py",
+            snippets=self.mock_snippets,
         )
         with open(".pre-commit-config.yaml", "r") as f:
             shebang = f.readline()
@@ -335,7 +328,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_executable_bit(self) -> None:
         """Tests that the generated file is marked as executable."""
         populate_pre_commit.populate_pre_commit(
-            extra_args={}, script_file="populate_pre_commit.py"
+            extra_args={},
+            script_file="populate_pre_commit.py",
+            snippets=self.mock_snippets,
         )
         mode = os.stat(".pre-commit-config.yaml").st_mode
         self.assertTrue(bool(mode & 0o111))
@@ -348,7 +343,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             with mock.patch("populate_pre_commit.populate_pre_commit") as mock_populate:
                 populate_pre_commit.main()
                 mock_populate.assert_called_once_with(
-                    extra_args={"hook1": "args"}, script_file=mock.ANY
+                    extra_args={"hook1": "args"},
+                    script_file=mock.ANY,
+                    snippets=mock.ANY,
                 )
 
     def test_main_invalid_extra_arg(self) -> None:
@@ -369,7 +366,9 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests populate_pre_commit when no config exists but script_file is provided."""
         if os.path.exists(".pre-commit-config.yaml"):
             os.remove(".pre-commit-config.yaml")
-        populate_pre_commit.populate_pre_commit(extra_args={}, script_file="script.py")
+        populate_pre_commit.populate_pre_commit(
+            extra_args={}, script_file="script.py", snippets=self.mock_snippets
+        )
         self.assertTrue(os.path.exists(".pre-commit-config.yaml"))
         with open(".pre-commit-config.yaml", "r") as f:
             self.assertTrue(f.readline().startswith("#!"))
@@ -379,7 +378,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         initial_content = "#!/old/shebang\nrepos:\n"
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
         populate_pre_commit.populate_pre_commit(
-            extra_args={}, script_file="new_script.py"
+            extra_args={}, script_file="new_script.py", snippets=self.mock_snippets
         )
         with open(".pre-commit-config.yaml", "r") as f:
             first_line = f.readline()
@@ -403,14 +402,15 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_multiple_snippets_with_extra_args(self) -> None:
         """Tests multiple snippets with extra arguments."""
         mock_snippets = [
-            ("python.yaml", populate_pre_commit.return_true),
-            ("meta.yaml", populate_pre_commit.return_true),
+            ("python.yaml", True),
+            ("meta.yaml", True),
         ]
         extra_args = {"fake-python": "--flag1", "meta-hook": "--flag2"}
-        with mock.patch.object(populate_pre_commit, "SNIPPETS", mock_snippets):
-            populate_pre_commit.populate_pre_commit(
-                extra_args=extra_args, script_file="populate_pre_commit_test.py"
-            )
+        populate_pre_commit.populate_pre_commit(
+            extra_args=extra_args,
+            script_file="populate_pre_commit_test.py",
+            snippets=mock_snippets,
+        )
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
@@ -422,7 +422,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             with mock.patch("populate_pre_commit.populate_pre_commit") as mock_populate:
                 populate_pre_commit.main()
                 mock_populate.assert_called_once_with(
-                    extra_args={}, script_file=mock.ANY
+                    extra_args={}, script_file=mock.ANY, snippets=mock.ANY
                 )
 
     def test_build_shebang_args_empty_dict(self) -> None:
@@ -440,22 +440,15 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             # Bottom comment
             """)
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
-        with mock.patch.object(
-            populate_pre_commit,
-            "SNIPPETS",
-            [("meta.yaml", populate_pre_commit.return_true)],
-        ):
-            populate_pre_commit.populate_pre_commit(
-                extra_args={}, script_file="populate_pre_commit_test.py"
-            )
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("meta.yaml", True)],
+        )
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
         self.assertIn("# Top comment", content)
         self.assertIn("# Bottom comment", content)
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
@@ -531,3 +524,7 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
             files = populate_pre_commit.get_non_ignored_files()
         self.assertIn("src/index.js", files)
         self.assertNotIn("node_modules/pkg/index.js", files)
+
+
+if __name__ == "__main__":
+    unittest.main()

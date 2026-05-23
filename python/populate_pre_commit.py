@@ -11,10 +11,10 @@ import os
 import subprocess
 import pathspec
 import yaml
-from typing import cast, Callable, TypedDict
+from typing import cast, TypedDict
 
 # Path to the directory containing pre-commit snippets.
-SNIPPETS_DIR = os.path.expanduser("~/bin/python/pre-commit-snippets")
+SNIPPETS_DIR = os.path.join(os.path.dirname(__file__), "pre-commit-snippets")
 # The pre-commit configuration file to update.
 CONFIG_FILE = ".pre-commit-config.yaml"
 
@@ -37,9 +37,6 @@ class RepoEntry(TypedDict):
 
 # A full config snippet.
 PreCommitConfig = list[RepoEntry]
-
-# Type definition for snippet detection function.
-DetectorFunc = Callable[[set[str]], bool]
 
 
 class Args(argparse.Namespace):
@@ -178,32 +175,17 @@ def get_non_ignored_files() -> set[str]:
     return all_files
 
 
-def should_include_actionlint(files: set[str]) -> bool:
-    """Checks if GitHub Actions workflows exist.
+def has_extension(files: set[str], extension: str) -> bool:
+    """Checks if any file in the set has the given extension.
 
     Args:
-        files: A set of all non-ignored file paths in the repository.
+        files: A set of relative file paths.
+        extension: The extension to check for (e.g., '.py').
 
     Returns:
-        True if any .yaml or .yml files exist in .github/workflows/.
+        True if any file ends with the extension.
     """
-    return any(
-        f.startswith(".github/workflows/")
-        and (f.endswith(".yaml") or f.endswith(".yml"))
-        for f in files
-    )
-
-
-def should_include_markdownlint(files: set[str]) -> bool:
-    """Checks if Markdown files exist.
-
-    Args:
-        files: A set of all non-ignored file paths in the repository.
-
-    Returns:
-        True if any .md files exist in the repository.
-    """
-    return any(f.endswith(".md") for f in files)
+    return any(f.endswith(extension) for f in files)
 
 
 def is_shell_script(filepath: str) -> bool:
@@ -238,58 +220,20 @@ def is_shell_script(filepath: str) -> bool:
     )
 
 
-def should_include_shellcheck(files: set[str]) -> bool:
-    """Checks if Shell scripts exist.
+def should_include_actionlint(files: set[str]) -> bool:
+    """Checks if GitHub Actions workflows exist.
 
     Args:
         files: A set of all non-ignored file paths in the repository.
 
     Returns:
-        True if any .sh files exist or any extension-less files are shell scripts.
+        True if any .yaml or .yml files exist in .github/workflows/.
     """
-    if any(f.endswith(".sh") for f in files):
-        return True
-
-    for f in files:
-        if "." not in os.path.basename(f) and is_shell_script(f):
-            return True
-    return False
-
-
-def should_include_python(files: set[str]) -> bool:
-    """Checks if Python files exist.
-
-    Args:
-        files: A set of all non-ignored file paths in the repository.
-
-    Returns:
-        True if any .py files exist in the repository.
-    """
-    return any(f.endswith(".py") for f in files)
-
-
-def should_include_json(files: set[str]) -> bool:
-    """Checks if JSON files exist.
-
-    Args:
-        files: A set of all non-ignored file paths in the repository.
-
-    Returns:
-        True if any .json files exist in the repository.
-    """
-    return any(f.endswith(".json") for f in files)
-
-
-def should_include_toml(files: set[str]) -> bool:
-    """Checks if TOML files exist.
-
-    Args:
-        files: A set of all non-ignored file paths in the repository.
-
-    Returns:
-        True if any .toml files exist in the repository.
-    """
-    return any(f.endswith(".toml") for f in files)
+    return any(
+        f.startswith(".github/workflows/")
+        and (f.endswith(".yaml") or f.endswith(".yml"))
+        for f in files
+    )
 
 
 def should_include_golang(files: set[str]) -> bool:
@@ -301,7 +245,7 @@ def should_include_golang(files: set[str]) -> bool:
     Returns:
         True if any .go files or a go.mod file exist.
     """
-    return "go.mod" in files or any(f.endswith(".go") for f in files)
+    return "go.mod" in files or has_extension(files, ".go")
 
 
 def should_include_rust(files: set[str]) -> bool:
@@ -313,49 +257,33 @@ def should_include_rust(files: set[str]) -> bool:
     Returns:
         True if any .rs files or a Cargo.toml file exist.
     """
-    return "Cargo.toml" in files or any(
-        f.endswith(".rs") or os.path.basename(f) == "Cargo.toml" for f in files
+    return "Cargo.toml" in files or has_extension(files, ".rs")
+
+
+def should_include_shellcheck(files: set[str]) -> bool:
+    """Checks if Shell scripts exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if any .sh files exist or any extension-less files are shell scripts.
+    """
+
+    return has_extension(files, ".sh") or any(
+        "." not in os.path.basename(f) and is_shell_script(f) for f in files
     )
 
 
-def return_true(files: set[str]) -> bool:
-    del files
-    return True
-
-
-# Define snippets and their detection logic in the desired output order.
-SNIPPETS: tuple[tuple[str, DetectorFunc], ...] = (
-    # keep-sorted start
-    ("actionlint.yaml", should_include_actionlint),
-    ("basedpyright.yaml", should_include_python),
-    ("black.yaml", should_include_python),
-    ("conventional-pre-commit.yaml", return_true),
-    ("golang-coverage-check.yaml", should_include_golang),
-    ("golang.yaml", should_include_golang),
-    ("golangci-lint.yaml", should_include_golang),
-    ("hooks.yaml", return_true),
-    ("json.yaml", should_include_json),
-    ("keep-sorted.yaml", return_true),
-    ("markdownlint.yaml", should_include_markdownlint),
-    ("meta.yaml", return_true),
-    ("mypy.yaml", should_include_python),
-    ("pygrep-hooks.yaml", should_include_python),
-    ("pytest.yaml", should_include_python),
-    ("python.yaml", should_include_python),
-    ("rust.yaml", should_include_rust),
-    ("shellcheck.yaml", should_include_shellcheck),
-    ("spellcheck.yaml", return_true),
-    ("toml.yaml", should_include_toml),
-    # keep-sorted end
-)
-
-
-def populate_pre_commit(*, extra_args: dict[str, str], script_file: str) -> None:
+def populate_pre_commit(
+    *, extra_args: dict[str, str], script_file: str, snippets: list[tuple[str, bool]]
+) -> None:
     """Updates .pre-commit-config.yaml with detected snippets.
 
     Args:
         extra_args: A dictionary mapping hook IDs to extra arguments.
         script_file: The path to the script calling this function (used for shebang).
+        snippets: A list of snippets and whether they should be included.
     """
     lines: list[str] = []
     if os.path.exists(CONFIG_FILE):
@@ -365,10 +293,9 @@ def populate_pre_commit(*, extra_args: dict[str, str], script_file: str) -> None
         lines = ["repos:\n"]
 
     # Determine which snippets to include.
-    all_files = get_non_ignored_files()
     to_include: list[str] = []
-    for snippet_name, detector in SNIPPETS:
-        if detector(all_files):
+    for snippet_name, should_include in snippets:
+        if should_include:
             to_include.append(snippet_name)
 
     # 1. Remove all existing managed blocks AND the shebang.
@@ -463,7 +390,36 @@ def main() -> None:
         hook_id, extra = item.split("=", 1)
         command_to_extra_args[hook_id.strip()] = extra.strip()
 
-    populate_pre_commit(extra_args=command_to_extra_args, script_file=__file__)
+    all_files = get_non_ignored_files()
+    # Define snippets and their detection logic in the desired output order.
+    snippets: list[tuple[str, bool]] = [
+        # keep-sorted start
+        ("actionlint.yaml", should_include_actionlint(all_files)),
+        ("basedpyright.yaml", has_extension(all_files, ".py")),
+        ("black.yaml", has_extension(all_files, ".py")),
+        ("conventional-pre-commit.yaml", True),
+        ("golang-coverage-check.yaml", should_include_golang(all_files)),
+        ("golang.yaml", should_include_golang(all_files)),
+        ("golangci-lint.yaml", should_include_golang(all_files)),
+        ("hooks.yaml", True),
+        ("json.yaml", has_extension(all_files, ".json")),
+        ("keep-sorted.yaml", True),
+        ("markdownlint.yaml", has_extension(all_files, ".md")),
+        ("meta.yaml", True),
+        ("mypy.yaml", has_extension(all_files, ".py")),
+        ("pygrep-hooks.yaml", has_extension(all_files, ".py")),
+        ("pytest.yaml", has_extension(all_files, ".py")),
+        ("python.yaml", has_extension(all_files, ".py")),
+        ("rust.yaml", should_include_rust(all_files)),
+        ("shellcheck.yaml", should_include_shellcheck(all_files)),
+        ("spellcheck.yaml", True),
+        ("toml.yaml", has_extension(all_files, ".toml")),
+        # keep-sorted end
+    ]
+
+    populate_pre_commit(
+        extra_args=command_to_extra_args, script_file=__file__, snippets=snippets
+    )
 
 
 if __name__ == "__main__":
