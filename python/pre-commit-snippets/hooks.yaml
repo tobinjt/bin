@@ -1,6 +1,16 @@
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v6.0.0
   hooks:
+  # keep-sorted start
   - id: check-case-conflict
+  - id: check-executables-have-shebangs
+  - id: check-illegal-windows-names
   - id: check-merge-conflict
+  - id: check-shebang-scripts-are-executable
   - id: check-vcs-permalinks
+  - id: check-yaml
+  - id: destroyed-symlinks
+  - id: detect-private-key
+  - id: fix-byte-order-marker
+  - id: mixed-line-ending
+  # keep-sorted end

@@ -268,6 +268,30 @@ def should_include_python(files: set[str]) -> bool:
     return any(f.endswith(".py") for f in files)
 
 
+def should_include_json(files: set[str]) -> bool:
+    """Checks if JSON files exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if any .json files exist in the repository.
+    """
+    return any(f.endswith(".json") for f in files)
+
+
+def should_include_toml(files: set[str]) -> bool:
+    """Checks if TOML files exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if any .toml files exist in the repository.
+    """
+    return any(f.endswith(".toml") for f in files)
+
+
 def should_include_golang(files: set[str]) -> bool:
     """Checks if Go files or a go.mod file exist.
 
@@ -310,15 +334,18 @@ SNIPPETS: tuple[tuple[str, DetectorFunc], ...] = (
     ("golang.yaml", should_include_golang),
     ("golangci-lint.yaml", should_include_golang),
     ("hooks.yaml", return_true),
+    ("json.yaml", should_include_json),
     ("keep-sorted.yaml", return_true),
     ("markdownlint.yaml", should_include_markdownlint),
     ("meta.yaml", return_true),
     ("mypy.yaml", should_include_python),
     ("pygrep-hooks.yaml", should_include_python),
     ("pytest.yaml", should_include_python),
+    ("python.yaml", should_include_python),
     ("rust.yaml", should_include_rust),
     ("shellcheck.yaml", should_include_shellcheck),
     ("spellcheck.yaml", return_true),
+    ("toml.yaml", should_include_toml),
     # keep-sorted end
 )
 
