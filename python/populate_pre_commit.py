@@ -15,7 +15,9 @@ import yaml
 from typing import cast, TypedDict
 
 # Path to the directory containing pre-commit snippets.
-SNIPPETS_DIR = os.path.join(os.path.dirname(__file__), "pre-commit-snippets")
+SNIPPETS_DIR = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "pre-commit-snippets"
+)
 # The pre-commit configuration file to update.
 CONFIG_FILE = ".pre-commit-config.yaml"
 
@@ -111,6 +113,8 @@ def apply_extra_args(content: str, extra_args: dict[str, str]) -> str:
             hook_id = hook["id"]
             if hook_id in extra_args:
                 # Append extra flags so they can override existing flags.
+                if "args" not in hook:
+                    hook["args"] = []
                 hook["args"].extend(extra_args[hook_id].split())
     return yaml.dump(config_snippet, sort_keys=False, default_flow_style=False)
 

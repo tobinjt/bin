@@ -138,24 +138,12 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     @override
     def setUp(self) -> None:
         self.setUpPyfakefs()
-        # Mock SNIPPETS_DIR to be within the fake filesystem
-        snippets_dir = "/fake/snippets"
-        self.fs.create_dir(snippets_dir)  # pyright: ignore[reportUnknownMemberType]
-
-        # Create some fake snippets
-        self.create_file(
-            os.path.join(snippets_dir, "meta.yaml"),
-            contents="- repo: meta\n  hooks: []\n",
-        )
-        self.create_file(
-            os.path.join(snippets_dir, "python.yaml"),
-            contents="- repo: local\n  hooks:\n  - id: fake-python\n    args: []\n",
+        # Add the real snippets directory to the fake filesystem
+        self.fs.add_real_directory(  # pyright: ignore[reportUnknownMemberType]
+            populate_pre_commit.SNIPPETS_DIR
         )
 
         # Patch the module-level constants
-        self.enterContext(
-            mock.patch.object(populate_pre_commit, "SNIPPETS_DIR", snippets_dir)
-        )
         self.enterContext(
             mock.patch.object(
                 populate_pre_commit,
@@ -194,13 +182,15 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             repos:
               # managed-by-populate-pre-commit start: meta.yaml
               - repo: meta
-                hooks: []
+                hooks:
+                - id: check-hooks-apply
               # managed-by-populate-pre-commit end: meta.yaml
               # managed-by-populate-pre-commit start: python.yaml
-              - repo: local
+              - repo: https://github.com/pre-commit/pre-commit-hooks
+                rev: v6.0.0
                 hooks:
-                - id: fake-python
-                  args: []
+                - id: debug-statements
+                - id: name-tests-test
               # managed-by-populate-pre-commit end: python.yaml
             """)
         self.assertEqual(content, expected)
@@ -228,7 +218,8 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             repos:
               # managed-by-populate-pre-commit start: meta.yaml
               - repo: meta
-                hooks: []
+                hooks:
+                - id: check-hooks-apply
               # managed-by-populate-pre-commit end: meta.yaml
               - repo: custom-repo
                 hooks:
@@ -260,7 +251,8 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             repos:
               # managed-by-populate-pre-commit start: meta.yaml
               - repo: meta
-                hooks: []
+                hooks:
+                - id: check-hooks-apply
               # managed-by-populate-pre-commit end: meta.yaml
               - repo: custom-repo
             """)
@@ -284,7 +276,8 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             repos:
               # managed-by-populate-pre-commit start: meta.yaml
               - repo: meta
-                hooks: []
+                hooks:
+                - id: check-hooks-apply
               # managed-by-populate-pre-commit end: meta.yaml
             """)
         self.assertEqual(content, expected)
@@ -293,12 +286,10 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that an empty snippet file crashes the program."""
         self.create_file(".pre-commit-config.yaml", contents="repos:\n")
 
-        self.create_file(
-            os.path.join(populate_pre_commit.SNIPPETS_DIR, "empty.yaml"),
-            contents="",
-        )
+        empty_path = os.path.join(populate_pre_commit.SNIPPETS_DIR, "empty.yaml")
+        self.create_file(empty_path, contents="")
         with self.assertRaisesRegex(
-            ValueError, "config snippet /fake/snippets/empty.yaml is empty"
+            ValueError, f"config snippet {empty_path} is empty"
         ):
             populate_pre_commit.populate_pre_commit(
                 extra_args={},
@@ -319,7 +310,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
     def test_extra_args_injection(self) -> None:
         """Tests that extra arguments are correctly injected into snippets."""
-        extra_args = {"fake-python": "--flag1 --flag2"}
+        extra_args = {"debug-statements": "--flag1 --flag2"}
         populate_pre_commit.populate_pre_commit(
             extra_args=extra_args,
             script_file="populate_pre_commit_test.py",
@@ -329,7 +320,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
 
-        self.assertIn("- id: fake-python", content)
+        self.assertIn("- id: debug-statements", content)
         self.assertIn("args:", content)
         self.assertIn("- --flag1", content)
         self.assertIn("- --flag2", content)
@@ -441,7 +432,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             ("python.yaml", True),
             ("meta.yaml", True),
         ]
-        extra_args = {"fake-python": "--flag1", "meta-hook": "--flag2"}
+        extra_args = {"debug-statements": "--flag1", "check-hooks-apply": "--flag2"}
         populate_pre_commit.populate_pre_commit(
             extra_args=extra_args,
             script_file="populate_pre_commit_test.py",
@@ -450,7 +441,13 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
-        self.assertIn("--flag1", content)
+
+        # Check that flags are in the YAML content (indented)
+        self.assertIn("- --flag1", content)
+        self.assertIn("- --flag2", content)
+        # Check that they are also in the shebang
+        self.assertIn("debug-statements=--flag1", content)
+        self.assertIn("check-hooks-apply=--flag2", content)
 
     def test_main_no_extra_args(self) -> None:
         """Tests the main function without extra arguments."""
