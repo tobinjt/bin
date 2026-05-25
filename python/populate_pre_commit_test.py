@@ -207,7 +207,6 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
                 rev: v6.0.0
                 hooks:
                 - id: debug-statements
-                - id: name-tests-test
               # managed-by-populate-pre-commit end: python.yaml
             """)
         self.assertEqual(content, expected)

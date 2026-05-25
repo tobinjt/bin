@@ -2,4 +2,3 @@
   rev: v6.0.0
   hooks:
   - id: debug-statements
-  - id: name-tests-test
