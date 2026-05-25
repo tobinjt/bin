@@ -43,6 +43,7 @@ update_everything() {
     return
   fi
 
+  GIT_MERGE_AUTOEDIT=no git pull
   if [[ -x ".github/dependabot.yml" ]]; then
     update_workflows
   fi
