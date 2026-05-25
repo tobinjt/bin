@@ -138,7 +138,6 @@ main() {
   # PHP; there's more config later.
   brew install composer php phpunit
   # Rust.
-  brew install rustup
   # Create the cargo directory so that `install-extra-development-tools` will
   # install packages.
   mkdir -p "${HOME}/.cargo"
