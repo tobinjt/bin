@@ -117,6 +117,23 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
             populate_pre_commit.should_include_golang(frozenset[str]({"go.mod"}))
         )
 
+    def test_should_include_json(self) -> None:
+        """Tests the should_include_json function."""
+        self.assertFalse(populate_pre_commit.should_include_json(frozenset[str]()))
+        self.assertTrue(
+            populate_pre_commit.should_include_json(frozenset[str]({"data.json"}))
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_json(
+                frozenset[str]({".vscode/settings.json"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_json(
+                frozenset[str]({"data.json", ".vscode/settings.json"})
+            )
+        )
+
     def test_should_include_rust_files(self) -> None:
         self.assertFalse(populate_pre_commit.should_include_rust(frozenset[str]()))
         self.assertTrue(

@@ -257,6 +257,19 @@ def should_include_golang(files: frozenset[str]) -> bool:
 
 
 @functools.cache
+def should_include_json(files: frozenset[str]) -> bool:
+    """Checks if JSON files exist, excluding .vscode/settings.json.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if any .json files exist, excluding .vscode/settings.json.
+    """
+    return any(f.endswith(".json") and f != ".vscode/settings.json" for f in files)
+
+
+@functools.cache
 def should_include_rust(files: frozenset[str]) -> bool:
     """Checks if Rust files or a Cargo.toml file exist.
 
@@ -412,7 +425,7 @@ def main() -> None:
         ("golang.yaml", should_include_golang(all_files)),
         ("golangci-lint.yaml", should_include_golang(all_files)),
         ("hooks.yaml", True),
-        ("json.yaml", has_extension(all_files, ".json")),
+        ("json.yaml", should_include_json(all_files)),
         ("keep-sorted.yaml", True),
         ("markdownlint.yaml", has_extension(all_files, ".md")),
         ("meta.yaml", True),

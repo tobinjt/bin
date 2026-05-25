@@ -2,4 +2,8 @@
   rev: v6.0.0
   hooks:
   - id: check-json
+    exclude: ^\.vscode/settings\.json$
   - id: pretty-format-json
+    exclude: ^\.vscode/settings\.json$
+    args:
+    - --autofix
