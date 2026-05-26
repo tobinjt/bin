@@ -9,11 +9,11 @@ code. It requires user interaction (pressing Enter) before each new attempt.
 
 import argparse
 import logging
+import os
 import subprocess as subprocess
 import sys
+import typing
 from collections import abc
-
-logger = logging.getLogger("retry_tool")
 
 
 class Args(argparse.Namespace):
@@ -35,6 +35,16 @@ class Args(argparse.Namespace):
         super().__init__()
         self.message = message
         self.command_args = list(command_args) if command_args is not None else []
+
+
+class MyLogger(logging.LoggerAdapter[logging.Logger]):
+    """Customise the logging output, prepending working directory."""
+
+    @typing.override
+    def process(
+        self, msg: str, kwargs: abc.MutableMapping[str, typing.Any]
+    ) -> tuple[str, abc.MutableMapping[str, typing.Any]]:
+        return (f"{os.getcwd()}: {msg}", kwargs)
 
 
 def main(argv: abc.Sequence[str]) -> int:
@@ -63,6 +73,7 @@ def main(argv: abc.Sequence[str]) -> int:
         parser.print_usage()
         return 2
 
+    logger = MyLogger(logging.getLogger("retry_tool"))
     while True:
         logger.info(f"Running: {args.command_args}")
         try:
