@@ -2,19 +2,6 @@
 
 set -e -f -u -o pipefail
 
-if [[ -z "${CAFFEINATED:-}" ]] && type caffeinate >& /dev/null; then
-  CAFFEINATED="do not sleep"
-  export CAFFEINATED
-  exec caffeinate -i "$0"
-fi
-
-dirs_to_update() {
-  set +f
-  echo "${HOME}/src/"*
-  echo "${HOME}/bin"
-  set -f
-}
-
 update_workflows() {
   retry "update Github workflows: ${PWD}" -- ./.github/dependabot.yml
   if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
@@ -33,7 +20,7 @@ update_pre_commit() {
   fi
 }
 
-update_everything() {
+main() {
   # Skip repos that I cannot push to.
   if git transport-is-https; then
     return
@@ -55,10 +42,4 @@ update_everything() {
   fi
 }
 
-for dir in $(dirs_to_update); do
-  if [[ ! -d "${dir}" ]]; then
-    continue
-  fi
-  (cd "${dir}" && update_everything)
-  printf "\n\n\n"
-done
+main "$@"

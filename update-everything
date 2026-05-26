@@ -2,6 +2,13 @@
 
 set -e -f -u -o pipefail
 
+dirs_to_update() {
+  set +f
+  echo "${HOME}/src/"*
+  echo "${HOME}/bin"
+  set -f
+}
+
 # Keep the laptop awake.
 if [[ -z "${CAFFEINATED:-}" ]] && type caffeinate >& /dev/null; then
   CAFFEINATED="do not sleep"
@@ -42,7 +49,14 @@ retry install-extra-development-tools -- install-extra-development-tools
 # code maintainence chores.
 if type pre-commit >& /dev/null; then
   echo "Performing routine code maintainence chores"
-  retry update-routine-code-chores -- update-routine-code-chores
+  for dir in $(dirs_to_update); do
+    if [[ ! -d "${dir}" ]]; then
+      continue
+    fi
+    (cd "${dir}" && \
+      retry update-routine-code-chores -- update-routine-code-chores)
+  printf "\n\n\n"
+  done
 fi
 
 if [[ -f "/Applications/AdGuardHome/AdGuardHome" ]]; then
