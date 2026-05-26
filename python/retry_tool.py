@@ -11,7 +11,7 @@ import argparse
 import logging
 import subprocess as subprocess
 import sys
-from collections.abc import Sequence
+from collections import abc
 
 logger = logging.getLogger("retry_tool")
 
@@ -19,11 +19,25 @@ logger = logging.getLogger("retry_tool")
 class Args(argparse.Namespace):
     """Command-line arguments for retry_tool."""
 
-    message: str = ""
-    command_args: list[str] = []
+    message: str
+    command_args: list[str]
+
+    def __init__(
+        self, message: str = "", command_args: list[str] | None = None
+    ) -> None:
+        """
+        Initialise the Args class.
+
+        Args:
+            message: Message to display between retries.
+            command_args: Command and arguments.
+        """
+        super().__init__()
+        self.message = message
+        self.command_args = list(command_args) if command_args is not None else []
 
 
-def main(argv: Sequence[str]) -> int:
+def main(argv: abc.Sequence[str]) -> int:
     """
     Main function to parse arguments and execute the retry logic.
 
