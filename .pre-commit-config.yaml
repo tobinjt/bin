@@ -37,9 +37,26 @@ repos:
     rev: v6.0.0
     hooks:
     - id: check-case-conflict
+    - id: check-executables-have-shebangs
+    - id: check-illegal-windows-names
     - id: check-merge-conflict
     - id: check-vcs-permalinks
+    - id: check-yaml
+    - id: destroyed-symlinks
+    - id: fix-byte-order-marker
+    - id: mixed-line-ending
   # managed-by-populate-pre-commit end: hooks.yaml
+  # managed-by-populate-pre-commit start: json.yaml
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: check-json
+      exclude: ^\.vscode/settings\.json$
+    - id: pretty-format-json
+      exclude: ^\.vscode/settings\.json$
+      args:
+      - --autofix
+  # managed-by-populate-pre-commit end: json.yaml
   # managed-by-populate-pre-commit start: keep-sorted.yaml
   - repo: https://github.com/google/keep-sorted
     rev: v0.8.0
@@ -94,6 +111,12 @@ repos:
       - python
       entry: pytest
   # managed-by-populate-pre-commit end: pytest.yaml
+  # managed-by-populate-pre-commit start: python.yaml
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: debug-statements
+  # managed-by-populate-pre-commit end: python.yaml
   # managed-by-populate-pre-commit start: shellcheck.yaml
   - repo: local
     hooks:
