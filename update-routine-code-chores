@@ -29,8 +29,10 @@ main() {
   if git remote show | grep -q upstream; then
     return
   fi
+  if git config remote.origin.url >& /dev/null; then
+    GIT_MERGE_AUTOEDIT=no git pull
+  fi
 
-  GIT_MERGE_AUTOEDIT=no git pull
   if [[ -x ".github/dependabot.yml" ]]; then
     update_workflows
   fi
