@@ -30,7 +30,7 @@ if type go >& /dev/null && [[ -d "${GOPATH}" ]]; then
 fi
 
 if [[ -d "${HOME}/.cargo" ]]; then
-  if not type rustup >& /dev/null; then
+  if ! type rustup >& /dev/null; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
       | sh -s -- --no-modify-path
   fi
