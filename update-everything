@@ -9,46 +9,58 @@ dirs_to_update() {
   set -f
 }
 
-# Keep the laptop awake.
-if [[ -z "${CAFFEINATED:-}" ]] && type caffeinate >& /dev/null; then
-  CAFFEINATED="do not sleep"
-  export CAFFEINATED
-  exec caffeinate -i "$0"
-fi
+prevent_sleeping() {
+  if [[ -z "${CAFFEINATED:-}" ]] && type caffeinate >& /dev/null; then
+    CAFFEINATED="do not sleep"
+    export CAFFEINATED
+    exec caffeinate -i "${BASH_SOURCE[0]}"
+  fi
+}
 
-# Restart with updated code if necessary.
-orig_code="$(cat "${BASH_SOURCE[0]}")"
-retry update-dotfiles-and-bin -- update-dotfiles-and-bin
-new_code="$(cat "${BASH_SOURCE[0]}")"
-if [[ "${orig_code}" != "${new_code}" ]]; then
-  echo "Restarting with updated tools"
-  exec "${BASH_SOURCE[0]}"
-fi
+maybe_restart_with_updated_code() {
+  local orig_code new_code
+  orig_code="$(cat "${BASH_SOURCE[0]}")"
+  retry update-dotfiles-and-bin -- update-dotfiles-and-bin
+  new_code="$(cat "${BASH_SOURCE[0]}")"
+  if [[ "${orig_code}" != "${new_code}" ]]; then
+    echo "Restarting with updated tools"
+    exec "${BASH_SOURCE[0]}"
+  fi
+}
 
-if is_mac_os && type brew >& /dev/null; then
-  retry brew-update-brew-cleanup -- brew-update-brew-cleanup
-elif is_linux && type apt >& /dev/null && groups | grep -w -q sudo; then
-  retry "apt update" -- sudo apt update
-  retry "apt upgrade" -- sudo apt upgrade --assume-yes
-  retry "apt autoremove" -- sudo apt autoremove --assume-yes
-fi
+update_system_packages() {
+  if is_mac_os && type brew >& /dev/null; then
+    retry brew-update-brew-cleanup -- brew-update-brew-cleanup
+  elif is_linux && type apt >& /dev/null && groups | grep -w -q sudo; then
+    retry "apt update" -- sudo apt update
+    retry "apt upgrade" -- sudo apt upgrade --assume-yes
+    retry "apt autoremove" -- sudo apt autoremove --assume-yes
+  fi
+}
 
-# Mason-installed packages are frequently broken by upgrades, reinstall them.
-# Do this before anything else because they're used in pre-commit hooks.
-retry "Delete Mason packages" -- rm -rf "${HOME}/.local/share/nvim/mason"
-if type nvim >& /dev/null; then
-  retry "Install Mason packages" -- \
-    run-nvim-command \
-      'lua require("johntobin.functions").RunCommandIfExists("MasonToolsUpdateSync")'
-fi
+update_mason_packages() {
+  retry "Delete Mason packages" -- rm -rf "${HOME}/.local/share/nvim/mason"
+  if type nvim >& /dev/null; then
+    retry "Install Mason packages" -- \
+      run-nvim-command \
+        'lua require("johntobin.functions").RunCommandIfExists("MasonToolsUpdateSync")'
+  fi
+}
 
-echo "Installing extra development tools"
-retry install-extra-development-tools -- install-extra-development-tools
+update_python_modules() {
+  if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
+    retry update-python-modules -- update-python-modules
+  fi
+}
 
-# Using the presence of pre-commit as a proxy for whether to perform routine
-# code maintainence chores.
-if type pre-commit >& /dev/null; then
+routine_code_maintenance_chores() {
+  # Using the presence of pre-commit as a proxy for whether to perform routine
+  # code maintainence chores.
+  if ! type pre-commit >& /dev/null; then
+    return
+  fi
   echo "Performing routine code maintainence chores"
+  local dir
   for dir in $(dirs_to_update); do
     if [[ ! -d "${dir}" ]]; then
       continue
@@ -57,33 +69,54 @@ if type pre-commit >& /dev/null; then
       retry update-routine-code-chores -- update-routine-code-chores)
   printf "\n\n\n"
   done
-fi
+}
 
-if [[ -f "/Applications/AdGuardHome/AdGuardHome" ]]; then
-  retry AdGuard -- update-adguard
-fi
-if [[ -d "${HOME}/tmp/bin/lazygit" ]]; then
-  retry update-lazygit -- update-lazygit
-fi
-if [[ -d "${HOME}/tmp/bin/nvim" ]]; then
-  retry update-nvim -- update-nvim
-fi
-if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
-  retry update-python-modules -- update-python-modules
-fi
-if [[ -d "${HOME}/src/hugo-coder" ]]; then
-  retry update-hugo-coder -- update-hugo-coder
-fi
-# This ensures that updates to ~/src/ariane-theme are committed *before* we try
-# to update Wordpress.
-if [[ -d "${HOME}/src/dev.arianetobin.ie" ]]; then
-  retry update-ariane-theme -- update-ariane-theme
-  retry update-all-wordpress -- update-all-wordpress
-fi
+update_applications() {
+  if [[ -f "/Applications/AdGuardHome/AdGuardHome" ]]; then
+    retry AdGuard -- update-adguard
+  fi
+  if [[ -d "${HOME}/tmp/bin/lazygit" ]]; then
+    retry update-lazygit -- update-lazygit
+  fi
+  if [[ -d "${HOME}/tmp/bin/nvim" ]]; then
+    retry update-nvim -- update-nvim
+  fi
+}
 
-# Update any git repo that hasn't already been updated.
-set +f
-for repo in "${HOME}/src/"*; do
-  retry "check-git-repos ${repo}" -- check-git-repos "${repo}"
-done
-set -f
+update_websites() {
+  if [[ -d "${HOME}/src/hugo-coder" ]]; then
+    retry update-hugo-coder -- update-hugo-coder
+  fi
+  # This ensures that updates to ~/src/ariane-theme are committed *before* we try
+  # to update Wordpress.
+  if [[ -d "${HOME}/src/dev.arianetobin.ie" ]]; then
+    retry update-ariane-theme -- update-ariane-theme
+    retry update-all-wordpress -- update-all-wordpress
+  fi
+}
+
+update_git_repos() {
+  local dir
+  for dir in $(dirs_to_update); do
+    retry "check-git-repos ${dir}" -- check-git-repos "${dir}"
+  done
+}
+
+main() {
+  prevent_sleeping
+  maybe_restart_with_updated_code
+  update_system_packages
+  # Mason-installed packages are frequently broken by upgrades, reinstall them.
+  # Do this before anything else because they're used in pre-commit hooks.
+  update_mason_packages
+  # Similarly, update development tools and Python modules.
+  retry install-extra-development-tools -- install-extra-development-tools
+  update_python_modules
+  routine_code_maintenance_chores
+  update_applications
+  update_websites
+  # Update any git repo that hasn't already been updated.
+  update_git_repos
+}
+
+main "$@"
