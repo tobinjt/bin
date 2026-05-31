@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 
 import io
+import logging
 import sys
 import retry_tool
 
@@ -82,6 +83,54 @@ class RetryMainTest(unittest.TestCase):
         self.assertEqual(return_code_no_args, 2)
         # Check that the usage string was printed
         self.assertIn("usage:", mock_stdout.getvalue())
+
+    @mock.patch.object(retry_tool.subprocess, "run")
+    @mock.patch.object(logging, "basicConfig")
+    def test_quiet_option_suppresses_info(
+        self, mock_basic_config: mock.Mock, mock_subprocess_run: mock.Mock
+    ) -> None:
+        """Test that -q or --quiet option sets logger level to WARNING.
+
+        Args:
+            mock_basic_config: Mocked setLevel method.
+            mock_subprocess_run: Mocked subprocess.run function.
+
+        Returns:
+            None.
+        """
+        mock_subprocess_run.return_value = mock.create_autospec(
+            retry_tool.subprocess.CompletedProcess, instance=True, returncode=0
+        )
+
+        argv = ["-q", "test message", "true"]
+        return_code = retry_tool.main(argv)
+
+        self.assertEqual(return_code, 0)
+        mock_basic_config.assert_called_once_with(level=logging.WARNING)
+
+    @mock.patch.object(retry_tool.subprocess, "run")
+    @mock.patch.object(logging, "basicConfig")
+    def test_no_quiet_option_default_level(
+        self, mock_basic_config: mock.Mock, mock_subprocess_run: mock.Mock
+    ) -> None:
+        """Test that without quiet option, logger level is set to NOTSET.
+
+        Args:
+            mock_basic_config: Mocked basicConfig method.
+            mock_subprocess_run: Mocked subprocess.run function.
+
+        Returns:
+            None.
+        """
+        mock_subprocess_run.return_value = mock.create_autospec(
+            retry_tool.subprocess.CompletedProcess, instance=True, returncode=0
+        )
+
+        argv = ["test message", "true"]
+        return_code = retry_tool.main(argv)
+
+        self.assertEqual(return_code, 0)
+        mock_basic_config.assert_called_once_with(level=logging.INFO)
 
 
 if __name__ == "__main__":

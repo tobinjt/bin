@@ -21,20 +21,28 @@ class Args(argparse.Namespace):
 
     message: str
     command_args: list[str]
+    quiet: bool
 
     def __init__(
-        self, message: str = "", command_args: list[str] | None = None
+        self,
+        message: str = "",
+        command_args: list[str] | None = None,
+        quiet: bool = False,
     ) -> None:
-        """
-        Initialise the Args class.
+        """Initialise the Args class.
 
         Args:
             message: Message to display between retries.
             command_args: Command and arguments.
+            quiet: If True, suppress INFO messages.
+
+        Returns:
+            None.
         """
         super().__init__()
         self.message = message
         self.command_args = list(command_args) if command_args is not None else []
+        self.quiet = quiet
 
 
 class MyLogger(logging.LoggerAdapter[logging.Logger]):
@@ -48,8 +56,7 @@ class MyLogger(logging.LoggerAdapter[logging.Logger]):
 
 
 def main(argv: abc.Sequence[str]) -> int:
-    """
-    Main function to parse arguments and execute the retry logic.
+    """Main function to parse arguments and execute the retry logic.
 
     Args:
         argv: Command-line arguments.
@@ -59,7 +66,13 @@ def main(argv: abc.Sequence[str]) -> int:
     """
     parser = argparse.ArgumentParser(
         description="Retry a command until it succeeds.",
-        usage="%(prog)s MESSAGE -- COMMAND [COMMAND_ARGS...]",
+        usage="%(prog)s [--quiet] MESSAGE -- COMMAND [COMMAND_ARGS...]",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress INFO messages.",
     )
     parser.add_argument("message", help="Message to display between retries.")
     parser.add_argument(
@@ -74,6 +87,12 @@ def main(argv: abc.Sequence[str]) -> int:
         return 2
 
     logger = MyLogger(logging.getLogger("retry_tool"))
+    if args.quiet:
+        logging.basicConfig(level=logging.WARNING)
+    else:
+        logging.basicConfig(level=logging.INFO)
+    logger = MyLogger(logging.getLogger("retry_tool"), extra={})
+
     while True:
         logger.info(f"Running: {args.command_args}")
         try:
@@ -92,8 +111,4 @@ def main(argv: abc.Sequence[str]) -> int:
 
 
 if __name__ == "__main__":
-    if sys.stdin.isatty():
-        logging.basicConfig(level=logging.INFO)
-    else:
-        logging.basicConfig(level=logging.ERROR)
     sys.exit(main(sys.argv[1:]))
