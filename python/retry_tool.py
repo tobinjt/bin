@@ -22,7 +22,9 @@ class Args(argparse.Namespace):
     message: str
     command_args: list[str]
 
-    def __init__(self, message: str, command_args: list[str]) -> None:
+    def __init__(
+        self, message: str = "", command_args: list[str] | None = None
+    ) -> None:
         """
         Initialise the Args class.
 
@@ -32,23 +34,14 @@ class Args(argparse.Namespace):
         """
         super().__init__()
         self.message = message
-        self.command_args = list(command_args)
+        self.command_args = list(command_args) if command_args is not None else []
 
 
-# Make basedpyright happy about the type that MyLogger inherits from, while also working
-# on Python 3.9 for older MacOS versions.
-if typing.TYPE_CHECKING:
-    # This is only executed by type checkers (like basedpyright)
-    _BaseAdapter = logging.LoggerAdapter[logging.Logger]
-else:
-    # This is what Python 3.9/3.14 actually runs at runtime
-    _BaseAdapter = logging.LoggerAdapter  # pyright: ignore[reportUnreachable]
-
-
-class MyLogger(_BaseAdapter):
+class MyLogger(logging.LoggerAdapter[logging.Logger]):
     """Customise the logging output, prepending working directory."""
 
-    def process(  # pyright: ignore[reportImplicitOverride]
+    @typing.override
+    def process(
         self, msg: str, kwargs: abc.MutableMapping[str, typing.Any]
     ) -> tuple[str, abc.MutableMapping[str, typing.Any]]:
         return (f"{os.getcwd()}: {msg}", kwargs)
@@ -75,12 +68,12 @@ def main(argv: abc.Sequence[str]) -> int:
         help="Command and arguments.",
     )
 
-    args = parser.parse_args(argv, namespace=Args(message="", command_args=[]))
+    args = parser.parse_args(argv, namespace=Args())
     if not args.command_args:
         parser.print_usage()
         return 2
 
-    logger = MyLogger(logging.getLogger("retry_tool"), extra={})
+    logger = MyLogger(logging.getLogger("retry_tool"))
     while True:
         logger.info(f"Running: {args.command_args}")
         try:
