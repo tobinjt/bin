@@ -172,6 +172,11 @@ repos:
         pass_filenames: false
         types: [yaml]
         entry: pytest
+      - id: retry_tool-system-python-test
+        name: Run `retry_tool_test_with_system_python.sh`
+        language: system
+        files: python/retry_tool.*
+        entry: ./python/retry_tool_test_with_system_python.sh
       - id: run-everywhere-system-python-test
         name: Run `run_everywhere_test_with_system_python.sh`
         language: system
