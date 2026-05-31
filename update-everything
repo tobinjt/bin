@@ -47,6 +47,21 @@ update_mason_packages() {
   fi
 }
 
+update_nvim_plugins() {
+  run-nvim-command 'Lazy! clean'
+  run-nvim-command 'Lazy! update' > /dev/null
+}
+
+update_treesitter_parsers() {
+  if ! type tree-sitter >& /dev/null; then
+    echo "Skipping treesitter updates, no tree-sitter binary available" >&2
+    return
+  fi
+  run-nvim-command \
+    'lua require("johntobin.functions").InstallAndUpdateTreesitterParsers()' \
+    > /dev/null
+}
+
 update_python_modules() {
   if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
     retry update-python-modules -- update-python-modules
@@ -106,6 +121,8 @@ main() {
   prevent_sleeping
   maybe_restart_with_updated_code
   update_system_packages
+  update_nvim_plugins
+  update_treesitter_parsers
   # Mason-installed packages are frequently broken by upgrades, reinstall them.
   # Do this before anything else because they're used in pre-commit hooks.
   update_mason_packages
