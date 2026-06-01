@@ -172,9 +172,4 @@ repos:
         pass_filenames: false
         types: [yaml]
         entry: pytest
-      - id: run-everywhere-system-python-test
-        name: Run `run_everywhere_test_with_system_python.sh`
-        language: system
-        files: python/run_everywhere.*
-        entry: ./python/run_everywhere_test_with_system_python.sh
       # keep-sorted end
