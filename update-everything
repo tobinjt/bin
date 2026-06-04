@@ -74,7 +74,7 @@ routine_code_maintenance_chores() {
   if ! type pre-commit >& /dev/null; then
     return
   fi
-  if ! populate_pre_commit --helo >& /dev/null; then
+  if ! populate_pre_commit --help >& /dev/null; then
     # populate_pre_commit needs pathspec, which isn't available without
     # installing extra Python modules; skip if populate_pre_commit fails.
     return
