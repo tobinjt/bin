@@ -59,7 +59,7 @@ repos:
   # managed-by-populate-pre-commit end: json.yaml
   # managed-by-populate-pre-commit start: keep-sorted.yaml
   - repo: https://github.com/google/keep-sorted
-    rev: v0.8.0
+    rev: v0.9.0
     hooks:
     - id: keep-sorted
   # managed-by-populate-pre-commit end: keep-sorted.yaml
@@ -110,6 +110,9 @@ repos:
       types:
       - python
       entry: pytest
+      args:
+      - -o
+      - pythonpath=.venv/lib/python3.14/site-packages
   # managed-by-populate-pre-commit end: pytest.yaml
   # managed-by-populate-pre-commit start: python.yaml
   - repo: https://github.com/pre-commit/pre-commit-hooks
