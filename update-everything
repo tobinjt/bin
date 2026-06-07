@@ -29,6 +29,9 @@ maybe_restart_with_updated_code() {
 }
 
 update_system_packages() {
+  if [[ "${USER}" != "johntobin" ]]; then
+    return
+  fi
   if is_mac_os && type brew >& /dev/null; then
     retry brew-update-brew-cleanup -- brew-update-brew-cleanup
   elif is_linux && type apt >& /dev/null && groups | grep -w -q sudo; then
