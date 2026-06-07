@@ -28,6 +28,15 @@ maybe_restart_with_updated_code() {
   fi
 }
 
+maybe_fake_retry() {
+  if is_mac_os && is_x86_64; then
+    retry() {
+      shift 2
+      "$@"
+    }
+  fi
+}
+
 update_system_packages() {
   if is_mac_os && type brew >& /dev/null; then
     retry brew-update-brew-cleanup -- brew-update-brew-cleanup
@@ -123,6 +132,7 @@ update_git_repos() {
 }
 
 main() {
+  maybe_fake_retry
   prevent_sleeping
   maybe_restart_with_updated_code
   update_system_packages
