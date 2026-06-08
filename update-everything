@@ -74,6 +74,14 @@ update_treesitter_parsers() {
     > /dev/null
 }
 
+update_vale_acepted_words() {
+  local destdir="${HOME}/.local/share/vale/styles/config/vocabularies/Neovim/"
+  mkdir -p "${destdir}"
+  set +f
+  cat "${HOME}"/.config/nvim/*spell/en.utf-8.add > "${destdir}/accept.txt"
+  set -f
+}
+
 update_python_modules() {
   if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
     retry update-python-modules -- update-python-modules
@@ -141,6 +149,7 @@ main() {
   update_system_packages
   update_nvim_plugins
   update_treesitter_parsers
+  update_vale_acepted_words
   # Mason-installed packages are frequently broken by upgrades, reinstall them.
   # Do this before anything else because they're used in pre-commit hooks.
   update_mason_packages
