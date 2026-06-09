@@ -1,1 +1,17 @@
-python/retry_tool.py
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  local directory program
+  directory="$(dirname "${BASH_SOURCE[0]}")"
+  program="${directory}/python/retry_tool.py"
+  if "${program}" --help >& /dev/null; then
+    "${program}" "$@"
+  else
+    shift 2
+    "$@"
+  fi
+}
+
+main "$@"
