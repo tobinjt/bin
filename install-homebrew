@@ -117,8 +117,6 @@ main() {
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
   brew install fswatch keep-sorted lazygit pre-commit zizmor
-  # AI.
-  brew install gemini-cli
 
   # Needed to install tools for Neovim.
   brew install luarocks node npm virtualenv
