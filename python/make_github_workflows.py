@@ -276,6 +276,25 @@ def get_parser(description: str) -> argparse.ArgumentParser:
     return parser
 
 
+def check_hugo_johntobin_ie() -> bool:
+    """Checks if config.toml exists and contains the baseURL line.
+
+    Returns:
+        True if config.toml exists and contains the baseURL line,
+        False otherwise.
+    """
+    if not os.path.exists("config.toml"):
+        return False
+    try:
+        with open("config.toml", "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip() == 'baseURL = "https://www.johntobin.ie/"':
+                    return True
+    except OSError:
+        return False
+    return False
+
+
 def main() -> None:
     """Parses arguments and generates the workflows."""
     description = "Generate GitHub Actions workflows for a project."
@@ -305,6 +324,14 @@ def main() -> None:
         if any(os.path.exists(f) for f in config.trigger_files):
             for workflow in config.workflows:
                 workflows_to_generate.add((workflow.template, workflow.output))
+
+    if check_hugo_johntobin_ie():
+        workflows_to_generate.add(
+            (
+                "hugo-johntobin.ie.yml",
+                ".github/workflows/hugo-johntobin.ie.yml",
+            )
+        )
 
     for template, output_file in sorted(workflows_to_generate):
         content = generate_workflow(

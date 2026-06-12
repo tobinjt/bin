@@ -1,5 +1,6 @@
 """Tests for make_github_workflows.py."""
 
+import builtins
 import os
 import unittest
 from typing import cast, override
@@ -313,6 +314,69 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         )
         # unknown should be filtered out
         self.assertNotIn("package-ecosystem: unknown", content)
+
+    def test_check_hugo_johntobin_ie_no_file(self) -> None:
+        """Tests check_hugo_johntobin_ie when config.toml does not exist."""
+        self.assertFalse(make_github_workflows.check_hugo_johntobin_ie())
+
+    def test_check_hugo_johntobin_ie_wrong_content(self) -> None:
+        """Tests check_hugo_johntobin_ie when config.toml has incorrect content."""
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            "config.toml", contents='baseURL = "https://example.com"\n'
+        )
+        self.assertFalse(make_github_workflows.check_hugo_johntobin_ie())
+
+    def test_check_hugo_johntobin_ie_correct_content(self) -> None:
+        """Tests check_hugo_johntobin_ie when config.toml is correct."""
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            "config.toml",
+            contents='baseURL = "https://www.johntobin.ie/"\n',
+        )
+        self.assertTrue(make_github_workflows.check_hugo_johntobin_ie())
+
+    def test_check_hugo_johntobin_ie_oserror(self) -> None:
+        """Tests check_hugo_johntobin_ie when open raises OSError."""
+        self.fs.create_file("config.toml")  # pyright: ignore[reportUnknownMemberType]
+        with mock.patch.object(builtins, "open", side_effect=OSError("Read error")):
+            self.assertFalse(make_github_workflows.check_hugo_johntobin_ie())
+
+    def test_main_with_hugo_johntobin_ie(self) -> None:
+        """Tests main generating the Hugo workflow when config.toml is correct."""
+        script_file = make_github_workflows.__file__
+        script_dir = os.path.dirname(script_file)
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "workflows", "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            os.path.join(script_dir, "workflows", "hugo-johntobin.ie.yml"),
+            contents="HUGO_CONTENT",
+        )
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            "config.toml",
+            contents='baseURL = "https://www.johntobin.ie/"\n',
+        )
+
+        with (
+            mock.patch.object(
+                make_github_workflows.argparse.ArgumentParser,
+                "parse_args",
+                return_value=make_github_workflows.Args(),
+            ),
+            mock.patch.object(
+                make_github_workflows, "write_workflow"
+            ) as mock_write_workflow,
+        ):
+            make_github_workflows.main()
+
+            # Check that write_workflow was called for:
+            # 1. .github/dependabot.yml
+            # 2. .github/workflows/hugo-johntobin.ie.yml
+            self.assertEqual(mock_write_workflow.call_count, 2)
+            mock_write_workflow.assert_any_call(".github/dependabot.yml", mock.ANY)
+            mock_write_workflow.assert_any_call(
+                ".github/workflows/hugo-johntobin.ie.yml", mock.ANY
+            )
 
 
 if __name__ == "__main__":
