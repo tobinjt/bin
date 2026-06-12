@@ -25,11 +25,11 @@ else
   # Separately upgrade formula and casks so I can force bottles.
   # Sometimes a formula doesn't have a bottle and upgrading will fail, so we
   # survive the failure and try again without forcing bottle.
-  brew upgrade --force-bottle --formula || true
+  brew upgrade --yes --force-bottle --formula || true
   sleep 2
-  brew upgrade --formula
+  brew upgrade --yes --formula
   sleep 2
-  brew upgrade --cask --greedy
+  brew upgrade --yes --cask --greedy
 fi
 sleep 2
 brew autoremove
