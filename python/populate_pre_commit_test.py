@@ -442,6 +442,49 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             populate_pre_commit.apply_extra_args(content, {"hook2": "args"}), content
         )
 
+    def test_apply_extra_args_hook_with_existing_args(self) -> None:
+        """Tests apply_extra_args when the hook ID is found and has existing 'args'."""
+        content = textwrap.dedent("""\
+            - repo: local
+              hooks:
+              - id: hook1
+                args:
+                - --existing
+            """)
+        expected = textwrap.dedent("""\
+            - repo: local
+              hooks:
+              - id: hook1
+                args:
+                - --existing
+                - --flag1
+                - --flag2
+            """)
+        self.assertEqual(
+            populate_pre_commit.apply_extra_args(content, {"hook1": "--flag1 --flag2"}),
+            expected,
+        )
+
+    def test_apply_extra_args_hook_no_existing_args(self) -> None:
+        """Tests apply_extra_args when the hook ID is found but does not have 'args'."""
+        content = textwrap.dedent("""\
+            - repo: local
+              hooks:
+              - id: hook1
+            """)
+        expected = textwrap.dedent("""\
+            - repo: local
+              hooks:
+              - id: hook1
+                args:
+                - --flag1
+                - --flag2
+            """)
+        self.assertEqual(
+            populate_pre_commit.apply_extra_args(content, {"hook1": "--flag1 --flag2"}),
+            expected,
+        )
+
     def test_multiple_snippets_with_extra_args(self) -> None:
         """Tests multiple snippets with extra arguments."""
         mock_snippets = [
