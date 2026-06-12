@@ -47,6 +47,11 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
+    def create_file(self, file_path: str, contents: str = "") -> None:
+        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+            file_path, contents=contents
+        )
+
     def test_generate_workflow_basic(self) -> None:
         """Tests basic workflow generation."""
         script_dir = "/fake/path"
@@ -54,9 +59,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         template_name = "test.template"
         template_path = os.path.join(script_dir, "workflows", template_name)
 
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            template_path, contents="Hello!\nINSERT_HERE\nGoodbye."
-        )
+        self.create_file(template_path, contents="Hello!\nINSERT_HERE\nGoodbye.")
 
         content = make_github_workflows.generate_workflow(
             template_name=template_name,
@@ -95,7 +98,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
                 {"package-ecosystem": "npm"},
             ],
         }
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             template_path, contents=make_github_workflows.yaml.dump(dependabot_template)
         )
 
@@ -112,7 +115,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         self.assertTrue(content.startswith('#!/usr/bin/env -S "my_script.py"\n'))
 
         # 2. Add go.mod. gomod should now be included.
-        self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
+        self.create_file("go.mod")
         content = make_github_workflows.generate_dependabot_config(
             script_file=script_file,
             extra_args={"foo": "bar"},
@@ -125,30 +128,28 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         )
 
         # 3. Add Cargo.toml. cargo should now be included.
-        self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
+        self.create_file("Cargo.toml")
         content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         self.assertIn("package-ecosystem: cargo", content)
 
         # 4. Add requirements.txt. pip should now be included.
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            "requirements.txt"
-        )
+        self.create_file("requirements.txt")
         content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         self.assertIn("package-ecosystem: pip", content)
 
         # 5. Add composer.json. composer should now be included.
-        self.fs.create_file("composer.json")  # pyright: ignore[reportUnknownMemberType]
+        self.create_file("composer.json")
         content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
         self.assertIn("package-ecosystem: composer", content)
 
         # 6. Add package.json. npm should now be included.
-        self.fs.create_file("package.json")  # pyright: ignore[reportUnknownMemberType]
+        self.create_file("package.json")
         content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )
@@ -158,21 +159,21 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         """Tests the main orchestration function."""
         script_file = make_github_workflows.__file__
         script_dir = os.path.dirname(script_file)
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "dependabot_validation.yml"),
             contents="VALIDATION_CONTENT",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "golang_pre-commit.yml"),
             contents="GOLANG_CONTENT",
         )
 
         # Create a trigger file to activate Go language
-        self.fs.create_file("go.mod")  # pyright: ignore[reportUnknownMemberType]
+        self.create_file("go.mod")
 
         with (
             mock.patch.object(
@@ -206,7 +207,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         template_name = "test.template"
         template_path = os.path.join(script_dir, "workflows", template_name)
 
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             template_path, contents="run: cargo llvm-cov test\nrun: other command"
         )
 
@@ -229,28 +230,28 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         """Tests the main orchestration function with extra arguments."""
         script_file = make_github_workflows.__file__
         script_dir = os.path.dirname(script_file)
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "dependabot_validation.yml"),
             contents="VALIDATION_CONTENT",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "rust_publish.yml"),
             contents="RUST_PUBLISH_CONTENT",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "rust_pull_request.yml"),
             contents="run: cargo llvm-cov test",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "rust_security_audit.yml"),
             contents="RUST_AUDIT_CONTENT",
         )
 
-        self.fs.create_file("Cargo.toml")  # pyright: ignore[reportUnknownMemberType]
+        self.create_file("Cargo.toml")
 
         args = make_github_workflows.Args(
             extra_args=["cargo llvm-cov test=--foo"],
@@ -305,7 +306,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
                 {"package-ecosystem": "unknown"},
             ],
         }
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             template_path, contents=make_github_workflows.yaml.dump(dependabot_template)
         )
 
@@ -321,14 +322,12 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
     def test_check_hugo_johntobin_ie_wrong_content(self) -> None:
         """Tests check_hugo_johntobin_ie when config.toml has incorrect content."""
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
-            "config.toml", contents='baseURL = "https://example.com"\n'
-        )
+        self.create_file("config.toml", contents='baseURL = "https://example.com"\n')
         self.assertFalse(make_github_workflows.check_hugo_johntobin_ie())
 
     def test_check_hugo_johntobin_ie_correct_content(self) -> None:
         """Tests check_hugo_johntobin_ie when config.toml is correct."""
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             "config.toml",
             contents='baseURL = "https://www.johntobin.ie/"\n',
         )
@@ -336,7 +335,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
     def test_check_hugo_johntobin_ie_oserror(self) -> None:
         """Tests check_hugo_johntobin_ie when open raises OSError."""
-        self.fs.create_file("config.toml")  # pyright: ignore[reportUnknownMemberType]
+        self.create_file("config.toml")
         with mock.patch.object(builtins, "open", side_effect=OSError("Read error")):
             self.assertFalse(make_github_workflows.check_hugo_johntobin_ie())
 
@@ -344,15 +343,15 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         """Tests main generating the Hugo workflow when config.toml is correct."""
         script_file = make_github_workflows.__file__
         script_dir = os.path.dirname(script_file)
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             os.path.join(script_dir, "workflows", "hugo-johntobin.ie.yml"),
             contents="HUGO_CONTENT",
         )
-        self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
+        self.create_file(
             "config.toml",
             contents='baseURL = "https://www.johntobin.ie/"\n',
         )
