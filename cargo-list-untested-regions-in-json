@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  cargo llvm-cov  >& /dev/null --quiet --json --output-path >(
+    jq \
+      '.data[].files[] |  >& /dev/null
+      {
+        file: .filename,
+        uncovered_regions: [
+          .segments[] |
+          select(.[2] == 0 and .[4] == true) |
+          {line: .[0], col: .[1]}
+        ]
+      } |
+      select(.uncovered_regions | length > 0)'
+    )
+}
+
+main "$@"
