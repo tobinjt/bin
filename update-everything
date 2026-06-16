@@ -66,7 +66,13 @@ update_treesitter_parsers() {
 }
 
 update_vale_acepted_words() {
-  local destdir="${HOME}/.local/share/vale/styles/config/vocabularies/Neovim/"
+  local base_dir
+  if is_mac_os; then
+    base_dir="${HOME}/Library/Application Support"
+  else
+    base_dir="${HOME}/.local/share"
+  fi
+  local destdir="${base_dir}/vale/styles/config/vocabularies/Neovim/"
   mkdir -p "${destdir}"
   set +f
   cat "${HOME}"/.config/nvim/*spell/en.utf-8.add > "${destdir}/accept.txt"
