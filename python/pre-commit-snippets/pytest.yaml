@@ -7,4 +7,6 @@
     types:
     - python
     entry: pytest
-    args: ["-o", "pythonpath=.venv/lib/python3.14/site-packages"]
+    args:
+      - -o
+      - pythonpath=.venv/lib/python3.14/site-packages
