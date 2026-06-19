@@ -270,6 +270,19 @@ def should_include_json(files: frozenset[str]) -> bool:
 
 
 @functools.cache
+def should_include_readme_toc(files: frozenset[str]) -> bool:
+    """Checks if a README.md file exists at the root of the repository.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if a README.md file exists at the root of the repository.
+    """
+    return "README.md" in files
+
+
+@functools.cache
 def should_include_rust(files: frozenset[str]) -> bool:
     """Checks if Rust files or a Cargo.toml file exist.
 
@@ -433,6 +446,7 @@ def main() -> None:
         ("pygrep-hooks.yaml", has_extension(all_files, ".py")),
         ("pytest.yaml", has_extension(all_files, ".py")),
         ("python.yaml", has_extension(all_files, ".py")),
+        ("readme-toc.yaml", should_include_readme_toc(all_files)),
         ("rust.yaml", should_include_rust(all_files)),
         ("shellcheck.yaml", should_include_shellcheck(all_files)),
         ("spellcheck.yaml", True),

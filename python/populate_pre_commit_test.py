@@ -134,6 +134,20 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
             )
         )
 
+    def test_should_include_readme_toc(self) -> None:
+        """Tests the should_include_readme_toc function."""
+        self.assertFalse(
+            populate_pre_commit.should_include_readme_toc(frozenset[str]())
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_readme_toc(frozenset[str]({"README.md"}))
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_readme_toc(
+                frozenset[str]({"subdir/README.md"})
+            )
+        )
+
     def test_should_include_rust_files(self) -> None:
         self.assertFalse(populate_pre_commit.should_include_rust(frozenset[str]()))
         self.assertTrue(

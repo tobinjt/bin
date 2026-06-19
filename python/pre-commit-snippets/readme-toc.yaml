@@ -1,0 +1,10 @@
+- repo: https://github.com/thlorenz/doctoc
+  rev: v2.5.0
+  hooks:
+    - id: doctoc
+      files: README.md
+      args:
+        - --notitle
+        - --minlevel=2
+        - --mintocitems=3
+        - --github
