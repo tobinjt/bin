@@ -114,6 +114,8 @@ main() {
   brew install atuin bat
   # Used to reconnect to machines.
   brew install autossh
+  # Easy sharing of files. https://github.com/9001/copyparty
+  brew install copyparty
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
   brew install fswatch keep-sorted lazygit pre-commit zizmor
