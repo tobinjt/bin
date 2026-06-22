@@ -43,7 +43,7 @@ if [[ -d "${HOME}/.cargo" ]]; then
   # https://crates.io/crates/cargo-binstall
   (unset RUSTC_WRAPPER; cargo install --locked cargo-binstall)
   # https://crates.io/crates/sccache
-  (unset RUSTC_WRAPPER; cargo binstall --locked sccache)
+  (unset RUSTC_WRAPPER; cargo binstall --locked --no-confirm sccache)
   # https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#from-source
   cargo +stable binstall --locked --no-confirm cargo-llvm-cov
 
