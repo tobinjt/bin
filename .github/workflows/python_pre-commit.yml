@@ -1,0 +1,75 @@
+#!/usr/bin/env -S "make_github_workflows"
+name: Python pre-commit checks.
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '**.py'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '**.py'
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit-checks:
+    name: |
+      Run `black`, `basedpyright`, `mypy`, `pygrep-hooks`,
+      `pyrefly`, and `pytest`.
+      Commits any changes made by `black`.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push new commits.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v6.0.3
+        with:
+          # Ensure we are on the PR branch, not a detached head
+          ref: ${{ github.head_ref }}
+          # Required to push new commits.
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install basedpyright black mypy pathspec pyfakefs pytest pytest-cov pytest-timeout pytest-flakefinder PyYAML pre-commit
+
+      # keep-sorted start block=true
+      - name: Run basedpyright
+        run: basedpyright .
+      - name: Run black
+        run: black .
+      - name: Run debug-statements
+        run: pre-commit run debug-statements --all-files
+      - name: Run mypy
+        run: mypy --ignore-missing-imports --scripts-are-modules .
+      - name: Run pygrep-hooks
+        run: |
+          pre-commit run python-check-blanket-noqa --all-files
+          pre-commit run python-check-blanket-type-ignore --all-files
+          pre-commit run python-check-mock-methods --all-files
+          pre-commit run python-no-eval --all-files
+          pre-commit run python-no-log-warn --all-files
+          pre-commit run python-use-type-annotations --all-files
+      - name: Run pyrefly
+        uses: facebook/pyrefly@main
+      - name: Run pytest
+        run: pytest
+      # keep-sorted end
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "style: automatic black fixes"
+          file_pattern: '**.py'
