@@ -131,7 +131,7 @@ main() {
   update_system_packages
   update_nvim_plugins
   update_treesitter_parsers
-  update_vale_acepted_words
+  update-vale-acepted-words
   # Mason-installed packages are frequently broken by upgrades, reinstall them.
   # Do this before anything else because they're used in pre-commit hooks.
   update_mason_packages
