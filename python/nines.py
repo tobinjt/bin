@@ -146,7 +146,8 @@ def main(*, argv: list[str]) -> None:
     Args:
         argv: Command-line arguments.
     """
-    usage, description = str(__doc__).split("\n", maxsplit=1)
+    assert __doc__ is not None
+    usage, description = __doc__.split("\n", maxsplit=1)
     description = description % {
         "PT": PERCENT_THRESHOLD,
     }

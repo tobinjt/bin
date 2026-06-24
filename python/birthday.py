@@ -61,7 +61,7 @@ def main(argv: list[str]):
         try:
             _ = int(number)
         except ValueError:
-            sys.exit(f"Argument is not a number: {str(number)}")
+            sys.exit(f"Argument is not a number: {number}")
 
     num_people, num_days = (int(argv[1]), 365)
     if len(argv) == 3:

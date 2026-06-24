@@ -665,7 +665,8 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
     """
     # __doc__ is written to pass pylint checks, so it must be changed before being
     # used as a usage message.
-    usage, description = str(__doc__).split("\n", maxsplit=1)
+    assert __doc__ is not None
+    usage, description = __doc__.split("\n", maxsplit=1)
     argv_parser = argparse.ArgumentParser(
         description=description,
         usage=usage,

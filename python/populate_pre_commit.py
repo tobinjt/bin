@@ -149,7 +149,8 @@ def get_non_ignored_files() -> frozenset[str]:
     except (subprocess.CalledProcessError, FileNotFoundError):
         global_ignore_path = os.path.expanduser("~/.config/git/ignore")
     else:
-        global_ignore_path = os.path.expanduser(str(ret.stdout).strip())
+        assert ret.stdout is not None
+        global_ignore_path = os.path.expanduser(ret.stdout.strip())
 
     if global_ignore_path and os.path.exists(global_ignore_path):
         with open(global_ignore_path, "r") as f:
