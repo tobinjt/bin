@@ -134,8 +134,8 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         )
         self.assertIn("package-ecosystem: cargo", content)
 
-        # 4. Add requirements.txt. pip should now be included.
-        self.create_file("requirements.txt")
+        # 4. Add python directory. pip should now be included.
+        self.create_file("python/dummy.py")
         content = make_github_workflows.generate_dependabot_config(
             script_file=script_file
         )

@@ -61,11 +61,25 @@ LANGUAGE_CONFIGS = [
     ),
     LanguageConfig(
         ecosystem="pip",
-        trigger_files=["requirements.txt", "pyproject.toml", "setup.py", "Pipfile"],
+        trigger_files=[
+            # keep-sorted start
+            "Pipfile",
+            "pyproject.toml",
+            "pyrefly.toml",
+            "pytest.ini",
+            "python",
+            "requirements.txt",
+            "setup.py",
+            # keep-sorted end
+        ],
         workflows=[
             Workflow(
                 "dependabot_validation.yml",
                 ".github/workflows/dependabot_validation.yml",
+            ),
+            Workflow(
+                "python_pre-commit.yml",
+                ".github/workflows/python_pre-commit.yml",
             ),
         ],
     ),
