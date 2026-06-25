@@ -3,7 +3,7 @@
 
 import argparse as argparse
 import dataclasses
-import os
+import pathlib as pathlib
 import re
 import yaml as yaml
 from typing import cast, override, TypeAlias
@@ -184,10 +184,10 @@ def generate_dependabot_config(
     Returns:
         The generated YAML content as a string.
     """
-    script_dir = os.path.dirname(os.path.realpath(script_file))
-    template_path = os.path.join(script_dir, "workflows", "dependabot.yml")
+    script_dir = pathlib.Path(script_file).resolve().parent
+    template_path = script_dir / "workflows" / "dependabot.yml"
 
-    with open(template_path, "r", encoding="utf-8") as f:
+    with template_path.open("r", encoding="utf-8") as f:
         template = cast(dict[str, int | list[UpdateStanza]], yaml.safe_load(f))
 
     filtered_updates: list[UpdateStanza] = []
@@ -200,7 +200,7 @@ def generate_dependabot_config(
             continue
 
         config = next((c for c in LANGUAGE_CONFIGS if c.ecosystem == ecosystem), None)
-        if config and any(os.path.exists(f) for f in config.trigger_files):
+        if config and any(pathlib.Path(f).exists() for f in config.trigger_files):
             filtered_updates.append(update)
 
     template["updates"] = filtered_updates
@@ -211,7 +211,7 @@ def generate_dependabot_config(
     yaml_content = yaml_content.replace("\n  - ", "\n\n  - ")
 
     shebang_args = build_shebang_args(extra_args)
-    script_name = escape_for_env_s(os.path.basename(script_file))
+    script_name = escape_for_env_s(pathlib.Path(script_file).name)
     shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}'
     return shebang + "\n" + yaml_content.rstrip()
 
@@ -231,10 +231,9 @@ def generate_workflow(
     Returns:
         The generated YAML content as a string.
     """
-    script_dir = os.path.dirname(os.path.realpath(script_file))
-    template_path = os.path.join(script_dir, "workflows", template_name)
-    with open(template_path, "r", encoding="utf-8") as f:
-        template = f.read()
+    script_dir = pathlib.Path(script_file).resolve().parent
+    template_path = script_dir / "workflows" / template_name
+    template = template_path.read_text(encoding="utf-8")
 
     if extra_args:
         for command, extra in extra_args.items():
@@ -246,7 +245,7 @@ def generate_workflow(
             template = pattern.sub(rf"\1 {extra}\2", template)
 
     shebang_args = build_shebang_args(extra_args)
-    script_name = escape_for_env_s(os.path.basename(script_file))
+    script_name = escape_for_env_s(pathlib.Path(script_file).name)
     shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}'
 
     return shebang + "\n" + template.rstrip()
@@ -259,11 +258,10 @@ def write_workflow(output_file: str, content: str) -> None:
         output_file: The path to the file to write.
         content: The content to write.
     """
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write(content + "\n")
-    os.chmod(output_file, 0o755)
+    path = pathlib.Path(output_file)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content + "\n", encoding="utf-8")
+    path.chmod(0o755)
 
 
 def get_parser(description: str) -> argparse.ArgumentParser:
@@ -297,10 +295,11 @@ def check_hugo_johntobin_ie() -> bool:
         True if config.toml exists and contains the baseURL line,
         False otherwise.
     """
-    if not os.path.exists("config.toml"):
+    config_path = pathlib.Path("config.toml")
+    if not config_path.exists():
         return False
     try:
-        with open("config.toml", "r", encoding="utf-8") as f:
+        with config_path.open("r", encoding="utf-8") as f:
             for line in f:
                 if line.strip() == 'baseURL = "https://www.johntobin.ie/"':
                     return True
@@ -324,7 +323,7 @@ def main() -> None:
         command, extra = item.split("=", 1)
         command_to_extra_args[command.strip()] = extra.strip()
 
-    script_file = __file__
+    script_file = str(pathlib.Path(__file__).absolute())
 
     # Generate dependabot.yml automatically.
     dependabot_content = generate_dependabot_config(
@@ -335,7 +334,7 @@ def main() -> None:
 
     workflows_to_generate: set[tuple[str, str]] = set()
     for config in LANGUAGE_CONFIGS:
-        if any(os.path.exists(f) for f in config.trigger_files):
+        if any(pathlib.Path(f).exists() for f in config.trigger_files):
             for workflow in config.workflows:
                 workflows_to_generate.add((workflow.template, workflow.output))
 

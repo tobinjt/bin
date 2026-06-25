@@ -1,7 +1,7 @@
 """Tests for make_github_workflows.py."""
 
-import builtins
 import os
+import pathlib as pathlib
 import unittest
 from typing import cast, override
 from unittest import mock
@@ -55,9 +55,9 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_generate_workflow_basic(self) -> None:
         """Tests basic workflow generation."""
         script_dir = "/fake/path"
-        script_file = os.path.join(script_dir, "my_script.py")
+        script_file = str(pathlib.Path(script_dir) / "my_script.py")
         template_name = "test.template"
-        template_path = os.path.join(script_dir, "workflows", template_name)
+        template_path = str(pathlib.Path(script_dir) / "workflows" / template_name)
 
         self.create_file(template_path, contents="Hello!\nINSERT_HERE\nGoodbye.")
 
@@ -74,7 +74,7 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
         output_file = "/fake/out/dir/workflow.yml"
         make_github_workflows.write_workflow(output_file, "content")
 
-        self.assertTrue(os.path.exists(output_file))
+        self.assertTrue(pathlib.Path(output_file).exists())
         with open(output_file, "r", encoding="utf-8") as f:
             self.assertEqual(f.read(), "content\n")
 
@@ -84,8 +84,8 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_generate_dependabot_config(self) -> None:
         """Tests dependabot config generation with various ecosystems."""
         script_dir = "/fake/path"
-        script_file = os.path.join(script_dir, "my_script.py")
-        template_path = os.path.join(script_dir, "workflows", "dependabot.yml")
+        script_file = str(pathlib.Path(script_dir) / "my_script.py")
+        template_path = str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml")
 
         dependabot_template = {
             "version": 2,
@@ -158,17 +158,17 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_main(self) -> None:
         """Tests the main orchestration function."""
         script_file = make_github_workflows.__file__
-        script_dir = os.path.dirname(script_file)
+        script_dir = str(pathlib.Path(script_file).parent)
         self.create_file(
-            os.path.join(script_dir, "workflows", "dependabot.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
         self.create_file(
-            os.path.join(script_dir, "workflows", "dependabot_validation.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot_validation.yml"),
             contents="VALIDATION_CONTENT",
         )
         self.create_file(
-            os.path.join(script_dir, "workflows", "golang_pre-commit.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "golang_pre-commit.yml"),
             contents="GOLANG_CONTENT",
         )
 
@@ -203,9 +203,9 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_generate_workflow_with_extra_args(self) -> None:
         """Tests workflow generation with extra arguments."""
         script_dir = "/fake/path"
-        script_file = os.path.join(script_dir, "my_script.py")
+        script_file = str(pathlib.Path(script_dir) / "my_script.py")
         template_name = "test.template"
-        template_path = os.path.join(script_dir, "workflows", template_name)
+        template_path = str(pathlib.Path(script_dir) / "workflows" / template_name)
 
         self.create_file(
             template_path, contents="run: cargo llvm-cov test\nrun: other command"
@@ -229,25 +229,25 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_main_with_extra_args(self) -> None:
         """Tests the main orchestration function with extra arguments."""
         script_file = make_github_workflows.__file__
-        script_dir = os.path.dirname(script_file)
+        script_dir = str(pathlib.Path(script_file).parent)
         self.create_file(
-            os.path.join(script_dir, "workflows", "dependabot.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
         self.create_file(
-            os.path.join(script_dir, "workflows", "dependabot_validation.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot_validation.yml"),
             contents="VALIDATION_CONTENT",
         )
         self.create_file(
-            os.path.join(script_dir, "workflows", "rust_publish.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "rust_publish.yml"),
             contents="RUST_PUBLISH_CONTENT",
         )
         self.create_file(
-            os.path.join(script_dir, "workflows", "rust_pull_request.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "rust_pull_request.yml"),
             contents="run: cargo llvm-cov test",
         )
         self.create_file(
-            os.path.join(script_dir, "workflows", "rust_security_audit.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "rust_security_audit.yml"),
             contents="RUST_AUDIT_CONTENT",
         )
 
@@ -297,8 +297,8 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_generate_dependabot_config_unknown_ecosystem(self) -> None:
         """Tests dependabot config generation with an unknown ecosystem."""
         script_dir = "/fake/path"
-        script_file = os.path.join(script_dir, "my_script.py")
-        template_path = os.path.join(script_dir, "workflows", "dependabot.yml")
+        script_file = str(pathlib.Path(script_dir) / "my_script.py")
+        template_path = str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml")
 
         dependabot_template = {
             "version": 2,
@@ -336,19 +336,19 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
     def test_check_hugo_johntobin_ie_oserror(self) -> None:
         """Tests check_hugo_johntobin_ie when open raises OSError."""
         self.create_file("config.toml")
-        with mock.patch.object(builtins, "open", side_effect=OSError("Read error")):
+        with mock.patch.object(pathlib.Path, "open", side_effect=OSError("Read error")):
             self.assertFalse(make_github_workflows.check_hugo_johntobin_ie())
 
     def test_main_with_hugo_johntobin_ie(self) -> None:
         """Tests main generating the Hugo workflow when config.toml is correct."""
         script_file = make_github_workflows.__file__
-        script_dir = os.path.dirname(script_file)
+        script_dir = str(pathlib.Path(script_file).parent)
         self.create_file(
-            os.path.join(script_dir, "workflows", "dependabot.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
             contents="version: 2\nupdates: []",
         )
         self.create_file(
-            os.path.join(script_dir, "workflows", "hugo-johntobin.ie.yml"),
+            str(pathlib.Path(script_dir) / "workflows" / "hugo-johntobin.ie.yml"),
             contents="HUGO_CONTENT",
         )
         self.create_file(
