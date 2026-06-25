@@ -8,6 +8,7 @@ markers to identify and update managed sections in .pre-commit-config.yaml.
 
 import argparse
 import functools
+import os
 import pathlib
 import subprocess
 import pathspec
@@ -403,6 +404,25 @@ def populate_pre_commit(
     print(f"Updated {CONFIG_FILE} with {len(to_include)} snippets.")
 
 
+def get_git_root() -> str:
+    """Finds the root of the git repository.
+
+    Returns:
+        The absolute path to the root of the git repository.
+
+    Raises:
+        subprocess.CalledProcessError: If the git command fails.
+        FileNotFoundError: If the git command is not found.
+    """
+    ret = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return ret.stdout.strip()
+
+
 def main() -> None:
     """Parses arguments and populates the pre-commit config."""
     parser = argparse.ArgumentParser(
@@ -429,6 +449,9 @@ def main() -> None:
             )
         hook_id, extra = item.split("=", 1)
         command_to_extra_args[hook_id.strip()] = extra.strip()
+
+    git_root = get_git_root()
+    os.chdir(git_root)
 
     all_files = get_non_ignored_files()
     # Define snippets and their detection logic in the desired output order.

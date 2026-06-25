@@ -1,5 +1,6 @@
 """Tests for populate_pre_commit.py."""
 
+import os
 import pathlib
 import subprocess
 import textwrap
@@ -176,12 +177,25 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             populate_pre_commit.SNIPPETS_DIR
         )
 
-        # Patch the module-level constants
+        # Patch the module-level constants and functions
         self.enterContext(
             mock.patch.object(
                 populate_pre_commit,
                 "get_non_ignored_files",
                 return_value=frozenset[str](),
+            )
+        )
+        self.enterContext(
+            mock.patch.object(
+                populate_pre_commit,
+                "get_git_root",
+                return_value=".",
+            )
+        )
+        self.enterContext(
+            mock.patch.object(
+                os,
+                "chdir",
             )
         )
 
@@ -633,6 +647,41 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
             files = populate_pre_commit.get_non_ignored_files()
         self.assertIn("src/index.js", files)
         self.assertNotIn("node_modules/pkg/index.js", files)
+
+
+class TestGetGitRoot(pyfakefs.fake_filesystem_unittest.TestCase):
+    """Tests for the get_git_root function."""
+
+    @override
+    def setUp(self) -> None:
+        self.setUpPyfakefs()
+
+    def test_get_git_root_success(self) -> None:
+        """Tests get_git_root when git command succeeds."""
+        mock_completed_process = cast(
+            subprocess.CompletedProcess[str],
+            mock.create_autospec(subprocess.CompletedProcess, instance=True),
+        )
+        mock_completed_process.stdout = "/repo/root\n"
+        with mock.patch.object(
+            subprocess, "run", return_value=mock_completed_process
+        ) as mock_run:
+            root = populate_pre_commit.get_git_root()
+            self.assertEqual(root, "/repo/root")
+            mock_run.assert_called_once_with(
+                ["git", "rev-parse", "--show-toplevel"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+    def test_get_git_root_failure(self) -> None:
+        """Tests that get_git_root raises an error when git command fails."""
+        with mock.patch.object(
+            subprocess, "run", side_effect=subprocess.CalledProcessError(1, "git")
+        ):
+            with self.assertRaises(subprocess.CalledProcessError):
+                populate_pre_commit.get_git_root()
 
 
 if __name__ == "__main__":
