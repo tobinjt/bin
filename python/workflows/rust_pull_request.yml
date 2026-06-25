@@ -31,7 +31,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
         with:
           # Ensure we are on the PR branch, not a detached head
           ref: ${{ github.head_ref }}
