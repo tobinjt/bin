@@ -2,6 +2,17 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
+  # managed-by-populate-pre-commit start: actionlint.yaml
+  - repo: local
+    hooks:
+    - id: actionlint
+      name: Run `actionlint`
+      language: system
+      types:
+      - yaml
+      exclude: dependabot.yml|.*.yaml$
+      entry: actionlint
+  # managed-by-populate-pre-commit end: actionlint.yaml
   # managed-by-populate-pre-commit start: basedpyright.yaml
   - repo: local
     hooks:
@@ -100,6 +111,15 @@ repos:
     - id: python-no-log-warn
     - id: python-use-type-annotations
   # managed-by-populate-pre-commit end: pygrep-hooks.yaml
+  # managed-by-populate-pre-commit start: pyrefly.yaml
+  - repo: https://github.com/facebook/pyrefly-pre-commit
+    rev: 1.1.1
+    hooks:
+    - id: pyrefly-check
+      name: Pyrefly (type checking)
+      pass_filenames: false
+      language: system
+  # managed-by-populate-pre-commit end: pyrefly.yaml
   # managed-by-populate-pre-commit start: pytest.yaml
   - repo: local
     hooks:
@@ -141,6 +161,12 @@ repos:
       verbose: true
       entry: spell-check-wrapper
   # managed-by-populate-pre-commit end: spellcheck.yaml
+  # managed-by-populate-pre-commit start: toml.yaml
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: check-toml
+  # managed-by-populate-pre-commit end: toml.yaml
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
