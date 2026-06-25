@@ -3,8 +3,10 @@
 
 import argparse as argparse
 import dataclasses
+import os
 import pathlib as pathlib
 import re
+import subprocess as subprocess
 import yaml as yaml
 from typing import cast, override, TypeAlias
 
@@ -308,6 +310,25 @@ def check_hugo_johntobin_ie() -> bool:
     return False
 
 
+def get_git_root() -> str:
+    """Finds the root of the git repository.
+
+    Returns:
+        The absolute path to the root of the git repository.
+
+    Raises:
+        subprocess.CalledProcessError: If the git command fails.
+        FileNotFoundError: If the git command is not found.
+    """
+    ret = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return ret.stdout.strip()
+
+
 def main() -> None:
     """Parses arguments and generates the workflows."""
     description = "Generate GitHub Actions workflows for a project."
@@ -324,6 +345,8 @@ def main() -> None:
         command_to_extra_args[command.strip()] = extra.strip()
 
     script_file = str(pathlib.Path(__file__).absolute())
+    git_root = get_git_root()
+    os.chdir(git_root)
 
     # Generate dependabot.yml automatically.
     dependabot_content = generate_dependabot_config(
