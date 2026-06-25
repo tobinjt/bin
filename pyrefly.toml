@@ -4,4 +4,7 @@ project-includes = [
     "**/*.ipynb",
 ]
 min-severity = "info"
-search-path = "python"
+search-path = [
+  "python",
+  ".",
+]
