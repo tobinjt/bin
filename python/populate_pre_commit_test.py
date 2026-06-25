@@ -1,6 +1,6 @@
 """Tests for populate_pre_commit.py."""
 
-import os
+import pathlib
 import subprocess
 import textwrap
 from typing import cast, override
@@ -19,7 +19,9 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
-    def create_file(self, file_path: str, contents: str | bytes = "") -> None:
+    def create_file(
+        self, file_path: pathlib.Path | str, contents: str | bytes = ""
+    ) -> None:
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             file_path, contents=contents
         )
@@ -85,18 +87,18 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
 
     def test_is_shell_script_not_file(self) -> None:
         """Tests is_shell_script with a directory path."""
-        os.mkdir("dir")
-        self.assertFalse(populate_pre_commit.is_shell_script("dir"))
+        pathlib.Path("dir").mkdir()
+        self.assertFalse(populate_pre_commit.is_shell_script(pathlib.Path("dir")))
 
     def test_is_shell_script_no_shebang(self) -> None:
         """Tests is_shell_script with a file that has no shebang."""
         self.create_file("plain", contents="no shebang here\n")
-        self.assertFalse(populate_pre_commit.is_shell_script("plain"))
+        self.assertFalse(populate_pre_commit.is_shell_script(pathlib.Path("plain")))
 
     def test_is_shell_script_unicode_error(self) -> None:
         """Tests is_shell_script with a binary file that triggers UnicodeDecodeError."""
         self.create_file("binary", contents=b"\xff\xfe\xfd")
-        self.assertFalse(populate_pre_commit.is_shell_script("binary"))
+        self.assertFalse(populate_pre_commit.is_shell_script(pathlib.Path("binary")))
 
     def test_shebang_present_but_dot_in_filename(self) -> None:
         """Tests should_include_shellcheck with non-shell shebang."""
@@ -191,19 +193,19 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             # keep-sorted end
         ]
 
-    def create_file(self, file_path: str, contents: str = "") -> None:
+    def create_file(self, file_path: pathlib.Path | str, contents: str = "") -> None:
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             file_path, contents=contents
         )
 
     def test_creates_new_file(self) -> None:
-        self.assertFalse(os.path.exists(".pre-commit-config.yaml"))
+        self.assertFalse(pathlib.Path(".pre-commit-config.yaml").exists())
         populate_pre_commit.populate_pre_commit(
             extra_args={},
             script_file="populate_pre_commit_test.py",
             snippets=self.mock_snippets,
         )
-        self.assertTrue(os.path.exists(".pre-commit-config.yaml"))
+        self.assertTrue(pathlib.Path(".pre-commit-config.yaml").exists())
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
@@ -316,7 +318,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that an empty snippet file crashes the program."""
         self.create_file(".pre-commit-config.yaml", contents="repos:\n")
 
-        empty_path = os.path.join(populate_pre_commit.SNIPPETS_DIR, "empty.yaml")
+        empty_path = populate_pre_commit.SNIPPETS_DIR / "empty.yaml"
         self.create_file(empty_path, contents="")
         with self.assertRaisesRegex(
             ValueError, f"config snippet {empty_path} is empty"
@@ -389,7 +391,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             script_file="populate_pre_commit.py",
             snippets=self.mock_snippets,
         )
-        mode = os.stat(".pre-commit-config.yaml").st_mode
+        mode = pathlib.Path(".pre-commit-config.yaml").stat().st_mode
         self.assertTrue(bool(mode & 0o111))
 
     def test_main_success(self) -> None:
@@ -421,13 +423,14 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
     def test_populate_pre_commit_no_config_with_script(self) -> None:
         """Tests populate_pre_commit when no config exists but script_file is provided."""
-        if os.path.exists(".pre-commit-config.yaml"):
-            os.remove(".pre-commit-config.yaml")
+        config_path = pathlib.Path(".pre-commit-config.yaml")
+        if config_path.exists():
+            config_path.unlink()
         populate_pre_commit.populate_pre_commit(
             extra_args={}, script_file="script.py", snippets=self.mock_snippets
         )
-        self.assertTrue(os.path.exists(".pre-commit-config.yaml"))
-        with open(".pre-commit-config.yaml", "r") as f:
+        self.assertTrue(config_path.exists())
+        with config_path.open("r", encoding="utf-8") as f:
             self.assertTrue(f.readline().startswith("#!"))
 
     def test_replaces_existing_shebang(self) -> None:
@@ -564,7 +567,7 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
 
-    def create_file(self, file_path: str, contents: str = "") -> None:
+    def create_file(self, file_path: pathlib.Path | str, contents: str = "") -> None:
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
             file_path, contents=contents
         )
@@ -596,7 +599,7 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
         self.assertEqual(files, frozenset[str]({"test.txt"}))
 
     def test_global_ignore(self) -> None:
-        home_ignore = os.path.expanduser("~/.gitignore.global")
+        home_ignore = pathlib.Path("~/.gitignore.global").expanduser()
         self.create_file(home_ignore, contents="venv/\n")
         self.create_file("venv/bin/python")
         self.create_file("main.py")
@@ -611,7 +614,7 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
         self.assertIn("main.py", files)
 
     def test_global_ignore_fallback(self) -> None:
-        home_ignore = os.path.expanduser("~/.config/git/ignore")
+        home_ignore = pathlib.Path("~/.config/git/ignore").expanduser()
         self.create_file(home_ignore, contents="build/\n")
         self.create_file("build/output.o")
         self.create_file("src/main.c")

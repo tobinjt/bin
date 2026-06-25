@@ -8,18 +8,16 @@ markers to identify and update managed sections in .pre-commit-config.yaml.
 
 import argparse
 import functools
-import os
+import pathlib
 import subprocess
 import pathspec
 import yaml
 from typing import cast, TypedDict
 
 # Path to the directory containing pre-commit snippets.
-SNIPPETS_DIR = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "pre-commit-snippets"
-)
+SNIPPETS_DIR = pathlib.Path(__file__).resolve().parent / "pre-commit-snippets"
 # The pre-commit configuration file to update.
-CONFIG_FILE = ".pre-commit-config.yaml"
+CONFIG_FILE = pathlib.Path(".pre-commit-config.yaml")
 
 
 class Hook(TypedDict):
@@ -131,11 +129,13 @@ def get_non_ignored_files() -> frozenset[str]:
     patterns: list[str] = []
 
     # Local ignores
-    if os.path.exists(".gitignore"):
-        with open(".gitignore", "r") as f:
+    gitignore = pathlib.Path(".gitignore")
+    if gitignore.exists():
+        with gitignore.open("r", encoding="utf-8") as f:
             patterns.extend(f.readlines())
-    if os.path.exists(".git/info/exclude"):
-        with open(".git/info/exclude", "r") as f:
+    exclude = pathlib.Path(".git/info/exclude")
+    if exclude.exists():
+        with exclude.open("r", encoding="utf-8") as f:
             patterns.extend(f.readlines())
 
     # Global ignores
@@ -147,25 +147,25 @@ def get_non_ignored_files() -> frozenset[str]:
             check=True,
         )
     except (subprocess.CalledProcessError, FileNotFoundError):
-        global_ignore_path = os.path.expanduser("~/.config/git/ignore")
+        global_ignore_path = pathlib.Path("~/.config/git/ignore").expanduser()
     else:
         assert ret.stdout is not None
-        global_ignore_path = os.path.expanduser(ret.stdout.strip())
+        global_ignore_path = pathlib.Path(ret.stdout.strip()).expanduser()
 
-    if global_ignore_path and os.path.exists(global_ignore_path):
-        with open(global_ignore_path, "r") as f:
+    if global_ignore_path.exists():
+        with global_ignore_path.open("r", encoding="utf-8") as f:
             patterns.extend(f.readlines())
 
     spec = pathspec.PathSpec.from_lines("gitignore", patterns)
     all_files: set[str] = set()
 
-    for root, dirs, files in os.walk("."):
+    for root, dirs, files in pathlib.Path(".").walk():
         # Prune ignored directories in-place
         dirs_to_keep: list[str] = []
         for d in dirs:
             if d == ".git":
                 continue
-            rel_dir = os.path.relpath(os.path.join(root, d), ".")
+            rel_dir = (root / d).as_posix()
             # Check directory against pathspec (trailing slash required for some
             # director patterns)
             if not spec.match_file(rel_dir) and not spec.match_file(rel_dir + "/"):
@@ -174,7 +174,7 @@ def get_non_ignored_files() -> frozenset[str]:
 
         # Add non-ignored files
         for filename in files:
-            rel_file = os.path.relpath(os.path.join(root, filename), ".")
+            rel_file = (root / filename).as_posix()
             if not spec.match_file(rel_file):
                 all_files.add(rel_file)
 
@@ -195,7 +195,7 @@ def has_extension(files: frozenset[str], extension: str) -> bool:
     return any(f.endswith(extension) for f in files)
 
 
-def is_shell_script(filepath: str) -> bool:
+def is_shell_script(filepath: pathlib.Path) -> bool:
     """Checks if a file is a shell script by inspecting its shebang.
 
     Args:
@@ -204,10 +204,10 @@ def is_shell_script(filepath: str) -> bool:
     Returns:
         True if the file starts with a shell shebang.
     """
-    if not os.path.isfile(filepath):
+    if not filepath.is_file():
         return False
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with filepath.open("r", encoding="utf-8") as f:
             first_line = f.readline()
     except (UnicodeDecodeError, PermissionError, OSError):
         return False
@@ -308,7 +308,8 @@ def should_include_shellcheck(files: frozenset[str]) -> bool:
     """
 
     return has_extension(files, ".sh") or any(
-        "." not in os.path.basename(f) and is_shell_script(f) for f in files
+        "." not in pathlib.Path(f).name and is_shell_script(pathlib.Path(f))
+        for f in files
     )
 
 
@@ -323,8 +324,8 @@ def populate_pre_commit(
         snippets: A list of snippets and whether they should be included.
     """
     lines: list[str] = []
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
+    if CONFIG_FILE.exists():
+        with CONFIG_FILE.open("r", encoding="utf-8") as f:
             lines = f.readlines()
     else:
         lines = ["repos:\n"]
@@ -365,9 +366,11 @@ def populate_pre_commit(
     # 3. Prepare snippet lines.
     snippet_lines: list[str] = []
     for snippet_name in to_include:
-        snippet_path: str = os.path.join(SNIPPETS_DIR, snippet_name)
-        with open(snippet_path, "r") as f:
-            content: str = f.read()
+        snippet_path = SNIPPETS_DIR / snippet_name
+        try:
+            content = snippet_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            raise
         if not content.strip():
             raise ValueError(f"config snippet {snippet_path} is empty")
 
@@ -389,13 +392,13 @@ def populate_pre_commit(
 
     # 5. Write back to file with shebang.
     shebang_args = build_shebang_args(extra_args)
-    script_name = escape_for_env_s(os.path.basename(script_file))
+    script_name = escape_for_env_s(pathlib.Path(script_file).name)
     shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}\n'
 
-    with open(CONFIG_FILE, "w") as f:
+    with CONFIG_FILE.open("w", encoding="utf-8") as f:
         f.write(shebang)
         f.writelines(final_lines)
-    os.chmod(CONFIG_FILE, 0o755)
+    CONFIG_FILE.chmod(0o755)
 
     print(f"Updated {CONFIG_FILE} with {len(to_include)} snippets.")
 
