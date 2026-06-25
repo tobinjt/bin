@@ -1,0 +1,7 @@
+# This is necessary for pyrefly to find modules in python/
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
+min-severity = "info"
+search-path = "python"

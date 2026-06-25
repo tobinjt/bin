@@ -1,5 +1,0 @@
-project-includes = [
-    "**/*.py*",
-    "**/*.ipynb",
-]
-min-severity = "info"
