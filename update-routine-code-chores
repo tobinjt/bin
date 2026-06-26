@@ -33,6 +33,9 @@ main() {
     GIT_MERGE_AUTOEDIT=no git pull
   fi
 
+  if [[ -x ./setup ]]; then
+    ./setup
+  fi
   if [[ -x ".github/dependabot.yml" ]]; then
     update_workflows
   fi
