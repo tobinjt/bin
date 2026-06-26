@@ -26,7 +26,7 @@ main() {
     fi
   fi
 
-  SSH_AUTH_SOCK="$(update_ssh_auth_sock)"
+  SSH_AUTH_SOCK="$(update-ssh-auth-sock)"
   export SSH_AUTH_SOCK
   # -D -A only works with named sessions, so name the session $USER.
   # Set the name of the first window to ''.
