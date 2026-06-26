@@ -89,7 +89,13 @@ def clean_virtualenvs(
     if verbose:
         print(f"Active venv resolved to: {active_venv}")
 
+    prefix = symlink_path.name.lower()
+
     for child in virtualenv_dir.iterdir():
+        # Ignore anything that does not start with the symlink name (case-insensitive)
+        if not child.name.lower().startswith(prefix):
+            continue
+
         # Do not delete the symlink itself
         if child == symlink_path:
             continue

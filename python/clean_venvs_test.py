@@ -47,24 +47,29 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
         self.setUpPyfakefs()
 
     def test_clean_virtualenvs_basic(self) -> None:
-        """Tests standard venv cleanup keeping the active one."""
+        """Tests standard venv cleanup keeping the active one and ignoring non-matching prefixes."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv = virtualenv_dir / "2026-06-26"
-        inactive_venv = virtualenv_dir / "2026-06-25"
+        active_venv = virtualenv_dir / "Python-2026-06-26"
+        inactive_venv = virtualenv_dir / "Python-2026-06-25"
+        ignored_venv = virtualenv_dir / "Other-2026-06-25"
 
         os.makedirs(active_venv)
         os.makedirs(inactive_venv)
+        os.makedirs(ignored_venv)
 
-        # Create symlink pointing to active
-        os.symlink("2026-06-26", virtualenv_dir / "Python")
+        # Create symlinks
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python")
+        os.symlink("Other-2026-06-25", virtualenv_dir / "Other-Symlink")
 
         # Create a regular file in the directory
-        with open(virtualenv_dir / "regular_file.txt", "w") as f:
+        with open(virtualenv_dir / "Python-regular-file.txt", "w") as f:
             f.write("hello")
 
         self.assertTrue(active_venv.is_dir())
         self.assertTrue(inactive_venv.is_dir())
-        self.assertTrue((virtualenv_dir / "regular_file.txt").is_file())
+        self.assertTrue(ignored_venv.is_dir())
+        self.assertTrue((virtualenv_dir / "Python-regular-file.txt").is_file())
+        self.assertTrue((virtualenv_dir / "Other-Symlink").is_symlink())
 
         clean_venvs.clean_virtualenvs(
             virtualenv_dir=virtualenv_dir,
@@ -73,22 +78,27 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
             verbose=False,
         )
 
+        # Python-related items: active is kept, inactive is deleted
         self.assertTrue(active_venv.is_dir())
         self.assertFalse(inactive_venv.is_dir())
         self.assertTrue((virtualenv_dir / "Python").is_symlink())
-        self.assertTrue((virtualenv_dir / "regular_file.txt").is_file())
+
+        # Non-Python-related items are ignored (not deleted)
+        self.assertTrue(ignored_venv.is_dir())
+        self.assertTrue((virtualenv_dir / "Other-Symlink").is_symlink())
+        self.assertTrue((virtualenv_dir / "Python-regular-file.txt").is_file())
 
     def test_clean_virtualenvs_lowercase_fallback(self) -> None:
         """Tests fallback to lowercase python symlink if Python is absent."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv = virtualenv_dir / "2026-06-26"
-        inactive_venv = virtualenv_dir / "2026-06-25"
+        active_venv = virtualenv_dir / "python-2026-06-26"
+        inactive_venv = virtualenv_dir / "python-2026-06-25"
 
         os.makedirs(active_venv)
         os.makedirs(inactive_venv)
 
         # Create lowercase python symlink pointing to active
-        os.symlink("2026-06-26", virtualenv_dir / "python")
+        os.symlink("python-2026-06-26", virtualenv_dir / "python")
 
         clean_venvs.clean_virtualenvs(
             virtualenv_dir=virtualenv_dir,
@@ -104,14 +114,14 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
     def test_clean_virtualenvs_nested_active(self) -> None:
         """Tests keeping directories when symlink points to a nested path."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv_dir = virtualenv_dir / "2026-06-26"
+        active_venv_dir = virtualenv_dir / "Python-2026-06-26"
         active_venv_subdir = active_venv_dir / "venv"
-        inactive_venv = virtualenv_dir / "2026-06-25"
+        inactive_venv = virtualenv_dir / "Python-2026-06-25"
 
         os.makedirs(active_venv_subdir)
         os.makedirs(inactive_venv)
 
-        os.symlink("2026-06-26/venv", virtualenv_dir / "Python")
+        os.symlink("Python-2026-06-26/venv", virtualenv_dir / "Python")
 
         clean_venvs.clean_virtualenvs(
             virtualenv_dir=virtualenv_dir,
@@ -127,13 +137,13 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
     def test_clean_virtualenvs_dry_run(self) -> None:
         """Tests dry run does not delete anything."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv = virtualenv_dir / "2026-06-26"
-        inactive_venv = virtualenv_dir / "2026-06-25"
+        active_venv = virtualenv_dir / "Python-2026-06-26"
+        inactive_venv = virtualenv_dir / "Python-2026-06-25"
 
         os.makedirs(active_venv)
         os.makedirs(inactive_venv)
 
-        os.symlink("2026-06-26", virtualenv_dir / "Python")
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python")
 
         clean_venvs.clean_virtualenvs(
             virtualenv_dir=virtualenv_dir,
@@ -185,14 +195,16 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
             )
 
     def test_clean_virtualenvs_extra_symlink_deleted(self) -> None:
-        """Tests that other symlinks in the directory are deleted."""
+        """Tests that other symlinks starting with the prefix are deleted, while others are ignored."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv = virtualenv_dir / "2026-06-26"
+        active_venv = virtualenv_dir / "Python-2026-06-26"
         os.makedirs(active_venv)
-        os.symlink("2026-06-26", virtualenv_dir / "Python")
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python")
 
-        # Create another symlink pointing elsewhere
-        os.symlink("2026-06-26", virtualenv_dir / "OtherSymlink")
+        # Create another symlink starting with prefix
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python-Other")
+        # Create another symlink not starting with prefix
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Other-Symlink")
 
         clean_venvs.clean_virtualenvs(
             virtualenv_dir=virtualenv_dir,
@@ -201,22 +213,23 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
             verbose=False,
         )
 
-        self.assertFalse((virtualenv_dir / "OtherSymlink").exists())
-        self.assertFalse((virtualenv_dir / "OtherSymlink").is_symlink())
+        self.assertFalse((virtualenv_dir / "Python-Other").exists())
+        self.assertFalse((virtualenv_dir / "Python-Other").is_symlink())
         self.assertTrue((virtualenv_dir / "Python").is_symlink())
+        self.assertTrue((virtualenv_dir / "Other-Symlink").is_symlink())
 
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     def test_clean_virtualenvs_verbose(self, mock_stdout: io.StringIO) -> None:
         """Tests verbose output logging."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv = virtualenv_dir / "2026-06-26"
-        inactive_venv = virtualenv_dir / "2026-06-25"
+        active_venv = virtualenv_dir / "Python-2026-06-26"
+        inactive_venv = virtualenv_dir / "Python-2026-06-25"
 
         os.makedirs(active_venv)
         os.makedirs(inactive_venv)
-        os.symlink("2026-06-26", virtualenv_dir / "Python")
-        # Also add an inactive symlink to test verbose symlink deletion
-        os.symlink("2026-06-26", virtualenv_dir / "inactive_symlink")
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python")
+        # Also add an inactive symlink starting with Python to test verbose symlink deletion
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python-inactive")
 
         clean_venvs.clean_virtualenvs(
             virtualenv_dir=virtualenv_dir,
@@ -235,10 +248,10 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
     def test_clean_virtualenvs_dry_run_symlink(self, mock_stdout: io.StringIO) -> None:
         """Tests dry run with an inactive symlink."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv = virtualenv_dir / "2026-06-26"
+        active_venv = virtualenv_dir / "Python-2026-06-26"
         os.makedirs(active_venv)
-        os.symlink("2026-06-26", virtualenv_dir / "Python")
-        os.symlink("2026-06-26", virtualenv_dir / "inactive_symlink")
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python")
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python-inactive")
 
         clean_venvs.clean_virtualenvs(
             virtualenv_dir=virtualenv_dir,
@@ -247,26 +260,26 @@ class TestCleanVirtualenvs(fake_filesystem_unittest.TestCase):
             verbose=False,
         )
 
-        self.assertTrue((virtualenv_dir / "inactive_symlink").is_symlink())
+        self.assertTrue((virtualenv_dir / "Python-inactive").is_symlink())
         output = mock_stdout.getvalue()
         self.assertIn("[DRY RUN] Would delete symlink:", output)
 
     def test_clean_virtualenvs_resolve_failure(self) -> None:
         """Tests that a directory failing to resolve is safely skipped."""
         virtualenv_dir = pathlib.Path("/fake/virtualenv")
-        active_venv = virtualenv_dir / "2026-06-26"
-        inactive_venv = virtualenv_dir / "2026-06-25"
+        active_venv = virtualenv_dir / "Python-2026-06-26"
+        inactive_venv = virtualenv_dir / "Python-2026-06-25"
 
         os.makedirs(active_venv)
         os.makedirs(inactive_venv)
-        os.symlink("2026-06-26", virtualenv_dir / "Python")
+        os.symlink("Python-2026-06-26", virtualenv_dir / "Python")
 
         original_resolve = pathlib.Path.resolve
 
         def resolve_side_effect(
             self_obj: pathlib.Path, strict: bool = False
         ) -> pathlib.Path:
-            if self_obj.name == "2026-06-25":
+            if self_obj.name == "Python-2026-06-25":
                 raise FileNotFoundError("mock error")
             return original_resolve(self_obj, strict=strict)
 
