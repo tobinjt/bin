@@ -10,18 +10,6 @@ update_workflows() {
   fi
 }
 
-update_rust_dependencies() {
-  # `cargo update` doesn't always update dependencies, neither does Dependabot,
-  # and nothing seems to remove unnecessary dependencies from Cargo.lock :(
-  # Workaround this by deleting Cargo.lock and regenerating it.
-  rm -f Cargo.lock
-  retry "update Rust dependencies: ${PWD}" -- cargo upgrade
-  if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
-    git add --all .
-    git commit --quiet --message "chore: update Rust dependencies"
-  fi
-}
-
 update_pre_commit() {
   retry "update pre-commit config: ${PWD}" -- ./.pre-commit-config.yaml
   if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
@@ -54,9 +42,7 @@ main() {
   if [[ -x ".pre-commit-config.yaml" ]]; then
     update_pre_commit
   fi
-  if [[ -f "Cargo.toml" ]]; then
-    update_rust_dependencies
-  fi
+  retry "update-dependencies: ${PWD}" -- update-dependencies
   if git config remote.origin.url >& /dev/null; then
     git push
   fi
