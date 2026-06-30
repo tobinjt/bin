@@ -48,8 +48,6 @@ if [[ -d "${HOME}/.cargo" ]]; then
   cargo +stable binstall --locked --no-confirm cargo-llvm-cov
 
   # keep-sorted start
-  # https://crates.io/crates/cargo-audit
-  cargo binstall --locked --no-confirm cargo-audit
   # https://crates.io/crates/cargo-binutils
   cargo binstall --locked --no-confirm cargo-binutils
   # https://github.com/dtolnay/cargo-edit
@@ -64,6 +62,9 @@ if [[ -d "${HOME}/.cargo" ]]; then
   cargo binstall --locked --no-confirm cargo-release
   # https://crates.io/crates/cargo-watch
   cargo binstall --locked --no-confirm cargo-watch
+  # https://crates.io/crates/cargo-audit
+  # Can't use `--features=fix` with `cargo binstall`
+  cargo install cargo-audit --features=fix
   # keep-sorted end
 
   # Tooling I wrote :)
