@@ -48,6 +48,8 @@ if [[ -d "${HOME}/.cargo" ]]; then
   cargo +stable binstall --locked --no-confirm cargo-llvm-cov
 
   # keep-sorted start
+  # https://crates.io/crates/cargo-audit
+  cargo binstall --locked --no-confirm cargo-audit
   # https://crates.io/crates/cargo-binutils
   cargo binstall --locked --no-confirm cargo-binutils
   # https://github.com/dtolnay/cargo-edit
