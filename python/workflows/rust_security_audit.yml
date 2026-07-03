@@ -14,11 +14,13 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   audit-dependencies:
+    permissions:
+      issues: write # Needed to create issue when there's a failure.
+      contents: read
     runs-on: ubuntu-latest
     name: Runs `cargo audit`.
     concurrency:
