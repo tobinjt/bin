@@ -4,7 +4,8 @@ set -e -f -u -o pipefail
 
 # This is duplicated in ~/src/dotfiles/.dotfiles.d/10-ssh-config.sh.
 dotfiles_sources() {
-  find "${HOME}/src" -maxdepth 1 -iname '*dotfiles*' -type d
+  # Append "/." to the source directory so that ~/src can be a symlink.
+  find "${HOME}/src/." -maxdepth 1 -iname '*dotfiles*' -type d
 }
 
 list_config_snippets() {

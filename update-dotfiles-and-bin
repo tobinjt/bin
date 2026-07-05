@@ -22,12 +22,13 @@ find_sources() {
 }
 
 dotfiles_sources() {
-  find_sources "${HOME}/src" '*dotfiles'
+  # Append "/." to the source directory so that ~/src can be a symlink.
+  find_sources "${HOME}/src/." '*dotfiles'
 }
 
 bin_sources() {
-  find_sources "${HOME}" '*bin'
-  find_sources "${HOME}/src" '*bin'
+  find_sources "${HOME}/." '*bin'
+  find_sources "${HOME}/src/." '*bin'
 }
 
 check_git_works() {
