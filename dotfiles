@@ -90,7 +90,8 @@ END_OF_HELP
   fi
   local snippet
   for snippet in $(list_config_snippets "${HOME}/.dotfiles.d"); do
-    if ! "${snippet}"; then
+    # Work around TrueNAS mounting /home noexec.
+    if ! bash "${snippet}"; then
       printf "Failed running %s\n" "${snippet}" >&2
       exit 1
     fi
