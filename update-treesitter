@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  # Using an old version because glibc on TrueNAS isn't new enough for the most
+  # recent version.
+  local url="https://github.com/tree-sitter/tree-sitter/releases/download/v0.24.7/tree-sitter-linux-x64.gz"
+  readonly url
+
+  local filename
+  filename="$(basename "${url}")"
+  readonly filename
+
+  local base_dir="${HOME}/tmp/bin/tree-sitter"
+  readonly base_dir
+  mkdir -p "${base_dir}"
+  cd "${base_dir}"
+  rm -f "${filename}"
+  curl --location --output "${filename}" "${url}"
+
+  gunzip "${filename}"
+  local tmp_binary date_binary
+  tmp_binary="$(basename "${filename}" .gz)"
+  date_binary="tree-sitter.$(date +%Y-%m-%d)"
+  rm -r -f "${date_binary}"
+  mv -f "${tmp_binary}" "${date_binary}"
+  chmod 755 "${date_binary}"
+  "./${date_binary}" --version
+  ln -s -f -n "${date_binary}" tree-sitter
+}
+
+main "$@"
