@@ -50,6 +50,8 @@ if [[ -d "${HOME}/.cargo" ]]; then
   # keep-sorted start
   # https://crates.io/crates/cargo-auditable
   cargo binstall --locked --no-confirm cargo-auditable
+  # https://crates.io/crates/cargo-dist
+  cargo binstall --locked --no-confirm cargo-dist
   # https://github.com/dtolnay/cargo-edit
   cargo binstall --locked --no-confirm cargo-edit
   # https://github.com/dtolnay/cargo-expand
