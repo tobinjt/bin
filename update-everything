@@ -68,6 +68,7 @@ update_treesitter_parsers() {
 update_python_modules() {
   if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
     retry update-python-modules -- update-python-modules
+    retry clean_venvs -- clean_venvs
   fi
 }
 
