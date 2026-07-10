@@ -18,12 +18,7 @@ main() {
     return 1
   fi
 
-  local dir="${HOME}/tmp/ssh"
-  if [ ! -d "${dir}" ]; then
-    mkdir -p "${dir}"
-    chmod 700 "${dir}"
-  fi
-
+  local dir="${HOME}/.ssh/agent"
   if grep -q "${dir}" <<<"${SSH_AUTH_SOCK}"; then
     # Already set up correctly.
     printf "%s\\n" "${SSH_AUTH_SOCK}"
