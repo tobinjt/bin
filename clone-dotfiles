@@ -18,7 +18,7 @@ chmod 700 "${DESTDIR}/.ssh"
 rm -f "${HOME}/.bashrc" "${HOME}/.bash_logout" "${HOME}/.profile"
 dotfiles
 # Create some directories that'll be needed.
-mkdir -p "${HOME}/tmp/generated" "${HOME}/tmp/ssh"
+mkdir -p "${HOME}/tmp/generated" "${HOME}/.ssh/control"
 if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
   # I need to do this anyway, so might as well do it now.
