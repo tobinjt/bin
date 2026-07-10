@@ -96,9 +96,6 @@ routine_code_maintenance_chores() {
 }
 
 update_applications() {
-  if [[ -f "/Applications/AdGuardHome/AdGuardHome" ]]; then
-    retry AdGuard -- update-adguard
-  fi
   if [[ -d "${HOME}/tmp/bin/lazygit" ]]; then
     retry update-lazygit -- update-lazygit
   fi
