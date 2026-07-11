@@ -47,10 +47,8 @@ ssh_key_path() {
 
 make_ssh_key() {
   local options="$1" hostname="$2" subdir="$3"
-  if [[ "${options}" != "--delete" && "${options}" != "--nodelete" \
-          && "${options}" != "--pull" ]]; then
-    printf "Bad flag: %s; expecting --delete or --nodelete or --pull\\n" \
-      "${options}"
+  if [[ "${options}" != "--delete" && "${options}" != "--nodelete" ]]; then
+    printf "Bad flag: %s; expecting --delete or --nodelete\\n" "${options}"
     return 1
   fi
   local ssh_key ssh_key_path dest_dir
@@ -63,9 +61,6 @@ make_ssh_key() {
     -f "${ssh_key_path}" -C "rsync-net_${ssh_key}"
 
   printf "command=\"rsync --server"
-  if [[ "${options}" == "--pull" ]]; then
-    printf " --sender"
-  fi
   printf " -vlogDtpre.iLsfxC"
   if [[ "${options}" == "--delete" ]]; then
     printf " --delete"
@@ -92,10 +87,8 @@ check_ssh_key_exists() {
 
 run_rsync() {
   local options="$1" hostname="$2" subdir="$3" source_dir="$4"
-  if [[ "${options}" != "--delete" && "${options}" != "--nodelete" \
-          && "${options}" != "--pull" ]]; then
-    printf "Bad flag: %s; expecting --delete or --nodelete or --pull\\n" \
-      "${options}"
+  if [[ "${options}" != "--delete" && "${options}" != "--nodelete" ]]; then
+    printf "Bad flag: %s; expecting --delete or --nodelete\\n" "${options}"
     return 1
   fi
   local dest_dir ssh_key_path
@@ -108,22 +101,14 @@ run_rsync() {
   if [[ "${options}" == "--delete" ]]; then
     flags+=("--delete" "--delete-excluded")
   fi
-  if [[ "${options}" != "--pull" ]]; then
-    flags+=("--filter=dir-merge rsync-net_filters")
-    flags+=("--filter=dir-merge,- .gitignore")
-  fi
+  flags+=("--filter=dir-merge rsync-net_filters")
+  flags+=("--filter=dir-merge,- .gitignore")
   if [[ "${__VERBOSE}" == 1 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
     flags+=("--info=progress2,stats" "--progress" "--verbose")
   fi
-
-  # Flip source and dest if we're pulling.
-  if [[ "${options}" == "--pull" ]]; then
-    flags+=("rsync-net:${dest_dir}/" "${source_dir}/")
-  else
-    flags+=("${source_dir}/" "rsync-net:${dest_dir}/")
-  fi
+  flags+=("${source_dir}/" "rsync-net:${dest_dir}/")
 
   # Save the exit status if rsync fails so that it can be checked for the magic
   # value 24, which is a magic exit code that means some files disappeared
