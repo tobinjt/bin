@@ -46,11 +46,7 @@ ssh_key_path() {
 }
 
 make_ssh_key() {
-  local options="$1" hostname="$2" subdir="$3"
-  if [[ "${options}" != "--delete" ]]; then
-    printf "Bad flag: %s; expecting --delete\\n" "${options}"
-    return 1
-  fi
+  local hostname="$1" subdir="$2"
   local ssh_key ssh_key_path dest_dir
   ssh_key="$(ssh_key_basename "${hostname}" "${subdir}")"
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
@@ -62,9 +58,7 @@ make_ssh_key() {
 
   printf "command=\"rsync --server"
   printf " -vlogDtpre.iLsfxC"
-  if [[ "${options}" == "--delete" ]]; then
-    printf " --delete"
-  fi
+  printf " --delete"
   printf " --partial-dir .rsync-partial"
   printf " . %s/\"" "${dest_dir}"
   printf ",no-pty,no-agent-forwarding,no-port-forwarding "
@@ -86,11 +80,7 @@ check_ssh_key_exists() {
 }
 
 run_rsync() {
-  local options="$1" hostname="$2" subdir="$3" source_dir="$4"
-  if [[ "${options}" != "--delete" ]]; then
-    printf "Bad flag: %s; expecting --delete\\n" "${options}"
-    return 1
-  fi
+  local hostname="$1" subdir="$2" source_dir="$3"
   local dest_dir ssh_key_path
   dest_dir="$(dest_dir "${hostname}" "${subdir}")"
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
@@ -98,9 +88,7 @@ run_rsync() {
   # Make sure we use the right key rather than any inherited keys.
   unset SSH_AUTH_SOCK
   local flags=()
-  if [[ "${options}" == "--delete" ]]; then
-    flags+=("--delete" "--delete-excluded")
-  fi
+  flags+=("--delete" "--delete-excluded")
   flags+=("--filter=dir-merge rsync-net_filters")
   flags+=("--filter=dir-merge,- .gitignore")
   if [[ "${__VERBOSE}" == 1 ]]; then

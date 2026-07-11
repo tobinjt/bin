@@ -26,12 +26,12 @@ main() {
   fi
 
   local hostname="$1" subdir="$2" source_dir="$3"
-  check_ssh_key_exists --delete "${hostname}" "${subdir}" "${make_keys_only}"
+  check_ssh_key_exists "${hostname}" "${subdir}" "${make_keys_only}"
   if [[ "${make_keys_only}" -eq 1 ]]; then
     return 0
   fi
 
-  run_rsync --delete "${hostname}" "${subdir}" "${source_dir}"
+  run_rsync "${hostname}" "${subdir}" "${source_dir}"
 }
 
 main "$@"
