@@ -47,8 +47,8 @@ ssh_key_path() {
 
 make_ssh_key() {
   local options="$1" hostname="$2" subdir="$3"
-  if [[ "${options}" != "--delete" && "${options}" != "--nodelete" ]]; then
-    printf "Bad flag: %s; expecting --delete or --nodelete\\n" "${options}"
+  if [[ "${options}" != "--delete" ]]; then
+    printf "Bad flag: %s; expecting --delete\\n" "${options}"
     return 1
   fi
   local ssh_key ssh_key_path dest_dir
@@ -87,8 +87,8 @@ check_ssh_key_exists() {
 
 run_rsync() {
   local options="$1" hostname="$2" subdir="$3" source_dir="$4"
-  if [[ "${options}" != "--delete" && "${options}" != "--nodelete" ]]; then
-    printf "Bad flag: %s; expecting --delete or --nodelete\\n" "${options}"
+  if [[ "${options}" != "--delete" ]]; then
+    printf "Bad flag: %s; expecting --delete\\n" "${options}"
     return 1
   fi
   local dest_dir ssh_key_path
