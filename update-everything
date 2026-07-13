@@ -108,8 +108,8 @@ update_websites() {
   if [[ -d "${HOME}/src/hugo-coder" ]]; then
     retry update-hugo-coder -- update-hugo-coder
   fi
-  # This ensures that updates to ~/src/ariane-theme are committed *before* we try
-  # to update Wordpress.
+  # This ensures that updates to ~/src/ariane-theme are committed *before* we
+  # try to update Wordpress.
   if [[ -d "${HOME}/src/dev.arianetobin.ie" ]]; then
     retry update-ariane-theme -- update-ariane-theme
     retry update-all-wordpress -- update-all-wordpress
@@ -135,10 +135,10 @@ main() {
   update_mason_packages
   # Similarly, update development tools and Python modules.
   retry install-extra-development-tools -- install-extra-development-tools
+  update_websites
   update_python_modules
   routine_code_maintenance_chores
   update_applications
-  update_websites
   # Update any git repo that hasn't already been updated.
   update_git_repos
 }
