@@ -173,6 +173,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             str(pathlib.Path(script_dir) / "workflows" / "golang_pre-commit.yml"),
             contents="GOLANG_CONTENT",
         )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
 
         # Create a trigger file to activate Go language
         self.create_file("go.mod")
@@ -206,6 +210,11 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             mock_write_workflow.assert_any_call(
                 ".github/workflows/golang_pre-commit.yml", mock.ANY
             )
+
+            # Assert that zizmor.yaml was copied
+            zizmor_dest = pathlib.Path(".github/zizmor.yaml")
+            self.assertTrue(zizmor_dest.exists())
+            self.assertEqual(zizmor_dest.read_text(encoding="utf-8"), "ZIZMOR_CONTENT")
 
     def test_generate_workflow_with_extra_args(self) -> None:
         """Tests workflow generation with extra arguments."""
@@ -257,6 +266,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             str(pathlib.Path(script_dir) / "workflows" / "rust_security_audit.yml"),
             contents="RUST_AUDIT_CONTENT",
         )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
 
         self.create_file("Cargo.toml")
 
@@ -290,6 +303,11 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             self.assertIn(
                 "run: cargo llvm-cov test --foo", cast(str, rust_pr_call.args[1])
             )
+
+            # Assert that zizmor.yaml was copied
+            zizmor_dest = pathlib.Path(".github/zizmor.yaml")
+            self.assertTrue(zizmor_dest.exists())
+            self.assertEqual(zizmor_dest.read_text(encoding="utf-8"), "ZIZMOR_CONTENT")
 
     def test_main_invalid_extra_arg(self) -> None:
         """Tests that main raises ValueError for invalid --extra-arg format."""
@@ -364,6 +382,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             contents="HUGO_CONTENT",
         )
         self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
+        self.create_file(
             "config.toml",
             contents='baseURL = "https://www.johntobin.ie/"\n',
         )
@@ -393,6 +415,11 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             mock_write_workflow.assert_any_call(
                 ".github/workflows/hugo-johntobin.ie.yml", mock.ANY
             )
+
+            # Assert that zizmor.yaml was copied
+            zizmor_dest = pathlib.Path(".github/zizmor.yaml")
+            self.assertTrue(zizmor_dest.exists())
+            self.assertEqual(zizmor_dest.read_text(encoding="utf-8"), "ZIZMOR_CONTENT")
 
 
 if __name__ == "__main__":

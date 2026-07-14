@@ -311,6 +311,25 @@ def check_hugo_johntobin_ie() -> bool:
     return False
 
 
+def copy_zizmor(script_file: str) -> None:
+    """Copies zizmor.yaml unconditionally to the destination.
+
+    Args:
+        script_file: The path to the script calling this function.
+
+    Returns:
+        None.
+
+    Raises:
+        OSError: If reading the source file or writing the destination file fails.
+    """
+    script_dir = pathlib.Path(script_file).resolve().parent
+    zizmor_source = script_dir / "zizmor.yaml"
+    zizmor_dest = pathlib.Path(".github/zizmor.yaml")
+    zizmor_dest.parent.mkdir(parents=True, exist_ok=True)
+    zizmor_dest.write_text(zizmor_source.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> None:
     """Parses arguments and generates the workflows."""
     description = "Generate GitHub Actions workflows for a project."
@@ -336,6 +355,9 @@ def main() -> None:
         extra_args=command_to_extra_args,
     )
     write_workflow(".github/dependabot.yml", dependabot_content)
+
+    # Copy zizmor.yaml unconditionally to the destination.
+    copy_zizmor(script_file)
 
     workflows_to_generate: set[tuple[str, str]] = set()
     for config in LANGUAGE_CONFIGS:
