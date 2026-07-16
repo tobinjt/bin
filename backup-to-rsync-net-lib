@@ -66,14 +66,14 @@ make_ssh_key() {
 }
 
 check_ssh_key_exists() {
-  local options="$1" hostname="$2" subdir="$3" make_keys_only="$4" ssh_key_path
+  local hostname="$1" subdir="$2" make_keys_only="$3" ssh_key_path
   ssh_key_path="$(ssh_key_path "${hostname}" "${subdir}")"
   if [[ -f "${ssh_key_path}" ]]; then
     return 0
   fi
   printf "Missing SSH key :( %s\\n" "${subdir}" >&2
   if [[ "${make_keys_only}" -eq 1 ]]; then
-    make_ssh_key "${options}" "${hostname}" "${subdir}"
+    make_ssh_key "${hostname}" "${subdir}"
     return 0
   fi
   return 1
