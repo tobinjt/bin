@@ -39,7 +39,11 @@ venv_install() {
   local destdir_date="${destdir}-${date}"
 
   mkdir -p "${destdir_date}"
-  python3 -m venv "${destdir_date}"
+  # The venv directories are earlier in the path than the Homebrew or system
+  # Python. This can lead to a bad situation where python3 in the venv links to
+  # python3 in an older venv, and when that older venv is deleted the new venv
+  # is broken. Prevent that by putting the Homebrew or system python3 first.
+  PATH="/opt/homebrew/bin:/usr/bin:${PATH}" python3 -m venv "${destdir_date}"
   cd "${destdir_date}"
   source bin/activate
 
