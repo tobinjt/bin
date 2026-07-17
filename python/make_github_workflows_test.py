@@ -177,6 +177,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             str(pathlib.Path(script_dir) / "zizmor.yaml"),
             contents="ZIZMOR_CONTENT",
         )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
 
         # Create a trigger file to activate Go language
         self.create_file("go.mod")
@@ -215,6 +219,13 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             zizmor_dest = pathlib.Path(".github/zizmor.yaml")
             self.assertTrue(zizmor_dest.exists())
             self.assertEqual(zizmor_dest.read_text(encoding="utf-8"), "ZIZMOR_CONTENT")
+
+            # Assert that actionlint.yaml was copied
+            actionlint_dest = pathlib.Path(".github/actionlint.yaml")
+            self.assertTrue(actionlint_dest.exists())
+            self.assertEqual(
+                actionlint_dest.read_text(encoding="utf-8"), "ACTIONLINT_CONTENT"
+            )
 
     def test_generate_workflow_with_extra_args(self) -> None:
         """Tests workflow generation with extra arguments."""
@@ -270,6 +281,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             str(pathlib.Path(script_dir) / "zizmor.yaml"),
             contents="ZIZMOR_CONTENT",
         )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
 
         self.create_file("Cargo.toml")
 
@@ -308,6 +323,13 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             zizmor_dest = pathlib.Path(".github/zizmor.yaml")
             self.assertTrue(zizmor_dest.exists())
             self.assertEqual(zizmor_dest.read_text(encoding="utf-8"), "ZIZMOR_CONTENT")
+
+            # Assert that actionlint.yaml was copied
+            actionlint_dest = pathlib.Path(".github/actionlint.yaml")
+            self.assertTrue(actionlint_dest.exists())
+            self.assertEqual(
+                actionlint_dest.read_text(encoding="utf-8"), "ACTIONLINT_CONTENT"
+            )
 
     def test_main_invalid_extra_arg(self) -> None:
         """Tests that main raises ValueError for invalid --extra-arg format."""
@@ -386,6 +408,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             contents="ZIZMOR_CONTENT",
         )
         self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
+        self.create_file(
             "config.toml",
             contents='baseURL = "https://www.johntobin.ie/"\n',
         )
@@ -420,6 +446,13 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             zizmor_dest = pathlib.Path(".github/zizmor.yaml")
             self.assertTrue(zizmor_dest.exists())
             self.assertEqual(zizmor_dest.read_text(encoding="utf-8"), "ZIZMOR_CONTENT")
+
+            # Assert that actionlint.yaml was copied
+            actionlint_dest = pathlib.Path(".github/actionlint.yaml")
+            self.assertTrue(actionlint_dest.exists())
+            self.assertEqual(
+                actionlint_dest.read_text(encoding="utf-8"), "ACTIONLINT_CONTENT"
+            )
 
 
 if __name__ == "__main__":

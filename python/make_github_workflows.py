@@ -330,6 +330,27 @@ def copy_zizmor(script_file: str) -> None:
     zizmor_dest.write_text(zizmor_source.read_text(encoding="utf-8"), encoding="utf-8")
 
 
+def copy_actionlint(script_file: str) -> None:
+    """Copies actionlint.yaml unconditionally to the destination.
+
+    Args:
+        script_file: The path to the script calling this function.
+
+    Returns:
+        None.
+
+    Raises:
+        OSError: If reading the source file or writing the destination file fails.
+    """
+    script_dir = pathlib.Path(script_file).resolve().parent
+    actionlint_source = script_dir / "workflows" / "actionlint.yaml"
+    actionlint_dest = pathlib.Path(".github/actionlint.yaml")
+    actionlint_dest.parent.mkdir(parents=True, exist_ok=True)
+    actionlint_dest.write_text(
+        actionlint_source.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+
+
 def main() -> None:
     """Parses arguments and generates the workflows."""
     description = "Generate GitHub Actions workflows for a project."
@@ -358,6 +379,9 @@ def main() -> None:
 
     # Copy zizmor.yaml unconditionally to the destination.
     copy_zizmor(script_file)
+
+    # Copy actionlint.yaml unconditionally to the destination.
+    copy_actionlint(script_file)
 
     workflows_to_generate: set[tuple[str, str]] = set()
     for config in LANGUAGE_CONFIGS:
