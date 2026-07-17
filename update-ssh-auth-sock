@@ -18,14 +18,13 @@ main() {
     return 1
   fi
 
-  local dir="${HOME}/.ssh/agent"
-  if grep -q "${dir}" <<<"${SSH_AUTH_SOCK}"; then
+  local new_ssh_auth_sock="${HOME}/.ssh/agent/ssh-auth-sock-${HOSTNAME}-${USER}"
+  if [[ "${SSH_AUTH_SOCK}" == "${new_ssh_auth_sock}" ]]; then
     # Already set up correctly.
     printf "%s\\n" "${SSH_AUTH_SOCK}"
     return 0
   fi
 
-  local new_ssh_auth_sock="${dir}/ssh-auth-sock-${HOSTNAME}-${USER}"
   ln -s -f -n "${SSH_AUTH_SOCK}" "${new_ssh_auth_sock}"
   printf "%s\\n" "${new_ssh_auth_sock}"
 }
