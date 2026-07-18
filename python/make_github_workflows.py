@@ -382,11 +382,6 @@ def main() -> None:
     # Copy actionlint.yaml unconditionally to the destination.
     copy_actionlint(script_file)
 
-    # Remove rust_publish.yml if it exists in the destination.
-    rust_publish_dest = pathlib.Path(".github/workflows/rust_publish.yml")
-    if rust_publish_dest.exists():
-        subprocess.run(["git", "rm", str(rust_publish_dest)], check=True)
-
     workflows_to_generate: set[tuple[str, str]] = set()
     for config in LANGUAGE_CONFIGS:
         if any(pathlib.Path(f).exists() for f in config.trigger_files):
