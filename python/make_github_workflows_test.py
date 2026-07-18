@@ -266,10 +266,6 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             contents="VALIDATION_CONTENT",
         )
         self.create_file(
-            str(pathlib.Path(script_dir) / "workflows" / "rust_publish.yml"),
-            contents="RUST_PUBLISH_CONTENT",
-        )
-        self.create_file(
             str(pathlib.Path(script_dir) / "workflows" / "rust_pull_request.yml"),
             contents="run: cargo llvm-cov test",
         )
@@ -453,6 +449,83 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             self.assertEqual(
                 actionlint_dest.read_text(encoding="utf-8"), "ACTIONLINT_CONTENT"
             )
+
+    def test_main_removes_rust_publish(self) -> None:
+        """Tests that main removes rust_publish.yml if it exists."""
+        script_file = make_github_workflows.__file__
+        script_dir = str(pathlib.Path(script_file).parent)
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
+
+        # Create the rust_publish.yml file in the destination to trigger git rm
+        rust_publish_dest = ".github/workflows/rust_publish.yml"
+        self.create_file(rust_publish_dest, contents="STALE_CONTENT")
+
+        with (
+            mock.patch.object(
+                get_git_root,
+                "get_git_root",
+                return_value=".",
+            ),
+            mock.patch.object(
+                make_github_workflows.argparse.ArgumentParser,
+                "parse_args",
+                return_value=make_github_workflows.Args(),
+            ),
+            mock.patch.object(make_github_workflows, "write_workflow"),
+            mock.patch.object(make_github_workflows.subprocess, "run") as mock_run,
+        ):
+            make_github_workflows.main()
+
+            mock_run.assert_called_once_with(
+                ["git", "rm", rust_publish_dest],
+                check=True,
+            )
+
+    def test_main_does_not_remove_rust_publish_if_not_exists(self) -> None:
+        """Tests that main does not call git rm if rust_publish.yml does not exist."""
+        script_file = make_github_workflows.__file__
+        script_dir = str(pathlib.Path(script_file).parent)
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
+
+        with (
+            mock.patch.object(
+                get_git_root,
+                "get_git_root",
+                return_value=".",
+            ),
+            mock.patch.object(
+                make_github_workflows.argparse.ArgumentParser,
+                "parse_args",
+                return_value=make_github_workflows.Args(),
+            ),
+            mock.patch.object(make_github_workflows, "write_workflow"),
+            mock.patch.object(make_github_workflows.subprocess, "run") as mock_run,
+        ):
+            make_github_workflows.main()
+
+            mock_run.assert_not_called()
 
 
 if __name__ == "__main__":
