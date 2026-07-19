@@ -17,7 +17,7 @@ main() {
   (install_venv "${venv_dir}")
   source "${venv_dir}/bin/activate"
   pip install pyfakefs
-  cd "${HOME}/bin/python"
+  cd "${HOME}/src/bin/python"
   python3 linkdirs_test.py
 }
 

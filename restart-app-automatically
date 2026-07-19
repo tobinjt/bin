@@ -26,7 +26,7 @@ output_plist() {
         <key>Label</key> <string>${label}</string>
         <key>ProgramArguments</key>
         <array>
-                <string>${HOME}/bin/restart-app-automatically-wrapper</string>
+                <string>${HOME}/src/bin/restart-app-automatically-wrapper</string>
                 <string>${timeout}</string>
                 <string>${app}</string>
         </array>

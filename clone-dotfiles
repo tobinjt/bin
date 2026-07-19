@@ -3,7 +3,7 @@
 set -e -u -f -o pipefail
 
 # Initial setup won't have the right environment, so extend $PATH.
-PATH="${HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
+PATH="${HOME}/src/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
 export PATH
 
 DESTDIR="${HOME}/src/dotfiles"
@@ -22,6 +22,7 @@ mkdir -p "${HOME}/tmp/generated" "${HOME}/.ssh/control"
 if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' .git/config
   # I need to do this anyway, so might as well do it now.
-  sed -i -e 's!https://github.com/!git@github.com:!' "${HOME}/bin/.git/config"
-  (cd "${HOME}/bin" && "${HOME}/bin/install-pre-commit-hooks")
+  sed -i -e 's!https://github.com/!git@github.com:!' \
+    "${HOME}/src/bin/.git/config"
+  (cd "${HOME}/src/bin" && install-pre-commit-hooks)
 fi
