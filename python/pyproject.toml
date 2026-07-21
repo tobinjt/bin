@@ -1,3 +1,30 @@
+[tool.coverage.html]
+# Where to write output.
+directory = "${HOME?}/tmp/generated/coverage"
+
+[tool.coverage.run]
+# Trace branch coverage.
+branch = true
+omit = [
+    # Exclude everything installed with pip.
+    "*/site-packages/*",
+    # Exclude tests.
+    "*_test.py",
+    # Exclude Python libraries.
+    "*/Frameworks/Python.framework/Versions/*",
+]
+
+[tool.coverage.report]
+# Fail if less than this percentage of lines are covered.
+fail_under = 99
+# In reports, show which lines are missing.
+show_missing = true
+# Exclude some untestable lines from coverage.
+exclude_lines = [
+    "if __name__ == .__main__.:",
+    "pragma: no cover",
+]
+
 [tool.pytest.ini_options]
 addopts = "--cov --cov-report=html"
 cache_dir = "$HOME/tmp/generated/pytest_cache"
