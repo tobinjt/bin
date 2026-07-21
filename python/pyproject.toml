@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report=html"
+cache_dir = "$HOME/tmp/generated/pytest_cache"
+timeout = 5
