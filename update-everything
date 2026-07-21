@@ -123,23 +123,27 @@ update_git_repos() {
 }
 
 main() {
-  prevent_sleeping
-  maybe_restart_with_updated_code
-  update_system_packages
-  update_nvim_plugins
-  update_treesitter_parsers
-  update-vale-acepted-words
-  # Mason-installed packages are frequently broken by upgrades, reinstall them.
-  # Do this before anything else because they're used in pre-commit hooks.
-  update_mason_packages
-  # Similarly, update development tools and Python modules.
-  retry install-extra-development-tools -- install-extra-development-tools
-  update_websites
-  update_python_modules
-  routine_code_maintenance_chores
-  update_applications
-  # Update any git repo that hasn't already been updated.
-  update_git_repos
+  if [[ "$#" -ne 0 ]]; then
+    "$@"
+  else
+    prevent_sleeping
+    maybe_restart_with_updated_code
+    update_system_packages
+    update_nvim_plugins
+    update_treesitter_parsers
+    update-vale-acepted-words
+    # Mason-installed packages are frequently broken by upgrades, reinstall them.
+    # Do this before anything else because they're used in pre-commit hooks.
+    update_mason_packages
+    # Similarly, update development tools and Python modules.
+    retry install-extra-development-tools -- install-extra-development-tools
+    update_websites
+    update_python_modules
+    routine_code_maintenance_chores
+    update_applications
+    # Update any git repo that hasn't already been updated.
+    update_git_repos
+  fi
 }
 
 main "$@"
