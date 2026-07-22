@@ -91,6 +91,7 @@ run_rsync() {
   flags+=("--delete" "--delete-excluded")
   flags+=("--filter=dir-merge rsync-net_filters")
   flags+=("--filter=dir-merge,- .gitignore")
+  flags+=("--exclude-from=${HOME}/.gitignore.global")
   if [[ "${__VERBOSE}" == 1 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
