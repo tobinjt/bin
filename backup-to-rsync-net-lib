@@ -95,7 +95,7 @@ run_rsync() {
   if [[ "${__VERBOSE}" == 1 ]]; then
     printf "Backing up %s\\n" "${source_dir}"
     # Progress indicator when run interactively.
-    flags+=("--info=progress2,stats" "--progress" "--verbose")
+    flags+=("--info=progress2,stats" "--progress" "--verbose" "--debug=FILTER")
   fi
   flags+=("${source_dir}/" "rsync-net:${dest_dir}/")
 
