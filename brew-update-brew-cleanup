@@ -28,7 +28,8 @@ brew upgrade --yes --force-bottle --formula || true
 sleep 2
 brew upgrade --yes --formula
 sleep 2
-brew upgrade --yes --cask --greedy
+# The wezterm cask is broken, so skip upgrading casks.
+# brew upgrade --yes --cask --greedy
 sleep 2
 brew autoremove
 sleep 2
