@@ -6,6 +6,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    exclude-paths:
+      - .github/workflows/release.yml
     groups:
       github-actions:
         patterns:
