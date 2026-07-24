@@ -10,6 +10,10 @@ fi
 if [[ ! -w "$(brew --prefix)" ]]; then
   exit 0
 fi
+if is_x86_64; then
+  # Skip the iMac, most packages aren't pre-built, and upgrading takes forever.
+  exit 0
+fi
 
 # Disable removal of old versions neovim and tmux.
 HOMEBREW_NO_CLEANUP_FORMULAE=neovim,tmux
@@ -17,28 +21,19 @@ export HOMEBREW_NO_CLEANUP_FORMULAE
 
 brew update
 brew outdated
-if is_x86_64; then
-  # Upgrade everything at once, not worrying about bottles.  The imac is
-  # unsupported by Homebrew, and bottles aren't always available.
-  brew upgrade
-else
-  # Separately upgrade formula and casks so I can force bottles.
-  # Sometimes a formula doesn't have a bottle and upgrading will fail, so we
-  # survive the failure and try again without forcing bottle.
-  brew upgrade --yes --force-bottle --formula || true
-  sleep 2
-  brew upgrade --yes --formula
-  sleep 2
-  brew upgrade --yes --cask --greedy
-fi
+# Separately upgrade formula and casks so I can force bottles.
+# Sometimes a formula doesn't have a bottle and upgrading will fail, so we
+# survive the failure and try again without forcing bottle.
+brew upgrade --yes --force-bottle --formula || true
+sleep 2
+brew upgrade --yes --formula
+sleep 2
+brew upgrade --yes --cask --greedy
 sleep 2
 brew autoremove
 sleep 2
-# The imac is old enough that brew reports unfixable problems.
-if ! is_x86_64; then
-  brew autoremove
-  sleep 2
-  brew cleanup
-  sleep 2
-  brew doctor --quiet
-fi
+brew autoremove
+sleep 2
+brew cleanup
+sleep 2
+brew doctor --quiet
