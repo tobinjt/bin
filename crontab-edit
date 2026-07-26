@@ -30,16 +30,15 @@ else
     read -r -p "Press enter to edit again: "
     ${ORIGINAL_EDITOR} -d "${FILENAME}" "$@"
   done
-  if ! git check-local-copy-is-clean; then
+  while ! git check-local-copy-is-clean --ignore-unpushed-commits; do
     # Git tracks symlinks, so it does not follow them, so I need to follow them.
     if [[ -L "${FILENAME}" ]]; then
       git add "$(readlink "${FILENAME}")"
     else
       git add "${FILENAME}"
     fi
-    EDITOR="${ORIGINAL_EDITOR}" git commit --edit \
-      --message 'BEWARE: An empty commit message will cause the commit to fail!'
-  fi
+    EDITOR="${ORIGINAL_EDITOR}" git commit --edit --file ".git/COMMIT_EDITMSG"
+  done
   git pull
   git push
 fi
