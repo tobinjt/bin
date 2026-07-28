@@ -1,14 +1,15 @@
 """Tests for linkdirs."""
 
+from __future__ import annotations
+
 import io
 import os
 import re
 import stat
 import sys
 import textwrap
-from pathlib import Path
-import typing
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -68,9 +69,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
     def setUp(self) -> None:  # pyright: ignore [reportImplicitOverride]
         # Do not truncate diffs.
-        self.maxDiff: typing.Optional[int] = (  # pyright: ignore[reportDeprecated]
-            1000000
-        )
+        self.maxDiff: int | None = 1000000
         self.setUpPyfakefs()
 
     def create_files(self, string: str):
@@ -722,18 +721,18 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             )
             self.assertMultiLineEqual(stdout, mock_stdout.getvalue())
 
-    def test_debug_output(self):
-        """Test that --debug prints the parsed options."""
+    def test_dump_config_output(self):
+        """Test that --dump_config prints the parsed options."""
         src_dir = "/a/b/c"
         dest_dir = "/z/y/x"
         os.makedirs(src_dir)
         os.makedirs(dest_dir)
 
         with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
-            linkdirs.real_main(argv=["linkdirs", "--debug", src_dir, dest_dir])
+            linkdirs.real_main(argv=["linkdirs", "--dump_config", src_dir, dest_dir])
             output = mock_stdout.getvalue()
             self.assertIn("DEBUG: options:", output)
-            self.assertIn("'debug': True", output)
+            self.assertIn("'dump_config': True", output)
 
 
 class TestUsage(unittest.TestCase):
@@ -826,9 +825,9 @@ class TestOptions(unittest.TestCase):
         # Test defaults
         opts = linkdirs.Options()
         self.assertEqual(opts.args, [])
-        self.assertFalse(opts.debug)
         self.assertFalse(opts.delete_unexpected_files)
         self.assertFalse(opts.dryrun)
+        self.assertFalse(opts.dump_config)
         self.assertFalse(opts.force)
         self.assertEqual(opts.ignore_file, [])
         self.assertEqual(
@@ -854,9 +853,9 @@ class TestOptions(unittest.TestCase):
         # Test setting values
         opts2 = linkdirs.Options(
             args=["a"],
-            debug=True,
             delete_unexpected_files=True,
             dryrun=True,
+            dump_config=True,
             force=True,
             ignore_file=["b"],
             ignore_pattern=["c"],
@@ -865,9 +864,9 @@ class TestOptions(unittest.TestCase):
             report_unexpected_files=True,
         )
         self.assertEqual(opts2.args, ["a"])
-        self.assertTrue(opts2.debug)
         self.assertTrue(opts2.delete_unexpected_files)
         self.assertTrue(opts2.dryrun)
+        self.assertTrue(opts2.dump_config)
         self.assertTrue(opts2.force)
         self.assertEqual(opts2.ignore_file, ["b"])
         self.assertEqual(opts2.ignore_pattern, ["c"])

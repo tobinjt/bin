@@ -6,6 +6,8 @@ DESTINATION_DIRECTORY, creating the destination directory hierarchy where
 necessary.
 """
 
+from __future__ import annotations
+
 import argparse
 import dataclasses
 import difflib
@@ -64,7 +66,7 @@ class LinkResults:
     diffs: Diffs
     errors: Messages
 
-    def extend(self, other: "LinkResults") -> None:
+    def extend(self, other: LinkResults) -> None:
         """Extend self with the data from other.
 
         Args:
@@ -93,17 +95,13 @@ class Options(argparse.Namespace):
         *,
         # MacOS Python 3.9 doesn't support 'foo | None' so I need to use
         # typing.Optional.
-        args: typing.Optional[list[str]] = None,  # pyright: ignore[reportDeprecated]
-        debug: bool = False,
+        args: list[str] | None = None,
         delete_unexpected_files: bool = False,
         dryrun: bool = False,
+        dump_config: bool = False,
         force: bool = False,
-        ignore_file: typing.Optional[  # pyright: ignore[reportDeprecated]
-            list[str]
-        ] = None,
-        ignore_pattern: typing.Optional[  # pyright: ignore[reportDeprecated]
-            list[str]
-        ] = None,
+        ignore_file: list[str] | None = None,
+        ignore_pattern: list[str] | None = None,
         ignore_symlinks: bool = False,
         ignore_unexpected_children: bool = False,
         report_unexpected_files: bool = False,
@@ -112,9 +110,9 @@ class Options(argparse.Namespace):
 
         Args:
             args: Positional arguments (directories).
-            debug: Enable debug output.
             delete_unexpected_files: Delete unexpected files.
             dryrun: Perform a trial run.
+            dump_config: Dump parsed options.
             force: Remove existing files if necessary.
             ignore_file: File containing shell patterns to ignore.
             ignore_pattern: Extra shell patterns to ignore.
@@ -124,9 +122,9 @@ class Options(argparse.Namespace):
         """
         super().__init__()
         self.args = list(args) if args is not None else []
-        self.debug = debug
         self.delete_unexpected_files = delete_unexpected_files
         self.dryrun = dryrun
+        self.dump_config = dump_config
         self.force = force
         self.ignore_file = list(ignore_file) if ignore_file is not None else []
         self.ignore_pattern = (
@@ -258,21 +256,23 @@ def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
     # pyfakefs doesn't seem to validate the mode, so stop mutating it.
     old_timestamp = time.ctime(old_filename.stat().st_mtime)
     new_timestamp = time.ctime(new_filename.stat().st_mtime)
-    with old_filename.open(encoding="utf8") as old_fh:
-        with new_filename.open(encoding="utf8") as new_fh:
-            old_contents = old_fh.readlines()
-            new_contents = new_fh.readlines()
-            diff_generator = difflib.unified_diff(
-                new_contents,
-                old_contents,
-                str(new_filename),
-                str(old_filename),
-                new_timestamp,
-                old_timestamp,
-            )
-            # Strip the newline here because one will be added later when printing the
-            # messages.
-            return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
+    with (
+        old_filename.open(encoding="utf8") as old_fh,
+        new_filename.open(encoding="utf8") as new_fh,
+    ):
+        old_contents = old_fh.readlines()
+        new_contents = new_fh.readlines()
+        diff_generator = difflib.unified_diff(
+            new_contents,
+            old_contents,
+            str(new_filename),
+            str(old_filename),
+            new_timestamp,
+            old_timestamp,
+        )
+        # Strip the newline here because one will be added later when printing the
+        # messages.
+        return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
 
 
 def remove_ignore_file_patterns(*, files: list[str], options: Options) -> list[str]:
@@ -561,10 +561,10 @@ def report_unexpected_files(
             ]
 
         unexpected_paths.directories.extend(
-            sorted(set([Path(p) for p in filtered_subdirs]) - set(expected_files))
+            sorted({Path(p) for p in filtered_subdirs} - set(expected_files))
         )
         unexpected_paths.files.extend(
-            sorted(set([Path(p) for p in filtered_files]) - set(expected_files))
+            sorted({Path(p) for p in filtered_files} - set(expected_files))
         )
 
     msgs: Messages = []
@@ -673,11 +673,11 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     argv_parser.add_argument(
-        "--debug",
+        "--dump_config",
         action=argparse.BooleanOptionalAction,
-        dest="debug",
+        dest="dump_config",
         default=False,
-        help=textwrap.fill("Enable debug output (default: %(default)s)"),
+        help=textwrap.fill("Dump parsed options (default: %(default)s)"),
     )
     argv_parser.add_argument(
         "--dryrun",
@@ -804,7 +804,7 @@ def real_main(*, argv: list[str]) -> Messages:
     # Nuke ignore_patterns so that I can't accidentally use it anywhere.
     options.ignore_patterns = []
 
-    if options.debug:
+    if options.dump_config:
         print("DEBUG: options:")
         pprint.pprint(vars(options), indent=2, width=100)
 
