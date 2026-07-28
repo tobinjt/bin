@@ -21,7 +21,7 @@ main() {
   while getopts ":dfhnrRX" opt "$@"; do
     case "${opt}" in
       d)
-        flags+=("--dryrun")
+        flags+=("--dryrun" "--debug_file_exclusion")
         return_early=1
         ;;
       f)

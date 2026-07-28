@@ -734,6 +734,68 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             self.assertIn("DEBUG: options:", output)
             self.assertIn("'dump_config': True", output)
 
+    def test_debug_file_exclusion_output(self):
+        """Test that --debug_file_exclusion prints exclusion debug info."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        os.makedirs(os.path.join(src_dir, ".git"))
+        os.makedirs(os.path.join(src_dir, "subdir"))
+        with open(os.path.join(src_dir, "test.spl"), "w") as f:
+            f.write("spell")
+        with open(os.path.join(src_dir, "file1"), "w") as f:
+            f.write("hello")
+        with open(os.path.join(src_dir, "subdir", "ignored_path"), "w") as f:
+            f.write("nested")
+        os.symlink(
+            os.path.join(src_dir, "file1"), os.path.join(src_dir, "symlink_file")
+        )
+        os.makedirs(dest_dir)
+        with open(os.path.join(dest_dir, "dest_file"), "w") as f:
+            f.write("dest")
+        os.makedirs(os.path.join(dest_dir, "unexpected_dir"))
+        os.symlink(
+            os.path.join(dest_dir, "dest_file"),
+            os.path.join(dest_dir, "unexpected_symlink"),
+        )
+
+        with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
+            linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--debug_file_exclusion",
+                    "--ignore_pattern",
+                    "subdir/ignored_path",
+                    "--report_unexpected_files",
+                    "--ignore_unexpected_children",
+                    "--ignore_symlinks",
+                    src_dir,
+                    dest_dir,
+                ]
+            )
+            output = mock_stdout.getvalue()
+            self.assertIn(
+                "DEBUG: Excluding file .git: matched set pattern .git", output
+            )
+            self.assertIn(
+                "DEBUG: Excluding file test.spl: matched glob pattern *.spl", output
+            )
+            self.assertIn(
+                f"DEBUG: Excluding path {Path(src_dir) / 'subdir' / 'ignored_path'}: matched full path pattern",
+                output,
+            )
+            self.assertIn(
+                f"DEBUG: Excluding {Path(src_dir) / 'symlink_file'}: is a symbolic link",
+                output,
+            )
+            self.assertIn(
+                f"DEBUG: Excluding unexpected top-level directory {Path(dest_dir) / 'unexpected_dir'}: ignore_unexpected_children is set",
+                output,
+            )
+            self.assertIn(
+                f"DEBUG: Excluding unexpected top-level symlink {Path(dest_dir) / 'unexpected_symlink'}: ignore_unexpected_children is set",
+                output,
+            )
+
 
 class TestUsage(unittest.TestCase):
     """Tests for usage messages."""
@@ -825,6 +887,7 @@ class TestOptions(unittest.TestCase):
         # Test defaults
         opts = linkdirs.Options()
         self.assertEqual(opts.args, [])
+        self.assertFalse(opts.debug_file_exclusion)
         self.assertFalse(opts.delete_unexpected_files)
         self.assertFalse(opts.dryrun)
         self.assertFalse(opts.dump_config)
@@ -853,6 +916,7 @@ class TestOptions(unittest.TestCase):
         # Test setting values
         opts2 = linkdirs.Options(
             args=["a"],
+            debug_file_exclusion=True,
             delete_unexpected_files=True,
             dryrun=True,
             dump_config=True,
@@ -864,6 +928,7 @@ class TestOptions(unittest.TestCase):
             report_unexpected_files=True,
         )
         self.assertEqual(opts2.args, ["a"])
+        self.assertTrue(opts2.debug_file_exclusion)
         self.assertTrue(opts2.delete_unexpected_files)
         self.assertTrue(opts2.dryrun)
         self.assertTrue(opts2.dump_config)

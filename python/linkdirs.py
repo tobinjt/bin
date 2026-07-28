@@ -96,6 +96,7 @@ class Options(argparse.Namespace):
         # MacOS Python 3.9 doesn't support 'foo | None' so I need to use
         # typing.Optional.
         args: list[str] | None = None,
+        debug_file_exclusion: bool = False,
         delete_unexpected_files: bool = False,
         dryrun: bool = False,
         dump_config: bool = False,
@@ -110,6 +111,7 @@ class Options(argparse.Namespace):
 
         Args:
             args: Positional arguments (directories).
+            debug_file_exclusion: Print debug output for file exclusion.
             delete_unexpected_files: Delete unexpected files.
             dryrun: Perform a trial run.
             dump_config: Dump parsed options.
@@ -122,6 +124,7 @@ class Options(argparse.Namespace):
         """
         super().__init__()
         self.args = list(args) if args is not None else []
+        self.debug_file_exclusion = debug_file_exclusion
         self.delete_unexpected_files = delete_unexpected_files
         self.dryrun = dryrun
         self.dump_config = dump_config
@@ -289,11 +292,23 @@ def remove_ignore_file_patterns(*, files: list[str], options: Options) -> list[s
     unmatched: list[str] = []
     for filename in files:
         if filename in options.ignore_set:
+            if options.debug_file_exclusion:
+                print(
+                    f"DEBUG: Excluding file {filename}: matched set pattern {filename}"
+                )
             continue
         for pattern in options.ignore_globs:
             if fnmatch.fnmatch(filename, pattern):
+                if options.debug_file_exclusion:
+                    print(
+                        f"DEBUG: Excluding file {filename}: matched glob pattern {pattern}"
+                    )
                 break
         else:
+            if options.debug_file_exclusion:
+                print(
+                    f"DEBUG: Including file {filename}: did not match ignore patterns"
+                )
             unmatched.append(filename)
     return unmatched
 
@@ -315,8 +330,14 @@ def remove_ignore_full_path_patterns(
     for path in paths:
         for pattern in options.ignore_full_paths:
             if fnmatch.fnmatch(path, pattern):
+                if options.debug_file_exclusion:
+                    print(
+                        f"DEBUG: Excluding path {path}: matched full path pattern {pattern}"
+                    )
                 break
         else:
+            if options.debug_file_exclusion:
+                print(f"DEBUG: Including path {path}: did not match full path patterns")
             unmatched.append(path)
     return unmatched
 
@@ -439,6 +460,8 @@ def link_files(
 
         if source_path.is_symlink():
             # Ignore source symlinks.
+            if options.debug_file_exclusion:
+                print(f"DEBUG: Excluding {source_path}: is a symbolic link")
             if not options.ignore_symlinks:
                 results.errors.append(f"Ignoring symbolic link {source_path}")
             continue
@@ -541,6 +564,10 @@ def report_unexpected_files(
                 if (directory / subdir) not in expected_files
             ]
             for subdir in unexpected:
+                if options.debug_file_exclusion:
+                    print(
+                        f"DEBUG: Excluding unexpected top-level directory {directory / subdir}: ignore_unexpected_children is set"
+                    )
                 subdirs.remove(subdir)
 
         full_subdirs = [str(directory / entry) for entry in subdirs]
@@ -556,6 +583,12 @@ def report_unexpected_files(
 
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
+            if options.debug_file_exclusion:
+                for file in filtered_files:
+                    if Path(file).is_symlink():
+                        print(
+                            f"DEBUG: Excluding unexpected top-level symlink {file}: ignore_unexpected_children is set"
+                        )
             filtered_files = [
                 file for file in filtered_files if not Path(file).is_symlink()
             ]
@@ -671,6 +704,15 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         description=description,
         usage=usage,
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    argv_parser.add_argument(
+        "--debug_file_exclusion",
+        action=argparse.BooleanOptionalAction,
+        dest="debug_file_exclusion",
+        default=False,
+        help=textwrap.fill(
+            "Print debug output for file exclusion (default: %(default)s)"
+        ),
     )
     argv_parser.add_argument(
         "--dump_config",
