@@ -46,6 +46,7 @@ main() {
   if git config remote.origin.url >& /dev/null; then
     git push
   fi
+  git gc
 }
 
 main "$@"
