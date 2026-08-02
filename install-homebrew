@@ -105,7 +105,7 @@ main() {
   # Everything needed for backups.
   brew install resticprofile rsync
   # Basics.
-  brew install fd less neovim ripgrep tmux tree-sitter-cli
+  brew install dust eza fd less neovim ripgrep tmux tree-sitter-cli
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
