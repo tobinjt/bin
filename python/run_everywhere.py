@@ -124,7 +124,6 @@ def update_single_host(host: str, users: list[str], command: list[str]) -> None:
         full_command = (
             [
                 "retry",
-                f"{user}@{host}",
             ]
             + ssh_command
             + sudo_commands.get(user, [])

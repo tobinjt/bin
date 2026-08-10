@@ -3,7 +3,7 @@
 set -e -f -u -o pipefail
 
 update_workflows() {
-  retry "update Github workflows: ${PWD}" -- ./.github/dependabot.yml
+  retry ./.github/dependabot.yml
   if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
     git add --all .
     git commit --quiet --message "chore: update Github workflows"
@@ -11,7 +11,7 @@ update_workflows() {
 }
 
 update_pre_commit() {
-  retry "update pre-commit config: ${PWD}" -- ./.pre-commit-config.yaml
+  retry ./.pre-commit-config.yaml
   if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
     pre-commit run --all-files
     git add --all .
@@ -42,7 +42,7 @@ main() {
   if [[ -x ".pre-commit-config.yaml" ]]; then
     update_pre_commit
   fi
-  retry "update-dependencies: ${PWD}" -- update-dependencies
+  retry update-dependencies
   if git config remote.origin.url >& /dev/null; then
     git push
   fi

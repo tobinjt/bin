@@ -24,7 +24,6 @@ class RunEverywhereTest(unittest.TestCase):
             mock.call(
                 [
                     "retry",
-                    "johntobin@testhost",
                     "ssh",
                     "-o",
                     "ControlMaster=no",
@@ -41,7 +40,6 @@ class RunEverywhereTest(unittest.TestCase):
             mock.call(
                 [
                     "retry",
-                    "root@testhost",
                     "ssh",
                     "-o",
                     "ControlMaster=no",
@@ -60,7 +58,6 @@ class RunEverywhereTest(unittest.TestCase):
             mock.call(
                 [
                     "retry",
-                    "arianetobin@testhost",
                     "ssh",
                     "-o",
                     "ControlMaster=no",
@@ -95,7 +92,6 @@ class RunEverywhereTest(unittest.TestCase):
             mock.call(
                 [
                     "retry",
-                    "johntobin@localhost",
                     "my-command",
                     "--arg1",
                 ],
@@ -104,7 +100,6 @@ class RunEverywhereTest(unittest.TestCase):
             mock.call(
                 [
                     "retry",
-                    "root@localhost",
                     "sudo",
                     "--login",
                     "my-command",

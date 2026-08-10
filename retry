@@ -3,13 +3,9 @@
 set -e -f -u -o pipefail
 
 main() {
-  local directory program
-  directory="$(dirname "${BASH_SOURCE[0]}")"
-  program="${directory}/python/retry_tool.py"
-  if "${program}" --help >& /dev/null; then
-    "${program}" "$@"
+  if wrap-command --help >& /dev/null; then
+    wrap-command --retry_wait -- "$@"
   else
-    shift 2
     "$@"
   fi
 }

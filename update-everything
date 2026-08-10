@@ -19,7 +19,7 @@ prevent_sleeping() {
 maybe_restart_with_updated_code() {
   local orig_code new_code
   orig_code="$(cat "${BASH_SOURCE[0]}")"
-  retry update-dotfiles-and-bin -- update-dotfiles-and-bin
+  retry update-dotfiles-and-bin
   new_code="$(cat "${BASH_SOURCE[0]}")"
   if [[ "${orig_code}" != "${new_code}" ]]; then
     echo "Restarting with updated tools"
@@ -32,20 +32,19 @@ update_system_packages() {
     return
   fi
   if is_mac_os && type brew >& /dev/null; then
-    retry brew-update-brew-cleanup -- brew-update-brew-cleanup
+    retry brew-update-brew-cleanup
   elif is_linux && type apt >& /dev/null && groups | grep -w -q sudo; then
-    retry "apt update" -- sudo apt update
-    retry "apt upgrade" -- sudo apt upgrade --assume-yes
-    retry "apt autoremove" -- sudo apt autoremove --assume-yes
+    retry sudo apt update
+    retry sudo apt upgrade --assume-yes
+    retry sudo apt autoremove --assume-yes
   fi
 }
 
 update_mason_packages() {
-  retry "Delete Mason packages" -- rm -rf "${HOME}/.local/share/nvim/mason"
+  retry rm -rf "${HOME}/.local/share/nvim/mason"
   if type nvim >& /dev/null; then
-    retry "Install Mason packages" -- \
-      run-nvim-command \
-        'lua require("johntobin.functions").RunCommandIfExists("MasonToolsUpdateSync")'
+    retry run-nvim-command \
+      'lua require("johntobin.functions").RunCommandIfExists("MasonToolsUpdateSync")'
   fi
 }
 
@@ -66,8 +65,8 @@ update_treesitter_parsers() {
 
 update_python_modules() {
   if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
-    retry update-python-modules -- update-python-modules
-    retry clean_venvs -- clean_venvs
+    retry update-python-modules
+    retry clean_venvs
   fi
 }
 
@@ -88,37 +87,36 @@ routine_code_maintenance_chores() {
     if [[ ! -d "${dir}" ]]; then
       continue
     fi
-    (cd "${dir}" && \
-      retry update-routine-code-chores -- update-routine-code-chores)
+    (cd "${dir}" && retry update-routine-code-chores)
   printf "\n\n\n"
   done
 }
 
 update_applications() {
   if [[ -d "${HOME}/tmp/bin/lazygit" ]]; then
-    retry update-lazygit -- update-lazygit
+    retry update-lazygit
   fi
   if [[ -d "${HOME}/tmp/bin/nvim" ]]; then
-    retry update-nvim -- update-nvim
+    retry update-nvim
   fi
 }
 
 update_websites() {
   if [[ -d "${HOME}/src/hugo-coder" ]]; then
-    retry update-hugo-coder -- update-hugo-coder
+    retry update-hugo-coder
   fi
   # This ensures that updates to ~/src/ariane-theme are committed *before* we
   # try to update Wordpress.
   if [[ -d "${HOME}/src/dev.arianetobin.ie" ]]; then
-    retry update-ariane-theme -- update-ariane-theme
-    retry update-all-wordpress -- update-all-wordpress
+    retry update-ariane-theme
+    retry update-all-wordpress
   fi
 }
 
 update_git_repos() {
   local dir
   for dir in $(dirs_to_update); do
-    retry "check-git-repos ${dir}" -- check-git-repos "${dir}"
+    retry check-git-repos "${dir}"
   done
 }
 
@@ -136,7 +134,7 @@ main() {
     # Do this before anything else because they're used in pre-commit hooks.
     update_mason_packages
     # Similarly, update development tools and Python modules.
-    retry install-extra-development-tools -- install-extra-development-tools
+    retry install-extra-development-tools
     update_websites
     update_python_modules
     routine_code_maintenance_chores
