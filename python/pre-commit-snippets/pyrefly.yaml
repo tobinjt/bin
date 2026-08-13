@@ -1,5 +1,5 @@
 - repo: https://github.com/facebook/pyrefly-pre-commit
-  rev: 1.1.1
+  rev: 1.2.0
   hooks:
     - id: pyrefly-check
       name: Pyrefly (type checking)
