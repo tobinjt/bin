@@ -4,7 +4,7 @@ set -e -f -u -o pipefail
 
 main() {
   if wrap-command --help >& /dev/null; then
-    wrap-command --retry_wait -- "$@"
+    wrap-command --retries 100 --retry_wait -- "$@"
   else
     "$@"
   fi
