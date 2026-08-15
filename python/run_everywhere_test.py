@@ -208,6 +208,34 @@ class RunEverywhereTest(unittest.TestCase):
         with self.assertRaisesRegex(run_everywhere.UsageError, "No command specified"):
             run_everywhere.parse_args([])
 
+    def test_parse_args_unrecognized_host_raises(self) -> None:
+        with self.assertRaisesRegex(
+            run_everywhere.UsageError, "Unrecognized host\\(s\\): unknown_host"
+        ):
+            run_everywhere.parse_args(["--hosts", "unknown_host", "my-command"])
+
+    def test_parse_args_unrecognized_user_raises(self) -> None:
+        with self.assertRaisesRegex(
+            run_everywhere.UsageError, "Unrecognized user\\(s\\): unknown_user"
+        ):
+            run_everywhere.parse_args(["--users", "unknown_user", "my-command"])
+
+    def test_parse_args_unrecognized_host_and_user_raises(self) -> None:
+        regex = (
+            "Unrecognized host\\(s\\): unknown_host\n"
+            "Unrecognized user\\(s\\): unknown_user"
+        )
+        with self.assertRaisesRegex(run_everywhere.UsageError, regex):
+            run_everywhere.parse_args(
+                [
+                    "--hosts",
+                    "unknown_host",
+                    "--users",
+                    "unknown_user",
+                    "my-command",
+                ]
+            )
+
     @mock.patch.object(
         run_everywhere.shutil, "which", return_value="/usr/bin/caffeinate"
     )

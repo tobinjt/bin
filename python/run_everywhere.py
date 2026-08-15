@@ -204,6 +204,24 @@ def parse_args(argv: list[str], host_map: HostUserMap | None = None) -> Config:
     if not config.command:
         parser.print_help(file=sys.stderr)
         raise UsageError("No command specified.")
+
+    errors: list[str] = []
+
+    known_hosts = set(map_to_use.get_all_hosts())
+    unknown_hosts = [h for h in config.hosts if h not in known_hosts]
+    if unknown_hosts:
+        errors.append(f"Unrecognized host(s): {', '.join(unknown_hosts)}")
+
+    known_users = set(map_to_use.get_all_users())
+    unknown_users = [u for u in config.users if u not in known_users]
+    if unknown_users:
+        errors.append(f"Unrecognized user(s): {', '.join(unknown_users)}")
+
+    if errors:
+        msg = "\n".join(errors)
+        print(msg, file=sys.stderr)
+        raise UsageError(msg)
+
     return config
 
 
