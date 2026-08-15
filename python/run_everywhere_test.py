@@ -7,6 +7,46 @@ import run_everywhere
 class RunEverywhereTest(unittest.TestCase):
     """Tests for the run_everywhere script."""
 
+    def test_host_user_map_bidirectional(self) -> None:
+        """Tests that HostUserMap populates host_to_users and user_to_hosts correctly."""
+        mapping = {
+            "h1": ["u1", "u2"],
+            "h2": ["u2", "u3"],
+        }
+        host_map = run_everywhere.HostUserMap.from_host_to_users(mapping)
+        self.assertEqual(host_map.host_to_users, mapping)
+        self.assertEqual(
+            host_map.user_to_hosts,
+            {
+                "u1": ["h1"],
+                "u2": ["h1", "h2"],
+                "u3": ["h2"],
+            },
+        )
+        self.assertEqual(host_map.get_all_hosts(), ["h1", "h2"])
+        self.assertEqual(host_map.get_all_users(), ["u1", "u2", "u3"])
+
+    def test_host_user_map_filter_targets(self) -> None:
+        """Tests filtering targets by presence of host or user in flags."""
+        mapping = {
+            "h1": ["u1", "u2"],
+            "h2": ["u2", "u3"],
+            "h3": ["u4"],
+        }
+        host_map = run_everywhere.HostUserMap.from_host_to_users(mapping)
+
+        # Matching by host only
+        res = host_map.filter_targets(["h1"], [])
+        self.assertEqual(res, {"h1": ["u1", "u2"]})
+
+        # Matching by user only
+        res = host_map.filter_targets([], ["u3"])
+        self.assertEqual(res, {"h2": ["u3"]})
+
+        # Matching by either host or user
+        res = host_map.filter_targets(["h1"], ["u3"])
+        self.assertEqual(res, {"h1": ["u1", "u2"], "h2": ["u3"]})
+
     @mock.patch.object(run_everywhere.subprocess, "run")
     def test_update_single_host(self, mock_subprocess_run: mock.Mock) -> None:
         """
