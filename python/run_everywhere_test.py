@@ -157,13 +157,21 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main(argv)
 
         self.assertEqual(return_code, 0)
-        self.assertEqual(mock_update_single_host.call_count, 3)
+        self.assertEqual(mock_update_single_host.call_count, 4)
 
-        default_users = ["johntobin", "root", "arianetobin"]
         expected_calls = [
-            mock.call("laptop", default_users, ["do-something", "arg"]),
-            mock.call("imac", default_users, ["do-something", "arg"]),
-            mock.call("hosting", default_users, ["do-something", "arg"]),
+            mock.call("laptop", ["johntobin", "root"], ["do-something", "arg"]),
+            mock.call(
+                "imac",
+                ["johntobin", "root", "arianetobin"],
+                ["do-something", "arg"],
+            ),
+            mock.call(
+                "hosting",
+                ["johntobin", "root", "arianetobin"],
+                ["do-something", "arg"],
+            ),
+            mock.call("truenas", ["truenas_admin"], ["do-something", "arg"]),
         ]
         mock_update_single_host.assert_has_calls(expected_calls, any_order=True)
 
@@ -174,13 +182,21 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main(argv)
 
         self.assertEqual(return_code, 0)
-        self.assertEqual(mock_update_single_host.call_count, 3)
+        self.assertEqual(mock_update_single_host.call_count, 4)
 
-        default_users = ["johntobin", "root", "arianetobin"]
         expected_calls = [
-            mock.call("laptop", default_users, ["do-something", "arg"]),
-            mock.call("imac", default_users, ["do-something", "arg"]),
-            mock.call("hosting", default_users, ["do-something", "arg"]),
+            mock.call("laptop", ["johntobin", "root"], ["do-something", "arg"]),
+            mock.call(
+                "imac",
+                ["johntobin", "root", "arianetobin"],
+                ["do-something", "arg"],
+            ),
+            mock.call(
+                "hosting",
+                ["johntobin", "root", "arianetobin"],
+                ["do-something", "arg"],
+            ),
+            mock.call("truenas", ["truenas_admin"], ["do-something", "arg"]),
         ]
         mock_update_single_host.assert_has_calls(expected_calls, any_order=True)
 
