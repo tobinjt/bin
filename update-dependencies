@@ -22,7 +22,7 @@ commit_if_necessary() {
 
 update_go() {
   if should_try_updating "go" "go.mod"; then
-    go get -u ./...
+    go get -u -t ./...
     go mod tidy
     commit_if_necessary "updating Go dependencies"
   fi
