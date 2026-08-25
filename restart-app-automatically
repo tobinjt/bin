@@ -67,6 +67,7 @@ maybe_reload() {
     fi
     printf "Updating %s\\n" "${DEST}"
     output_plist "${APP}" "${LABEL}" "${TIMEOUT}" > "${DEST}"
+    plutil -lint "${DEST}"
   fi
 }
 
