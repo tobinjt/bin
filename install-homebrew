@@ -134,7 +134,7 @@ main() {
   # install packages.
   mkdir -p "${GOPATH}"
   # Lua.
-  brew install busted luacheck
+  brew install busted
   # PHP; there's more config later.
   brew install composer php phpunit
   # Rust.
