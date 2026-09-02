@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  docker stats --no-stream \
+    --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
+}
+
+main "$@"
