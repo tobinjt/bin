@@ -15,8 +15,10 @@ die() {
 # find: /Users/johntobin/.Trash: Operation not permitted
 # find: /Users/johntobin/Documents: Operation not permitted
 # find: /Users/johntobin/Downloads: Operation not permitted
+# -L follows symbolic links, so if there's a symlink in the path we'll still get
+#  results.
 find_sources() {
-  find "$1" -maxdepth 2 -mindepth 2 -type d -path "$2/.git" 2> /dev/null \
+  find -L "$1" -maxdepth 2 -mindepth 2 -type d -path "$2/.git" 2> /dev/null \
     | sed -e 's,/.git$,,' \
     | sort
 }
