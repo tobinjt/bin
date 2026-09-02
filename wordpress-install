@@ -164,8 +164,6 @@ if [[ "${EXCLUDED_FILE_NEEDED}" -eq 1 ]]; then
 fi
 # --all marks deleted files for deletion in git.
 git add --all .
-# Give some idea of the scale of the changes.
-(unset LESS; git diff --cached --shortstat)
 # If there's anything to commit then commit it.
 if ! git check-local-copy-is-clean 2>/dev/null; then
   git commit --quiet --message "chore: Installed ${NAME} ${VERSION}"
