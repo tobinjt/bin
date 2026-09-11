@@ -72,16 +72,11 @@ update_python_modules() {
 
 routine_code_maintenance_chores() {
   # Using the presence of pre-commit as a proxy for whether to perform routine
-  # code maintainence chores.
+  # code maintenance chores.
   if ! type pre-commit >& /dev/null; then
     return
   fi
-  if ! populate_pre_commit --help >& /dev/null; then
-    # populate_pre_commit needs pathspec, which isn't available without
-    # installing extra Python modules; skip if populate_pre_commit fails.
-    return
-  fi
-  echo "Performing routine code maintainence chores"
+  echo "Performing routine code maintenance chores"
   local dir
   for dir in $(dirs_to_update); do
     if [[ ! -d "${dir}" ]]; then

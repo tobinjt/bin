@@ -5,11 +5,7 @@ set -e -f -u -o pipefail
 main() {
   local url="https://github.com/neovim/neovim/releases/download/stable/"
   if is_mac_os; then
-    if is_x86_64; then
-      url+="nvim-macos-x86_64.tar.gz"
-    else
-      url+="nvim-macos-arm64.tar.gz"
-    fi
+    url+="nvim-macos-arm64.tar.gz"
   else
     url+="nvim-linux-x86_64.appimage"
   fi

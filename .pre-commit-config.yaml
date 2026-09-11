@@ -190,11 +190,6 @@ repos:
         types: [yaml]
         exclude: dependabot.yml|.*.yaml$
         entry: actionlint
-      - id: linkdirs-system-python-test
-        name: Run `linkdirs_test_with_system_python.sh`
-        language: system
-        files: python/linkdirs.*
-        entry: ./python/linkdirs_test_with_system_python.sh
       - id: pytest - triggered by Github workflows changing
         name: Run `pytest` when Github workflows change
         language: system

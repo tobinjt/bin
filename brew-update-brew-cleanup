@@ -10,10 +10,6 @@ fi
 if [[ ! -w "$(brew --prefix)" ]]; then
   exit 0
 fi
-if is_x86_64; then
-  # Skip the iMac, most packages aren't pre-built, and upgrading takes forever.
-  exit 0
-fi
 
 # Disable removal of old versions neovim and tmux.
 HOMEBREW_NO_CLEANUP_FORMULAE=neovim,tmux

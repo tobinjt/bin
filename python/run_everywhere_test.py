@@ -157,15 +157,10 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main(argv)
 
         self.assertEqual(return_code, 0)
-        self.assertEqual(mock_update_single_host.call_count, 4)
+        self.assertEqual(mock_update_single_host.call_count, 3)
 
         expected_calls = [
             mock.call("laptop", ["johntobin", "root"], ["do-something", "arg"]),
-            mock.call(
-                "imac",
-                ["johntobin", "root", "arianetobin"],
-                ["do-something", "arg"],
-            ),
             mock.call(
                 "hosting",
                 ["johntobin", "root", "arianetobin"],
@@ -182,15 +177,10 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main(argv)
 
         self.assertEqual(return_code, 0)
-        self.assertEqual(mock_update_single_host.call_count, 4)
+        self.assertEqual(mock_update_single_host.call_count, 3)
 
         expected_calls = [
             mock.call("laptop", ["johntobin", "root"], ["do-something", "arg"]),
-            mock.call(
-                "imac",
-                ["johntobin", "root", "arianetobin"],
-                ["do-something", "arg"],
-            ),
             mock.call(
                 "hosting",
                 ["johntobin", "root", "arianetobin"],

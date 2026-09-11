@@ -15,10 +15,6 @@ USAGE
 
 test_python() {
   cd "${HOME}/src/bin/python"
-  if is_mac_os && is_x86_64; then
-    ./linkdirs_test_with_system_python.sh
-    return
-  fi
   pytest
   set +f
   mypy -- *.py

@@ -12,11 +12,7 @@ main() {
   version="${version/v/}"
   readonly version
   if is_mac_os; then
-    if is_x86_64; then
-      os_type="Darwin_x86_64"
-    else
-      os_type="Darwin_arm64"
-    fi
+    os_type="Darwin_arm64"
   else
     os_type="Linux_x86_64"
   fi
