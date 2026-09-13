@@ -454,7 +454,7 @@ def main() -> None:
         ("mypy.yaml", has_extension(all_files, ".py")),
         ("pygrep-hooks.yaml", has_extension(all_files, ".py")),
         ("pyrefly.yaml", has_extension(all_files, ".py")),
-        ("pytest.yaml", has_extension(all_files, ".py")),
+        ("pytest.yaml", has_extension(all_files, "_test.py")),
         ("python.yaml", has_extension(all_files, ".py")),
         ("readme-toc.yaml", should_include_readme_toc(all_files)),
         ("rust.yaml", should_include_rust(all_files)),

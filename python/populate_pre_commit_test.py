@@ -64,6 +64,14 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         self.assertTrue(
             populate_pre_commit.has_extension(frozenset[str]({"config.toml"}), ".toml")
         )
+        self.assertTrue(
+            populate_pre_commit.has_extension(
+                frozenset[str]({"main_test.py"}), "_test.py"
+            )
+        )
+        self.assertFalse(
+            populate_pre_commit.has_extension(frozenset[str]({"main.py"}), "_test.py")
+        )
 
     def test_should_include_shellcheck(self) -> None:
         self.assertFalse(
