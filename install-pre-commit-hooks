@@ -31,7 +31,7 @@ main() {
   if [[ ! -f "${config_file}" ]]; then
     return 0
   fi
-  if ! git transport-is-ssh; then
+  if git transport-is-https; then
     # We don't need pre-commit if we're not committing.
     return 0
   fi
