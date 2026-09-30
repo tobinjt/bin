@@ -33,7 +33,7 @@ bin_sources() {
 }
 
 check_git_works() {
-  if ! git help status > /dev/null; then
+  if ! git help status >& /dev/null; then
     printf "Failed to run git.\\n" >&2
     printf "On MacOS install it with 'xcode-select --install'\\n" >&2
     exit 1
