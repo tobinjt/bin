@@ -364,11 +364,7 @@ def post_process_html(html_content: str, current_page_dest: str = "") -> str:
         if href.startswith(("http://", "https://", "//")):
             return match.group(0)
         filename: str = href.split("/")[-1]
-        if filename == "README.md":
-            return f'href="index.html{anchor}"'
-        if filename.endswith(".md"):
-            return f'href="{filename[:-3]}.html{anchor}"'
-        return match.group(0)
+        return f'href="{filename[:-3]}.html{anchor}"'
 
     processed = re.sub(r'href="([^"#]+\.md)(#[^"]*)?"', rewrite_link, processed)
 
@@ -428,10 +424,11 @@ def build_header(
         )
 
     nav_html: str = "\n".join(nav_items)
+    home_link: str = pages[0].dest if pages else "#"
     template = textwrap.dedent("""
         <header class="site-header">
           <div class="header-container">
-            <a href="index.html" class="logo-area">
+            <a href="{home_link}" class="logo-area">
               <span class="logo-icon">{logo_icon}</span>
               <span>{site_title}</span>
             </a>
@@ -446,6 +443,7 @@ def build_header(
         </header>
         """)
     return template.format(
+        home_link=home_link,
         logo_icon=logo_icon,
         site_title=site_title,
         nav_html=nav_html,
@@ -574,44 +572,13 @@ def discover_pages(
     if not filenames:
         return []
 
-    if len(filenames) == 1 and filenames[0] != "README.md":
-        filename = filenames[0]
-        file_path = base_dir / filename
-        content = file_path.read_text(encoding="utf-8") if file_path.exists() else ""
-        title = extract_title_from_markdown(content, default=filename)
-        return [
-            PageConfig(
-                src=filename,
-                dest="index.html",
-                title=title,
-                short_title="Overview & Guide",
-            ),
-            PageConfig(
-                src=filename,
-                dest=f"{pathlib.Path(filename).stem}.html",
-                title=title,
-                short_title=title,
-            ),
-        ]
+    ordered_filenames: list[str] = list(filenames)
+    if not input_files and "README.md" in ordered_filenames:
+        ordered_filenames.remove("README.md")
+        ordered_filenames.insert(0, "README.md")
 
     pages: list[PageConfig] = []
-    has_readme = "README.md" in filenames
-    if has_readme:
-        file_path = base_dir / "README.md"
-        content = file_path.read_text(encoding="utf-8") if file_path.exists() else ""
-        title = extract_title_from_markdown(content, default="Overview & Plan")
-        pages.append(
-            PageConfig(
-                src="README.md",
-                dest="index.html",
-                title=title,
-                short_title="Overview",
-            )
-        )
-
-    for filename in filenames:
-        if filename == "README.md":
-            continue
+    for filename in ordered_filenames:
         file_path = base_dir / filename
         content = file_path.read_text(encoding="utf-8") if file_path.exists() else ""
         stem = pathlib.Path(filename).stem
@@ -709,9 +676,7 @@ def resolve_site_config(
     if toml_pages and not args.inputs:
         for p in toml_pages:
             src = p["src"]
-            dest = p.get("dest") or (
-                f"{pathlib.Path(src).stem}.html" if src != "README.md" else "index.html"
-            )
+            dest = p.get("dest") or f"{pathlib.Path(src).stem}.html"
             file_path = base_dir / src
             file_content = (
                 file_path.read_text(encoding="utf-8") if file_path.exists() else ""

@@ -119,7 +119,7 @@ class TestMarkdownToHtml(unittest.TestCase):
         )
         processed = markdown_to_html.post_process_html(raw_html)
         self.assertIn('href="guide.html"', processed)
-        self.assertIn('href="index.html#summary"', processed)
+        self.assertIn('href="README.html#summary"', processed)
         self.assertIn('href="https://example.com/other.md"', processed)
 
     def test_insert_diagrams(self) -> None:
@@ -145,7 +145,7 @@ class TestMarkdownToHtml(unittest.TestCase):
         pages = [
             markdown_to_html.PageConfig(
                 src="README.md",
-                dest="index.html",
+                dest="README.html",
                 title="Home",
                 short_title="Overview",
             ),
@@ -158,16 +158,27 @@ class TestMarkdownToHtml(unittest.TestCase):
         ]
         header = markdown_to_html.build_header(
             pages=pages,
-            current_dest="index.html",
+            current_dest="README.html",
             site_title="Test Project",
             logo_icon="🛠️",
         )
         self.assertIn("Test Project", header)
         self.assertIn("🛠️", header)
-        self.assertIn('href="index.html" class="nav-item active"', header)
+        self.assertIn('href="README.html" class="logo-area"', header)
+        self.assertIn('href="README.html" class="nav-item active"', header)
         self.assertIn('href="specs.html" class="nav-item"', header)
         self.assertIn("toggleTheme()", header)
         self.assertIn("window.print()", header)
+
+    def test_build_header_empty_pages(self) -> None:
+        """Tests header HTML rendering when pages list is empty."""
+        header = markdown_to_html.build_header(
+            pages=[],
+            current_dest="",
+            site_title="Test Project",
+            logo_icon="🛠️",
+        )
+        self.assertIn('href="#" class="logo-area"', header)
 
     def test_build_theme_script(self) -> None:
         """Tests theme script generation with specified storage key."""
@@ -235,11 +246,10 @@ class TestMarkdownToHtml(unittest.TestCase):
             _ = guide.write_text("# Complete Guide\n\nContent.", encoding="utf-8")
 
             pages = markdown_to_html.discover_pages(base_dir)
-            self.assertEqual(len(pages), 2)
-            self.assertEqual(pages[0].dest, "index.html")
+            self.assertEqual(len(pages), 1)
+            self.assertEqual(pages[0].dest, "guide.html")
             self.assertEqual(pages[0].title, "Complete Guide")
-            self.assertEqual(pages[1].dest, "guide.html")
-            self.assertEqual(pages[1].title, "Complete Guide")
+            self.assertEqual(pages[0].short_title, "Complete Guide")
 
     def test_discover_pages_multiple_documents(self) -> None:
         """Tests page auto-discovery with README.md and multiple markdown files."""
@@ -259,7 +269,7 @@ class TestMarkdownToHtml(unittest.TestCase):
 
             pages = markdown_to_html.discover_pages(base_dir)
             dests = [p.dest for p in pages]
-            self.assertEqual(dests, ["index.html", "01_specs.html", "02_notes.html"])
+            self.assertEqual(dests, ["README.html", "01_specs.html", "02_notes.html"])
             self.assertEqual(pages[0].title, "Main Overview")
             self.assertEqual(pages[1].title, "01 — Specifications")
 
@@ -320,7 +330,8 @@ class TestMarkdownToHtml(unittest.TestCase):
             _ = (base_dir / "README.md").write_text("# Readme\n", encoding="utf-8")
             exit_code = markdown_to_html.main(["--dir", str(base_dir)])
             self.assertEqual(exit_code, 0)
-            self.assertTrue((base_dir / "index.html").exists())
+            self.assertTrue((base_dir / "README.html").exists())
+            self.assertFalse((base_dir / "index.html").exists())
 
     def test_main_with_mock(self) -> None:
         """Tests that main orchestrates argument parsing and generation."""
@@ -489,6 +500,63 @@ class TestMarkdownToHtml(unittest.TestCase):
                 program_dir=pathlib.Path(tmp_prog),
             )
             self.assertFalse(copied)
+
+    def test_discover_pages_with_input_files(self) -> None:
+        """Tests page discovery when explicit input files are provided."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            _ = (base_dir / "doc.md").write_text("# Doc\n", encoding="utf-8")
+            pages = markdown_to_html.discover_pages(
+                base_dir, input_files=["doc.md", "missing.md"]
+            )
+            self.assertEqual(len(pages), 2)
+            self.assertEqual(pages[0].dest, "doc.html")
+            self.assertEqual(pages[1].dest, "missing.html")
+            self.assertEqual(pages[1].title, "missing")
+
+    def test_post_process_html_alerts_with_leading_p(self) -> None:
+        """Tests alert processing when alert body starts with paragraph tag."""
+        raw_alert = "<blockquote><p>[!NOTE]<p>Paragraph text.</p></blockquote>"
+        processed = markdown_to_html.post_process_html(raw_alert)
+        self.assertIn("<p>Paragraph text.</p>", processed)
+
+    def test_resolve_site_config_relative_config(self) -> None:
+        """Tests resolving site configuration with a relative config path."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            config_file = base_dir / "custom.toml"
+            _ = config_file.write_text(
+                'site_title = "Relative Title"\n', encoding="utf-8"
+            )
+            args = markdown_to_html.Args(dir=str(base_dir), config="custom.toml")
+            site_config = markdown_to_html.resolve_site_config(args, base_dir)
+            self.assertEqual(site_config.site_title, "Relative Title")
+
+    def test_resolve_site_config_auto_markdown_to_html_toml(self) -> None:
+        """Tests auto-discovering markdown-to-html.toml configuration file."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            config_file = base_dir / "markdown-to-html.toml"
+            _ = config_file.write_text(
+                'site_title = "Auto TOML Title"\n', encoding="utf-8"
+            )
+            args = markdown_to_html.Args(dir=str(base_dir))
+            site_config = markdown_to_html.resolve_site_config(args, base_dir)
+            self.assertEqual(site_config.site_title, "Auto TOML Title")
+
+    def test_resolve_site_config_toml_pages_without_dest(self) -> None:
+        """Tests resolving TOML pages when dest is omitted defaults to stem.html."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            _ = (base_dir / "README.md").write_text("# Readme\n", encoding="utf-8")
+            config_file = base_dir / "markdown-to-html.toml"
+            _ = config_file.write_text(
+                '[[pages]]\nsrc = "README.md"\n', encoding="utf-8"
+            )
+            args = markdown_to_html.Args(dir=str(base_dir))
+            site_config = markdown_to_html.resolve_site_config(args, base_dir)
+            self.assertEqual(len(site_config.pages), 1)
+            self.assertEqual(site_config.pages[0].dest, "README.html")
 
 
 if __name__ == "__main__":
