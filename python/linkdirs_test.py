@@ -21,30 +21,25 @@ class TestMain(unittest.TestCase):
     """Tests for main()."""
 
     @mock.patch.object(linkdirs, "real_main", return_value=[])
-    @mock.patch.object(sys, "exit")
-    def test_success(self, mock_sys_exit: mock.Mock, _unused_mock_real_main: mock.Mock):
+    def test_success(self, _unused_mock_real_main: mock.Mock) -> None:
         """Successful run."""
         with mock.patch.object(sys, "stderr", new_callable=io.StringIO) as mock_stderr:
-            linkdirs.main(argv=[])
+            exit_code = linkdirs.main(argv=[])
             warnings = mock_stderr.getvalue()
             self.assertEqual("", warnings)
-        mock_sys_exit.assert_called_once_with(0)
+        self.assertEqual(0, exit_code)
 
     @mock.patch.object(sys, "stdout", new_callable=io.StringIO)
     @mock.patch.object(linkdirs, "real_main", return_value=["a message"])
-    @mock.patch.object(sys, "exit")
     def test_failure(
         self,
-        mock_sys_exit: mock.Mock,
         _unused_mock_real_main: mock.Mock,
         mock_stdout: io.StringIO,
-    ):
+    ) -> None:
         """Failed run."""
-        linkdirs.main(argv=[])
+        exit_code = linkdirs.main(argv=[])
         self.assertEqual("a message\n", mock_stdout.getvalue())
-        # In reality sys.exit will only be called once, but because we mock it out
-        # the flow control continues and it is called twice.
-        mock_sys_exit.assert_has_calls([mock.call(1), mock.call(0)])
+        self.assertEqual(1, exit_code)
 
 
 class TestIntegration(fake_filesystem_unittest.TestCase):

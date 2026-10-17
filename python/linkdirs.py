@@ -873,14 +873,22 @@ def real_main(*, argv: list[str]) -> Messages:
     return all_results.diffs + all_results.errors + unexpected_msgs
 
 
-def main(*, argv: list[str]):
+def main(*, argv: list[str]) -> int:
+    """Print diffs and errors from linking directories.
+
+    Args:
+        argv: Command-line arguments.
+
+    Returns:
+        Exit code (0 for success, 1 for failure).
+    """
     messages = real_main(argv=argv)
     for line in messages:
         print(line)
     if messages:
-        sys.exit(1)
-    sys.exit(0)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no mutate
-    main(argv=list[str](sys.argv))
+    sys.exit(main(argv=list[str](sys.argv)))
