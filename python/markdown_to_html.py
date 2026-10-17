@@ -9,16 +9,17 @@ callouts, and dark/light theme switching.
 import argparse
 import dataclasses
 import html
+import os.path
 import pathlib
 import re
 import shutil
 import sys
 import textwrap
+import tomllib
 import typing
 
 import markdown_it
 import mdit_py_plugins.tasklists
-import tomllib
 
 ALERT_TYPES: dict[str, tuple[str, str, str]] = {
     "NOTE": ("callout-note", "ℹ️", "Note"),
@@ -363,20 +364,45 @@ def post_process_html(html_content: str, current_page_dest: str = "") -> str:
         anchor: str = match.group(2) or ""
         if href.startswith(("http://", "https://", "//")):
             return match.group(0)
-        filename: str = href.split("/")[-1]
-        return f'href="{filename[:-3]}.html{anchor}"'
+        target: str = href[:-3]
+        return f'href="{target}.html{anchor}"'
 
     processed = re.sub(r'href="([^"#]+\.md)(#[^"]*)?"', rewrite_link, processed)
 
     return processed
 
 
-def insert_diagrams(body_html: str, diagrams: list[str]) -> str:
+def compute_relative_path(
+    target_path: str,
+    from_dir: pathlib.Path | None,
+) -> str:
+    """Computes a relative POSIX path from a directory to a target file or URL.
+
+    Args:
+        target_path: Destination path or URL.
+        from_dir: Directory to compute the relative path from. If None, returns
+            target_path unchanged.
+
+    Returns:
+        Relative POSIX path string or unchanged URL.
+    """
+    if from_dir is None or target_path.startswith(("http://", "https://", "//", "#")):
+        return target_path
+    rel = os.path.relpath(target_path, from_dir)
+    return pathlib.Path(rel).as_posix()
+
+
+def insert_diagrams(
+    body_html: str,
+    diagrams: list[str],
+    current_page_dest: str = "",
+) -> str:
     """Inserts diagram image cards after the primary page heading.
 
     Args:
         body_html: Rendered and post-processed HTML content of the page.
         diagrams: List of diagram file paths to embed.
+        current_page_dest: Optional destination path of the current page for relative links.
 
     Returns:
         HTML string with diagram cards inserted after </h1> or at the beginning.
@@ -384,12 +410,14 @@ def insert_diagrams(body_html: str, diagrams: list[str]) -> str:
     if not diagrams:
         return body_html
 
+    current_dir = pathlib.Path(current_page_dest).parent if current_page_dest else None
     diagram_html = ""
     for diag in diagrams:
         diag_file = pathlib.Path(diag).name
+        diag_src = compute_relative_path(diag, current_dir)
         diagram_html += textwrap.dedent(f"""
             <div class="diagram-card">
-              <img src="{diag}" alt="{diag_file}" loading="lazy" />
+              <img src="{diag_src}" alt="{diag_file}" loading="lazy" />
               <div class="diagram-caption">Architectural Drawing: {diag_file}</div>
             </div>
             """)
@@ -416,15 +444,19 @@ def build_header(
     Returns:
         HTML string of the header navigation element.
     """
+    current_dir = (
+        pathlib.Path(current_dest).parent if current_dest else pathlib.Path(".")
+    )
     nav_items: list[str] = []
     for page in pages:
         active_class: str = " active" if page.dest == current_dest else ""
+        rel_dest = compute_relative_path(page.dest, current_dir)
         nav_items.append(
-            f'<a href="{page.dest}" class="nav-item{active_class}">{page.short_title}</a>'
+            f'<a href="{rel_dest}" class="nav-item{active_class}">{page.short_title}</a>'
         )
 
     nav_html: str = "\n".join(nav_items)
-    home_link: str = pages[0].dest if pages else "#"
+    home_link: str = compute_relative_path(pages[0].dest, current_dir) if pages else "#"
     template = textwrap.dedent("""
         <header class="site-header">
           <div class="header-container">
@@ -503,6 +535,8 @@ def render_page(
         logo_icon=site_config.logo_icon,
     )
     theme_script = build_theme_script(site_config.theme_key)
+    current_dir = pathlib.Path(page.dest).parent
+    css_path = compute_relative_path(site_config.css_rel_path, current_dir)
 
     template = textwrap.dedent("""\
         <!DOCTYPE html>
@@ -538,7 +572,7 @@ def render_page(
     return template.format(
         title=page.title,
         title_suffix=site_config.title_suffix,
-        css_path=site_config.css_rel_path,
+        css_path=css_path,
         header_html=header_html,
         body_html=body_html,
         theme_script=theme_script,
@@ -586,10 +620,11 @@ def discover_pages(
         short_title = title.split("—")[-1].strip() if "—" in title else title
         if len(short_title) > 20:
             short_title = stem
+        dest = pathlib.Path(filename).with_suffix(".html").as_posix()
         pages.append(
             PageConfig(
                 src=filename,
-                dest=f"{stem}.html",
+                dest=dest,
                 title=title,
                 short_title=short_title,
             )
@@ -676,7 +711,7 @@ def resolve_site_config(
     if toml_pages and not args.inputs:
         for p in toml_pages:
             src = p["src"]
-            dest = p.get("dest") or f"{pathlib.Path(src).stem}.html"
+            dest = p.get("dest") or pathlib.Path(src).with_suffix(".html").as_posix()
             file_path = base_dir / src
             file_content = (
                 file_path.read_text(encoding="utf-8") if file_path.exists() else ""
@@ -786,9 +821,12 @@ def generate_individual_pages(
         raw_md: str = src_path.read_text(encoding="utf-8")
         parsed_html: str = render_markdown(md_parser, raw_md)
         processed_html: str = post_process_html(parsed_html, page.dest)
-        body_with_diagrams: str = insert_diagrams(processed_html, page.diagrams)
+        body_with_diagrams: str = insert_diagrams(
+            processed_html, page.diagrams, page.dest
+        )
         full_html: str = render_page(page, body_with_diagrams, site_config)
 
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
         _ = dest_path.write_text(full_html, encoding="utf-8")
         generated_files.append(dest_path)
         print(f"  ✓ Written: {page.dest}")

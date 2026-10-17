@@ -558,6 +558,198 @@ class TestMarkdownToHtml(unittest.TestCase):
             self.assertEqual(len(site_config.pages), 1)
             self.assertEqual(site_config.pages[0].dest, "README.html")
 
+    def test_discover_pages_with_subdirectories(self) -> None:
+        """Tests page discovery when input files reside in subdirectories."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            doc_path = base_dir / "docs" / "explanations-reference.md"
+            doc_path.parent.mkdir(parents=True, exist_ok=True)
+            _ = doc_path.write_text(
+                "# Explanations Reference\n\nDetailed content.", encoding="utf-8"
+            )
+            pages = markdown_to_html.discover_pages(
+                base_dir, input_files=["docs/explanations-reference.md"]
+            )
+            self.assertEqual(len(pages), 1)
+            self.assertEqual(pages[0].src, "docs/explanations-reference.md")
+            self.assertEqual(pages[0].dest, "docs/explanations-reference.html")
+            self.assertEqual(pages[0].title, "Explanations Reference")
+
+    def test_compute_relative_path(self) -> None:
+        """Tests relative POSIX path computation between directories and files."""
+        self.assertEqual(
+            markdown_to_html.compute_relative_path(
+                "css/styles.css", pathlib.Path("docs")
+            ),
+            "../css/styles.css",
+        )
+        self.assertEqual(
+            markdown_to_html.compute_relative_path("css/styles.css", pathlib.Path(".")),
+            "css/styles.css",
+        )
+        self.assertEqual(
+            markdown_to_html.compute_relative_path("css/styles.css", None),
+            "css/styles.css",
+        )
+        self.assertEqual(
+            markdown_to_html.compute_relative_path(
+                "https://example.com/styles.css", pathlib.Path("docs")
+            ),
+            "https://example.com/styles.css",
+        )
+        self.assertEqual(
+            markdown_to_html.compute_relative_path("#anchor", pathlib.Path("docs")),
+            "#anchor",
+        )
+
+    def test_post_process_html_link_rewriting_subdirectory(self) -> None:
+        """Tests link rewriting preserves subdirectory paths."""
+        raw_html = (
+            '<a href="docs/reference.md">Doc</a> and '
+            '<a href="../guide.md#anchor">Guide</a>'
+        )
+        processed = markdown_to_html.post_process_html(raw_html)
+        self.assertIn('href="docs/reference.html"', processed)
+        self.assertIn('href="../guide.html#anchor"', processed)
+
+    def test_build_header_subdirectory(self) -> None:
+        """Tests header links are computed relative to current page directory."""
+        pages = [
+            markdown_to_html.PageConfig(
+                src="README.md",
+                dest="README.html",
+                title="Home",
+                short_title="Home",
+            ),
+            markdown_to_html.PageConfig(
+                src="docs/explanations-reference.md",
+                dest="docs/explanations-reference.html",
+                title="Explanations",
+                short_title="Explanations",
+            ),
+        ]
+        header = markdown_to_html.build_header(
+            pages=pages,
+            current_dest="docs/explanations-reference.html",
+            site_title="My Site",
+            logo_icon="📄",
+        )
+        self.assertIn('href="../README.html" class="logo-area"', header)
+        self.assertIn('href="../README.html" class="nav-item"', header)
+        self.assertIn(
+            'href="explanations-reference.html" class="nav-item active"', header
+        )
+
+    def test_render_page_subdirectory(self) -> None:
+        """Tests page rendering computes stylesheet path relative to document directory."""
+        page = markdown_to_html.PageConfig(
+            src="docs/explanations-reference.md",
+            dest="docs/explanations-reference.html",
+            title="Reference",
+            short_title="Reference",
+        )
+        site_config = markdown_to_html.SiteConfig(
+            site_title="Docs Site",
+            title_suffix="Docs",
+            logo_icon="📄",
+            theme_key="docs-theme",
+            css_rel_path="css/styles.css",
+            pages=[page],
+        )
+        rendered = markdown_to_html.render_page(
+            page=page,
+            body_html="<p>Content</p>",
+            site_config=site_config,
+        )
+        self.assertIn('<link rel="stylesheet" href="../css/styles.css">', rendered)
+
+    def test_insert_diagrams_subdirectory(self) -> None:
+        """Tests diagram image src is computed relative to page directory."""
+        body = "<h1>Diagrams</h1><p>Content</p>"
+        diagrams = ["diagrams/architecture.svg"]
+        result = markdown_to_html.insert_diagrams(
+            body, diagrams, current_page_dest="docs/explanations-reference.html"
+        )
+        self.assertIn('src="../diagrams/architecture.svg"', result)
+
+    def test_generate_individual_pages_subdirectory(self) -> None:
+        """Tests generating pages into subdirectories creates parent directories."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            md_file = base_dir / "docs" / "explanations-reference.md"
+            md_file.parent.mkdir(parents=True, exist_ok=True)
+            _ = md_file.write_text(
+                "# Explanations\n\nReference text.", encoding="utf-8"
+            )
+
+            page = markdown_to_html.PageConfig(
+                src="docs/explanations-reference.md",
+                dest="docs/explanations-reference.html",
+                title="Explanations",
+                short_title="Explanations",
+            )
+            site_config = markdown_to_html.SiteConfig(
+                site_title="Test Site",
+                title_suffix="Test",
+                logo_icon="📄",
+                theme_key="test-theme",
+                css_rel_path="css/styles.css",
+                pages=[page],
+            )
+            parser = markdown_to_html.create_markdown_parser()
+            written = markdown_to_html.generate_individual_pages(
+                site_config=site_config,
+                base_dir=base_dir,
+                output_dir=base_dir,
+                md_parser=parser,
+            )
+            self.assertEqual(len(written), 1)
+            dest = base_dir / "docs" / "explanations-reference.html"
+            self.assertTrue(dest.exists())
+            html_content = dest.read_text(encoding="utf-8")
+            self.assertIn("<h1>Explanations</h1>", html_content)
+            self.assertIn(
+                '<link rel="stylesheet" href="../css/styles.css">', html_content
+            )
+
+    def test_main_with_subdirectory_input(self) -> None:
+        """Tests main entrypoint writing output to subdirectory when given subdirectory input."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            doc_file = base_dir / "docs" / "explanations-reference.md"
+            doc_file.parent.mkdir(parents=True, exist_ok=True)
+            _ = doc_file.write_text(
+                "# Explanations Reference\n\nDocs body.", encoding="utf-8"
+            )
+
+            exit_code = markdown_to_html.main(
+                ["--dir", str(base_dir), "docs/explanations-reference.md"]
+            )
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(
+                (base_dir / "docs" / "explanations-reference.html").exists()
+            )
+            self.assertFalse((base_dir / "explanations-reference.html").exists())
+
+    def test_resolve_site_config_toml_pages_subdirectory_without_dest(self) -> None:
+        """Tests resolving TOML pages with subdirectory src defaults to subdirectory html."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            doc_path = base_dir / "docs" / "explanations-reference.md"
+            doc_path.parent.mkdir(parents=True, exist_ok=True)
+            _ = doc_path.write_text("# Explanations\n", encoding="utf-8")
+            config_file = base_dir / "markdown-to-html.toml"
+            _ = config_file.write_text(
+                '[[pages]]\nsrc = "docs/explanations-reference.md"\n',
+                encoding="utf-8",
+            )
+            args = markdown_to_html.Args(dir=str(base_dir))
+            site_config = markdown_to_html.resolve_site_config(args, base_dir)
+            self.assertEqual(len(site_config.pages), 1)
+            self.assertEqual(
+                site_config.pages[0].dest, "docs/explanations-reference.html"
+            )
+
 
 if __name__ == "__main__":
     _ = unittest.main()
