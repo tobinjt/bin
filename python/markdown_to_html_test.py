@@ -31,6 +31,37 @@ class TestMarkdownToHtml(unittest.TestCase):
         result = markdown_to_html.render_markdown(parser, "**Bold Text**")
         self.assertIn("<strong>Bold Text</strong>", result)
 
+    def test_render_markdown_math_inline(self) -> None:
+        """Tests LaTeX inline math rendering with $ delimiters."""
+        parser = markdown_to_html.create_markdown_parser()
+        rendered = markdown_to_html.render_markdown(
+            parser,
+            "Parameters: $SVM < 0.4$ and $UGR > 22$. Formula: $x_1 * y_2$.",
+        )
+        self.assertIn('<span class="math inline">SVM &lt; 0.4</span>', rendered)
+        self.assertIn('<span class="math inline">UGR &gt; 22</span>', rendered)
+        self.assertIn('<span class="math inline">x_1 * y_2</span>', rendered)
+
+    def test_render_markdown_math_block(self) -> None:
+        """Tests LaTeX display/block math rendering with $$ delimiters."""
+        parser = markdown_to_html.create_markdown_parser()
+        rendered = markdown_to_html.render_markdown(
+            parser,
+            "$$\n\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\n$$",
+        )
+        self.assertIn('<div class="math block">', rendered)
+        self.assertIn("\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", rendered)
+
+    def test_render_markdown_math_currency_not_parsed(self) -> None:
+        """Tests that currency values with $ are not mistakenly parsed as math."""
+        parser = markdown_to_html.create_markdown_parser()
+        rendered = markdown_to_html.render_markdown(
+            parser,
+            "The price is $100 and $50.",
+        )
+        self.assertNotIn("math", rendered)
+        self.assertIn("The price is $100 and $50.", rendered)
+
     def test_extract_title_from_markdown(self) -> None:
         """Tests heading extraction from markdown text."""
         content = "<!-- comment -->\n\n# Document Title\n\nBody text."
@@ -212,6 +243,9 @@ class TestMarkdownToHtml(unittest.TestCase):
         self.assertIn("<title>Home — Alpha</title>", html_out)
         self.assertIn('<link rel="stylesheet" href="css/styles.css">', html_out)
         self.assertIn("mermaid.initialize", html_out)
+        self.assertIn("katex.min.css", html_out)
+        self.assertIn("katex.min.js", html_out)
+        self.assertIn("katex.render", html_out)
         self.assertIn("<p>Hello World</p>", html_out)
 
     def test_load_config_file(self) -> None:

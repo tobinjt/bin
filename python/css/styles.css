@@ -399,11 +399,19 @@ pre code {
 }
 
 /* Math rendering */
-.math-inline {
+.math-inline,
+.math.inline {
   font-family: "Cambria Math", "Latin Modern Math", serif;
   font-style: italic;
   padding: 0 4px;
   color: var(--brand);
+}
+
+.math.block {
+  font-family: "Cambria Math", "Latin Modern Math", serif;
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
 }
 
 /* Print Styles */

@@ -2,8 +2,8 @@
 """HTML documentation generator converting Markdown files into styled HTML pages.
 
 Converts Markdown documentation files into responsive HTML pages with top navigation,
-print styles, interactive Mermaid diagrams, SVG/image diagram embedding, GitHub-style
-callouts, and dark/light theme switching.
+print styles, interactive Mermaid diagrams, LaTeX math rendering, SVG/image diagram
+embedding, GitHub-style callouts, and dark/light theme switching.
 """
 
 import argparse
@@ -19,6 +19,7 @@ import tomllib
 import typing
 
 import markdown_it
+import mdit_py_plugins.dollarmath
 import mdit_py_plugins.tasklists
 
 ALERT_TYPES: dict[str, tuple[str, str, str]] = {
@@ -248,6 +249,12 @@ def create_markdown_parser() -> markdown_it.MarkdownIt:
     _ = md.enable("table")
     _ = md.enable("strikethrough")
     mdit_py_plugins.tasklists.tasklists_plugin(md)
+    mdit_py_plugins.dollarmath.dollarmath_plugin(
+        md,
+        allow_space=False,
+        allow_digits=False,
+        double_inline=True,
+    )
     return md
 
 
@@ -546,7 +553,9 @@ def render_page(
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>{title} — {title_suffix}</title>
           <link rel="stylesheet" href="{css_path}">
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
           <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+          <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
           <script>
             document.addEventListener("DOMContentLoaded", function() {{
               const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -557,6 +566,14 @@ def render_page(
                 securityLevel: 'loose',
                 logLevel: 'warn'
               }});
+              if (typeof katex !== 'undefined') {{
+                document.querySelectorAll('.math.inline').forEach(function(el) {{
+                  katex.render(el.textContent, el, {{ throwOnError: false, displayMode: false }});
+                }});
+                document.querySelectorAll('.math.block').forEach(function(el) {{
+                  katex.render(el.textContent, el, {{ throwOnError: false, displayMode: true }});
+                }});
+              }}
             }});
           </script>
         </head>
