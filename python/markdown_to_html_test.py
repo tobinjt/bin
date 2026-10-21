@@ -212,6 +212,31 @@ class TestMarkdownToHtml(unittest.TestCase):
         )
         self.assertIn('href="#" class="logo-area"', header)
 
+    def test_build_header_second_page_links_to_itself(self) -> None:
+        """Tests that the header logo on second and subsequent pages links to itself."""
+        pages = [
+            markdown_to_html.PageConfig(
+                src="README.md",
+                dest="README.html",
+                title="Home",
+                short_title="Overview",
+            ),
+            markdown_to_html.PageConfig(
+                src="specs.md",
+                dest="specs.html",
+                title="Specs",
+                short_title="Specifications",
+            ),
+        ]
+        header = markdown_to_html.build_header(
+            pages=pages,
+            current_dest="specs.html",
+            site_title="Test Project",
+            logo_icon="🛠️",
+        )
+        self.assertIn('href="specs.html" class="logo-area"', header)
+        self.assertNotIn('href="README.html" class="logo-area"', header)
+
     def test_build_theme_script(self) -> None:
         """Tests theme script generation with specified storage key."""
         script = markdown_to_html.build_theme_script("custom-theme")
@@ -421,6 +446,20 @@ class TestMarkdownToHtml(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertTrue((base_dir / "README.html").exists())
             self.assertFalse((base_dir / "index.html").exists())
+
+    def test_main_multiple_files_link_to_themselves(self) -> None:
+        """Tests that when run in a directory, all output files link to themselves."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            _ = (base_dir / "README.md").write_text("# Readme\n", encoding="utf-8")
+            _ = (base_dir / "specs.md").write_text("# Specs\n", encoding="utf-8")
+            exit_code = markdown_to_html.main(["--dir", str(base_dir)])
+            self.assertEqual(exit_code, 0)
+            readme_html = (base_dir / "README.html").read_text(encoding="utf-8")
+            specs_html = (base_dir / "specs.html").read_text(encoding="utf-8")
+            self.assertIn('href="README.html" class="logo-area"', readme_html)
+            self.assertIn('href="specs.html" class="logo-area"', specs_html)
+            self.assertNotIn('href="README.html" class="logo-area"', specs_html)
 
     def test_main_with_mock(self) -> None:
         """Tests that main orchestrates argument parsing and generation."""
@@ -723,7 +762,7 @@ class TestMarkdownToHtml(unittest.TestCase):
             site_title="My Site",
             logo_icon="📄",
         )
-        self.assertIn('href="../README.html" class="logo-area"', header)
+        self.assertIn('href="explanations-reference.html" class="logo-area"', header)
         self.assertIn('href="../README.html" class="nav-item"', header)
         self.assertIn(
             'href="explanations-reference.html" class="nav-item active"', header

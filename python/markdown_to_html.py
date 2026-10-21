@@ -464,11 +464,13 @@ def build_header(
         )
 
     nav_html: str = "\n".join(nav_items)
-    home_link: str = compute_relative_path(pages[0].dest, current_dir) if pages else "#"
+    logo_link: str = (
+        compute_relative_path(current_dest, current_dir) if current_dest else "#"
+    )
     template = textwrap.dedent("""
         <header class="site-header">
           <div class="header-container">
-            <a href="{home_link}" class="logo-area">
+            <a href="{logo_link}" class="logo-area">
               <span class="logo-icon">{logo_icon}</span>
               <span>{site_title}</span>
             </a>
@@ -483,7 +485,7 @@ def build_header(
         </header>
         """)
     return template.format(
-        home_link=home_link,
+        logo_link=logo_link,
         logo_icon=logo_icon,
         site_title=site_title,
         nav_html=nav_html,
