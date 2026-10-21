@@ -3,6 +3,7 @@
 import os
 import pathlib
 import subprocess
+import sys
 import textwrap
 from typing import cast, override
 import unittest
@@ -146,6 +147,42 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
             )
         )
 
+    def test_should_include_markdown_to_html(self) -> None:
+        """Tests the should_include_markdown_to_html function."""
+        self.assertFalse(
+            populate_pre_commit.should_include_markdown_to_html(frozenset[str]())
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_markdown_to_html(
+                frozenset[str]({"foo.md"})
+            )
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_markdown_to_html(
+                frozenset[str]({"foo.html"})
+            )
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_markdown_to_html(
+                frozenset[str]({"foo.md", "bar.html"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_markdown_to_html(
+                frozenset[str]({"foo.md", "foo.html"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_markdown_to_html(
+                frozenset[str]({"dir/foo.md", "dir/foo.html"})
+            )
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_markdown_to_html(
+                frozenset[str]({"dir1/foo.md", "dir2/foo.html"})
+            )
+        )
+
     def test_should_include_readme_toc(self) -> None:
         """Tests the should_include_readme_toc function."""
         self.assertFalse(
@@ -176,7 +213,9 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
 class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     """Tests for the main populate_pre_commit function."""
 
-    mock_snippets: list[tuple[str, bool]] = []
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName=methodName)
+        self.mock_snippets: list[tuple[str, bool]] = []
 
     @override
     def setUp(self) -> None:
@@ -417,26 +456,48 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         mode = pathlib.Path(".pre-commit-config.yaml").stat().st_mode
         self.assertTrue(bool(mode & 0o111))
 
+    def test_markdown_to_html_snippet(self) -> None:
+        """Tests that markdown_to_html snippet is populated correctly."""
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("markdown_to_html.yaml", True)],
+        )
+        with open(".pre-commit-config.yaml", "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn(
+            "managed-by-populate-pre-commit start: markdown_to_html.yaml",
+            content,
+        )
+        self.assertIn("- id: markdown_to_html", content)
+
     def test_main_success(self) -> None:
         """Tests the main function with arguments."""
-        with mock.patch(
-            "sys.argv", ["populate_pre_commit.py", "--extra-arg", "hook1=args"]
+        with (
+            mock.patch.object(
+                sys, "argv", ["populate_pre_commit.py", "--extra-arg", "hook1=args"]
+            ),
+            mock.patch.object(
+                populate_pre_commit, "populate_pre_commit"
+            ) as mock_populate,
         ):
-            with mock.patch("populate_pre_commit.populate_pre_commit") as mock_populate:
-                populate_pre_commit.main()
-                mock_populate.assert_called_once_with(
-                    extra_args={"hook1": "args"},
-                    script_file=mock.ANY,
-                    snippets=mock.ANY,
-                )
+            populate_pre_commit.main()
+            mock_populate.assert_called_once_with(
+                extra_args={"hook1": "args"},
+                script_file=mock.ANY,
+                snippets=mock.ANY,
+            )
 
     def test_main_invalid_extra_arg(self) -> None:
         """Tests the main function with invalid --extra-arg format."""
-        with mock.patch(
-            "sys.argv", ["populate_pre_commit.py", "--extra-arg", "invalid"]
+        with (
+            mock.patch.object(
+                sys, "argv", ["populate_pre_commit.py", "--extra-arg", "invalid"]
+            ),
+            self.assertRaises(ValueError),
         ):
-            with self.assertRaises(ValueError):
-                populate_pre_commit.main()
+            populate_pre_commit.main()
 
     def test_escape_for_env_s(self) -> None:
         """Tests the escape_for_env_s function."""
@@ -550,12 +611,16 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
     def test_main_no_extra_args(self) -> None:
         """Tests the main function without extra arguments."""
-        with mock.patch("sys.argv", ["populate_pre_commit.py"]):
-            with mock.patch("populate_pre_commit.populate_pre_commit") as mock_populate:
-                populate_pre_commit.main()
-                mock_populate.assert_called_once_with(
-                    extra_args={}, script_file=mock.ANY, snippets=mock.ANY
-                )
+        with (
+            mock.patch.object(sys, "argv", ["populate_pre_commit.py"]),
+            mock.patch.object(
+                populate_pre_commit, "populate_pre_commit"
+            ) as mock_populate,
+        ):
+            populate_pre_commit.main()
+            mock_populate.assert_called_once_with(
+                extra_args={}, script_file=mock.ANY, snippets=mock.ANY
+            )
 
     def test_build_shebang_args_empty_dict(self) -> None:
         """Tests build_shebang_args with an empty dictionary."""

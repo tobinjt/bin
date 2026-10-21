@@ -82,6 +82,11 @@ Configuration is handled in `pytest.ini`, which sets default options (e.g.,
 When writing Python code, you **must** import entire modules or submodules
 rather than specific classes or functions from within those modules.
 
+Exceptions to this rule:
+
+- Imports from the `typing` module should be imported directly rather than
+  importing the `typing` module itself.
+
 ______________________________________________________________________
 
 ### Example
@@ -142,6 +147,23 @@ class TestMain(unittest.TestCase):
     @mock.patch.object(sys, "exit")
     def test_success(self, mock_sys_exit: mock.Mock) -> None:
         ...
+```
+
+______________________________________________________________________
+
+#### ✅ Correct Usage: `from typing import cast.database`
+
+This is the exception for `typing`: import members from the module rather than
+the module itself.
+
+```python
+# In main.py
+from typing import cast
+
+def initialize_app():
+    db_conn = my_app.database.DatabaseConnection()
+    data = cast(dict[str, int], my_app.utils.load_initial_data())
+    # ... more code
 ```
 
 ## Docstrings are required

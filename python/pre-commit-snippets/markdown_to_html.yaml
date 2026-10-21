@@ -1,0 +1,9 @@
+- repo: local
+  hooks:
+  - id: markdown_to_html
+    name: Run `markdown_to_html`
+    pass_filenames: false
+    language: system
+    types:
+    - markdown
+    entry: markdown_to_html

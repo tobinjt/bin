@@ -8,13 +8,15 @@ markers to identify and update managed sections in .pre-commit-config.yaml.
 
 import argparse
 import functools
-import get_git_root
 import os
 import pathlib
 import subprocess
+from typing import TypedDict, cast
+
 import pathspec
 import yaml
-from typing import cast, TypedDict
+
+import get_git_root
 
 # Path to the directory containing pre-commit snippets.
 SNIPPETS_DIR = pathlib.Path(__file__).resolve().parent / "pre-commit-snippets"
@@ -240,8 +242,7 @@ def should_include_actionlint(files: frozenset[str]) -> bool:
         True if any .yaml or .yml files exist in .github/workflows/.
     """
     return any(
-        f.startswith(".github/workflows/")
-        and (f.endswith(".yaml") or f.endswith(".yml"))
+        f.startswith(".github/workflows/") and f.endswith((".yaml", ".yml"))
         for f in files
     )
 
@@ -270,6 +271,21 @@ def should_include_json(files: frozenset[str]) -> bool:
         True if any .json files exist, excluding .vscode/settings.json.
     """
     return any(f.endswith(".json") and f != ".vscode/settings.json" for f in files)
+
+
+@functools.cache
+def should_include_markdown_to_html(files: frozenset[str]) -> bool:
+    """Checks if any markdown file has a corresponding HTML file.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if the repository contains foo.md and foo.html for any value of foo.md.
+    """
+    return any(
+        f.endswith(".md") and f.removesuffix(".md") + ".html" in files for f in files
+    )
 
 
 @functools.cache
@@ -324,6 +340,10 @@ def populate_pre_commit(
         extra_args: A dictionary mapping hook IDs to extra arguments.
         script_file: The path to the script calling this function (used for shebang).
         snippets: A list of snippets and whether they should be included.
+
+    Raises:
+        ValueError: If a config snippet is empty.
+        OSError: If a config snippet cannot be read.
     """
     lines: list[str] = []
     if CONFIG_FILE.exists():
@@ -369,10 +389,7 @@ def populate_pre_commit(
     snippet_lines: list[str] = []
     for snippet_name in to_include:
         snippet_path = SNIPPETS_DIR / snippet_name
-        try:
-            content = snippet_path.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            raise
+        content = snippet_path.read_text(encoding="utf-8")
         if not content.strip():
             raise ValueError(f"config snippet {snippet_path} is empty")
 
@@ -406,7 +423,11 @@ def populate_pre_commit(
 
 
 def main() -> None:
-    """Parses arguments and populates the pre-commit config."""
+    """Parses arguments and populates the pre-commit config.
+
+    Raises:
+        ValueError: If an extra argument is not formatted as 'hook_id=args'.
+    """
     parser = argparse.ArgumentParser(
         description="Populate .pre-commit-config.yaml with managed snippets."
     )
@@ -449,6 +470,7 @@ def main() -> None:
         ("hooks.yaml", True),
         ("json.yaml", should_include_json(all_files)),
         ("keep-sorted.yaml", True),
+        ("markdown_to_html.yaml", should_include_markdown_to_html(all_files)),
         ("markdownlint.yaml", has_extension(all_files, ".md")),
         ("meta.yaml", True),
         ("mypy.yaml", has_extension(all_files, ".py")),
