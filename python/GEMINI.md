@@ -3,8 +3,8 @@
 <!-- markdownlint-disable MD025 -->
 
 This directory contains a collection of standalone Python utility scripts and
-tools used for various system administration and personal tasks. These scripts
-are designed to be run directly from the command line.
+tools used for system administration and personal tasks. These scripts are
+designed to be run directly from the command line.
 
 # Building and Running
 
@@ -131,7 +131,7 @@ def initialize_app():
 
 ______________________________________________________________________
 
-#### ✅ Correct Usage: importing a sub-module: from unitest import mock
+#### ✅ Correct Usage: importing a sub-module: from unittest import mock
 
 This is preferred because 1) it's importing a sub-module rather than a class or
 function, 2) the shorter import paths are easier to read, and 3) if we ever
@@ -168,10 +168,10 @@ def initialize_app():
 
 ## Docstrings are required
 
-When you write or modify Python code, you must ensure that every function,
+When you write or change Python code, you must ensure that every function,
 method, or generator that is not part of a test suite has a docstring. This
-docstring must, at a minimum, document the function's arguments, return values,
-and any exceptions that may be raised by the function.
+docstring must, at least, document the function's arguments, return values, and
+any exceptions that may be raised by the function.
 
 This rule applies to all non-test functions, regardless of their visibility
 (public or private).
@@ -221,7 +221,7 @@ def connect_to_database(hostname: str, port: int) -> Connection:
     # ... implementation ...
 ```
 
-## Use dataclasses rather than dicts
+## Use `dataclasses` rather than `dicts`
 
 When you are writing Python code, you **must** use `dataclasses` to represent
 structured data. You **must not** use dictionaries (`dict`) for this purpose.
@@ -375,7 +375,7 @@ for these features.
 
 ## Use `foo | None` for optional types
 
-When you write or modify Python code, you must use the `| None` syntax for
+When you write or change Python code, you must use the `| None` syntax for
 optional types, as specified in PEP 604. You must not use `typing.Optional`.
 
 This rule applies to all Python code you generate, including function
@@ -578,7 +578,7 @@ ______________________________________________________________________
 
 #### ✅ Correct Usage: mock.create_autospec
 
-This test will fail if you try to call get_user_data with the wrong number of
+This test will fail if you try to call `get_user_data` with the wrong number of
 arguments, protecting you from API changes.
 
 ```python
@@ -602,10 +602,10 @@ def test_user_retrieval():
 
 ______________________________________________________________________
 
-#### ❌ Incorrect Usage: mock.MagicMock
+#### ❌ Incorrect Usage: `mock.MagicMock`
 
-This test is brittle. It would still pass even if the signature of get_user_data
-changed or if you misspelled a method name.
+This test is brittle. It would still pass even if the signature of
+`get_user_data` changed or if you misspelled a method name.
 
 ```python
 from unittest import mock
@@ -626,7 +626,7 @@ def test_user_retrieval_brittle():
 
 ## Lint all Python code with `ruff` and `basedpyright`
 
-When you are asked to write, modify, or generate Python code, you must always
+When you are asked to write, change, or generate Python code, you must always
 lint your final code output using the `ruff` and `basedpyright` command-line
 tools.
 
@@ -642,7 +642,7 @@ tools.
   `FILENAME(s)` are the names of the Python files you have written.
 - **Error Resolution Strategy**:
   - *Type Mismatches*: Add or correct type annotations, including return type
-    annotations. Use typing.Any only as a last resort.
+    annotations. Use `typing.Any` only as a last resort.
   - *Unused Imports/Variables*: Remove them unless they are required for side
     effects; if they are required for side effects the import must be annotated
     with a reason.
@@ -664,7 +664,7 @@ tools.
 
 ## Format all Python code with `black`
 
-When you are asked to write, modify, or generate Python code, you must always
+When you are asked to write, change, or generate Python code, you must always
 reformat your final code output using the `black` command-line tool.
 
 - **Trigger**: Any request that results in Python code as the primary output.
