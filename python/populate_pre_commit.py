@@ -472,6 +472,7 @@ def main() -> None:
         ("keep-sorted.yaml", True),
         ("markdown_to_html.yaml", should_include_markdown_to_html(all_files)),
         ("markdownlint.yaml", has_extension(all_files, ".md")),
+        ("mdformat.yaml", has_extension(all_files, ".md")),
         ("meta.yaml", True),
         ("mypy.yaml", has_extension(all_files, ".py")),
         ("pygrep-hooks.yaml", has_extension(all_files, ".py")),

@@ -1,0 +1,9 @@
+- repo: local
+  hooks:
+  - id: mdformat
+    name: Run `mdformat`
+    language: system
+    types:
+    - markdown
+    exclude: CODE_OF_CONDUCT.md
+    entry: mdformat
