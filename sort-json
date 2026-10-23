@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Sort a JSON file in-place.
+
+set -e -f -u -o pipefail
+
+main() {
+  if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $0 FILENAME" >&2
+    return 1
+  fi
+
+  local input_file="$1" tmp_file
+  tmp_file="$(mktemp "${input_file}.XXXXXXXXXXXX")"
+  # I want the variable expansion to happen now, because the variable will have
+  # gone out of scope at exit time.
+  # shellcheck disable=SC2064
+  trap "rm -f \"${tmp_file}\"" EXIT
+  jq --sort-keys 'walk(if type == "array" then sort else . end)' \
+    "${input_file}" > "${tmp_file}"
+  mv -f "${tmp_file}" "${input_file}"
+}
+
+main "$@"
