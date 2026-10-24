@@ -5,8 +5,8 @@ import pathlib
 import subprocess
 import sys
 import textwrap
-from typing import cast, override
 import unittest
+from typing import cast, override
 from unittest import mock
 
 import pyfakefs.fake_filesystem_unittest
@@ -188,6 +188,7 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         self.assertFalse(
             populate_pre_commit.should_include_readme_toc(frozenset[str]())
         )
+        self.create_file("README.md", contents="# Title\n")
         self.assertTrue(
             populate_pre_commit.should_include_readme_toc(frozenset[str]({"README.md"}))
         )
@@ -195,6 +196,15 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
             populate_pre_commit.should_include_readme_toc(
                 frozenset[str]({"subdir/README.md"})
             )
+        )
+
+    def test_should_include_readme_toc_disabled(self) -> None:
+        """Tests should_include_readme_toc when disabled via comment."""
+        self.create_file(
+            "README.md", contents="# Title\n<!-- doctoc-disable -->\nSome text\n"
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_readme_toc(frozenset[str]({"README.md"}))
         )
 
     def test_should_include_rust_files(self) -> None:

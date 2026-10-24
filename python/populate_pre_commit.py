@@ -288,17 +288,20 @@ def should_include_markdown_to_html(files: frozenset[str]) -> bool:
     )
 
 
-@functools.cache
 def should_include_readme_toc(files: frozenset[str]) -> bool:
-    """Checks if a README.md file exists at the root of the repository.
+    """Checks if a README.md file exists at the root and doesn't disable TOC.
 
     Args:
         files: A set of all non-ignored file paths in the repository.
 
     Returns:
-        True if a README.md file exists at the root of the repository.
+        True if a README.md file exists at the root of the repository and does
+        not contain a comment to disable TOC generation.
     """
-    return "README.md" in files
+    if "README.md" not in files:
+        return False
+    content = pathlib.Path("README.md").read_text(encoding="utf-8")
+    return "<!-- doctoc-disable -->" not in content
 
 
 @functools.cache
