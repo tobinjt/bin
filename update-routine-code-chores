@@ -39,6 +39,9 @@ main() {
   if [[ -x ".github/dependabot.yml" ]]; then
     update_workflows
   fi
+  if [[ -f ".venv/bin/activate" ]]; then
+    . ".venv/bin/activate"
+  fi
   if [[ -x ".pre-commit-config.yaml" ]]; then
     update_pre_commit
   fi
