@@ -20,6 +20,7 @@ import json
 import re
 import ssl
 import sys
+import typing
 import zlib
 from collections import abc as collections_abc
 from html import parser as html_parser
@@ -69,7 +70,15 @@ _BOT_CHALLENGE_RE = re.compile(
     + r"challenge-platform|access denied|just a moment\.\.\.|captcha)",
     re.IGNORECASE,
 )
+_NEXTJS_BUILD_ID_RE = re.compile(r'"buildId"\s*:\s*"([^"]+)"')
 _WHITESPACE_RE = re.compile(r"\s+")
+
+_BUILD_ID_CACHE: dict[str, str] = {}
+
+
+def clear_build_id_cache() -> None:
+    """Clears the cached Next.js build IDs (primarily for testing)."""
+    _BUILD_ID_CACHE.clear()
 
 
 @final
@@ -592,6 +601,273 @@ def fetch_http_response(
     raise ValueError(f"Too many redirects (exceeded {max_redirects})")
 
 
+def find_nested_dict(
+    data: object,
+    key_name: str,
+) -> dict[str, object] | None:
+    """Recursively searches for the first nested dictionary under key_name.
+
+    Args:
+        data: Arbitrary nested dictionary or list.
+        key_name: Target dictionary key to locate.
+
+    Returns:
+        The dictionary value associated with key_name, or None.
+    """
+    if isinstance(data, dict):
+        untyped_dict = typing.cast(dict[object, object], data)
+        str_dict: dict[str, object] = {str(k): v for k, v in untyped_dict.items()}
+        target = str_dict.get(key_name)
+        if isinstance(target, dict):
+            untyped_target = typing.cast(dict[object, object], target)
+            return {str(k): v for k, v in untyped_target.items()}
+        for value in str_dict.values():
+            found = find_nested_dict(value, key_name)
+            if found is not None:
+                return found
+    elif isinstance(data, list):
+        untyped_list = typing.cast(list[object], data)
+        for item in untyped_list:
+            found = find_nested_dict(item, key_name)
+            if found is not None:
+                return found
+    return None
+
+
+def parse_nextjs_json_content(
+    requested_url: str,
+    final_url: str,
+    json_text: str,
+    max_text_chars: int = DEFAULT_MAX_TEXT_CHARS,
+    pattern: str = "",
+) -> PageInspectionResult | None:
+    """Parses a Next.js page JSON payload into a PageInspectionResult.
+
+    Args:
+        requested_url: Original URL requested by the caller.
+        final_url: Effective URL after redirects.
+        json_text: Decoded JSON document text.
+        max_text_chars: Maximum characters of visible text excerpt to retain.
+        pattern: Optional case-insensitive regex pattern to match against text.
+
+    Returns:
+        A populated PageInspectionResult instance, or None if invalid JSON.
+    """
+    try:
+        raw_payload = typing.cast(object, json.loads(json_text))
+    except ValueError:
+        return None
+
+    if not isinstance(raw_payload, dict):
+        return None
+
+    untyped_payload = typing.cast(dict[object, object], raw_payload)
+    product_details = find_nested_dict(untyped_payload, "productDetails") or {}
+    seo_overrides = find_nested_dict(untyped_payload, "seoOverrides") or {}
+
+    raw_title = (
+        seo_overrides.get("title")
+        or product_details.get("longDescription")
+        or seo_overrides.get("productName")
+        or product_details.get("productName")
+        or ""
+    )
+    title = (
+        _WHITESPACE_RE.sub(" ", raw_title).strip() if isinstance(raw_title, str) else ""
+    )
+
+    raw_desc = (
+        product_details.get("overview") or seo_overrides.get("productDescription") or ""
+    )
+    description = (
+        _WHITESPACE_RE.sub(" ", raw_desc).strip() if isinstance(raw_desc, str) else ""
+    )
+
+    canonical_path = seo_overrides.get("canonicalUrl") or ""
+    if isinstance(canonical_path, str) and canonical_path:
+        canonical_url = urllib_parse.urljoin(final_url, canonical_path)
+    else:
+        canonical_url = final_url
+
+    prices: list[str] = []
+    price_info = product_details.get("priceInformation")
+    if isinstance(price_info, dict):
+        untyped_price_info = typing.cast(dict[object, object], price_info)
+        sub_info: dict[str, object] = {str(k): v for k, v in untyped_price_info.items()}
+        inc_vat = sub_info.get("currentPriceIncVat")
+        if isinstance(inc_vat, dict):
+            untyped_inc_vat = typing.cast(dict[object, object], inc_vat)
+            inc_dict: dict[str, object] = {
+                str(k): v for k, v in untyped_inc_vat.items()
+            }
+            curr = str(inc_dict.get("currency") or "EUR")
+            amt = inc_dict.get("amount")
+            if isinstance(amt, (int, float)):
+                _append_unique(prices, f"{curr} {amt:.2f}")
+        ex_vat = sub_info.get("currentPriceExVat")
+        if isinstance(ex_vat, dict):
+            untyped_ex_vat = typing.cast(dict[object, object], ex_vat)
+            ex_dict: dict[str, object] = {str(k): v for k, v in untyped_ex_vat.items()}
+            curr = str(ex_dict.get("currency") or "EUR")
+            amt = ex_dict.get("amount")
+            if isinstance(amt, (int, float)):
+                _append_unique(prices, f"{curr} {amt:.2f} (ex VAT)")
+
+    skus: list[str] = []
+    sku_val = product_details.get("skuId") or seo_overrides.get("skuId")
+    if isinstance(sku_val, (str, int)):
+        _append_unique(skus, str(sku_val))
+
+    availability: list[str] = []
+    fulfilment = product_details.get("fulfilmentAvailability")
+    if isinstance(fulfilment, dict):
+        untyped_fulfilment = typing.cast(dict[object, object], fulfilment)
+        fulfil_dict: dict[str, object] = {
+            str(k): v for k, v in untyped_fulfilment.items()
+        }
+        can_deliver = bool(fulfil_dict.get("canBeDelivered"))
+        can_collect = bool(fulfil_dict.get("canBeCollected"))
+        if can_deliver:
+            _append_unique(availability, "available for delivery")
+        if can_collect:
+            _append_unique(availability, "click & collect")
+        if not can_deliver and not can_collect:
+            _append_unique(availability, "out of stock")
+    avail_status = product_details.get("productAvailabilityStatus")
+    if isinstance(avail_status, str) and avail_status:
+        _append_unique(availability, avail_status)
+
+    text_parts: list[str] = []
+    if title:
+        text_parts.append(title)
+    if description:
+        text_parts.append(description)
+    bullets = product_details.get("bullets")
+    if isinstance(bullets, list):
+        untyped_bullets = typing.cast(list[object], bullets)
+        for bullet in untyped_bullets:
+            if isinstance(bullet, str) and bullet.strip():
+                text_parts.append(bullet.strip())
+    specs = product_details.get("technicalSpecifications")
+    if isinstance(specs, list):
+        untyped_specs = typing.cast(list[object], specs)
+        for spec in untyped_specs:
+            if isinstance(spec, dict):
+                untyped_spec = typing.cast(dict[object, object], spec)
+                spec_dict: dict[str, object] = {
+                    str(k): v for k, v in untyped_spec.items()
+                }
+                spec_name = spec_dict.get("name")
+                spec_val = spec_dict.get("value")
+                if isinstance(spec_name, str) and isinstance(spec_val, str):
+                    text_parts.append(f"{spec_name}: {spec_val}")
+
+    visible_text = _WHITESPACE_RE.sub(" ", " ".join(text_parts)).strip()
+
+    pattern_matches: list[str] = []
+    if pattern:
+        compiled = re.compile(pattern, re.IGNORECASE)
+        for line in json_text.splitlines():
+            cleaned_line = _WHITESPACE_RE.sub(" ", line).strip()
+            if compiled.search(cleaned_line):
+                _append_unique(pattern_matches, cleaned_line[:240])
+                if len(pattern_matches) >= 10:
+                    break
+
+    excerpt = visible_text[:max_text_chars]
+    return PageInspectionResult(
+        requested_url=requested_url,
+        final_url=final_url,
+        status_code=200,
+        error=None,
+        bot_challenge_detected=False,
+        title=title,
+        description=description,
+        canonical_url=canonical_url,
+        prices=prices,
+        skus=skus,
+        availability=availability,
+        pattern_matches=pattern_matches,
+        text_excerpt=excerpt,
+    )
+
+
+def get_nextjs_build_id(
+    host: str,
+    scheme: str = "https",
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+) -> str | None:
+    """Extracts the Next.js build ID for a host, caching the result.
+
+    Args:
+        host: Target hostname (e.g. 'www.screwfix.ie').
+        scheme: URL scheme ('https' or 'http').
+        timeout: Socket timeout in seconds.
+
+    Returns:
+        The extracted buildId string, or None if not found.
+    """
+    if host in _BUILD_ID_CACHE:
+        return _BUILD_ID_CACHE[host]
+
+    homepage_url = f"{scheme}://{host}/"
+    try:
+        resp = fetch_http_response(homepage_url, timeout=timeout)
+    except (ValueError, OSError, http_client.HTTPException):
+        return None
+
+    if resp.status_code != 200:
+        return None
+
+    body_text = decode_response_bytes(resp.body, resp.content_encoding)
+    match = _NEXTJS_BUILD_ID_RE.search(body_text)
+    if match:
+        build_id = match.group(1)
+        _BUILD_ID_CACHE[host] = build_id
+        return build_id
+    return None
+
+
+def fetch_nextjs_data_response(
+    url: str,
+    timeout: float = DEFAULT_TIMEOUT_SECONDS,
+) -> RawHTTPResponse | None:
+    """Attempts to fetch the Next.js JSON data route for a page URL.
+
+    Args:
+        url: The web page URL (e.g. 'https://www.screwfix.ie/p/name/123').
+        timeout: Socket timeout in seconds.
+
+    Returns:
+        RawHTTPResponse containing the JSON payload if successful, else None.
+    """
+    parsed = urllib_parse.urlsplit(url)
+    if not parsed.hostname or not parsed.path or parsed.path == "/":
+        return None
+
+    build_id = get_nextjs_build_id(
+        parsed.hostname, scheme=parsed.scheme, timeout=timeout
+    )
+    if not build_id:
+        return None
+
+    clean_path = parsed.path.rstrip("/")
+    data_url = (
+        f"{parsed.scheme}://{parsed.netloc}/_next/data/{build_id}{clean_path}.json"
+    )
+    if parsed.query:
+        data_url = f"{data_url}?{parsed.query}"
+
+    try:
+        data_resp = fetch_http_response(data_url, timeout=timeout)
+    except (ValueError, OSError, http_client.HTTPException):
+        return None
+
+    if data_resp.status_code == 200:
+        return data_resp
+    return None
+
+
 def inspect_url(
     url: str,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
@@ -637,6 +913,29 @@ def inspect_url(
         max_text_chars=max_text_chars,
         pattern=pattern,
     )
+    if result.bot_challenge_detected or raw_response.status_code in {202, 403, 405}:
+        nextjs_raw = fetch_nextjs_data_response(raw_response.final_url, timeout=timeout)
+        if nextjs_raw is not None:
+            json_text = decode_response_bytes(
+                nextjs_raw.body, nextjs_raw.content_encoding
+            )
+            parsed_nextjs = parse_nextjs_json_content(
+                requested_url=url,
+                final_url=raw_response.final_url,
+                json_text=json_text,
+                max_text_chars=max_text_chars,
+                pattern=pattern,
+            )
+            if parsed_nextjs is not None:
+                return parsed_nextjs
+
+    if raw_response.status_code in {202} and not result.title:
+        return dataclasses.replace(
+            result,
+            error=f"HTTP {raw_response.status_code}: {raw_response.reason}",
+            bot_challenge_detected=True,
+        )
+
     if raw_response.status_code >= 400:
         return dataclasses.replace(
             result,

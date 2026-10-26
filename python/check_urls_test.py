@@ -356,11 +356,19 @@ class TestCheckUrls(unittest.TestCase):
             body=b"<html><head><title>Human Verification</title></head></html>",
         )
 
-        with mock.patch.object(
-            check_urls,
-            "fetch_http_response",
-            autospec=True,
-            side_effect=[ok_raw, forbidden_raw, OSError("DNS lookup failed")],
+        with (
+            mock.patch.object(
+                check_urls,
+                "fetch_http_response",
+                autospec=True,
+                side_effect=[ok_raw, forbidden_raw, OSError("DNS lookup failed")],
+            ),
+            mock.patch.object(
+                check_urls,
+                "fetch_nextjs_data_response",
+                autospec=True,
+                return_value=None,
+            ),
         ):
             res_ok = check_urls.inspect_url("https://short.url/ronseal")
             res_403 = check_urls.inspect_url("https://www.screwfix.ie/p/blocked")
@@ -445,6 +453,442 @@ class TestCheckUrls(unittest.TestCase):
         self.assertIn('"final_url": "https://shop.example/product/1"', output_text)
         self.assertIn('"prices": [\n      "EUR 329.00"\n    ]', output_text)
         self.assertIn('"bot_challenge_detected": true', output_text)
+
+    def test_parse_nextjs_json_content(self) -> None:
+        """Tests parsing Next.js JSON product data and edge cases."""
+        sample_json = json.dumps(
+            {
+                "pageProps": {
+                    "models": {
+                        "enrichedData": {
+                            "productDetails": {
+                                "skuId": "885KJ",
+                                "longDescription": "Broadfix Plastic U-Shims Assorted 60 Pcs",
+                                "overview": "Easily stacked to achieve any shimming height.",
+                                "bullets": ["Resealable Packaging", "Colour-Coded"],
+                                "technicalSpecifications": [
+                                    {"name": "Brand", "value": "Broadfix"},
+                                    {"name": "Pack Size", "value": "60"},
+                                ],
+                                "priceInformation": {
+                                    "currentPriceIncVat": {
+                                        "currency": "EUR",
+                                        "amount": 11.85,
+                                    },
+                                    "currentPriceExVat": {
+                                        "currency": "EUR",
+                                        "amount": 9.63,
+                                    },
+                                },
+                                "fulfilmentAvailability": {
+                                    "canBeDelivered": True,
+                                    "canBeCollected": True,
+                                },
+                                "productAvailabilityStatus": "AVAILABLE",
+                            },
+                            "seoOverrides": {
+                                "title": "Broadfix Plastic U-Shims - Screwfix",
+                                "canonicalUrl": "/p/broadfix-plastic-u-shims-assorted-60-pcs/885kj",
+                            },
+                        }
+                    }
+                }
+            }
+        )
+        res = check_urls.parse_nextjs_json_content(
+            requested_url="https://short.url/shims",
+            final_url="https://www.screwfix.ie/p/broadfix-plastic-u-shims-assorted-60-pcs/885kj",
+            json_text=sample_json,
+            pattern="Resealable",
+        )
+        self.assertIsNotNone(res)
+        assert res is not None
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNone(res.error)
+        self.assertFalse(res.bot_challenge_detected)
+        self.assertEqual(res.title, "Broadfix Plastic U-Shims - Screwfix")
+        self.assertEqual(
+            res.description, "Easily stacked to achieve any shimming height."
+        )
+        self.assertEqual(
+            res.canonical_url,
+            "https://www.screwfix.ie/p/broadfix-plastic-u-shims-assorted-60-pcs/885kj",
+        )
+        self.assertIn("EUR 11.85", res.prices)
+        self.assertIn("EUR 9.63 (ex VAT)", res.prices)
+        self.assertIn("885KJ", res.skus)
+        self.assertIn("available for delivery", res.availability)
+        self.assertIn("click & collect", res.availability)
+        self.assertIn("AVAILABLE", res.availability)
+        self.assertIn("Brand: Broadfix", res.text_excerpt)
+        self.assertTrue(len(res.pattern_matches) > 0)
+
+        # Invalid JSON or non-dict payloads return None
+        self.assertIsNone(
+            check_urls.parse_nextjs_json_content(
+                "https://example.com", "https://example.com", "not json"
+            )
+        )
+        self.assertIsNone(
+            check_urls.parse_nextjs_json_content(
+                "https://example.com", "https://example.com", "[]"
+            )
+        )
+
+    def test_parse_nextjs_json_content_out_of_stock(self) -> None:
+        """Tests Next.js parsing when an item is out of stock."""
+        sample_json = json.dumps(
+            {
+                "pageProps": {
+                    "productDetails": {
+                        "skuId": "999XX",
+                        "longDescription": "Discontinued Item",
+                        "fulfilmentAvailability": {
+                            "canBeDelivered": False,
+                            "canBeCollected": False,
+                        },
+                    }
+                }
+            }
+        )
+        res = check_urls.parse_nextjs_json_content(
+            requested_url="https://example.com/item",
+            final_url="https://example.com/item",
+            json_text=sample_json,
+        )
+        self.assertIsNotNone(res)
+        assert res is not None
+        self.assertIn("out of stock", res.availability)
+
+    def test_find_nested_dict_in_list_and_primitives(self) -> None:
+        """Tests find_nested_dict when traversing lists and missing keys."""
+        data = [{"a": 1}, {"target": {"found": "yes"}}]
+        found = check_urls.find_nested_dict(data, "target")
+        self.assertEqual(found, {"found": "yes"})
+        self.assertIsNone(check_urls.find_nested_dict("not a container", "target"))
+        self.assertIsNone(check_urls.find_nested_dict([1, 2, 3], "target"))
+
+    def test_parse_nextjs_json_content_edge_cases(self) -> None:
+        """Tests branch coverage for Next.js JSON edge cases and fallbacks."""
+        items: list[dict[str, object]] = [
+            {"pattern_line": f"match_pattern_{i}"} for i in range(15)
+        ]
+        sparse_dict: dict[str, object] = {
+            "items": [
+                {
+                    "productDetails": {
+                        "productName": "Minimal Product",
+                        "bullets": [" ", 123],
+                        "technicalSpecifications": [
+                            "invalid_spec",
+                            {"name": "OnlyName"},
+                            {"value": "OnlyVal"},
+                        ],
+                        "priceInformation": {
+                            "currentPriceIncVat": {
+                                "currency": "EUR",
+                                "amount": "invalid",
+                            },
+                            "currentPriceExVat": {
+                                "currency": "EUR",
+                                "amount": "invalid",
+                            },
+                        },
+                        "skuId": None,
+                    },
+                    "seoOverrides": {
+                        "canonicalUrl": None,
+                        "productDescription": "Minimal Description",
+                    },
+                }
+            ],
+            "extra_matches": items,
+        }
+        sparse_json = json.dumps(sparse_dict, indent=2)
+        res = check_urls.parse_nextjs_json_content(
+            requested_url="https://example.com/p/item",
+            final_url="https://example.com/p/item",
+            json_text=sparse_json,
+            pattern="match_pattern_",
+        )
+        self.assertIsNotNone(res)
+        assert res is not None
+        self.assertEqual(res.title, "Minimal Product")
+        self.assertEqual(res.description, "Minimal Description")
+        self.assertEqual(res.canonical_url, "https://example.com/p/item")
+        self.assertEqual(res.prices, [])
+        self.assertEqual(res.skus, [])
+        self.assertEqual(len(res.pattern_matches), 10)
+
+        # Test empty title and description path
+        empty_json = json.dumps({"pageProps": {}})
+        empty_res = check_urls.parse_nextjs_json_content(
+            requested_url="https://example.com/empty",
+            final_url="https://example.com/empty",
+            json_text=empty_json,
+        )
+        self.assertIsNotNone(empty_res)
+        assert empty_res is not None
+        self.assertEqual(empty_res.title, "")
+        self.assertEqual(empty_res.text_excerpt, "")
+
+    def test_inspect_url_202_fallback_failure(self) -> None:
+        """Tests inspect_url handling HTTP 202 when Next.js data route is missing."""
+        resp_202 = check_urls.RawHTTPResponse(
+            final_url="https://example.com/accepted",
+            status_code=202,
+            reason="Accepted",
+            content_encoding="",
+            body=b"<html><head><title></title></head><body></body></html>",
+        )
+        with (
+            mock.patch.object(
+                check_urls,
+                "fetch_http_response",
+                autospec=True,
+                return_value=resp_202,
+            ),
+            mock.patch.object(
+                check_urls,
+                "fetch_nextjs_data_response",
+                autospec=True,
+                return_value=None,
+            ),
+        ):
+            res = check_urls.inspect_url("https://example.com/accepted")
+
+        self.assertEqual(res.status_code, 202)
+        self.assertEqual(res.error, "HTTP 202: Accepted")
+        self.assertTrue(res.bot_challenge_detected)
+
+    def test_get_nextjs_build_id_and_caching(self) -> None:
+        """Tests extracting Next.js build ID from homepage HTML and caching."""
+        check_urls.clear_build_id_cache()
+        ok_home = check_urls.RawHTTPResponse(
+            final_url="https://www.screwfix.ie/",
+            status_code=200,
+            reason="OK",
+            content_encoding="",
+            body=b'<html><body><script id="__NEXT_DATA__">{"buildId":"test-build-123"}</script></body></html>',
+        )
+        with mock.patch.object(
+            check_urls,
+            "fetch_http_response",
+            autospec=True,
+            return_value=ok_home,
+        ):
+            build_id = check_urls.get_nextjs_build_id("www.screwfix.ie")
+            self.assertEqual(build_id, "test-build-123")
+            # Second call uses cache and does not fetch
+            cached = check_urls.get_nextjs_build_id("www.screwfix.ie")
+            self.assertEqual(cached, "test-build-123")
+
+        bad_home = check_urls.RawHTTPResponse(
+            final_url="https://other.example/",
+            status_code=404,
+            reason="Not Found",
+            content_encoding="",
+            body=b"",
+        )
+        with mock.patch.object(
+            check_urls,
+            "fetch_http_response",
+            autospec=True,
+            return_value=bad_home,
+        ):
+            self.assertIsNone(check_urls.get_nextjs_build_id("other.example"))
+
+        no_build = check_urls.RawHTTPResponse(
+            final_url="https://nobuild.example/",
+            status_code=200,
+            reason="OK",
+            content_encoding="",
+            body=b"<html>No build id</html>",
+        )
+        with mock.patch.object(
+            check_urls,
+            "fetch_http_response",
+            autospec=True,
+            return_value=no_build,
+        ):
+            self.assertIsNone(check_urls.get_nextjs_build_id("nobuild.example"))
+
+        with mock.patch.object(
+            check_urls,
+            "fetch_http_response",
+            autospec=True,
+            side_effect=OSError("network down"),
+        ):
+            self.assertIsNone(check_urls.get_nextjs_build_id("down.example"))
+
+    def test_fetch_nextjs_data_response(self) -> None:
+        """Tests fetching Next.js data route and error paths."""
+        self.assertIsNone(check_urls.fetch_nextjs_data_response("https://example.com/"))
+        self.assertIsNone(check_urls.fetch_nextjs_data_response("https:///p/1"))
+
+        with mock.patch.object(
+            check_urls,
+            "get_nextjs_build_id",
+            autospec=True,
+            return_value=None,
+        ):
+            self.assertIsNone(
+                check_urls.fetch_nextjs_data_response("https://example.com/p/1")
+            )
+
+        data_resp = check_urls.RawHTTPResponse(
+            final_url="https://example.com/_next/data/b1/p/1.json?q=test",
+            status_code=200,
+            reason="OK",
+            content_encoding="",
+            body=b'{"pageProps":{}}',
+        )
+        with (
+            mock.patch.object(
+                check_urls,
+                "get_nextjs_build_id",
+                autospec=True,
+                return_value="b1",
+            ),
+            mock.patch.object(
+                check_urls,
+                "fetch_http_response",
+                autospec=True,
+                return_value=data_resp,
+            ),
+        ):
+            res = check_urls.fetch_nextjs_data_response(
+                "https://example.com/p/1?q=test"
+            )
+            self.assertIsNotNone(res)
+            assert res is not None
+            self.assertEqual(res.status_code, 200)
+
+        with (
+            mock.patch.object(
+                check_urls,
+                "get_nextjs_build_id",
+                autospec=True,
+                return_value="b1",
+            ),
+            mock.patch.object(
+                check_urls,
+                "fetch_http_response",
+                autospec=True,
+                side_effect=OSError("fail"),
+            ),
+        ):
+            self.assertIsNone(
+                check_urls.fetch_nextjs_data_response("https://example.com/p/1")
+            )
+
+        error_resp = check_urls.RawHTTPResponse(
+            final_url="https://example.com/_next/data/b1/p/1.json",
+            status_code=500,
+            reason="Server Error",
+            content_encoding="",
+            body=b"error",
+        )
+        with (
+            mock.patch.object(
+                check_urls,
+                "get_nextjs_build_id",
+                autospec=True,
+                return_value="b1",
+            ),
+            mock.patch.object(
+                check_urls,
+                "fetch_http_response",
+                autospec=True,
+                return_value=error_resp,
+            ),
+        ):
+            self.assertIsNone(
+                check_urls.fetch_nextjs_data_response("https://example.com/p/1")
+            )
+
+    def test_inspect_url_nextjs_fallback_success(self) -> None:
+        """Tests that a bot-challenged URL falls back to Next.js data route."""
+        challenge_raw = check_urls.RawHTTPResponse(
+            final_url="https://www.screwfix.ie/p/sample/123",
+            status_code=405,
+            reason="Not Allowed",
+            content_encoding="",
+            body=b"<html><head><title>Human Verification</title></head></html>",
+        )
+        sample_json = json.dumps(
+            {
+                "pageProps": {
+                    "productDetails": {
+                        "skuId": "123",
+                        "longDescription": "Fallback Product",
+                        "priceInformation": {
+                            "currentPriceIncVat": {
+                                "currency": "EUR",
+                                "amount": 19.99,
+                            }
+                        },
+                        "fulfilmentAvailability": {"canBeDelivered": True},
+                    }
+                }
+            }
+        )
+        data_raw = check_urls.RawHTTPResponse(
+            final_url="https://www.screwfix.ie/_next/data/b1/p/sample/123.json",
+            status_code=200,
+            reason="OK",
+            content_encoding="",
+            body=sample_json.encode(),
+        )
+
+        with (
+            mock.patch.object(
+                check_urls,
+                "fetch_http_response",
+                autospec=True,
+                return_value=challenge_raw,
+            ),
+            mock.patch.object(
+                check_urls,
+                "fetch_nextjs_data_response",
+                autospec=True,
+                return_value=data_raw,
+            ),
+        ):
+            res = check_urls.inspect_url("https://www.screwfix.ie/p/sample/123")
+
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNone(res.error)
+        self.assertFalse(res.bot_challenge_detected)
+        self.assertEqual(res.title, "Fallback Product")
+        self.assertIn("EUR 19.99", res.prices)
+        self.assertIn("123", res.skus)
+
+        # Fallback payload is invalid JSON, so it returns original error
+        bad_json_raw = check_urls.RawHTTPResponse(
+            final_url="https://www.screwfix.ie/_next/data/b1/p/sample/123.json",
+            status_code=200,
+            reason="OK",
+            content_encoding="",
+            body=b"not valid json",
+        )
+        with (
+            mock.patch.object(
+                check_urls,
+                "fetch_http_response",
+                autospec=True,
+                return_value=challenge_raw,
+            ),
+            mock.patch.object(
+                check_urls,
+                "fetch_nextjs_data_response",
+                autospec=True,
+                return_value=bad_json_raw,
+            ),
+        ):
+            res_bad = check_urls.inspect_url("https://www.screwfix.ie/p/sample/123")
+        self.assertEqual(res_bad.status_code, 405)
+        self.assertEqual(res_bad.error, "HTTP 405: Not Allowed")
 
 
 if __name__ == "__main__":
