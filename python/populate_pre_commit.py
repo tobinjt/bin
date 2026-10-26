@@ -288,6 +288,20 @@ def should_include_markdown_to_html(files: frozenset[str]) -> bool:
     )
 
 
+@functools.cache
+def should_include_mdformat(files: frozenset[str]) -> bool:
+    """Checks if markdown files other than CODE_OF_CONDUCT.md and README.md exist.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if any markdown files exist besides CODE_OF_CONDUCT.md and README.md.
+    """
+    excluded = {"CODE_OF_CONDUCT.md", "README.md"}
+    return any(f.endswith(".md") and f not in excluded for f in files)
+
+
 def should_include_readme_toc(files: frozenset[str]) -> bool:
     """Checks if a README.md file exists at the root and doesn't disable TOC.
 
@@ -475,7 +489,7 @@ def main() -> None:
         ("keep-sorted.yaml", True),
         ("markdown_to_html.yaml", should_include_markdown_to_html(all_files)),
         ("markdownlint.yaml", has_extension(all_files, ".md")),
-        ("mdformat.yaml", has_extension(all_files, ".md")),
+        ("mdformat.yaml", should_include_mdformat(all_files)),
         ("meta.yaml", True),
         ("mypy.yaml", has_extension(all_files, ".py")),
         ("pygrep-hooks.yaml", has_extension(all_files, ".py")),

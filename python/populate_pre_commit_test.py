@@ -183,6 +183,51 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
             )
         )
 
+    def test_should_include_mdformat(self) -> None:
+        """Tests the should_include_mdformat function."""
+        self.assertFalse(populate_pre_commit.should_include_mdformat(frozenset[str]()))
+        self.assertFalse(
+            populate_pre_commit.should_include_mdformat(frozenset[str]({"README.md"}))
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_mdformat(
+                frozenset[str]({"CODE_OF_CONDUCT.md"})
+            )
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_mdformat(
+                frozenset[str]({"README.md", "CODE_OF_CONDUCT.md"})
+            )
+        )
+        self.assertFalse(
+            populate_pre_commit.should_include_mdformat(
+                frozenset[str]({"main.py", "README.txt"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_mdformat(frozenset[str]({"foo.md"}))
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_mdformat(
+                frozenset[str]({"README.md", "foo.md"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_mdformat(
+                frozenset[str]({"CODE_OF_CONDUCT.md", "docs/guide.md"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_mdformat(
+                frozenset[str]({"dir/README.md"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_mdformat(
+                frozenset[str]({"dir/CODE_OF_CONDUCT.md"})
+            )
+        )
+
     def test_should_include_readme_toc(self) -> None:
         """Tests the should_include_readme_toc function."""
         self.assertFalse(
@@ -481,6 +526,22 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             content,
         )
         self.assertIn("- id: markdown_to_html", content)
+
+    def test_mdformat_snippet(self) -> None:
+        """Tests that mdformat snippet is populated correctly."""
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("mdformat.yaml", True)],
+        )
+        with open(".pre-commit-config.yaml", "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn(
+            "managed-by-populate-pre-commit start: mdformat.yaml",
+            content,
+        )
+        self.assertIn("- id: mdformat", content)
 
     def test_main_success(self) -> None:
         """Tests the main function with arguments."""

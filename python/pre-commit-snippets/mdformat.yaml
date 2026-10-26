@@ -5,5 +5,5 @@
     language: system
     types:
     - markdown
-    exclude: CODE_OF_CONDUCT.md
+    exclude: ^(CODE_OF_CONDUCT\.md|README\.md)$
     entry: mdformat
