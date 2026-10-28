@@ -7,6 +7,7 @@ embedding, GitHub-style callouts, and dark/light theme switching.
 """
 
 import argparse
+import collections.abc
 import dataclasses
 import html
 import os.path
@@ -17,9 +18,11 @@ import shutil
 import sys
 import textwrap
 import tomllib
-import typing
+from typing import NotRequired, TypedDict, cast, final
 
 import markdown_it
+import markdown_it.rules_core
+import markdown_it.token
 import mdit_py_plugins.dollarmath
 import mdit_py_plugins.tasklists
 
@@ -32,7 +35,7 @@ ALERT_TYPES: dict[str, tuple[str, str, str]] = {
 }
 
 
-class PageDict(typing.TypedDict):
+class PageDict(TypedDict):
     """Schema for a single page entry in a TOML configuration file.
 
     Attributes:
@@ -41,16 +44,22 @@ class PageDict(typing.TypedDict):
         title: Optional full page title for the HTML head.
         short_title: Optional short title for navigation menus.
         diagrams: Optional list of diagram file paths to embed.
+        toc: Optional boolean override for table of contents generation.
+        toc_depth: Optional integer override for maximum heading level in TOC.
+        toc_style: Optional string override for TOC style ('dropdown' or 'floating').
     """
 
     src: str
-    dest: typing.NotRequired[str]
-    title: typing.NotRequired[str]
-    short_title: typing.NotRequired[str]
-    diagrams: typing.NotRequired[list[str]]
+    dest: NotRequired[str]
+    title: NotRequired[str]
+    short_title: NotRequired[str]
+    diagrams: NotRequired[list[str]]
+    toc: NotRequired[bool]
+    toc_depth: NotRequired[int]
+    toc_style: NotRequired[str]
 
 
-class SiteConfigDict(typing.TypedDict, total=False):
+class SiteConfigDict(TypedDict, total=False):
     """Schema for the top-level site configuration in a TOML file.
 
     Attributes:
@@ -60,14 +69,35 @@ class SiteConfigDict(typing.TypedDict, total=False):
         theme_key: LocalStorage key for persisting color theme.
         css_rel_path: Relative path to the CSS stylesheet.
         pages: List of page configuration dictionaries.
+        toc: Whether table of contents is enabled.
+        toc_depth: Maximum heading level for table of contents.
+        toc_style: Display style for table of contents ('dropdown' or 'floating').
     """
 
-    site_title: typing.NotRequired[str]
-    title_suffix: typing.NotRequired[str]
-    logo_icon: typing.NotRequired[str]
-    theme_key: typing.NotRequired[str]
-    css_rel_path: typing.NotRequired[str]
-    pages: typing.NotRequired[list[PageDict]]
+    site_title: NotRequired[str]
+    title_suffix: NotRequired[str]
+    logo_icon: NotRequired[str]
+    theme_key: NotRequired[str]
+    css_rel_path: NotRequired[str]
+    pages: NotRequired[list[PageDict]]
+    toc: NotRequired[bool]
+    toc_depth: NotRequired[int]
+    toc_style: NotRequired[str]
+
+
+@dataclasses.dataclass(frozen=True)
+class TocEntry:
+    """A heading entry in the table of contents.
+
+    Attributes:
+        title: Clean display text of the heading.
+        slug: HTML anchor ID for the heading.
+        level: Heading level (1 to 6).
+    """
+
+    title: str
+    slug: str
+    level: int
 
 
 @dataclasses.dataclass(frozen=True)
@@ -80,6 +110,9 @@ class PageConfig:
         title: Full page title for the HTML document head.
         short_title: Short title for navigation menu items.
         diagrams: List of diagram file paths to embed in this page.
+        toc: Optional page-level override for table of contents enabled.
+        toc_depth: Optional page-level override for table of contents depth.
+        toc_style: Optional page-level override for table of contents style.
     """
 
     src: str
@@ -87,6 +120,9 @@ class PageConfig:
     title: str
     short_title: str
     diagrams: list[str] = dataclasses.field(default_factory=list)
+    toc: bool | None = None
+    toc_depth: int | None = None
+    toc_style: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -100,6 +136,9 @@ class SiteConfig:
         theme_key: Key name used in localStorage for theme preference.
         css_rel_path: Relative URL/path to the CSS stylesheet.
         pages: List of configured pages to build.
+        toc: Whether table of contents is enabled.
+        toc_depth: Maximum heading level for table of contents.
+        toc_style: Display style for table of contents ('dropdown' or 'floating').
     """
 
     site_title: str
@@ -108,9 +147,12 @@ class SiteConfig:
     theme_key: str
     css_rel_path: str
     pages: list[PageConfig] = dataclasses.field(default_factory=list)
+    toc: bool = True
+    toc_depth: int = 3
+    toc_style: str = "dropdown"
 
 
-@typing.final
+@final
 class Args(argparse.Namespace):
     """Typed container for parsed command line arguments.
 
@@ -123,6 +165,9 @@ class Args(argparse.Namespace):
         theme_key: LocalStorage key for persisting theme selection.
         css_path: Relative path to stylesheet.
         output_dir: Destination directory for generated HTML files.
+        toc: Optional boolean indicating whether TOC generation is enabled.
+        toc_depth: Maximum heading level included in the table of contents.
+        toc_style: Display style for the table of contents.
         inputs: List of specific markdown filenames to process.
     """
 
@@ -134,6 +179,9 @@ class Args(argparse.Namespace):
     theme_key: str
     css_path: str
     output_dir: str
+    toc: bool | None
+    toc_depth: int
+    toc_style: str
     inputs: list[str]
 
     def __init__(
@@ -146,6 +194,9 @@ class Args(argparse.Namespace):
         theme_key: str = "",
         css_path: str = "",
         output_dir: str = "",
+        toc: bool | None = None,
+        toc_depth: int = 0,
+        toc_style: str = "",
         inputs: list[str] | None = None,
     ) -> None:
         """Initializes the argument container with default values.
@@ -159,6 +210,9 @@ class Args(argparse.Namespace):
             theme_key: LocalStorage key for persisting theme selection.
             css_path: Relative path to stylesheet.
             output_dir: Destination directory for generated HTML files.
+            toc: Optional boolean indicating whether TOC generation is enabled.
+            toc_depth: Maximum heading level included in the table of contents.
+            toc_style: Display style for the table of contents.
             inputs: List of specific markdown filenames to process.
         """
         super().__init__()
@@ -170,6 +224,9 @@ class Args(argparse.Namespace):
         self.theme_key = theme_key
         self.css_path = css_path
         self.output_dir = output_dir
+        self.toc = toc
+        self.toc_depth = toc_depth
+        self.toc_style = toc_style
         self.inputs = list(inputs) if inputs is not None else []
 
 
@@ -231,6 +288,25 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="Destination directory for generated HTML files (defaults to base directory).",
     )
     _ = parser.add_argument(
+        "--toc",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Enable or disable table of contents generation (default: enabled).",
+    )
+    _ = parser.add_argument(
+        "--toc-depth",
+        type=int,
+        default=0,
+        help="Maximum heading level for table of contents (default: 3).",
+    )
+    _ = parser.add_argument(
+        "--toc-style",
+        type=str,
+        default="",
+        choices=["dropdown", "floating", "none", ""],
+        help="Display style for table of contents: dropdown or floating (default: dropdown).",
+    )
+    _ = parser.add_argument(
         "inputs",
         nargs="*",
         type=str,
@@ -238,6 +314,65 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="Optional specific Markdown files to process.",
     )
     return parser
+
+
+def slugify(text: str) -> str:
+    """Generates a URL-safe slug from a heading text string.
+
+    Args:
+        text: Heading text to convert to a slug.
+
+    Returns:
+        URL-safe hyphen-separated slug string.
+    """
+    cleaned = re.sub(r"[^\w\s-]", "", text.strip().lower())
+    slug = re.sub(r"[\s_]+", "-", cleaned).strip("-")
+    return slug or "section"
+
+
+def extract_heading_title(inline_token: markdown_it.token.Token) -> str:
+    """Extracts plain text content from an inline token's children.
+
+    Args:
+        inline_token: MarkdownIt inline token containing child tokens.
+
+    Returns:
+        Combined plain text title string.
+    """
+    if inline_token.children is None:
+        return inline_token.content.strip()
+    return "".join(
+        child.content for child in inline_token.children if child.content
+    ).strip()
+
+
+def _create_toc_anchors_rule() -> (
+    collections.abc.Callable[[markdown_it.rules_core.StateCore], None]
+):
+    """Creates a core rule for markdown-it to assign anchor IDs and collect TOC entries.
+
+    Returns:
+        A rule function accepting a StateCore instance.
+    """
+
+    def toc_anchors_rule(state: markdown_it.rules_core.StateCore) -> None:
+        slugs: dict[str, int] = {}
+        entries: list[TocEntry] = []
+        for idx, token in enumerate(state.tokens):
+            if token.type != "heading_open":
+                continue
+            level = int(token.tag[1])
+            inline_token = state.tokens[idx + 1]
+            title = extract_heading_title(inline_token)
+            base_slug = slugify(title)
+            count = slugs.get(base_slug, 0)
+            slugs[base_slug] = count + 1
+            slug = base_slug if count == 0 else f"{base_slug}-{count}"
+            token.attrSet("id", slug)
+            entries.append(TocEntry(title=title, slug=slug, level=level))
+        state.env["toc"] = entries
+
+    return toc_anchors_rule
 
 
 def create_markdown_parser() -> markdown_it.MarkdownIt:
@@ -256,20 +391,27 @@ def create_markdown_parser() -> markdown_it.MarkdownIt:
         allow_digits=False,
         double_inline=True,
     )
+    md.core.ruler.push("toc_anchors", _create_toc_anchors_rule())
     return md
 
 
-def render_markdown(md_parser: markdown_it.MarkdownIt, text: str) -> str:
+def render_markdown(
+    md_parser: markdown_it.MarkdownIt,
+    text: str,
+    env: dict[str, object] | None = None,
+) -> str:
     """Renders markdown text to HTML using the provided parser.
 
     Args:
         md_parser: Configured MarkdownIt parser instance.
         text: Raw markdown string.
+        env: Optional environment dictionary to receive metadata such as TOC entries.
 
     Returns:
         Rendered HTML string.
     """
-    return typing.cast(str, md_parser.render(text))
+    parse_env: dict[str, object] = env if env is not None else {}
+    return cast(str, md_parser.render(text, parse_env))
 
 
 def extract_title_from_markdown(content: str, default: str) -> str:
@@ -440,6 +582,7 @@ def build_header(
     current_dest: str,
     site_title: str,
     logo_icon: str,
+    toc_html: str = "",
 ) -> str:
     """Builds the top navigation header bar HTML.
 
@@ -448,6 +591,7 @@ def build_header(
         current_dest: Destination filename of the current page being built.
         site_title: Title of the site displayed in the header.
         logo_icon: Emoji or symbol icon displayed beside site title.
+        toc_html: Optional HTML string for table of contents dropdown.
 
     Returns:
         HTML string of the header navigation element.
@@ -467,6 +611,7 @@ def build_header(
     logo_link: str = (
         compute_relative_path(current_dest, current_dir) if current_dest else "#"
     )
+    toc_section = f"{toc_html}\n        " if toc_html else ""
     template = textwrap.dedent("""
         <header class="site-header">
           <div class="header-container">
@@ -478,7 +623,7 @@ def build_header(
               {nav_html}
             </nav>
             <div class="header-actions">
-              <button class="btn-action" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌓 Mode</button>
+              {toc_section}<button class="btn-action" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌓 Mode</button>
               <button class="btn-action btn-action-primary" onclick="window.print()" title="Print Current Document">🖨️ Print</button>
             </div>
           </div>
@@ -489,7 +634,115 @@ def build_header(
         logo_icon=logo_icon,
         site_title=site_title,
         nav_html=nav_html,
+        toc_section=toc_section,
     )
+
+
+def build_toc_html(
+    toc_entries: list[TocEntry],
+    max_level: int = 3,
+    style: str = "dropdown",
+) -> str:
+    """Builds HTML markup for the table of contents.
+
+    Args:
+        toc_entries: List of heading entries extracted from the document.
+        max_level: Maximum heading level to include in the table of contents.
+        style: Display style ('dropdown' or 'floating').
+
+    Returns:
+        HTML string for the table of contents element, or empty string if insufficient headings.
+    """
+    filtered = [e for e in toc_entries if e.level <= max_level]
+    if len(filtered) <= 1:
+        return ""
+
+    min_level = min(e.level for e in filtered)
+    links: list[str] = []
+    for entry in filtered:
+        indent = entry.level - min_level
+        padding = 16 + indent * 12
+        escaped_title = html.escape(entry.title)
+        link_tag = (
+            f'<a href="#{entry.slug}" class="toc-link toc-level-{entry.level}" '
+            + f'style="padding-left: {padding}px;" title="{escaped_title}">{escaped_title}</a>'
+        )
+        links.append(link_tag)
+    links_html = "\n".join(links)
+
+    if style == "floating":
+        template = textwrap.dedent("""
+            <aside class="toc-floating" id="toc-floating" aria-label="Table of contents">
+              <details class="toc-floating-card" open>
+                <summary class="toc-floating-summary">
+                  <span><span class="toc-icon">📑</span> Contents</span>
+                  <span class="toc-arrow">▾</span>
+                </summary>
+                <nav class="toc-nav" aria-label="Table of contents">
+                  {links_html}
+                </nav>
+              </details>
+            </aside>
+            """).strip()
+        return template.format(links_html=links_html)
+
+    template = textwrap.dedent("""
+        <details class="toc-dropdown" id="toc-dropdown">
+          <summary class="btn-action toc-summary" title="Table of Contents" aria-label="Table of Contents">
+            <span class="toc-icon">📑</span>
+            <span class="toc-label">Contents</span>
+            <span class="toc-arrow">▾</span>
+          </summary>
+          <div class="toc-menu" role="menu">
+            <div class="toc-menu-header">
+              <span class="toc-menu-title">Table of Contents</span>
+            </div>
+            <nav class="toc-nav" aria-label="Table of contents">
+              {links_html}
+            </nav>
+          </div>
+        </details>
+        """).strip()
+    return template.format(links_html=links_html)
+
+
+def build_toc_script() -> str:
+    """Builds JavaScript for table of contents interactions and dismiss handling.
+
+    Returns:
+        HTML script tag string containing TOC event listeners.
+    """
+    return textwrap.dedent("""
+        <script>
+          document.addEventListener("DOMContentLoaded", function() {
+            document.addEventListener("click", function(event) {
+              const dropdown = document.getElementById("toc-dropdown");
+              if (dropdown && dropdown.hasAttribute("open")) {
+                const target = event.target;
+                if (target instanceof Node && !dropdown.contains(target)) {
+                  dropdown.removeAttribute("open");
+                }
+              }
+            });
+            document.querySelectorAll(".toc-dropdown .toc-link").forEach(function(link) {
+              link.addEventListener("click", function() {
+                const dropdown = document.getElementById("toc-dropdown");
+                if (dropdown) {
+                  dropdown.removeAttribute("open");
+                }
+              });
+            });
+            document.addEventListener("keydown", function(event) {
+              if (event.key === "Escape") {
+                const dropdown = document.getElementById("toc-dropdown");
+                if (dropdown && dropdown.hasAttribute("open")) {
+                  dropdown.removeAttribute("open");
+                }
+              }
+            });
+          });
+        </script>
+        """).strip()
 
 
 def build_theme_script(theme_key: str) -> str:
@@ -569,6 +822,7 @@ def render_page(
     body_html: str,
     site_config: SiteConfig,
     regen_command: str = "markdown_to_html.py",
+    toc_entries: list[TocEntry] | None = None,
 ) -> str:
     """Wraps body content in full HTML document template with head and scripts.
 
@@ -577,15 +831,37 @@ def render_page(
         body_html: Post-processed body HTML content.
         site_config: Site-wide configuration parameters.
         regen_command: Shell command string used to regenerate this HTML document.
+        toc_entries: Optional list of heading entries extracted from markdown.
 
     Returns:
         Complete HTML document string.
     """
+    page_toc: bool = page.toc if page.toc is not None else site_config.toc
+    page_toc_depth: int = (
+        page.toc_depth if page.toc_depth is not None else site_config.toc_depth
+    )
+    page_toc_style: str = (
+        page.toc_style if page.toc_style is not None else site_config.toc_style
+    )
+
+    toc_html = ""
+    if page_toc and page_toc_style != "none" and toc_entries:
+        toc_html = build_toc_html(
+            toc_entries, max_level=page_toc_depth, style=page_toc_style
+        )
+
+    header_toc = toc_html if page_toc_style == "dropdown" else ""
+    floating_toc = (
+        f"\n  {toc_html}" if page_toc_style == "floating" and toc_html else ""
+    )
+    toc_script = f"\n  {build_toc_script()}" if toc_html else ""
+
     header_html = build_header(
         pages=site_config.pages,
         current_dest=page.dest,
         site_title=site_config.site_title,
         logo_icon=site_config.logo_icon,
+        toc_html=header_toc,
     )
     theme_script = build_theme_script(site_config.theme_key)
     current_dir = pathlib.Path(page.dest).parent
@@ -628,11 +904,11 @@ def render_page(
           </script>
         </head>
         <body>
-          {header_html}
+          {header_html}{floating_toc}
           <main class="page-container">
             {body_html}
           </main>
-          {theme_script}
+          {theme_script}{toc_script}
         </body>
         </html>
         """)
@@ -642,8 +918,10 @@ def render_page(
         title_suffix=site_config.title_suffix,
         css_path=css_path,
         header_html=header_html,
+        floating_toc=floating_toc,
         body_html=body_html,
         theme_script=theme_script,
+        toc_script=toc_script,
     )
 
 
@@ -716,7 +994,7 @@ def load_config_file(filepath: pathlib.Path) -> SiteConfigDict:
     """
     with filepath.open("rb") as f:
         raw_data = tomllib.load(f)
-    config: SiteConfigDict = typing.cast(SiteConfigDict, typing.cast(object, raw_data))
+    config: SiteConfigDict = cast(SiteConfigDict, cast(object, raw_data))
     return config
 
 
@@ -774,6 +1052,12 @@ def resolve_site_config(
 
     css_rel_path = args.css_path or config_dict.get("css_rel_path") or "css/styles.css"
 
+    toc = args.toc if args.toc is not None else config_dict.get("toc", True)
+    toc_depth = (
+        args.toc_depth if args.toc_depth > 0 else config_dict.get("toc_depth", 3)
+    )
+    toc_style = args.toc_style or config_dict.get("toc_style") or "dropdown"
+
     pages: list[PageConfig] = []
     toml_pages = config_dict.get("pages")
     if toml_pages and not args.inputs:
@@ -796,6 +1080,9 @@ def resolve_site_config(
                     title=title,
                     short_title=short_title,
                     diagrams=diagrams,
+                    toc=p.get("toc"),
+                    toc_depth=p.get("toc_depth"),
+                    toc_style=p.get("toc_style"),
                 )
             )
     else:
@@ -808,6 +1095,9 @@ def resolve_site_config(
         theme_key=theme_key,
         css_rel_path=css_rel_path,
         pages=pages,
+        toc=toc,
+        toc_depth=toc_depth,
+        toc_style=toc_style,
     )
 
 
@@ -892,7 +1182,12 @@ def generate_individual_pages(
             continue
 
         raw_md: str = src_path.read_text(encoding="utf-8")
-        parsed_html: str = render_markdown(md_parser, raw_md)
+        env: dict[str, object] = {}
+        parsed_html: str = render_markdown(md_parser, raw_md, env=env)
+        raw_toc = env.get("toc")
+        toc_entries: list[TocEntry] = (
+            cast(list[TocEntry], raw_toc) if isinstance(raw_toc, list) else []
+        )
         processed_html: str = post_process_html(parsed_html, page.dest)
         body_with_diagrams: str = insert_diagrams(
             processed_html, page.diagrams, page.dest
@@ -902,6 +1197,7 @@ def generate_individual_pages(
             body_with_diagrams,
             site_config,
             regen_command=effective_regen_command,
+            toc_entries=toc_entries,
         )
 
         dest_path.parent.mkdir(parents=True, exist_ok=True)

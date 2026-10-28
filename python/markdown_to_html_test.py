@@ -5,9 +5,11 @@ import pathlib
 import sys
 import tempfile
 import textwrap
-import typing
 import unittest
+from typing import cast
 from unittest import mock
+
+import markdown_it.token
 
 import markdown_to_html
 
@@ -22,7 +24,7 @@ class TestMarkdownToHtml(unittest.TestCase):
             parser,
             "# Hello World\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n~~strike~~",
         )
-        self.assertIn("<h1>Hello World</h1>", rendered)
+        self.assertIn('<h1 id="hello-world">Hello World</h1>', rendered)
         self.assertIn("<table>", rendered)
         self.assertIn("<s>strike</s>", rendered)
 
@@ -435,7 +437,7 @@ class TestMarkdownToHtml(unittest.TestCase):
             dest = base_dir / "test.html"
             self.assertTrue(dest.exists())
             html_content = dest.read_text(encoding="utf-8")
-            self.assertIn("<h1>Test Page</h1>", html_content)
+            self.assertIn('<h1 id="test-page">Test Page</h1>', html_content)
 
     def test_main(self) -> None:
         """Tests main CLI orchestration function."""
@@ -463,7 +465,7 @@ class TestMarkdownToHtml(unittest.TestCase):
 
     def test_main_with_mock(self) -> None:
         """Tests that main orchestrates argument parsing and generation."""
-        mock_generate = typing.cast(
+        mock_generate = cast(
             mock.Mock,
             mock.create_autospec(
                 markdown_to_html.generate_individual_pages, return_value=[]
@@ -835,7 +837,7 @@ class TestMarkdownToHtml(unittest.TestCase):
             dest = base_dir / "docs" / "explanations-reference.html"
             self.assertTrue(dest.exists())
             html_content = dest.read_text(encoding="utf-8")
-            self.assertIn("<h1>Explanations</h1>", html_content)
+            self.assertIn('<h1 id="explanations">Explanations</h1>', html_content)
             self.assertIn(
                 '<link rel="stylesheet" href="../css/styles.css">', html_content
             )
@@ -877,6 +879,310 @@ class TestMarkdownToHtml(unittest.TestCase):
             self.assertEqual(
                 site_config.pages[0].dest, "docs/explanations-reference.html"
             )
+
+    def test_slugify(self) -> None:
+        """Tests converting headings to URL-safe anchor slugs."""
+        self.assertEqual(markdown_to_html.slugify("Hello World"), "hello-world")
+        self.assertEqual(
+            markdown_to_html.slugify("1. Getting Started & Setup!"),
+            "1-getting-started-setup",
+        )
+        self.assertEqual(markdown_to_html.slugify("???"), "section")
+
+    def test_extract_heading_title_fallback(self) -> None:
+        """Tests heading title extraction when token children is None."""
+        token = markdown_it.token.Token("inline", "", 0)
+        token.content = "Direct Title Content"
+        token.children = None
+        extracted = markdown_to_html.extract_heading_title(token)
+        self.assertEqual(extracted, "Direct Title Content")
+
+    def test_toc_rule_and_anchors(self) -> None:
+        """Tests assigning anchor IDs to headings and collecting TOC entries."""
+        parser = markdown_to_html.create_markdown_parser()
+        content = textwrap.dedent("""
+            # Main Title
+            ## Section One
+            ```html
+            <h2>Not A Real Heading</h2>
+            ```
+            ### Subsection 1.1
+            ## Section One
+            """).strip()
+        env: dict[str, object] = {}
+        rendered = markdown_to_html.render_markdown(parser, content, env=env)
+        self.assertIn('<h1 id="main-title">Main Title</h1>', rendered)
+        self.assertIn('<h2 id="section-one">Section One</h2>', rendered)
+        self.assertIn('<h3 id="subsection-11">Subsection 1.1</h3>', rendered)
+        self.assertIn('<h2 id="section-one-1">Section One</h2>', rendered)
+        self.assertNotIn('id="not-a-real-heading"', rendered)
+
+        raw_toc = env.get("toc")
+        self.assertIsInstance(raw_toc, list)
+        toc = cast(list[markdown_to_html.TocEntry], raw_toc)
+        self.assertEqual(len(toc), 4)
+        self.assertEqual(toc[0].title, "Main Title")
+        self.assertEqual(toc[0].slug, "main-title")
+        self.assertEqual(toc[0].level, 1)
+        self.assertEqual(toc[1].slug, "section-one")
+        self.assertEqual(toc[2].slug, "subsection-11")
+        self.assertEqual(toc[3].slug, "section-one-1")
+
+    def test_build_toc_html_insufficient_headings(self) -> None:
+        """Tests that build_toc_html returns empty string when 0 or 1 heading."""
+        self.assertEqual(markdown_to_html.build_toc_html([]), "")
+        single = [markdown_to_html.TocEntry(title="One", slug="one", level=1)]
+        self.assertEqual(markdown_to_html.build_toc_html(single), "")
+
+    def test_build_toc_html_dropdown(self) -> None:
+        """Tests rendering table of contents as a header dropdown."""
+        entries = [
+            markdown_to_html.TocEntry(title="Guide", slug="guide", level=1),
+            markdown_to_html.TocEntry(title="Usage", slug="usage", level=2),
+            markdown_to_html.TocEntry(title="Options", slug="options", level=3),
+        ]
+        html_out = markdown_to_html.build_toc_html(
+            entries, max_level=3, style="dropdown"
+        )
+        self.assertIn('<details class="toc-dropdown" id="toc-dropdown">', html_out)
+        self.assertIn('class="btn-action toc-summary"', html_out)
+        self.assertIn('href="#guide"', html_out)
+        self.assertIn('href="#usage"', html_out)
+        self.assertIn('href="#options"', html_out)
+        self.assertIn('class="toc-link toc-level-1"', html_out)
+        self.assertIn('class="toc-link toc-level-2"', html_out)
+        self.assertIn('class="toc-link toc-level-3"', html_out)
+
+    def test_build_toc_html_floating(self) -> None:
+        """Tests rendering table of contents as a floating right box."""
+        entries = [
+            markdown_to_html.TocEntry(title="Intro", slug="intro", level=2),
+            markdown_to_html.TocEntry(title="Advanced", slug="advanced", level=2),
+        ]
+        html_out = markdown_to_html.build_toc_html(
+            entries, max_level=3, style="floating"
+        )
+        self.assertIn('<aside class="toc-floating" id="toc-floating"', html_out)
+        self.assertIn('<details class="toc-floating-card" open>', html_out)
+        self.assertIn('href="#intro"', html_out)
+        self.assertIn('href="#advanced"', html_out)
+
+    def test_build_toc_html_max_level(self) -> None:
+        """Tests filtering headings by max_level in build_toc_html."""
+        entries = [
+            markdown_to_html.TocEntry(title="Level 1", slug="level-1", level=1),
+            markdown_to_html.TocEntry(title="Level 2", slug="level-2", level=2),
+            markdown_to_html.TocEntry(title="Level 4", slug="level-4", level=4),
+        ]
+        html_out = markdown_to_html.build_toc_html(
+            entries, max_level=2, style="dropdown"
+        )
+        self.assertIn('href="#level-1"', html_out)
+        self.assertIn('href="#level-2"', html_out)
+        self.assertNotIn('href="#level-4"', html_out)
+
+    def test_build_toc_script(self) -> None:
+        """Tests generating JavaScript event listeners for TOC dropdown dismiss."""
+        script = markdown_to_html.build_toc_script()
+        self.assertIn("toc-dropdown", script)
+        self.assertIn("Escape", script)
+
+    def test_build_header_with_toc(self) -> None:
+        """Tests building header navigation with embedded TOC dropdown."""
+        header = markdown_to_html.build_header(
+            pages=[],
+            current_dest="page.html",
+            site_title="Site",
+            logo_icon="📘",
+            toc_html='<details id="custom-toc"></details>',
+        )
+        self.assertIn('<details id="custom-toc"></details>', header)
+
+    def test_render_page_with_toc_dropdown(self) -> None:
+        """Tests rendering page with TOC in dropdown header mode."""
+        page = markdown_to_html.PageConfig(
+            src="guide.md",
+            dest="guide.html",
+            title="Guide",
+            short_title="Guide",
+        )
+        site_config = markdown_to_html.SiteConfig(
+            site_title="Docs",
+            title_suffix="Docs",
+            logo_icon="📖",
+            theme_key="docs-theme",
+            css_rel_path="css/styles.css",
+            pages=[page],
+            toc=True,
+            toc_style="dropdown",
+        )
+        toc_entries = [
+            markdown_to_html.TocEntry(title="Guide", slug="guide", level=1),
+            markdown_to_html.TocEntry(title="Setup", slug="setup", level=2),
+        ]
+        html_out = markdown_to_html.render_page(
+            page=page,
+            body_html="<h1>Guide</h1><h2>Setup</h2>",
+            site_config=site_config,
+            toc_entries=toc_entries,
+        )
+        self.assertIn('<details class="toc-dropdown" id="toc-dropdown">', html_out)
+        self.assertIn('href="#setup"', html_out)
+        self.assertNotIn('<aside class="toc-floating"', html_out)
+
+    def test_render_page_with_toc_floating(self) -> None:
+        """Tests rendering page with TOC in floating style mode."""
+        page = markdown_to_html.PageConfig(
+            src="guide.md",
+            dest="guide.html",
+            title="Guide",
+            short_title="Guide",
+        )
+        site_config = markdown_to_html.SiteConfig(
+            site_title="Docs",
+            title_suffix="Docs",
+            logo_icon="📖",
+            theme_key="docs-theme",
+            css_rel_path="css/styles.css",
+            pages=[page],
+            toc=True,
+            toc_style="floating",
+        )
+        toc_entries = [
+            markdown_to_html.TocEntry(title="Guide", slug="guide", level=1),
+            markdown_to_html.TocEntry(title="Setup", slug="setup", level=2),
+        ]
+        html_out = markdown_to_html.render_page(
+            page=page,
+            body_html="<h1>Guide</h1><h2>Setup</h2>",
+            site_config=site_config,
+            toc_entries=toc_entries,
+        )
+        self.assertIn('<aside class="toc-floating" id="toc-floating"', html_out)
+        self.assertNotIn('<details class="toc-dropdown"', html_out)
+
+    def test_render_page_with_toc_disabled(self) -> None:
+        """Tests rendering page when TOC is disabled at page or site level."""
+        page_disabled = markdown_to_html.PageConfig(
+            src="guide.md",
+            dest="guide.html",
+            title="Guide",
+            short_title="Guide",
+            toc=False,
+        )
+        site_config = markdown_to_html.SiteConfig(
+            site_title="Docs",
+            title_suffix="Docs",
+            logo_icon="📖",
+            theme_key="docs-theme",
+            css_rel_path="css/styles.css",
+            pages=[page_disabled],
+            toc=True,
+        )
+        toc_entries = [
+            markdown_to_html.TocEntry(title="Guide", slug="guide", level=1),
+            markdown_to_html.TocEntry(title="Setup", slug="setup", level=2),
+        ]
+        html_out = markdown_to_html.render_page(
+            page=page_disabled,
+            body_html="<h1>Guide</h1><h2>Setup</h2>",
+            site_config=site_config,
+            toc_entries=toc_entries,
+        )
+        self.assertNotIn("toc-dropdown", html_out)
+        self.assertNotIn("toc-floating", html_out)
+
+    def test_resolve_site_config_toc_cli_args(self) -> None:
+        """Tests resolving TOC configuration from command-line arguments."""
+        args_enabled = markdown_to_html.Args(
+            toc=True, toc_depth=4, toc_style="floating"
+        )
+        config_enabled = markdown_to_html.resolve_site_config(
+            args_enabled, pathlib.Path(".")
+        )
+        self.assertTrue(config_enabled.toc)
+        self.assertEqual(config_enabled.toc_depth, 4)
+        self.assertEqual(config_enabled.toc_style, "floating")
+
+        args_disabled = markdown_to_html.Args(toc=False)
+        config_disabled = markdown_to_html.resolve_site_config(
+            args_disabled, pathlib.Path(".")
+        )
+        self.assertFalse(config_disabled.toc)
+
+    def test_resolve_site_config_toc_toml_options(self) -> None:
+        """Tests resolving TOC configuration from TOML file including page overrides."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            config_file = base_dir / "markdown-to-html.toml"
+            _ = config_file.write_text(
+                textwrap.dedent("""
+                    site_title = "Site"
+                    toc = false
+                    toc_depth = 2
+                    toc_style = "floating"
+                    [[pages]]
+                    src = "doc1.md"
+                    toc = true
+                    toc_depth = 4
+                    toc_style = "dropdown"
+                    """),
+                encoding="utf-8",
+            )
+            args = markdown_to_html.Args(dir=str(base_dir))
+            site_config = markdown_to_html.resolve_site_config(args, base_dir)
+            self.assertFalse(site_config.toc)
+            self.assertEqual(site_config.toc_depth, 2)
+            self.assertEqual(site_config.toc_style, "floating")
+            self.assertEqual(len(site_config.pages), 1)
+            self.assertTrue(site_config.pages[0].toc)
+            self.assertEqual(site_config.pages[0].toc_depth, 4)
+            self.assertEqual(site_config.pages[0].toc_style, "dropdown")
+
+    def test_generate_individual_pages_with_toc(self) -> None:
+        """Tests generating HTML files with working Table of Contents."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            md_file = base_dir / "manual.md"
+            _ = md_file.write_text(
+                "# Manual\n\n## Chapter 1\n\nText.\n\n## Chapter 2\n\nMore text.",
+                encoding="utf-8",
+            )
+            page = markdown_to_html.PageConfig(
+                src="manual.md",
+                dest="manual.html",
+                title="Manual",
+                short_title="Manual",
+            )
+            site_config = markdown_to_html.SiteConfig(
+                site_title="Manual Site",
+                title_suffix="Manual",
+                logo_icon="📚",
+                theme_key="manual-theme",
+                css_rel_path="css/styles.css",
+                pages=[page],
+                toc=True,
+                toc_style="dropdown",
+            )
+            parser = markdown_to_html.create_markdown_parser()
+            written = markdown_to_html.generate_individual_pages(
+                site_config=site_config,
+                base_dir=base_dir,
+                output_dir=base_dir,
+                md_parser=parser,
+            )
+            self.assertEqual(len(written), 1)
+            dest = base_dir / "manual.html"
+            self.assertTrue(dest.exists())
+            html_content = dest.read_text(encoding="utf-8")
+            self.assertIn('<h1 id="manual">Manual</h1>', html_content)
+            self.assertIn('<h2 id="chapter-1">Chapter 1</h2>', html_content)
+            self.assertIn('<h2 id="chapter-2">Chapter 2</h2>', html_content)
+            self.assertIn(
+                '<details class="toc-dropdown" id="toc-dropdown">', html_content
+            )
+            self.assertIn('href="#chapter-1"', html_content)
+            self.assertIn('href="#chapter-2"', html_content)
 
 
 if __name__ == "__main__":
