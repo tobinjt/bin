@@ -3,7 +3,7 @@
 
 Converts Markdown documentation files into responsive HTML pages with top navigation,
 print styles, interactive Mermaid diagrams, LaTeX math rendering, SVG/image diagram
-embedding, GitHub-style callouts, and dark/light theme switching.
+embedding, GitHub-style callouts, code block copy buttons, and dark/light theme switching.
 """
 
 import argparse
@@ -431,7 +431,7 @@ def extract_title_from_markdown(content: str, default: str) -> str:
 
 
 def post_process_html(html_content: str, current_page_dest: str = "") -> str:
-    """Post-processes rendered HTML with tables, callouts, links, and mermaid diagrams.
+    """Post-processes rendered HTML with tables, callouts, mermaid diagrams, code blocks, and links.
 
     Args:
         html_content: Raw HTML rendered from Markdown.
@@ -498,6 +498,32 @@ def post_process_html(html_content: str, current_page_dest: str = "") -> str:
     processed = re.sub(
         r'<pre><code class="language-mermaid">([\s\S]*?)</code></pre>',
         replace_mermaid,
+        processed,
+    )
+
+    def wrap_pre(match: re.Match[str]) -> str:
+        """Wraps a pre block in a code block container with a copy button.
+
+        Args:
+            match: Regex match containing an existing wrapper or an unwrapped pre block.
+
+        Returns:
+            HTML string with the pre block wrapped in a code block container.
+        """
+        if match.group(1) is None:
+            return match.group(0)
+        pre_html: str = match.group(1)
+        return (
+            '<div class="code-block-wrapper">'
+            '<button class="copy-code-button" type="button" aria-label="Copy code to clipboard" '
+            'title="Copy code">Copy</button>'
+            f"{pre_html}"
+            "</div>"
+        )
+
+    processed = re.sub(
+        r'<div class="code-block-wrapper">[\s\S]*?</div>|(<pre(?:\s+[^>]*)?>[\s\S]*?</pre>)',
+        wrap_pre,
         processed,
     )
 
@@ -776,6 +802,73 @@ def build_theme_script(theme_key: str) -> str:
         """)
 
 
+def build_copy_script() -> str:
+    """Builds JavaScript for copy button functionality on pre blocks.
+
+    Returns:
+        HTML script tag string containing copy event listeners and clipboard fallback.
+    """
+    return textwrap.dedent("""
+        <script>
+          document.addEventListener("DOMContentLoaded", function() {
+            function showCopied(btn) {
+              btn.textContent = "Copied!";
+              btn.classList.add("copied");
+              const currentTimeout = btn.getAttribute("data-timeout-id");
+              if (currentTimeout) {
+                clearTimeout(Number(currentTimeout));
+              }
+              const timeoutId = setTimeout(function() {
+                btn.textContent = "Copy";
+                btn.classList.remove("copied");
+                btn.removeAttribute("data-timeout-id");
+              }, 2000);
+              btn.setAttribute("data-timeout-id", String(timeoutId));
+            }
+
+            function fallbackCopy(text, btn) {
+              try {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                document.body.appendChild(textarea);
+                textarea.select();
+                const success = document.execCommand("copy");
+                document.body.removeChild(textarea);
+                if (success) {
+                  showCopied(btn);
+                }
+              } catch (err) {
+                console.error("Failed to copy text: ", err);
+              }
+            }
+
+            document.querySelectorAll(".copy-code-button").forEach(function(btn) {
+              btn.addEventListener("click", function() {
+                const wrapper = btn.closest(".code-block-wrapper");
+                const pre = wrapper ? wrapper.querySelector("pre") : btn.nextElementSibling;
+                if (!pre) {
+                  return;
+                }
+                const code = pre.querySelector("code") || pre;
+                const text = code.textContent || "";
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(text).then(function() {
+                    showCopied(btn);
+                  }).catch(function() {
+                    fallbackCopy(text, btn);
+                  });
+                } else {
+                  fallbackCopy(text, btn);
+                }
+              });
+            });
+          });
+        </script>
+        """).strip()
+
+
 def build_regeneration_command(
     argv: list[str] | None = None,
     program_name: str | None = None,
@@ -864,6 +957,7 @@ def render_page(
         toc_html=header_toc,
     )
     theme_script = build_theme_script(site_config.theme_key)
+    copy_script = f"\n  {build_copy_script()}"
     current_dir = pathlib.Path(page.dest).parent
     css_path = compute_relative_path(site_config.css_rel_path, current_dir)
 
@@ -908,7 +1002,7 @@ def render_page(
           <main class="page-container">
             {body_html}
           </main>
-          {theme_script}{toc_script}
+          {theme_script}{toc_script}{copy_script}
         </body>
         </html>
         """)
@@ -922,6 +1016,7 @@ def render_page(
         body_html=body_html,
         theme_script=theme_script,
         toc_script=toc_script,
+        copy_script=copy_script,
     )
 
 

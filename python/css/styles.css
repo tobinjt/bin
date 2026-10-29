@@ -294,6 +294,11 @@ tbody tr:hover {
 }
 
 /* Code & Pre Blocks */
+.code-block-wrapper {
+  position: relative;
+  margin: 18px 0 24px 0;
+}
+
 pre {
   background-color: var(--code-bg);
   color: var(--code-text);
@@ -305,6 +310,11 @@ pre {
   line-height: 1.5;
   margin: 18px 0 24px 0;
   border: 1px solid var(--border-subtle);
+}
+
+.code-block-wrapper pre {
+  margin: 0;
+  padding-right: 72px;
 }
 
 code {
@@ -320,6 +330,44 @@ pre code {
   background-color: transparent;
   color: inherit;
   padding: 0;
+}
+
+.copy-code-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+  opacity: 0.75;
+}
+
+.copy-code-button:hover,
+.copy-code-button:focus {
+  background-color: rgba(255, 255, 255, 0.22);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.3);
+  opacity: 1;
+}
+
+.copy-code-button.copied {
+  background-color: #059669;
+  border-color: #059669;
+  color: #ffffff;
+  opacity: 1;
+}
+
+.code-block-wrapper:hover .copy-code-button {
+  opacity: 1;
 }
 
 /* Callouts */
@@ -429,7 +477,7 @@ pre code {
 
 /* Print Styles */
 @media print {
-  header.site-header, .no-print, .btn-action, .toc-dropdown, .toc-floating {
+  header.site-header, .no-print, .btn-action, .toc-dropdown, .toc-floating, .copy-code-button {
     display: none !important;
   }
   body {

@@ -1184,6 +1184,100 @@ class TestMarkdownToHtml(unittest.TestCase):
             self.assertIn('href="#chapter-1"', html_content)
             self.assertIn('href="#chapter-2"', html_content)
 
+    def test_build_copy_script(self) -> None:
+        """Tests copy button script generation with clipboard API and fallback."""
+        script = markdown_to_html.build_copy_script()
+        self.assertIn("copy-code-button", script)
+        self.assertIn("code-block-wrapper", script)
+        self.assertIn("fallbackCopy", script)
+        self.assertIn("showCopied", script)
+        self.assertIn("navigator.clipboard", script)
+        self.assertIn("Copied!", script)
+
+    def test_post_process_html_code_block_wrapping(self) -> None:
+        """Tests that pre blocks are wrapped in code block wrapper with a copy button."""
+        raw_html = (
+            "<p>Code example:</p>"
+            + '<pre><code class="language-python">x = 1\nprint(x)</code></pre>'
+        )
+        processed = markdown_to_html.post_process_html(raw_html)
+        self.assertIn('<div class="code-block-wrapper">', processed)
+        self.assertIn(
+            '<button class="copy-code-button" type="button" '
+            + 'aria-label="Copy code to clipboard" title="Copy code">Copy</button>',
+            processed,
+        )
+        self.assertIn(
+            '<pre><code class="language-python">x = 1\nprint(x)</code></pre>', processed
+        )
+
+    def test_post_process_html_code_block_wrapping_attributes(self) -> None:
+        """Tests that pre blocks with HTML attributes are wrapped with a copy button."""
+        raw_html = '<pre class="highlight" id="snippet-1"><code>text</code></pre>'
+        processed = markdown_to_html.post_process_html(raw_html)
+        self.assertIn('<div class="code-block-wrapper">', processed)
+        self.assertIn('class="copy-code-button"', processed)
+        self.assertIn(
+            '<pre class="highlight" id="snippet-1"><code>text</code></pre>', processed
+        )
+
+    def test_post_process_html_code_block_wrapping_plain_pre(self) -> None:
+        """Tests that plain pre blocks without code child elements are wrapped."""
+        raw_html = "<pre>plain preformatted text</pre>"
+        processed = markdown_to_html.post_process_html(raw_html)
+        self.assertIn('<div class="code-block-wrapper">', processed)
+        self.assertIn('class="copy-code-button"', processed)
+        self.assertIn("<pre>plain preformatted text</pre>", processed)
+
+    def test_post_process_html_code_block_wrapping_idempotent(self) -> None:
+        """Tests that already-wrapped pre blocks are not wrapped a second time."""
+        wrapped_html = (
+            '<div class="code-block-wrapper">'
+            + '<button class="copy-code-button" type="button" '
+            + 'aria-label="Copy code to clipboard" title="Copy code">Copy</button>'
+            + "<pre><code>already wrapped</code></pre>"
+            + "</div>"
+        )
+        processed = markdown_to_html.post_process_html(wrapped_html)
+        self.assertEqual(processed.count("code-block-wrapper"), 1)
+        self.assertEqual(processed.count("copy-code-button"), 1)
+
+    def test_post_process_html_mermaid_not_wrapped_as_code_block(self) -> None:
+        """Tests that mermaid blocks become mermaid divs and do not receive pre copy buttons."""
+        raw_html = (
+            '<pre><code class="language-mermaid">graph LR\n'
+            + "A --> B\n"
+            + "</code></pre>"
+        )
+        processed = markdown_to_html.post_process_html(raw_html)
+        self.assertIn('<div class="mermaid">', processed)
+        self.assertNotIn("code-block-wrapper", processed)
+        self.assertNotIn("copy-code-button", processed)
+
+    def test_render_page_includes_copy_script(self) -> None:
+        """Tests that render_page includes the copy button script in the output."""
+        page = markdown_to_html.PageConfig(
+            src="index.md",
+            dest="index.html",
+            title="Home",
+            short_title="Home",
+        )
+        site_config = markdown_to_html.SiteConfig(
+            site_title="Project Alpha",
+            title_suffix="Alpha",
+            logo_icon="🚀",
+            theme_key="alpha-theme",
+            css_rel_path="css/styles.css",
+            pages=[page],
+        )
+        html_out = markdown_to_html.render_page(
+            page=page,
+            body_html="<pre><code>val = 42</code></pre>",
+            site_config=site_config,
+        )
+        self.assertIn("copy-code-button", html_out)
+        self.assertIn("showCopied", html_out)
+
 
 if __name__ == "__main__":
     _ = unittest.main()
