@@ -9,6 +9,7 @@ excerpt for fast URL and product verification.
 Usage examples:
     ./check_urls.py https://www.screwfix.ie/p/broadfix-plastic-u-shims-assorted-60-pcs/885kj
     ./check_urls.py --pattern "broadfix|shim" https://www.mydiy.ie/products/broadfix-u-shims.html
+    ./check_urls.py --include-page https://www.screwfix.ie/p/broadfix-plastic-u-shims-assorted-60-pcs/885kj
 """
 
 import argparse
@@ -92,6 +93,7 @@ class Args(argparse.Namespace):
         timeout: float = DEFAULT_TIMEOUT_SECONDS,
         max_text_chars: int = DEFAULT_MAX_TEXT_CHARS,
         pattern: str = "",
+        include_page: bool = False,
         **kwargs: Any,  # pyright: ignore [reportAny,reportExplicitAny]
     ) -> None:
         """Initializes typed command-line arguments.
@@ -101,12 +103,14 @@ class Args(argparse.Namespace):
             timeout: Socket timeout in seconds per URL request.
             max_text_chars: Maximum number of visible text characters to include.
             pattern: Optional case-insensitive regex pattern to search for.
+            include_page: Whether to include the full page content in the JSON output.
         """
         super().__init__(**kwargs)
         self.urls: list[str] = list(urls) if urls is not None else []
         self.timeout: float = timeout
         self.max_text_chars: int = max_text_chars
         self.pattern: str = pattern
+        self.include_page: bool = include_page
 
 
 class PageInspectionDict(TypedDict):
@@ -125,6 +129,7 @@ class PageInspectionDict(TypedDict):
     availability: list[str]
     pattern_matches: list[str]
     text_excerpt: str
+    page_content: str | None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -144,6 +149,7 @@ class PageInspectionResult:
     availability: list[str]
     pattern_matches: list[str]
     text_excerpt: str
+    page_content: str | None = None
 
     def to_dict(self) -> PageInspectionDict:
         """Converts this result into a JSON-serializable PageInspectionDict.
@@ -165,6 +171,7 @@ class PageInspectionResult:
             "availability": list(self.availability),
             "pattern_matches": list(self.pattern_matches),
             "text_excerpt": self.text_excerpt,
+            "page_content": self.page_content,
         }
 
 
@@ -408,6 +415,7 @@ def parse_html_content(
     html_text: str,
     max_text_chars: int = DEFAULT_MAX_TEXT_CHARS,
     pattern: str = "",
+    include_page: bool = False,
 ) -> PageInspectionResult:
     """Parses HTML text into a structured PageInspectionResult.
 
@@ -418,6 +426,7 @@ def parse_html_content(
         html_text: Decoded HTML document text.
         max_text_chars: Maximum characters of visible text excerpt to retain.
         pattern: Optional case-insensitive regex pattern to match against text.
+        include_page: Whether to include the full HTML content in page_content.
 
     Returns:
         A populated PageInspectionResult instance.
@@ -482,7 +491,8 @@ def parse_html_content(
                 if len(pattern_matches) >= 10:
                     break
 
-    excerpt = visible_text[:max_text_chars]
+    excerpt = visible_text if max_text_chars < 0 else visible_text[:max_text_chars]
+    page_content = html_text if include_page else None
     return PageInspectionResult(
         requested_url=requested_url,
         final_url=final_url,
@@ -497,6 +507,7 @@ def parse_html_content(
         availability=availability,
         pattern_matches=pattern_matches,
         text_excerpt=excerpt,
+        page_content=page_content,
     )
 
 
@@ -640,6 +651,7 @@ def parse_nextjs_json_content(
     json_text: str,
     max_text_chars: int = DEFAULT_MAX_TEXT_CHARS,
     pattern: str = "",
+    include_page: bool = False,
 ) -> PageInspectionResult | None:
     """Parses a Next.js page JSON payload into a PageInspectionResult.
 
@@ -649,6 +661,7 @@ def parse_nextjs_json_content(
         json_text: Decoded JSON document text.
         max_text_chars: Maximum characters of visible text excerpt to retain.
         pattern: Optional case-insensitive regex pattern to match against text.
+        include_page: Whether to include the full JSON content in page_content.
 
     Returns:
         A populated PageInspectionResult instance, or None if invalid JSON.
@@ -774,7 +787,8 @@ def parse_nextjs_json_content(
                 if len(pattern_matches) >= 10:
                     break
 
-    excerpt = visible_text[:max_text_chars]
+    excerpt = visible_text if max_text_chars < 0 else visible_text[:max_text_chars]
+    page_content = json_text if include_page else None
     return PageInspectionResult(
         requested_url=requested_url,
         final_url=final_url,
@@ -789,6 +803,7 @@ def parse_nextjs_json_content(
         availability=availability,
         pattern_matches=pattern_matches,
         text_excerpt=excerpt,
+        page_content=page_content,
     )
 
 
@@ -873,6 +888,7 @@ def inspect_url(
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     max_text_chars: int = DEFAULT_MAX_TEXT_CHARS,
     pattern: str = "",
+    include_page: bool = False,
 ) -> PageInspectionResult:
     """Fetches a single URL over HTTP/HTTPS and returns its inspection result.
 
@@ -881,6 +897,7 @@ def inspect_url(
         timeout: Timeout in seconds for the network request.
         max_text_chars: Maximum characters of visible page text to include.
         pattern: Optional case-insensitive regex pattern to search for.
+        include_page: Whether to include the full page content in page_content.
 
     Returns:
         A PageInspectionResult containing status, redirect target, and metadata.
@@ -902,6 +919,7 @@ def inspect_url(
             availability=[],
             pattern_matches=[],
             text_excerpt="",
+            page_content=None,
         )
 
     html_text = decode_response_bytes(raw_response.body, raw_response.content_encoding)
@@ -912,6 +930,7 @@ def inspect_url(
         html_text=html_text,
         max_text_chars=max_text_chars,
         pattern=pattern,
+        include_page=include_page,
     )
     if result.bot_challenge_detected or raw_response.status_code in {202, 403, 405}:
         nextjs_raw = fetch_nextjs_data_response(raw_response.final_url, timeout=timeout)
@@ -925,6 +944,7 @@ def inspect_url(
                 json_text=json_text,
                 max_text_chars=max_text_chars,
                 pattern=pattern,
+                include_page=include_page,
             )
             if parsed_nextjs is not None:
                 return parsed_nextjs
@@ -1006,6 +1026,12 @@ def parse_args(argv: collections_abc.Sequence[str] | None = None) -> Args:
         default="",
         help="Optional case-insensitive regex pattern to match lines.",
     )
+    _ = parser.add_argument(
+        "-i",
+        "--include-page",
+        action="store_true",
+        help="Include the entire page content (HTML or JSON) in page_content.",
+    )
     return parser.parse_args(argv, namespace=Args())
 
 
@@ -1033,6 +1059,7 @@ def main(
             timeout=args.timeout,
             max_text_chars=args.max_text_chars,
             pattern=args.pattern,
+            include_page=args.include_page,
         )
         results.append(result)
         if result.error is not None:

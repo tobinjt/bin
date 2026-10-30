@@ -112,6 +112,7 @@ class TestCheckUrls(unittest.TestCase):
         default_args = check_urls.Args()
         self.assertEqual(default_args.urls, [])
         self.assertEqual(default_args.timeout, check_urls.DEFAULT_TIMEOUT_SECONDS)
+        self.assertFalse(default_args.include_page)
 
         source_urls = ["https://example.com/a"]
         custom_args = check_urls.Args(
@@ -119,12 +120,14 @@ class TestCheckUrls(unittest.TestCase):
             timeout=5.0,
             max_text_chars=200,
             pattern="shim",
+            include_page=True,
         )
         source_urls.append("https://example.com/b")
         self.assertEqual(custom_args.urls, ["https://example.com/a"])
         self.assertEqual(custom_args.timeout, 5.0)
         self.assertEqual(custom_args.max_text_chars, 200)
         self.assertEqual(custom_args.pattern, "shim")
+        self.assertTrue(custom_args.include_page)
 
     def test_decode_response_bytes_encodings_and_fallbacks(self) -> None:
         """Tests gzip, deflate, invalid compression, and latin-1 decoding."""
@@ -234,6 +237,19 @@ class TestCheckUrls(unittest.TestCase):
         self.assertIn("In Stock", result.availability)
         self.assertTrue(len(result.pattern_matches) >= 2)
         self.assertIn("Broadfix U-Shims", result.text_excerpt)
+        self.assertIsNone(result.page_content)
+
+        result_with_page = check_urls.parse_html_content(
+            requested_url="https://short.example/u",
+            final_url="https://www.mydiy.ie/products/broadfix-u-shims.html?id=1",
+            status_code=200,
+            html_text=sample_html,
+            max_text_chars=-1,
+            pattern="broadfix|SKUID",
+            include_page=True,
+        )
+        self.assertEqual(result_with_page.page_content, sample_html)
+        self.assertIn("In Stock - Click & Collect", result_with_page.text_excerpt)
 
     def test_parse_html_content_fallbacks_and_caps(self) -> None:
         """Tests og:title/og:url fallbacks, price/pattern caps, and bot challenge."""
@@ -370,20 +386,27 @@ class TestCheckUrls(unittest.TestCase):
                 return_value=None,
             ),
         ):
-            res_ok = check_urls.inspect_url("https://short.url/ronseal")
+            res_ok = check_urls.inspect_url(
+                "https://short.url/ronseal", include_page=True
+            )
             res_403 = check_urls.inspect_url("https://www.screwfix.ie/p/blocked")
             res_err = check_urls.inspect_url("https://nonexistent.invalid")
 
         self.assertEqual(res_ok.status_code, 200)
         self.assertIsNone(res_ok.error)
         self.assertIn("€52.95", res_ok.prices)
+        self.assertIsNotNone(res_ok.page_content)
+        assert res_ok.page_content is not None
+        self.assertIn("Test Tool", res_ok.page_content)
 
         self.assertEqual(res_403.status_code, 403)
         self.assertEqual(res_403.error, "HTTP 403: Forbidden")
         self.assertTrue(res_403.bot_challenge_detected)
+        self.assertIsNone(res_403.page_content)
 
         self.assertIsNone(res_err.status_code)
         self.assertIn("DNS lookup failed", res_err.error or "")
+        self.assertIsNone(res_err.page_content)
 
     def test_main_and_format_results_multiple_urls(self) -> None:
         """Tests CLI argument parsing, JSON output formatting, and exit code."""
@@ -454,6 +477,48 @@ class TestCheckUrls(unittest.TestCase):
         self.assertIn('"prices": [\n      "EUR 329.00"\n    ]', output_text)
         self.assertIn('"bot_challenge_detected": true', output_text)
 
+    def test_main_include_page_flag(self) -> None:
+        """Tests that --include-page flag passes include_page=True to inspect_url."""
+        dummy_result = check_urls.PageInspectionResult(
+            requested_url="https://example.com",
+            final_url="https://example.com",
+            status_code=200,
+            error=None,
+            bot_challenge_detected=False,
+            title="Example",
+            description="",
+            canonical_url="https://example.com",
+            prices=[],
+            skus=[],
+            availability=[],
+            pattern_matches=[],
+            text_excerpt="",
+            page_content="<html>Hello</html>",
+        )
+        out = io.StringIO()
+        with mock.patch.object(
+            check_urls,
+            "inspect_url",
+            autospec=True,
+            return_value=dummy_result,
+        ) as mock_inspect:
+            exit_code = check_urls.main(
+                [
+                    "--include-page",
+                    "https://example.com",
+                ],
+                stdout=out,
+            )
+        self.assertEqual(exit_code, 0)
+        mock_inspect.assert_called_once_with(
+            url="https://example.com",
+            timeout=check_urls.DEFAULT_TIMEOUT_SECONDS,
+            max_text_chars=check_urls.DEFAULT_MAX_TEXT_CHARS,
+            pattern="",
+            include_page=True,
+        )
+        self.assertIn('"page_content": "<html>Hello</html>"', out.getvalue())
+
     def test_parse_nextjs_json_content(self) -> None:
         """Tests parsing Next.js JSON product data and edge cases."""
         sample_json = json.dumps(
@@ -522,6 +587,20 @@ class TestCheckUrls(unittest.TestCase):
         self.assertIn("AVAILABLE", res.availability)
         self.assertIn("Brand: Broadfix", res.text_excerpt)
         self.assertTrue(len(res.pattern_matches) > 0)
+        self.assertIsNone(res.page_content)
+
+        res_with_page = check_urls.parse_nextjs_json_content(
+            requested_url="https://short.url/shims",
+            final_url="https://www.screwfix.ie/p/broadfix-plastic-u-shims-assorted-60-pcs/885kj",
+            json_text=sample_json,
+            max_text_chars=-1,
+            pattern="Resealable",
+            include_page=True,
+        )
+        self.assertIsNotNone(res_with_page)
+        assert res_with_page is not None
+        self.assertEqual(res_with_page.page_content, sample_json)
+        self.assertIn("Brand: Broadfix", res_with_page.text_excerpt)
 
         # Invalid JSON or non-dict payloads return None
         self.assertIsNone(
