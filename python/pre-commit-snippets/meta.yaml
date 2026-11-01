@@ -1,3 +1,0 @@
-- repo: meta
-  hooks:
-  - id: check-hooks-apply

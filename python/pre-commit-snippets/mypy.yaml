@@ -1,8 +1,0 @@
-- repo: local
-  hooks:
-  - id: mypy
-    name: Run `mypy`
-    language: system
-    types:
-    - python
-    entry: mypy --ignore-missing-imports --scripts-are-modules

@@ -1,4 +1,0 @@
-- repo: https://github.com/tobinjt/golang-coverage-check
-  rev: v1.0
-  hooks:
-    - id: golang-coverage-check

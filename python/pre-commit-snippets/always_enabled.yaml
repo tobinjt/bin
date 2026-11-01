@@ -1,0 +1,50 @@
+- repo: meta
+  hooks:
+  - id: check-hooks-apply
+- repo: https://github.com/compilerla/conventional-pre-commit
+  rev: v4.4.0
+  hooks:
+  - id: conventional-pre-commit
+    stages:
+    - commit-msg
+    args:
+    - --verbose
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v6.0.0
+  hooks:
+  # keep-sorted start
+  - id: check-case-conflict
+  - id: check-executables-have-shebangs
+  - id: check-illegal-windows-names
+  - id: check-merge-conflict
+  - id: check-vcs-permalinks
+  - id: check-yaml
+  - id: destroyed-symlinks
+  - id: fix-byte-order-marker
+  - id: mixed-line-ending
+  # keep-sorted end
+- repo: local
+  hooks:
+  - id: make_github_workflows
+    name: Run `make_github_workflows`
+    language: system
+    always_run: true
+    pass_filenames: false
+    entry: make_github_workflows
+- repo: local
+  hooks:
+  - id: populate_pre_commit
+    name: Run `populate_pre_commit`
+    language: system
+    always_run: true
+    pass_filenames: false
+    entry: populate_pre_commit
+- repo: local
+  hooks:
+  - id: spellcheck
+    stages:
+    - commit-msg
+    name: Check spelling
+    language: system
+    verbose: true
+    entry: spell-check-wrapper

@@ -1,8 +1,0 @@
-- repo: local
-  hooks:
-  - id: black
-    name: Run `black`
-    language: system
-    types:
-    - python
-    entry: black

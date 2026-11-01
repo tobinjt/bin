@@ -13,27 +13,10 @@ repos:
       exclude: dependabot.yml|.*.yaml$
       entry: actionlint
   # managed-by-populate-pre-commit end: actionlint.yaml
-  # managed-by-populate-pre-commit start: basedpyright.yaml
-  - repo: local
+  # managed-by-populate-pre-commit start: always_enabled.yaml
+  - repo: meta
     hooks:
-    - id: basedpyright
-      name: Run `basedpyright`
-      language: system
-      types:
-      - python
-      entry: basedpyright
-  # managed-by-populate-pre-commit end: basedpyright.yaml
-  # managed-by-populate-pre-commit start: black.yaml
-  - repo: local
-    hooks:
-    - id: black
-      name: Run `black`
-      language: system
-      types:
-      - python
-      entry: black
-  # managed-by-populate-pre-commit end: black.yaml
-  # managed-by-populate-pre-commit start: conventional-pre-commit.yaml
+    - id: check-hooks-apply
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.4.0
     hooks:
@@ -42,8 +25,6 @@ repos:
       - commit-msg
       args:
       - --verbose
-  # managed-by-populate-pre-commit end: conventional-pre-commit.yaml
-  # managed-by-populate-pre-commit start: hooks.yaml
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -56,7 +37,32 @@ repos:
     - id: destroyed-symlinks
     - id: fix-byte-order-marker
     - id: mixed-line-ending
-  # managed-by-populate-pre-commit end: hooks.yaml
+  - repo: local
+    hooks:
+    - id: make_github_workflows
+      name: Run `make_github_workflows`
+      language: system
+      always_run: true
+      pass_filenames: false
+      entry: make_github_workflows
+  - repo: local
+    hooks:
+    - id: populate_pre_commit
+      name: Run `populate_pre_commit`
+      language: system
+      always_run: true
+      pass_filenames: false
+      entry: populate_pre_commit
+  - repo: local
+    hooks:
+    - id: spellcheck
+      stages:
+      - commit-msg
+      name: Check spelling
+      language: system
+      verbose: true
+      entry: spell-check-wrapper
+  # managed-by-populate-pre-commit end: always_enabled.yaml
   # managed-by-populate-pre-commit start: json.yaml
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -68,23 +74,7 @@ repos:
       args:
       - --autofix
   # managed-by-populate-pre-commit end: json.yaml
-  # managed-by-populate-pre-commit start: keep-sorted.yaml
-  - repo: https://github.com/google/keep-sorted
-    rev: v0.10.0
-    hooks:
-    - id: keep-sorted
-  # managed-by-populate-pre-commit end: keep-sorted.yaml
-  # managed-by-populate-pre-commit start: make_github_workflows.yaml
-  - repo: local
-    hooks:
-    - id: make_github_workflows
-      name: Run `make_github_workflows`
-      language: system
-      always_run: true
-      pass_filenames: false
-      entry: make_github_workflows
-  # managed-by-populate-pre-commit end: make_github_workflows.yaml
-  # managed-by-populate-pre-commit start: markdownlint.yaml
+  # managed-by-populate-pre-commit start: markdown.yaml
   - repo: local
     hooks:
     - id: markdownlint
@@ -94,7 +84,15 @@ repos:
       - markdown
       exclude: CODE_OF_CONDUCT.md
       entry: markdownlint
-  # managed-by-populate-pre-commit end: markdownlint.yaml
+  - repo: local
+    hooks:
+    - id: mermaid-pre-commit
+      name: Run `mermaid-pre-commit`
+      language: system
+      types:
+      - markdown
+      entry: mermaid-pre-commit
+  # managed-by-populate-pre-commit end: markdown.yaml
   # managed-by-populate-pre-commit start: mdformat.yaml
   - repo: local
     hooks:
@@ -106,61 +104,6 @@ repos:
       exclude: ^(CODE_OF_CONDUCT\.md|README\.md)$
       entry: mdformat
   # managed-by-populate-pre-commit end: mdformat.yaml
-  # managed-by-populate-pre-commit start: mermaid.yaml
-  - repo: local
-    hooks:
-    - id: mermaid-pre-commit
-      name: Run `mermaid-pre-commit`
-      language: system
-      types:
-      - markdown
-      entry: mermaid-pre-commit
-  # managed-by-populate-pre-commit end: mermaid.yaml
-  # managed-by-populate-pre-commit start: meta.yaml
-  - repo: meta
-    hooks:
-    - id: check-hooks-apply
-  # managed-by-populate-pre-commit end: meta.yaml
-  # managed-by-populate-pre-commit start: mypy.yaml
-  - repo: local
-    hooks:
-    - id: mypy
-      name: Run `mypy`
-      language: system
-      types:
-      - python
-      entry: mypy --ignore-missing-imports --scripts-are-modules
-  # managed-by-populate-pre-commit end: mypy.yaml
-  # managed-by-populate-pre-commit start: populate_pre_commit.yaml
-  - repo: local
-    hooks:
-    - id: populate_pre_commit
-      name: Run `populate_pre_commit`
-      language: system
-      always_run: true
-      pass_filenames: false
-      entry: populate_pre_commit
-  # managed-by-populate-pre-commit end: populate_pre_commit.yaml
-  # managed-by-populate-pre-commit start: pygrep-hooks.yaml
-  - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
-    hooks:
-    - id: python-check-blanket-noqa
-    - id: python-check-blanket-type-ignore
-    - id: python-check-mock-methods
-    - id: python-no-eval
-    - id: python-no-log-warn
-    - id: python-use-type-annotations
-  # managed-by-populate-pre-commit end: pygrep-hooks.yaml
-  # managed-by-populate-pre-commit start: pyrefly.yaml
-  - repo: https://github.com/facebook/pyrefly-pre-commit
-    rev: 1.3.2
-    hooks:
-    - id: pyrefly-check
-      name: Pyrefly (type checking)
-      pass_filenames: false
-      language: system
-  # managed-by-populate-pre-commit end: pyrefly.yaml
   # managed-by-populate-pre-commit start: pytest.yaml
   - repo: local
     hooks:
@@ -176,6 +119,46 @@ repos:
       - pythonpath=.venv/lib/python3.14/site-packages
   # managed-by-populate-pre-commit end: pytest.yaml
   # managed-by-populate-pre-commit start: python.yaml
+  - repo: local
+    hooks:
+    - id: basedpyright
+      name: Run `basedpyright`
+      language: system
+      types:
+      - python
+      entry: basedpyright
+  - repo: local
+    hooks:
+    - id: black
+      name: Run `black`
+      language: system
+      types:
+      - python
+      entry: black
+  - repo: local
+    hooks:
+    - id: mypy
+      name: Run `mypy`
+      language: system
+      types:
+      - python
+      entry: mypy --ignore-missing-imports --scripts-are-modules
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+    - id: python-check-blanket-noqa
+    - id: python-check-blanket-type-ignore
+    - id: python-check-mock-methods
+    - id: python-no-eval
+    - id: python-no-log-warn
+    - id: python-use-type-annotations
+  - repo: https://github.com/facebook/pyrefly-pre-commit
+    rev: 1.3.2
+    hooks:
+    - id: pyrefly-check
+      name: Pyrefly (type checking)
+      pass_filenames: false
+      language: system
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -191,17 +174,6 @@ repos:
       - shell
       entry: shellcheck -e SC1090 -e SC1091
   # managed-by-populate-pre-commit end: shellcheck.yaml
-  # managed-by-populate-pre-commit start: spellcheck.yaml
-  - repo: local
-    hooks:
-    - id: spellcheck
-      stages:
-      - commit-msg
-      name: Check spelling
-      language: system
-      verbose: true
-      entry: spell-check-wrapper
-  # managed-by-populate-pre-commit end: spellcheck.yaml
   # managed-by-populate-pre-commit start: toml.yaml
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

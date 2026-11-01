@@ -7,3 +7,11 @@
     - markdown
     exclude: CODE_OF_CONDUCT.md
     entry: markdownlint
+- repo: local
+  hooks:
+  - id: mermaid-pre-commit
+    name: Run `mermaid-pre-commit`
+    language: system
+    types:
+    - markdown
+    entry: mermaid-pre-commit

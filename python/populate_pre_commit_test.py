@@ -265,6 +265,109 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         )
 
 
+_EXPECTED_ALWAYS_ENABLED = """\
+  # managed-by-populate-pre-commit start: always_enabled.yaml
+  - repo: meta
+    hooks:
+    - id: check-hooks-apply
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+    - id: conventional-pre-commit
+      stages:
+      - commit-msg
+      args:
+      - --verbose
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: check-case-conflict
+    - id: check-executables-have-shebangs
+    - id: check-illegal-windows-names
+    - id: check-merge-conflict
+    - id: check-vcs-permalinks
+    - id: check-yaml
+    - id: destroyed-symlinks
+    - id: fix-byte-order-marker
+    - id: mixed-line-ending
+  - repo: local
+    hooks:
+    - id: make_github_workflows
+      name: Run `make_github_workflows`
+      language: system
+      always_run: true
+      pass_filenames: false
+      entry: make_github_workflows
+  - repo: local
+    hooks:
+    - id: populate_pre_commit
+      name: Run `populate_pre_commit`
+      language: system
+      always_run: true
+      pass_filenames: false
+      entry: populate_pre_commit
+  - repo: local
+    hooks:
+    - id: spellcheck
+      stages:
+      - commit-msg
+      name: Check spelling
+      language: system
+      verbose: true
+      entry: spell-check-wrapper
+  # managed-by-populate-pre-commit end: always_enabled.yaml
+"""
+
+_EXPECTED_PYTHON = """\
+  # managed-by-populate-pre-commit start: python.yaml
+  - repo: local
+    hooks:
+    - id: basedpyright
+      name: Run `basedpyright`
+      language: system
+      types:
+      - python
+      entry: basedpyright
+  - repo: local
+    hooks:
+    - id: black
+      name: Run `black`
+      language: system
+      types:
+      - python
+      entry: black
+  - repo: local
+    hooks:
+    - id: mypy
+      name: Run `mypy`
+      language: system
+      types:
+      - python
+      entry: mypy --ignore-missing-imports --scripts-are-modules
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+    - id: python-check-blanket-noqa
+    - id: python-check-blanket-type-ignore
+    - id: python-check-mock-methods
+    - id: python-no-eval
+    - id: python-no-log-warn
+    - id: python-use-type-annotations
+  - repo: https://github.com/facebook/pyrefly-pre-commit
+    rev: 1.3.2
+    hooks:
+    - id: pyrefly-check
+      name: Pyrefly (type checking)
+      pass_filenames: false
+      language: system
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: debug-statements
+  # managed-by-populate-pre-commit end: python.yaml
+"""
+
+
 class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     """Tests for the main populate_pre_commit function."""
 
@@ -304,8 +407,8 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         self.mock_snippets = [
             # keep-sorted start
+            ("always_enabled.yaml", True),
             ("ignored.yaml", False),
-            ("meta.yaml", True),
             ("python.yaml", True),
             # keep-sorted end
         ]
@@ -327,21 +430,12 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
 
-        expected = textwrap.dedent("""\
-            #!/usr/bin/env -S "populate_pre_commit_test.py"
-            repos:
-              # managed-by-populate-pre-commit start: meta.yaml
-              - repo: meta
-                hooks:
-                - id: check-hooks-apply
-              # managed-by-populate-pre-commit end: meta.yaml
-              # managed-by-populate-pre-commit start: python.yaml
-              - repo: https://github.com/pre-commit/pre-commit-hooks
-                rev: v6.0.0
-                hooks:
-                - id: debug-statements
-              # managed-by-populate-pre-commit end: python.yaml
-            """)
+        expected = (
+            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            "repos:\n"
+            f"{_EXPECTED_ALWAYS_ENABLED}"
+            f"{_EXPECTED_PYTHON}"
+        )
         self.assertEqual(content, expected)
 
     def test_updates_existing_file_preserves_custom(self) -> None:
@@ -356,32 +450,28 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         populate_pre_commit.populate_pre_commit(
             extra_args={},
             script_file="populate_pre_commit_test.py",
-            snippets=[("meta.yaml", True)],
+            snippets=[("always_enabled.yaml", True)],
         )
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
 
-        expected = textwrap.dedent("""\
-            #!/usr/bin/env -S "populate_pre_commit_test.py"
-            repos:
-              # managed-by-populate-pre-commit start: meta.yaml
-              - repo: meta
-                hooks:
-                - id: check-hooks-apply
-              # managed-by-populate-pre-commit end: meta.yaml
-              - repo: custom-repo
-                hooks:
-                  - id: custom-hook
-            """)
+        expected = (
+            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            "repos:\n"
+            f"{_EXPECTED_ALWAYS_ENABLED}"
+            "  - repo: custom-repo\n"
+            "    hooks:\n"
+            "      - id: custom-hook\n"
+        )
         self.assertEqual(content, expected)
 
     def test_replaces_existing_managed_blocks(self) -> None:
         initial_content = textwrap.dedent("""\
             repos:
-              # managed-by-populate-pre-commit start: meta.yaml
+              # managed-by-populate-pre-commit start: always_enabled.yaml
               - repo: old-meta-stuff
-              # managed-by-populate-pre-commit end: meta.yaml
+              # managed-by-populate-pre-commit end: always_enabled.yaml
               - repo: custom-repo
             """)
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
@@ -389,22 +479,18 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         populate_pre_commit.populate_pre_commit(
             extra_args={},
             script_file="populate_pre_commit_test.py",
-            snippets=[("meta.yaml", True)],
+            snippets=[("always_enabled.yaml", True)],
         )
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
 
-        expected = textwrap.dedent("""\
-            #!/usr/bin/env -S "populate_pre_commit_test.py"
-            repos:
-              # managed-by-populate-pre-commit start: meta.yaml
-              - repo: meta
-                hooks:
-                - id: check-hooks-apply
-              # managed-by-populate-pre-commit end: meta.yaml
-              - repo: custom-repo
-            """)
+        expected = (
+            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            "repos:\n"
+            f"{_EXPECTED_ALWAYS_ENABLED}"
+            "  - repo: custom-repo\n"
+        )
         self.assertEqual(content, expected)
 
     def test_adds_repos_if_missing(self) -> None:
@@ -413,22 +499,18 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         populate_pre_commit.populate_pre_commit(
             extra_args={},
             script_file="populate_pre_commit_test.py",
-            snippets=[("meta.yaml", True)],
+            snippets=[("always_enabled.yaml", True)],
         )
 
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()
 
-        expected = textwrap.dedent("""\
-            #!/usr/bin/env -S "populate_pre_commit_test.py"
-            # Just a comment
-            repos:
-              # managed-by-populate-pre-commit start: meta.yaml
-              - repo: meta
-                hooks:
-                - id: check-hooks-apply
-              # managed-by-populate-pre-commit end: meta.yaml
-            """)
+        expected = (
+            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            "# Just a comment\n"
+            "repos:\n"
+            f"{_EXPECTED_ALWAYS_ENABLED}"
+        )
         self.assertEqual(content, expected)
 
     def test_empty_snippet_file_crashes(self) -> None:
@@ -660,8 +742,10 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
     def test_multiple_snippets_with_extra_args(self) -> None:
         """Tests multiple snippets with extra arguments."""
         mock_snippets = [
+            # keep-sorted start
+            ("always_enabled.yaml", True),
             ("python.yaml", True),
-            ("meta.yaml", True),
+            # keep-sorted end
         ]
         extra_args = {"debug-statements": "--flag1", "check-hooks-apply": "--flag2"}
         populate_pre_commit.populate_pre_commit(
@@ -702,16 +786,16 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         initial_content = textwrap.dedent("""\
             # Top comment
             repos:
-              # managed-by-populate-pre-commit start: meta.yaml
+              # managed-by-populate-pre-commit start: always_enabled.yaml
               - repo: meta
-              # managed-by-populate-pre-commit end: meta.yaml
+              # managed-by-populate-pre-commit end: always_enabled.yaml
             # Bottom comment
             """)
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
         populate_pre_commit.populate_pre_commit(
             extra_args={},
             script_file="populate_pre_commit_test.py",
-            snippets=[("meta.yaml", True)],
+            snippets=[("always_enabled.yaml", True)],
         )
         with open(".pre-commit-config.yaml", "r") as f:
             content = f.read()

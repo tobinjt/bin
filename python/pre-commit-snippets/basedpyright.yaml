@@ -1,8 +1,0 @@
-- repo: local
-  hooks:
-  - id: basedpyright
-    name: Run `basedpyright`
-    language: system
-    types:
-    - python
-    entry: basedpyright
