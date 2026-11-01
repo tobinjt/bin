@@ -1,0 +1,8 @@
+- repo: local
+  hooks:
+  - id: populate_pre_commit
+    name: Run `populate_pre_commit`
+    language: system
+    always_run: true
+    pass_filenames: false
+    entry: populate_pre_commit

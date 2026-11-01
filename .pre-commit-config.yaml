@@ -74,6 +74,16 @@ repos:
     hooks:
     - id: keep-sorted
   # managed-by-populate-pre-commit end: keep-sorted.yaml
+  # managed-by-populate-pre-commit start: make_github_workflows.yaml
+  - repo: local
+    hooks:
+    - id: make_github_workflows
+      name: Run `make_github_workflows`
+      language: system
+      always_run: true
+      pass_filenames: false
+      entry: make_github_workflows
+  # managed-by-populate-pre-commit end: make_github_workflows.yaml
   # managed-by-populate-pre-commit start: markdownlint.yaml
   - repo: local
     hooks:
@@ -121,6 +131,16 @@ repos:
       - python
       entry: mypy --ignore-missing-imports --scripts-are-modules
   # managed-by-populate-pre-commit end: mypy.yaml
+  # managed-by-populate-pre-commit start: populate_pre_commit.yaml
+  - repo: local
+    hooks:
+    - id: populate_pre_commit
+      name: Run `populate_pre_commit`
+      language: system
+      always_run: true
+      pass_filenames: false
+      entry: populate_pre_commit
+  # managed-by-populate-pre-commit end: populate_pre_commit.yaml
   # managed-by-populate-pre-commit start: pygrep-hooks.yaml
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0

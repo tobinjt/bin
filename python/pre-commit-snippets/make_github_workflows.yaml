@@ -1,0 +1,8 @@
+- repo: local
+  hooks:
+  - id: make_github_workflows
+    name: Run `make_github_workflows`
+    language: system
+    always_run: true
+    pass_filenames: false
+    entry: make_github_workflows
