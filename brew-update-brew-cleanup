@@ -32,5 +32,3 @@ sleep 2
 brew autoremove
 sleep 2
 brew cleanup
-sleep 2
-brew doctor --quiet
