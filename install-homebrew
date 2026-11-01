@@ -105,7 +105,7 @@ main() {
   # Everything needed for backups.
   brew install resticprofile rsync
   # Basics.
-  brew install dust eza fd less neovim ripgrep tmux tree-sitter-cli
+  brew install dust eza fd less ncdu neovim ripgrep tmux tree-sitter-cli
   if [[ "${ariane}" -eq 1 ]]; then
     return 0
   fi
@@ -118,7 +118,9 @@ main() {
   brew install copyparty
   # Basic development.  I prefer to install tooling with Neovim's Mason so that
   # it's consistent across machines.
-  brew install fswatch keep-sorted lazygit pre-commit zizmor
+  brew install fswatch jj lazygit
+  # Pre-commit checks.
+  brew install actionlint aspell keep-sorted mermaid-cli pre-commit zizmor
 
   # Needed to install tools for Neovim.
   brew install luarocks node npm virtualenv
