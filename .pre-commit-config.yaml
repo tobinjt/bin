@@ -93,9 +93,19 @@ repos:
       language: system
       types:
       - markdown
-      exclude: CODE_OF_CONDUCT.md
+      exclude: ^(CODE_OF_CONDUCT\.md|README\.md)$
       entry: mdformat
   # managed-by-populate-pre-commit end: mdformat.yaml
+  # managed-by-populate-pre-commit start: mermaid.yaml
+  - repo: local
+    hooks:
+    - id: mermaid-pre-commit
+      name: Run `mermaid-pre-commit`
+      language: system
+      types:
+      - markdown
+      entry: mermaid-pre-commit
+  # managed-by-populate-pre-commit end: mermaid.yaml
   # managed-by-populate-pre-commit start: meta.yaml
   - repo: meta
     hooks:
