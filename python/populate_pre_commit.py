@@ -490,6 +490,7 @@ def main() -> None:
         ("markdown_to_html.yaml", should_include_markdown_to_html(all_files)),
         ("markdownlint.yaml", has_extension(all_files, ".md")),
         ("mdformat.yaml", should_include_mdformat(all_files)),
+        ("mermaid.yaml", has_extension(all_files, ".md")),
         ("meta.yaml", True),
         ("mypy.yaml", has_extension(all_files, ".py")),
         ("pygrep-hooks.yaml", has_extension(all_files, ".py")),

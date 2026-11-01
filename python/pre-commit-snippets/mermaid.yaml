@@ -1,0 +1,8 @@
+- repo: local
+  hooks:
+  - id: mermaid-pre-commit
+    name: Run `mermaid-pre-commit`
+    language: system
+    types:
+    - markdown
+    entry: mermaid-pre-commit
