@@ -33,6 +33,9 @@ main() {
     GIT_MERGE_AUTOEDIT=no git pull
   fi
 
+  # Don't accidentally commit other changes.
+  git check-local-copy-is-clean
+
   if [[ -x ./setup ]]; then
     ./setup
   fi
