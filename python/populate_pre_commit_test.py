@@ -305,7 +305,7 @@ _EXPECTED_ALWAYS_ENABLED = """\
       language: system
       always_run: true
       pass_filenames: false
-      entry: make_github_workflows
+      entry: env ./.github/dependabot.yml
   - repo: local
     hooks:
     - id: populate_pre_commit
@@ -313,7 +313,7 @@ _EXPECTED_ALWAYS_ENABLED = """\
       language: system
       always_run: true
       pass_filenames: false
-      entry: populate_pre_commit
+      entry: env ./.pre-commit-config.yaml
   - repo: local
     hooks:
     - id: spellcheck
