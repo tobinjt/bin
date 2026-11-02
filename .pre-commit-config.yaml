@@ -1,6 +1,11 @@
 #!/usr/bin/env -S "populate_pre_commit"
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+
+# managed-by-populate-pre-commit start: header
+# Placeholder
+# managed-by-populate-pre-commit end: header
+
 repos:
   # managed-by-populate-pre-commit start: actionlint.yaml
   - repo: local

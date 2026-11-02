@@ -265,6 +265,14 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         )
 
 
+_EXPECTED_HEADER = """\
+
+# managed-by-populate-pre-commit start: header
+# Placeholder
+# managed-by-populate-pre-commit end: header
+
+"""
+
 _EXPECTED_ALWAYS_ENABLED = """\
   # managed-by-populate-pre-commit start: always_enabled.yaml
   - repo: meta
@@ -432,6 +440,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         expected = (
             '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
             f"{_EXPECTED_PYTHON}"
@@ -458,6 +467,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         expected = (
             '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
             "  - repo: custom-repo\n"
@@ -487,11 +497,87 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         expected = (
             '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
             "  - repo: custom-repo\n"
         )
         self.assertEqual(content, expected)
+
+    def test_replaces_existing_header_block(self) -> None:
+        """Tests that an existing managed header block is replaced."""
+        initial_content = textwrap.dedent("""\
+            # managed-by-populate-pre-commit start: header
+            # Old header content
+            # managed-by-populate-pre-commit end: header
+            repos:
+              - repo: custom-repo
+            """)
+        self.create_file(".pre-commit-config.yaml", contents=initial_content)
+
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("always_enabled.yaml", True)],
+        )
+
+        with open(".pre-commit-config.yaml", "r") as f:
+            content = f.read()
+
+        expected = (
+            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            f"{_EXPECTED_HEADER}"
+            "repos:\n"
+            f"{_EXPECTED_ALWAYS_ENABLED}"
+            "  - repo: custom-repo\n"
+        )
+        self.assertEqual(content, expected)
+
+    def test_empty_fixed_header(self) -> None:
+        """Tests that an empty fixed header does not insert header markers."""
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("always_enabled.yaml", True)],
+            fixed_header="",
+        )
+
+        with open(".pre-commit-config.yaml", "r") as f:
+            content = f.read()
+
+        expected = (
+            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            "repos:\n"
+            f"{_EXPECTED_ALWAYS_ENABLED}"
+        )
+        self.assertEqual(content, expected)
+
+    def test_idempotent_runs_preserve_blank_lines(self) -> None:
+        """Tests that running populate_pre_commit repeatedly does not accumulate blank lines."""
+        initial_content = textwrap.dedent("""\
+            # Top comment
+            repos:
+              - repo: custom-repo
+            """)
+        self.create_file(".pre-commit-config.yaml", contents=initial_content)
+
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("always_enabled.yaml", True)],
+        )
+        with open(".pre-commit-config.yaml", "r") as f:
+            first_run_content = f.read()
+
+        populate_pre_commit.populate_pre_commit(
+            extra_args={},
+            script_file="populate_pre_commit_test.py",
+            snippets=[("always_enabled.yaml", True)],
+        )
+        with open(".pre-commit-config.yaml", "r") as f:
+            second_run_content = f.read()
+
+        self.assertEqual(first_run_content, second_run_content)
 
     def test_adds_repos_if_missing(self) -> None:
         self.create_file(".pre-commit-config.yaml", contents="# Just a comment\n")
@@ -508,6 +594,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         expected = (
             '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
             "# Just a comment\n"
+            f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
         )

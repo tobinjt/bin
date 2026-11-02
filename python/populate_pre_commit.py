@@ -22,6 +22,10 @@ import get_git_root
 SNIPPETS_DIR = pathlib.Path(__file__).resolve().parent / "pre-commit-snippets"
 # The pre-commit configuration file to update.
 CONFIG_FILE = pathlib.Path(".pre-commit-config.yaml")
+# Fixed header block to insert before the repos: block.
+FIXED_HEADER: str = """\
+# Placeholder
+"""
 
 
 class Hook(TypedDict):
@@ -349,7 +353,11 @@ def should_include_shellcheck(files: frozenset[str]) -> bool:
 
 
 def populate_pre_commit(
-    *, extra_args: dict[str, str], script_file: str, snippets: list[tuple[str, bool]]
+    *,
+    extra_args: dict[str, str],
+    script_file: str,
+    snippets: list[tuple[str, bool]],
+    fixed_header: str = FIXED_HEADER,
 ) -> None:
     """Updates .pre-commit-config.yaml with detected snippets.
 
@@ -357,6 +365,7 @@ def populate_pre_commit(
         extra_args: A dictionary mapping hook IDs to extra arguments.
         script_file: The path to the script calling this function (used for shebang).
         snippets: A list of snippets and whether they should be included.
+        fixed_header: The fixed header block to insert before the repos: block.
 
     Raises:
         ValueError: If a config snippet is empty.
@@ -402,7 +411,22 @@ def populate_pre_commit(
         new_lines.append("repos:\n")
         repos_idx = len(new_lines) - 1
 
-    # 3. Prepare snippet lines.
+    # Strip any trailing blank lines before repos: to ensure idempotency across runs.
+    while repos_idx > 0 and new_lines[repos_idx - 1].strip() == "":
+        del new_lines[repos_idx - 1]
+        repos_idx -= 1
+
+    # 3. Prepare header lines.
+    header_lines: list[str] = []
+    if fixed_header.strip():
+        header_lines.append("\n")
+        header_lines.append("# managed-by-populate-pre-commit start: header\n")
+        for line in fixed_header.splitlines():
+            header_lines.append(f"{line}\n")
+        header_lines.append("# managed-by-populate-pre-commit end: header\n")
+        header_lines.append("\n")
+
+    # 4. Prepare snippet lines.
     snippet_lines: list[str] = []
     for snippet_name in to_include:
         snippet_path = SNIPPETS_DIR / snippet_name
@@ -420,13 +444,16 @@ def populate_pre_commit(
             f"  # managed-by-populate-pre-commit end: {snippet_name}\n"
         )
 
-    # 4. Insert snippets.
-    insert_pos: int = repos_idx + 1
+    # 5. Insert header and snippets.
     final_lines: list[str] = (
-        new_lines[:insert_pos] + snippet_lines + new_lines[insert_pos:]
+        new_lines[:repos_idx]
+        + header_lines
+        + new_lines[repos_idx : repos_idx + 1]
+        + snippet_lines
+        + new_lines[repos_idx + 1 :]
     )
 
-    # 5. Write back to file with shebang.
+    # 6. Write back to file with shebang.
     shebang_args = build_shebang_args(extra_args)
     script_name = escape_for_env_s(pathlib.Path(script_file).name)
     shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}\n'
