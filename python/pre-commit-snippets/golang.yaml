@@ -2,7 +2,6 @@
   rev: v0.5.1
   hooks:
   - id: go-build
-  - id: go-fmt
   - id: go-imports
   - id: go-unit-tests
   - id: go-vet
