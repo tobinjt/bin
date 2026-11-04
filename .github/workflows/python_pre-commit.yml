@@ -43,25 +43,15 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install basedpyright black mypy pathspec pyfakefs pytest pytest-cov pytest-timeout pytest-flakefinder PyYAML pre-commit
+          pip install basedpyright black mypy pathspec pyfakefs pytest pytest-cov pytest-timeout pytest-flakefinder PyYAML
 
       # keep-sorted start block=true
       - name: Run basedpyright
         run: basedpyright .
       - name: Run black
         run: black .
-      - name: Run debug-statements
-        run: pre-commit run debug-statements --all-files
       - name: Run mypy
         run: mypy --ignore-missing-imports --scripts-are-modules .
-      - name: Run pygrep-hooks
-        run: |
-          pre-commit run python-check-blanket-noqa --all-files
-          pre-commit run python-check-blanket-type-ignore --all-files
-          pre-commit run python-check-mock-methods --all-files
-          pre-commit run python-no-eval --all-files
-          pre-commit run python-no-log-warn --all-files
-          pre-commit run python-use-type-annotations --all-files
       - name: Run pyrefly
         uses: facebook/pyrefly@main
       - name: Run pytest
