@@ -152,7 +152,7 @@ repos:
       entry: pytest
       args:
       - -o
-      - pythonpath=.venv/lib/python3.14/site-packages
+      - pythonpath=.venv/lib/python3.15/site-packages
   # managed-by-populate-pre-commit end: pytest.yaml
   # managed-by-populate-pre-commit start: python.yaml
   - repo: local

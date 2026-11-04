@@ -10,4 +10,4 @@
     entry: pytest
     args:
       - -o
-      - pythonpath=.venv/lib/python3.14/site-packages
+      - pythonpath=.venv/lib/python3.15/site-packages
