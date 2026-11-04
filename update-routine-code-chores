@@ -33,7 +33,7 @@ main() {
   fi
 
   # Don't accidentally commit other changes.
-  git check-local-copy-is-clean
+  git check-local-copy-is-clean --ignore-unpushed-commits
 
   if [[ -x ./setup ]]; then
     ./setup
