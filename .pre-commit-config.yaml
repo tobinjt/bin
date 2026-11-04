@@ -3,6 +3,9 @@
 # See https://pre-commit.com/hooks.html for more hooks
 
 # managed-by-populate-pre-commit start: header
+# Install all the hook types I use rather than just pre-commit.
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+
 # https://prek.j178.dev/benchmark/?h=priority#3-priority
 priorities:
     generator: 10

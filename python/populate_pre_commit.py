@@ -25,6 +25,9 @@ SNIPPETS_DIR = pathlib.Path(__file__).resolve().parent / "pre-commit-snippets"
 CONFIG_FILE = pathlib.Path(".pre-commit-config.yaml")
 # Fixed header block to insert before the repos: block.
 FIXED_HEADER: str = textwrap.dedent("""\
+    # Install all the hook types I use rather than just pre-commit.
+    default_install_hook_types: [pre-commit, pre-push, commit-msg]
+
     # https://prek.j178.dev/benchmark/?h=priority#3-priority
     priorities:
         generator: 10

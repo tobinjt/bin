@@ -47,14 +47,8 @@ main() {
     done < <(find_hooks "${hooks_dir}")
   fi
 
-  local hook
-  for hook in "commit-msg" "pre-commit" "pre-push"; do
-    local hook_file="${hooks_dir}/${hook}"
-    if [[ "${config_file}" -nt "${hook_file}" ]]; then
-      printf "Installing pre-commit in %s/%s\n" "${PWD}" "${hook_file}"
-      pre-commit install --install-hooks --hook-type "${hook}"
-    fi
-  done
+  printf "Installing pre-commit in %s\n" "${PWD}"
+  pre-commit install --install-hooks
   return 0
 }
 
