@@ -120,7 +120,7 @@ main() {
   # it's consistent across machines.
   brew install fswatch jj lazygit
   # Pre-commit checks.
-  brew install actionlint aspell keep-sorted mermaid-cli pre-commit zizmor
+  brew install actionlint aspell keep-sorted mermaid-cli zizmor
 
   # Needed to install tools for Neovim.
   brew install luarocks node npm virtualenv

@@ -71,9 +71,9 @@ update_python_modules() {
 }
 
 routine_code_maintenance_chores() {
-  # Using the presence of pre-commit as a proxy for whether to perform routine
-  # code maintenance chores.
-  if ! type pre-commit >& /dev/null; then
+  # Using the presence of prek as a proxy for whether to perform routine code
+  # maintenance chores.
+  if ! type prek >& /dev/null; then
     return
   fi
   if ! populate_pre_commit --help >& /dev/null; then
@@ -130,8 +130,9 @@ main() {
     update_nvim_plugins
     update_treesitter_parsers
     update-vale-acepted-words
-    # Mason-installed packages are frequently broken by upgrades, reinstall them.
-    # Do this before anything else because they're used in pre-commit hooks.
+    # Mason-installed packages are frequently broken by upgrades, so reinstall
+    # them. Do this before anything else because they're used in pre-commit
+    # hooks.
     update_mason_packages
     # Similarly, update development tools and Python modules.
     retry install-extra-development-tools

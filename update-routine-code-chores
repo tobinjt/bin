@@ -10,7 +10,7 @@ update_pre-commit_and_github_workflows() {
   if [[ -x ".pre-commit-config.yaml" ]]; then
     retry ./.pre-commit-config.yaml
     git add --all ./.pre-commit-config.yaml
-    pre-commit run --all-files
+    prek run --all-files
     install-pre-commit-hooks
   fi
   if ! git check-local-copy-is-clean --ignore-unpushed-commits; then
