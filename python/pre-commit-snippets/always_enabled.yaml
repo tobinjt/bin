@@ -1,10 +1,12 @@
 - repo: meta
   hooks:
   - id: check-hooks-apply
+    priority: linter
 - repo: https://github.com/compilerla/conventional-pre-commit
   rev: v4.4.0
   hooks:
   - id: conventional-pre-commit
+    priority: linter
     stages:
     - commit-msg
     args:
@@ -14,19 +16,29 @@
   hooks:
   # keep-sorted start
   - id: check-case-conflict
+    priority: linter
   - id: check-executables-have-shebangs
+    priority: linter
   - id: check-illegal-windows-names
+    priority: linter
   - id: check-merge-conflict
+    priority: linter
   - id: check-vcs-permalinks
+    priority: linter
   - id: check-yaml
+    priority: linter
   - id: destroyed-symlinks
+    priority: linter
   - id: fix-byte-order-marker
+    priority: linter
   - id: mixed-line-ending
+    priority: linter
   # keep-sorted end
 - repo: local
   hooks:
   - id: make_github_workflows
     name: Run `make_github_workflows`
+    priority: generator
     language: system
     always_run: true
     pass_filenames: false
@@ -35,6 +47,7 @@
   hooks:
   - id: populate_pre_commit
     name: Run `populate_pre_commit`
+    priority: generator
     language: system
     always_run: true
     pass_filenames: false
@@ -45,6 +58,7 @@
     stages:
     - commit-msg
     name: Check spelling
+    priority: linter
     language: system
     verbose: true
     entry: spell-check-wrapper

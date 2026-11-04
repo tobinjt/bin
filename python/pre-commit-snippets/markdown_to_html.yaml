@@ -2,6 +2,7 @@
   hooks:
   - id: markdown_to_html
     name: Run `markdown_to_html`
+    priority: formatter
     pass_filenames: false
     language: system
     types:

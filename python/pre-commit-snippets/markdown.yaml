@@ -2,6 +2,7 @@
   hooks:
   - id: markdownlint
     name: Run `markdownlint`
+    priority: linter
     language: system
     types:
     - markdown
@@ -11,6 +12,7 @@
   hooks:
   - id: mermaid-pre-commit
     name: Run `mermaid-pre-commit`
+    priority: linter
     language: system
     types:
     - markdown

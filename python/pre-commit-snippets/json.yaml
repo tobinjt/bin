@@ -2,8 +2,10 @@
   rev: v6.0.0
   hooks:
   - id: check-json
+    priority: linter
     exclude: ^\.vscode/settings\.json|package-lock\.json$
   - id: pretty-format-json
+    priority: formatter
     exclude: ^\.vscode/settings\.json|package-lock\.json$
     args:
     - --autofix

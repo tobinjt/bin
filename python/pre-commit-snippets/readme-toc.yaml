@@ -2,6 +2,7 @@
   rev: v2.5.0
   hooks:
     - id: doctoc
+      priority: generator
       files: README.md
       args:
         - --notitle

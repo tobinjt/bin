@@ -2,6 +2,7 @@
   hooks:
   - id: shellcheck
     name: Run `shellcheck`
+    priority: linter
     language: system
     types:
     - shell

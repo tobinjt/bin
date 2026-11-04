@@ -265,23 +265,25 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
         )
 
 
-_EXPECTED_HEADER = """\
-
-# managed-by-populate-pre-commit start: header
-# Placeholder
-# managed-by-populate-pre-commit end: header
-
-"""
+_EXPECTED_HEADER = (
+    "\n"
+    "# managed-by-populate-pre-commit start: header\n"
+    f"{populate_pre_commit.FIXED_HEADER}"
+    "# managed-by-populate-pre-commit end: header\n"
+    "\n"
+)
 
 _EXPECTED_ALWAYS_ENABLED = """\
   # managed-by-populate-pre-commit start: always_enabled.yaml
   - repo: meta
     hooks:
     - id: check-hooks-apply
+      priority: linter
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.4.0
     hooks:
     - id: conventional-pre-commit
+      priority: linter
       stages:
       - commit-msg
       args:
@@ -290,18 +292,28 @@ _EXPECTED_ALWAYS_ENABLED = """\
     rev: v6.0.0
     hooks:
     - id: check-case-conflict
+      priority: linter
     - id: check-executables-have-shebangs
+      priority: linter
     - id: check-illegal-windows-names
+      priority: linter
     - id: check-merge-conflict
+      priority: linter
     - id: check-vcs-permalinks
+      priority: linter
     - id: check-yaml
+      priority: linter
     - id: destroyed-symlinks
+      priority: linter
     - id: fix-byte-order-marker
+      priority: linter
     - id: mixed-line-ending
+      priority: linter
   - repo: local
     hooks:
     - id: make_github_workflows
       name: Run `make_github_workflows`
+      priority: generator
       language: system
       always_run: true
       pass_filenames: false
@@ -310,6 +322,7 @@ _EXPECTED_ALWAYS_ENABLED = """\
     hooks:
     - id: populate_pre_commit
       name: Run `populate_pre_commit`
+      priority: generator
       language: system
       always_run: true
       pass_filenames: false
@@ -320,6 +333,7 @@ _EXPECTED_ALWAYS_ENABLED = """\
       stages:
       - commit-msg
       name: Check spelling
+      priority: linter
       language: system
       verbose: true
       entry: spell-check-wrapper
@@ -332,6 +346,7 @@ _EXPECTED_PYTHON = """\
     hooks:
     - id: basedpyright
       name: Run `basedpyright`
+      priority: linter
       language: system
       types:
       - python
@@ -340,6 +355,7 @@ _EXPECTED_PYTHON = """\
     hooks:
     - id: black
       name: Run `black`
+      priority: formatter
       language: system
       types:
       - python
@@ -348,6 +364,7 @@ _EXPECTED_PYTHON = """\
     hooks:
     - id: mypy
       name: Run `mypy`
+      priority: linter
       language: system
       types:
       - python
@@ -356,22 +373,30 @@ _EXPECTED_PYTHON = """\
     rev: v1.10.0
     hooks:
     - id: python-check-blanket-noqa
+      priority: linter
     - id: python-check-blanket-type-ignore
+      priority: linter
     - id: python-check-mock-methods
+      priority: linter
     - id: python-no-eval
+      priority: linter
     - id: python-no-log-warn
+      priority: linter
     - id: python-use-type-annotations
+      priority: linter
   - repo: https://github.com/facebook/pyrefly-pre-commit
     rev: 1.3.2
     hooks:
     - id: pyrefly-check
       name: Pyrefly (type checking)
+      priority: linter
       pass_filenames: false
       language: system
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
     - id: debug-statements
+      priority: linter
   # managed-by-populate-pre-commit end: python.yaml
 """
 

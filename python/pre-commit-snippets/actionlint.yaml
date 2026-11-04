@@ -2,6 +2,7 @@
   hooks:
   - id: actionlint
     name: Run `actionlint`
+    priority: linter
     language: system
     types:
     - yaml

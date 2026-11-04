@@ -2,6 +2,7 @@
   hooks:
   - id: mdformat
     name: Run `mdformat`
+    priority: linter
     language: system
     types:
     - markdown

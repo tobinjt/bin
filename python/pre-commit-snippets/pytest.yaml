@@ -2,6 +2,7 @@
   hooks:
   - id: pytest
     name: Run `pytest`
+    priority: tests
     language: system
     pass_filenames: false
     types:

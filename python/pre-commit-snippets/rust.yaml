@@ -2,10 +2,15 @@
   rev: v1.3.1
   hooks:
   - id: cargo-check
+    priority: linter
   - id: cargo-clippy
+    priority: linter
   - id: cargo-fmt
+    priority: formatter
   - id: cargo-llvm-cov
+    priority: coverage
     args:
     - --quiet
     - --show-missing-lines
   - id: cargo-test
+    priority: tests

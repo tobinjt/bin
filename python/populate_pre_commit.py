@@ -11,6 +11,7 @@ import functools
 import os
 import pathlib
 import subprocess
+import textwrap
 from typing import TypedDict, cast
 
 import pathspec
@@ -23,9 +24,16 @@ SNIPPETS_DIR = pathlib.Path(__file__).resolve().parent / "pre-commit-snippets"
 # The pre-commit configuration file to update.
 CONFIG_FILE = pathlib.Path(".pre-commit-config.yaml")
 # Fixed header block to insert before the repos: block.
-FIXED_HEADER: str = """\
-# Placeholder
-"""
+FIXED_HEADER: str = textwrap.dedent("""\
+    # https://prek.j178.dev/benchmark/?h=priority#3-priority
+    priorities:
+        generator: 10
+        formatter: 20
+        formatter-late: 25
+        linter: 30
+        tests: 40
+        coverage: 50
+""")
 
 
 class Hook(TypedDict):

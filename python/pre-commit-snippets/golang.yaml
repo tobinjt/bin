@@ -2,14 +2,20 @@
   rev: v0.5.1
   hooks:
   - id: go-build
+    priority: linter
   - id: go-imports
+    priority: formatter
   - id: go-unit-tests
+    priority: tests
   - id: go-vet
+    priority: linter
 - repo: https://github.com/golangci/golangci-lint
   rev: v2.15.0
   hooks:
     - id: golangci-lint
+      priority: linter
 - repo: https://github.com/tobinjt/golang-coverage-check
   rev: v1.0
   hooks:
     - id: golang-coverage-check
+      priority: coverage
