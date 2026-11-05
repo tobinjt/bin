@@ -385,7 +385,7 @@ _EXPECTED_PYTHON = """\
     - id: python-use-type-annotations
       priority: linter
   - repo: https://github.com/facebook/pyrefly-pre-commit
-    rev: 1.3.2
+    rev: 1.4.0
     hooks:
     - id: pyrefly-check
       name: Pyrefly (type checking)
