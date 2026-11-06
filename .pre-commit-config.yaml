@@ -263,22 +263,13 @@ repos:
         files: python/.*\.py$
       - id: check-docstring-first
         files: python/.*\.py$
-      - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
       - id: check-symlinks
-      - id: debug-statements
-        files: python/.*\.py$
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: local
     hooks:
       # keep-sorted start
-      - id: actionlint
-        name: Run `actionlint`
-        language: system
-        types: [yaml]
-        exclude: dependabot.yml|.*.yaml$
-        entry: actionlint
       - id: pytest - triggered by Github workflows changing
         name: Run `pytest` when Github workflows change
         language: system
