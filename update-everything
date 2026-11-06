@@ -63,13 +63,6 @@ update_treesitter_parsers() {
     > /dev/null
 }
 
-update_python_modules() {
-  if [[ -d "${HOME}/tmp/bin/virtualenv" ]]; then
-    retry update-python-modules
-    retry clean_venvs
-  fi
-}
-
 routine_code_maintenance_chores() {
   # Using the presence of prek as a proxy for whether to perform routine code
   # maintenance chores.
@@ -137,7 +130,6 @@ main() {
     # Similarly, update development tools and Python modules.
     retry install-extra-development-tools
     update_websites
-    update_python_modules
     routine_code_maintenance_chores
     update_applications
     # Update any git repo that hasn't already been updated.

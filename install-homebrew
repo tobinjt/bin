@@ -127,7 +127,7 @@ main() {
   # Create the npm directory so that `install-extra-development-tools` will
   # install packages.
   mkdir -p "${HOME}/tmp/bin/node_modules"
-  # My website. mdformat is installed by update-python-modules.
+  # My website. mdformat is installed separately.
   brew install hugo markdown
 
   # Golang.
@@ -139,6 +139,8 @@ main() {
   brew install busted
   # PHP; there's more config later.
   brew install composer php phpunit
+  # Python.
+  brew install python
   # Rust.
   # Create the cargo directory so that `install-extra-development-tools` will
   # install packages.
@@ -182,8 +184,6 @@ CONFIG
 
   # Non-packaged development tools.
   install-extra-development-tools
-  # All the Python modules I need for development.
-  update-python-modules
 }
 
 main "$@"
