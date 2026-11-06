@@ -11,3 +11,16 @@
     args:
       - -o
       - pythonpath=.venv/lib/python3.15/site-packages
+- repo: local
+  hooks:
+  - id: pytest-requirements
+    name: Run `pytest` if requirements change
+    priority: tests
+    language: system
+    pass_filenames: false
+    # Match requirements.in OR requirements.txt
+    files: '(^requirements\.in$|^requirements\.txt$)'
+    entry: pytest
+    args:
+      - -o
+      - pythonpath=.venv/lib/python3.15/site-packages

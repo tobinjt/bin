@@ -153,6 +153,18 @@ repos:
       args:
       - -o
       - pythonpath=.venv/lib/python3.15/site-packages
+  - repo: local
+    hooks:
+    - id: pytest-requirements
+      name: Run `pytest` if requirements change
+      priority: tests
+      language: system
+      pass_filenames: false
+      files: (^requirements\.in$|^requirements\.txt$)
+      entry: pytest
+      args:
+      - -o
+      - pythonpath=.venv/lib/python3.15/site-packages
   # managed-by-populate-pre-commit end: pytest.yaml
   # managed-by-populate-pre-commit start: python.yaml
   - repo: local
