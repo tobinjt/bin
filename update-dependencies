@@ -28,6 +28,13 @@ update_go() {
   fi
 }
 
+update_python() {
+  if should_try_updating "python" "requirements.in"; then
+    ./.venv/bin/pip-compile --upgrade --strip-extras --quiet requirements.in
+    commit_if_necessary "updating Python dependencies"
+  fi
+}
+
 update_rust() {
   if should_try_updating "cargo" "Cargo.toml"; then
     cargo update

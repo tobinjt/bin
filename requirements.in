@@ -1,0 +1,16 @@
+PyYAML
+markdown-it-py
+mdformat
+mdformat-config
+mdformat-myst
+mdit-py-plugins
+pathspec
+pip-tools
+pudb
+pyfakefs
+pytest
+pytest-cov
+pytest-flakefinder
+pytest-timeout
+pytest-timeout
+types-PyYAML
