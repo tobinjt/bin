@@ -228,6 +228,22 @@ class TestShouldInclude(pyfakefs.fake_filesystem_unittest.TestCase):
             )
         )
 
+    def test_should_include_python_requirements(self) -> None:
+        """Tests the should_include_python_requirements function."""
+        self.assertFalse(
+            populate_pre_commit.should_include_python_requirements(frozenset[str]())
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_python_requirements(
+                frozenset[str]({"requirements.in"})
+            )
+        )
+        self.assertTrue(
+            populate_pre_commit.should_include_python_requirements(
+                frozenset[str]({"requirements.txt"})
+            )
+        )
+
     def test_should_include_readme_toc(self) -> None:
         """Tests the should_include_readme_toc function."""
         self.assertFalse(

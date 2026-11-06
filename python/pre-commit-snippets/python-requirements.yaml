@@ -1,0 +1,15 @@
+- repo: local
+  hooks:
+  - id: python-requirements
+    name: Run `pip-compile` to regenerate requirements.txt.
+    priority: generator
+    language: system
+    pass_filenames: false
+    # Match requirements.in OR requirements.txt
+    files: '(^requirements\.in$|^requirements\.txt$)'
+    entry: ./.venv/bin/pip-compile
+    # Note that `--upgrade` deliberately isn't included.
+    args:
+      - --strip-extras
+      - --quiet
+      - requirements.in

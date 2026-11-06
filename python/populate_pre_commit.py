@@ -328,6 +328,19 @@ def should_include_mdformat(files: frozenset[str]) -> bool:
     return any(f.endswith(".md") and f not in excluded for f in files)
 
 
+def should_include_python_requirements(files: frozenset[str]) -> bool:
+    """Checks if requirements.in or requirements.txt exist at the root.
+
+    Args:
+        files: A set of all non-ignored file paths in the repository.
+
+    Returns:
+        True if either requirements.in or requirements.txt exists at the root of the
+        repository.
+    """
+    return "requirements.in" in files or "requirements.txt" in files
+
+
 def should_include_readme_toc(files: frozenset[str]) -> bool:
     """Checks if a README.md file exists at the root and doesn't disable TOC.
 
@@ -534,6 +547,7 @@ def main() -> None:
         ("markdown_to_html.yaml", should_include_markdown_to_html(all_files)),
         ("mdformat.yaml", should_include_mdformat(all_files)),
         ("pytest.yaml", has_extension(all_files, "_test.py")),
+        ("python-requirements.yaml", should_include_python_requirements(all_files)),
         ("python.yaml", has_extension(all_files, ".py")),
         ("readme-toc.yaml", should_include_readme_toc(all_files)),
         ("rust.yaml", should_include_rust(all_files)),

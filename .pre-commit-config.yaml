@@ -166,6 +166,21 @@ repos:
       - -o
       - pythonpath=.venv/lib/python3.15/site-packages
   # managed-by-populate-pre-commit end: pytest.yaml
+  # managed-by-populate-pre-commit start: python-requirements.yaml
+  - repo: local
+    hooks:
+    - id: python-requirements
+      name: Run `pip-compile` to regenerate requirements.txt.
+      priority: generator
+      language: system
+      pass_filenames: false
+      files: (^requirements\.in$|^requirements\.txt$)
+      entry: ./.venv/bin/pip-compile
+      args:
+      - --strip-extras
+      - --quiet
+      - requirements.in
+  # managed-by-populate-pre-commit end: python-requirements.yaml
   # managed-by-populate-pre-commit start: python.yaml
   - repo: local
     hooks:
