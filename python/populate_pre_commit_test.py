@@ -280,7 +280,7 @@ _EXPECTED_ALWAYS_ENABLED = """\
     - id: check-hooks-apply
       priority: linter
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
     - id: conventional-pre-commit
       priority: linter
