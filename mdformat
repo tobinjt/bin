@@ -3,9 +3,8 @@
 set -e -f -u -o pipefail
 
 main() {
-  cd "$(git rev-parse --show-toplevel)"
-  source .venv/bin/activate
-  .venv/bin/mdformat "$@"
+  source "${HOME}/src/bin/.venv/bin/activate"
+  "${HOME}/src/bin/.venv/bin/mdformat" "$@"
 }
 
 main "$@"
