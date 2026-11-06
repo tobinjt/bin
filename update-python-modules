@@ -114,7 +114,6 @@ main() {
     local python_dir="${venv_dir}/python"
     # Run in a subshell because it changes directory.
     (venv_install "${python_dir}" "${install_individually}" test_python \
-      identify \
       mdformat \
       mdformat-config \
       mdformat-myst \
