@@ -921,6 +921,8 @@ class TestGetNonIgnoredFiles(pyfakefs.fake_filesystem_unittest.TestCase):
     @override
     def setUp(self) -> None:
         self.setUpPyfakefs()
+        pathlib.Path("/repo").mkdir()
+        os.chdir("/repo")
 
     def create_file(self, file_path: pathlib.Path | str, contents: str = "") -> None:
         self.fs.create_file(  # pyright: ignore[reportUnknownMemberType]
