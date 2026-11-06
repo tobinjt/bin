@@ -1,20 +1,48 @@
 #!/usr/bin/env python3
 """Tool for generating GitHub Actions workflows."""
 
-import argparse as argparse
+import argparse
 import dataclasses
-import get_git_root
 import os
-import pathlib as pathlib
+import pathlib
 import re
-import subprocess as subprocess
-import yaml as yaml
-from typing import cast, override, TypeAlias
+import subprocess
+from typing import TypeAlias, cast, override
+
+import yaml
+
+import get_git_root
+
+__all__ = [
+    "DEPENDABOT_VALIDATION_WORKFLOW",
+    "HUGO_WORKFLOW",
+    "LANGUAGE_CONFIGS",
+    "Args",
+    "IndentDumper",
+    "LanguageConfig",
+    "UpdateStanza",
+    "Workflow",
+    "argparse",
+    "build_shebang_args",
+    "check_hugo_johntobin_ie",
+    "copy_actionlint",
+    "copy_zizmor",
+    "escape_for_env_s",
+    "generate_dependabot_config",
+    "generate_workflow",
+    "get_all_workflows",
+    "get_parser",
+    "main",
+    "remove_workflow",
+    "subprocess",
+    "write_workflow",
+    "yaml",
+]
 
 UpdateStanza: TypeAlias = dict[str, str | dict[str, str] | dict[str, int]]
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, order=True)
 class Workflow:
     """A GitHub Actions workflow."""
 
@@ -31,15 +59,22 @@ class LanguageConfig:
     workflows: list[Workflow]
 
 
+DEPENDABOT_VALIDATION_WORKFLOW = Workflow(
+    "dependabot_validation.yml",
+    ".github/workflows/dependabot_validation.yml",
+)
+
+HUGO_WORKFLOW = Workflow(
+    "hugo-johntobin.ie.yml",
+    ".github/workflows/hugo-johntobin.ie.yml",
+)
+
+
 LANGUAGE_CONFIGS = [
     LanguageConfig(
         ecosystem="gomod",
         trigger_files=["go.mod"],
         workflows=[
-            Workflow(
-                "dependabot_validation.yml",
-                ".github/workflows/dependabot_validation.yml",
-            ),
             Workflow(
                 "golang_pre-commit.yml", ".github/workflows/golang_pre-commit.yml"
             ),
@@ -49,10 +84,6 @@ LANGUAGE_CONFIGS = [
         ecosystem="cargo",
         trigger_files=["Cargo.toml"],
         workflows=[
-            Workflow(
-                "dependabot_validation.yml",
-                ".github/workflows/dependabot_validation.yml",
-            ),
             Workflow(
                 "rust_pull_request.yml", ".github/workflows/rust_pull_request.yml"
             ),
@@ -76,10 +107,6 @@ LANGUAGE_CONFIGS = [
         ],
         workflows=[
             Workflow(
-                "dependabot_validation.yml",
-                ".github/workflows/dependabot_validation.yml",
-            ),
-            Workflow(
                 "python_pre-commit.yml",
                 ".github/workflows/python_pre-commit.yml",
             ),
@@ -88,22 +115,12 @@ LANGUAGE_CONFIGS = [
     LanguageConfig(
         ecosystem="composer",
         trigger_files=["composer.json"],
-        workflows=[
-            Workflow(
-                "dependabot_validation.yml",
-                ".github/workflows/dependabot_validation.yml",
-            ),
-        ],
+        workflows=[],
     ),
     LanguageConfig(
         ecosystem="npm",
         trigger_files=["package.json"],
-        workflows=[
-            Workflow(
-                "dependabot_validation.yml",
-                ".github/workflows/dependabot_validation.yml",
-            ),
-        ],
+        workflows=[],
     ),
 ]
 
@@ -111,8 +128,16 @@ LANGUAGE_CONFIGS = [
 class IndentDumper(yaml.SafeDumper):
     @override
     def increase_indent(self, flow: bool = False, indentless: bool = False):
-        # The magic happens here: we force indentless to be False
-        return super(IndentDumper, self).increase_indent(flow, False)
+        """Forces indentless to be False so list items are indented.
+
+        Args:
+            flow: Whether flow style is used.
+            indentless: Whether indentless is used (overridden to False).
+
+        Returns:
+            The result of the parent class increase_indent call.
+        """
+        return super().increase_indent(flow, False)
 
 
 class Args(argparse.Namespace):
@@ -266,6 +291,20 @@ def write_workflow(output_file: str, content: str) -> None:
     path.chmod(0o755)
 
 
+def remove_workflow(output_file: str) -> None:
+    """Removes a workflow file from the destination if it exists.
+
+    Args:
+        output_file: The path to the file to remove.
+
+    Raises:
+        subprocess.CalledProcessError: If git rm fails.
+    """
+    path = pathlib.Path(output_file)
+    if path.exists():
+        subprocess.run(["git", "rm", output_file], check=True)
+
+
 def get_parser(description: str) -> argparse.ArgumentParser:
     """Returns a standard argument parser for workflow generation.
 
@@ -350,8 +389,27 @@ def copy_actionlint(script_file: str) -> None:
     )
 
 
+def get_all_workflows() -> set[Workflow]:
+    """Returns all known workflows across all configurations.
+
+    Returns:
+        A set of all known Workflow objects.
+    """
+    workflows = {
+        workflow for config in LANGUAGE_CONFIGS for workflow in config.workflows
+    }
+    workflows.add(DEPENDABOT_VALIDATION_WORKFLOW)
+    workflows.add(HUGO_WORKFLOW)
+    return workflows
+
+
 def main() -> None:
-    """Parses arguments and generates the workflows."""
+    """Parses arguments and generates the workflows.
+
+    Raises:
+        ValueError: If an extra argument is not formatted as 'command=args'.
+        subprocess.CalledProcessError: If git rm fails.
+    """
     description = "Generate GitHub Actions workflows for a project."
     parser = get_parser(description=description)
     args = parser.parse_args(namespace=Args())
@@ -382,27 +440,26 @@ def main() -> None:
     # Copy actionlint.yaml unconditionally to the destination.
     copy_actionlint(script_file)
 
-    workflows_to_generate: set[tuple[str, str]] = set()
+    workflows_to_generate: set[Workflow] = {DEPENDABOT_VALIDATION_WORKFLOW}
     for config in LANGUAGE_CONFIGS:
         if any(pathlib.Path(f).exists() for f in config.trigger_files):
             for workflow in config.workflows:
-                workflows_to_generate.add((workflow.template, workflow.output))
+                workflows_to_generate.add(workflow)
 
     if check_hugo_johntobin_ie():
-        workflows_to_generate.add(
-            (
-                "hugo-johntobin.ie.yml",
-                ".github/workflows/hugo-johntobin.ie.yml",
-            )
-        )
+        workflows_to_generate.add(HUGO_WORKFLOW)
 
-    for template, output_file in sorted(workflows_to_generate):
+    workflows_to_remove = get_all_workflows() - workflows_to_generate
+    for workflow in sorted(workflows_to_remove):
+        remove_workflow(workflow.output)
+
+    for workflow in sorted(workflows_to_generate):
         content = generate_workflow(
-            template,
+            workflow.template,
             script_file,
             extra_args=command_to_extra_args,
         )
-        write_workflow(output_file, content)
+        write_workflow(workflow.output, content)
 
 
 if __name__ == "__main__":

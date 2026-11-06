@@ -1,16 +1,15 @@
 """Tests for make_github_workflows.py."""
 
 import os
-import pathlib as pathlib
-import subprocess as subprocess
+import pathlib
 import unittest
 from typing import cast, override
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
 
-import make_github_workflows
 import get_git_root
+import make_github_workflows
 
 
 class TestArgs(unittest.TestCase):
@@ -396,6 +395,10 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             contents="version: 2\nupdates: []",
         )
         self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot_validation.yml"),
+            contents="VALIDATION_CONTENT",
+        )
+        self.create_file(
             str(pathlib.Path(script_dir) / "workflows" / "hugo-johntobin.ie.yml"),
             contents="HUGO_CONTENT",
         )
@@ -431,9 +434,13 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
 
             # Check that write_workflow was called for:
             # 1. .github/dependabot.yml
-            # 2. .github/workflows/hugo-johntobin.ie.yml
-            self.assertEqual(mock_write_workflow.call_count, 2)
+            # 2. .github/workflows/dependabot_validation.yml
+            # 3. .github/workflows/hugo-johntobin.ie.yml
+            self.assertEqual(mock_write_workflow.call_count, 3)
             mock_write_workflow.assert_any_call(".github/dependabot.yml", mock.ANY)
+            mock_write_workflow.assert_any_call(
+                ".github/workflows/dependabot_validation.yml", mock.ANY
+            )
             mock_write_workflow.assert_any_call(
                 ".github/workflows/hugo-johntobin.ie.yml", mock.ANY
             )
@@ -449,6 +456,238 @@ class TestWorkflowUtils(fake_filesystem_unittest.TestCase):
             self.assertEqual(
                 actionlint_dest.read_text(encoding="utf-8"), "ACTIONLINT_CONTENT"
             )
+
+    def test_get_all_workflows(self) -> None:
+        """Tests that get_all_workflows returns all expected workflows."""
+        workflows = make_github_workflows.get_all_workflows()
+        self.assertIn(
+            make_github_workflows.Workflow(
+                "dependabot_validation.yml",
+                ".github/workflows/dependabot_validation.yml",
+            ),
+            workflows,
+        )
+        self.assertIn(
+            make_github_workflows.Workflow(
+                "golang_pre-commit.yml",
+                ".github/workflows/golang_pre-commit.yml",
+            ),
+            workflows,
+        )
+        self.assertIn(
+            make_github_workflows.Workflow(
+                "rust_pull_request.yml",
+                ".github/workflows/rust_pull_request.yml",
+            ),
+            workflows,
+        )
+        self.assertIn(
+            make_github_workflows.Workflow(
+                "rust_security_audit.yml",
+                ".github/workflows/rust_security_audit.yml",
+            ),
+            workflows,
+        )
+        self.assertIn(
+            make_github_workflows.Workflow(
+                "python_pre-commit.yml",
+                ".github/workflows/python_pre-commit.yml",
+            ),
+            workflows,
+        )
+        self.assertIn(
+            make_github_workflows.Workflow(
+                "hugo-johntobin.ie.yml",
+                ".github/workflows/hugo-johntobin.ie.yml",
+            ),
+            workflows,
+        )
+
+    def test_remove_workflow_exists(self) -> None:
+        """Tests that remove_workflow calls git rm when the file exists."""
+        output_file = ".github/workflows/rust_pull_request.yml"
+        self.create_file(output_file, contents="STALE_CONTENT")
+        with mock.patch.object(make_github_workflows.subprocess, "run") as mock_run:
+            make_github_workflows.remove_workflow(output_file)
+            mock_run.assert_called_once_with(
+                ["git", "rm", output_file],
+                check=True,
+            )
+
+    def test_remove_workflow_not_exists(self) -> None:
+        """Tests that remove_workflow does not call git rm if file does not exist."""
+        output_file = ".github/workflows/rust_pull_request.yml"
+        with mock.patch.object(make_github_workflows.subprocess, "run") as mock_run:
+            make_github_workflows.remove_workflow(output_file)
+            mock_run.assert_not_called()
+
+    def test_main_removes_unneeded_workflow(self) -> None:
+        """Tests that main removes an unneeded workflow if it exists."""
+        script_file = make_github_workflows.__file__
+        script_dir = str(pathlib.Path(script_file).parent)
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot_validation.yml"),
+            contents="VALIDATION_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "golang_pre-commit.yml"),
+            contents="GOLANG_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
+
+        # Create trigger file to activate Go language
+        self.create_file("go.mod")
+
+        # Create an existing workflow that SHOULD NOT be removed because Go is active
+        existing_needed = ".github/workflows/golang_pre-commit.yml"
+        self.create_file(existing_needed, contents="EXISTING_GO_CONTENT")
+
+        # Create an unneeded workflow that SHOULD be removed
+        unneeded_workflow = ".github/workflows/rust_pull_request.yml"
+        self.create_file(unneeded_workflow, contents="STALE_RUST_CONTENT")
+
+        with (
+            mock.patch.object(
+                get_git_root,
+                "get_git_root",
+                return_value=".",
+            ),
+            mock.patch.object(
+                make_github_workflows.argparse.ArgumentParser,
+                "parse_args",
+                return_value=make_github_workflows.Args(),
+            ),
+            mock.patch.object(make_github_workflows, "write_workflow"),
+            mock.patch.object(make_github_workflows.subprocess, "run") as mock_run,
+        ):
+            make_github_workflows.main()
+
+            mock_run.assert_called_once_with(
+                ["git", "rm", unneeded_workflow],
+                check=True,
+            )
+
+    def test_main_removes_multiple_unneeded_workflows(self) -> None:
+        """Tests that main removes multiple unneeded workflows if they exist."""
+        script_file = make_github_workflows.__file__
+        script_dir = str(pathlib.Path(script_file).parent)
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot_validation.yml"),
+            contents="VALIDATION_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "golang_pre-commit.yml"),
+            contents="GOLANG_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
+
+        # Create trigger file to activate Go language
+        self.create_file("go.mod")
+
+        rust_workflow = ".github/workflows/rust_pull_request.yml"
+        python_workflow = ".github/workflows/python_pre-commit.yml"
+        self.create_file(rust_workflow, contents="STALE_RUST")
+        self.create_file(python_workflow, contents="STALE_PYTHON")
+
+        with (
+            mock.patch.object(
+                get_git_root,
+                "get_git_root",
+                return_value=".",
+            ),
+            mock.patch.object(
+                make_github_workflows.argparse.ArgumentParser,
+                "parse_args",
+                return_value=make_github_workflows.Args(),
+            ),
+            mock.patch.object(make_github_workflows, "write_workflow"),
+            mock.patch.object(make_github_workflows.subprocess, "run") as mock_run,
+        ):
+            make_github_workflows.main()
+
+            self.assertEqual(mock_run.call_count, 2)
+            mock_run.assert_any_call(["git", "rm", python_workflow], check=True)
+            mock_run.assert_any_call(["git", "rm", rust_workflow], check=True)
+
+    def test_main_no_languages_keeps_dependabot_validation(self) -> None:
+        """Tests that main keeps dependabot_validation.yml even without language triggers."""
+        script_file = make_github_workflows.__file__
+        script_dir = str(pathlib.Path(script_file).parent)
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot.yml"),
+            contents="version: 2\nupdates: []",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "dependabot_validation.yml"),
+            contents="VALIDATION_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "zizmor.yaml"),
+            contents="ZIZMOR_CONTENT",
+        )
+        self.create_file(
+            str(pathlib.Path(script_dir) / "workflows" / "actionlint.yaml"),
+            contents="ACTIONLINT_CONTENT",
+        )
+
+        # No language triggers exist (e.g. no go.mod, Cargo.toml, requirements.txt, etc.)
+        # Existing python workflow in destination should be deleted
+        python_dest = ".github/workflows/python_pre-commit.yml"
+        self.create_file(python_dest, contents="STALE_PYTHON")
+
+        # Existing dependabot_validation in destination should be kept
+        dependabot_val_dest = ".github/workflows/dependabot_validation.yml"
+        self.create_file(dependabot_val_dest, contents="EXISTING_VALIDATION")
+
+        with (
+            mock.patch.object(
+                get_git_root,
+                "get_git_root",
+                return_value=".",
+            ),
+            mock.patch.object(
+                make_github_workflows.argparse.ArgumentParser,
+                "parse_args",
+                return_value=make_github_workflows.Args(),
+            ),
+            mock.patch.object(
+                make_github_workflows, "write_workflow"
+            ) as mock_write_workflow,
+            mock.patch.object(make_github_workflows.subprocess, "run") as mock_run,
+        ):
+            make_github_workflows.main()
+
+            # write_workflow was called for dependabot.yml and dependabot_validation.yml
+            self.assertEqual(mock_write_workflow.call_count, 2)
+            mock_write_workflow.assert_any_call(".github/dependabot.yml", mock.ANY)
+            mock_write_workflow.assert_any_call(
+                ".github/workflows/dependabot_validation.yml", mock.ANY
+            )
+
+            # git rm was only called for python_pre-commit.yml, NOT dependabot_validation.yml
+            mock_run.assert_called_once_with(["git", "rm", python_dest], check=True)
 
 
 if __name__ == "__main__":
