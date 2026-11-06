@@ -117,15 +117,6 @@ main() {
       mdformat \
       mdformat-config \
       mdformat-myst \
-      pathspec \
-      pudb \
-      pyfakefs \
-      pytest \
-      pytest-cov \
-      pytest-flakefinder \
-      pytest-timeout \
-      pyyaml \
-      types-PyYAML \
     )
   fi
 }
