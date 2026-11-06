@@ -1,17 +1,28 @@
 #!/usr/bin/env python3
 """Tool for generating GitHub Actions workflows."""
 
+import os
+import sys
+
+# Ensure execution inside project .venv if present
+_VENV_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), ".venv"
+)
+_VENV_PYTHON = os.path.join(_VENV_DIR, "bin", "python")
+if os.path.exists(_VENV_PYTHON) and os.path.abspath(sys.prefix) != os.path.abspath(
+    _VENV_DIR
+):
+    os.execv(_VENV_PYTHON, [_VENV_PYTHON] + sys.argv)
+
 import argparse
 import dataclasses
-import os
 import pathlib
 import re
 import subprocess
 from typing import TypeAlias, cast, override
 
-import yaml
-
 import get_git_root
+import yaml
 
 __all__ = [
     "DEPENDABOT_VALIDATION_WORKFLOW",

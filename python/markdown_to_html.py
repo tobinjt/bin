@@ -6,16 +6,27 @@ print styles, interactive Mermaid diagrams, LaTeX math rendering, SVG/image diag
 embedding, GitHub-style callouts, code block copy buttons, and dark/light theme switching.
 """
 
+import os
+import sys
+
+# Ensure execution inside project .venv if present
+_VENV_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), ".venv"
+)
+_VENV_PYTHON = os.path.join(_VENV_DIR, "bin", "python")
+if os.path.exists(_VENV_PYTHON) and os.path.abspath(sys.prefix) != os.path.abspath(
+    _VENV_DIR
+):
+    os.execv(_VENV_PYTHON, [_VENV_PYTHON] + sys.argv)
+
 import argparse
 import collections.abc
 import dataclasses
 import html
-import os.path
 import pathlib
 import re
 import shlex
 import shutil
-import sys
 import textwrap
 import tomllib
 from typing import NotRequired, TypedDict, cast, final

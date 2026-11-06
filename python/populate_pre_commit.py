@@ -6,18 +6,29 @@ corresponding pre-commit hooks from a central snippets directory. It uses
 markers to identify and update managed sections in .pre-commit-config.yaml.
 """
 
+import os
+import sys
+
+# Ensure execution inside project .venv if present
+_VENV_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), ".venv"
+)
+_VENV_PYTHON = os.path.join(_VENV_DIR, "bin", "python")
+if os.path.exists(_VENV_PYTHON) and os.path.abspath(sys.prefix) != os.path.abspath(
+    _VENV_DIR
+):
+    os.execv(_VENV_PYTHON, [_VENV_PYTHON] + sys.argv)
+
 import argparse
 import functools
-import os
 import pathlib
 import subprocess
 import textwrap
 from typing import TypedDict, cast
 
+import get_git_root
 import pathspec
 import yaml
-
-import get_git_root
 
 # Path to the directory containing pre-commit snippets.
 SNIPPETS_DIR = pathlib.Path(__file__).resolve().parent / "pre-commit-snippets"
