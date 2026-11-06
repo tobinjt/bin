@@ -35,10 +35,8 @@ main() {
   # Don't accidentally commit other changes.
   git check-local-copy-is-clean --ignore-unpushed-commits
 
-  if [[ -x ./setup ]]; then
-    ./setup
-  fi
-  if [[ -f ".venv/bin/activate" ]]; then
+  if [[ -f requirements.txt ]]; then
+    setup-venv
     . ".venv/bin/activate"
   fi
   update_pre-commit_and_github_workflows
