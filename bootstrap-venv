@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  rm -rf .venv
+  python3 -m venv .venv
+  source .venv/bin/activate
+  echo "pip-tools" >> requirements.in
+  sort -u -o requirements.in requirements.in
+  pip install pip-tools
+  ./.venv/bin/pip-compile --upgrade --strip-extras --quiet requirements.in
+  pip install -r requirements.txt
+}
+
+main "$@"
