@@ -26,7 +26,8 @@ repos:
       language: system
       types:
       - yaml
-      exclude: dependabot.yml|.*.yaml$
+      exclude: dependabot.yml|actionlint.yaml$
+      files: ^python/workflows/|^.github/workflows/
       entry: actionlint
   # managed-by-populate-pre-commit end: actionlint.yaml
   # managed-by-populate-pre-commit start: always_enabled.yaml

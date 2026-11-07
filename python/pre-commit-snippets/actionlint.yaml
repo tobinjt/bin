@@ -6,5 +6,6 @@
     language: system
     types:
     - yaml
-    exclude: dependabot.yml|.*.yaml$
+    exclude: dependabot.yml|actionlint.yaml$
+    files: ^python/workflows/|^.github/workflows/
     entry: actionlint
