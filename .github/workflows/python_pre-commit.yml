@@ -43,7 +43,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install basedpyright black mypy pathspec pyfakefs pytest pytest-cov pytest-timeout pytest-flakefinder PyYAML
+          pip install basedpyright black mypy
+          pip install -r requirements.txt
 
       # keep-sorted start block=true
       - name: Run basedpyright
