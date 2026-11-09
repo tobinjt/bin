@@ -4,8 +4,7 @@
 
 set -e -f -u -o pipefail
 
-if [[ "${UID}" -eq 0 ]]; then
-  echo "$0: refusing to install tools as root"
+if [[ "${USER}" != "johntobin" ]]; then
   exit 0
 fi
 
