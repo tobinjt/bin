@@ -18,6 +18,7 @@ import pprint
 import shlex
 import shutil
 import stat
+import subprocess
 import sys
 import textwrap
 import time
@@ -98,6 +99,7 @@ class Options(argparse.Namespace):
         args: list[str] | None = None,
         debug_file_exclusion: bool = False,
         delete_unexpected_files: bool = False,
+        diff_tool: str | None = None,
         dryrun: bool = False,
         dump_config: bool = False,
         force: bool = False,
@@ -113,6 +115,7 @@ class Options(argparse.Namespace):
             args: Positional arguments (directories).
             debug_file_exclusion: Print debug output for file exclusion.
             delete_unexpected_files: Delete unexpected files.
+            diff_tool: Command to run to resolve diffs between files.
             dryrun: Perform a trial run.
             dump_config: Dump parsed options.
             force: Remove existing files if necessary.
@@ -126,6 +129,7 @@ class Options(argparse.Namespace):
         self.args = list(args) if args is not None else []
         self.debug_file_exclusion = debug_file_exclusion
         self.delete_unexpected_files = delete_unexpected_files
+        self.diff_tool = diff_tool
         self.dryrun = dryrun
         self.dump_config = dump_config
         self.force = force
@@ -276,6 +280,103 @@ def diff(*, old_filename: Path, new_filename: Path) -> Diffs:
         # Strip the newline here because one will be added later when printing the
         # messages.
         return [d.rstrip("\n") for d in diff_generator]  # pragma: no mutate
+
+
+def format_diff_tool_command(
+    *, diff_tool: str, source_path: Path, dest_path: Path
+) -> list[str]:
+    """Format the diff tool command line with source and destination paths.
+
+    If {source} and {dest} placeholders are present in the command string, they
+    will be replaced with the actual paths. Otherwise, the paths will be
+    appended to the command.
+
+    Args:
+        diff_tool: The diff tool command string.
+        source_path: The path to the source file.
+        dest_path: The path to the destination file.
+
+    Returns:
+        A list of command line arguments for subprocess.run.
+    """
+    tokens = shlex.split(diff_tool)
+    has_source = any("{source}" in token for token in tokens)
+    has_dest = any("{dest}" in token for token in tokens)
+    if has_source or has_dest:
+        return [
+            token.replace("{source}", str(source_path)).replace(
+                "{dest}", str(dest_path)
+            )
+            for token in tokens
+        ]
+    return tokens + [str(source_path), str(dest_path)]
+
+
+def resolve_diff_with_tool(
+    *,
+    source_path: Path,
+    dest_path: Path,
+    options: Options,
+    results: LinkResults,
+) -> bool:
+    """Run the diff tool to resolve differences between source and destination.
+
+    Args:
+        source_path: Path to the source file.
+        dest_path: Path to the destination file.
+        options: Options requested by the user.
+        results: LinkResults to record errors into.
+
+    Returns:
+        True if the diff was handled (resolved and linked, or tool failed),
+        False if files still differ or in dryrun mode (caller should generate diff).
+
+    Raises:
+        OSError: A filesystem error occurred while unlinking or linking.
+    """
+    assert options.diff_tool is not None
+    cmd = format_diff_tool_command(
+        diff_tool=options.diff_tool,
+        source_path=source_path,
+        dest_path=dest_path,
+    )
+    if options.dryrun:
+        print(shlex.join(cmd))
+        return False
+
+    try:
+        proc = subprocess.run(cmd, check=False)
+        if proc.returncode != 0:
+            results.errors.append(
+                f"Diff tool failed with exit code {proc.returncode}: {shlex.join(cmd)}"
+            )
+            return True
+    except OSError as e:
+        results.errors.append(f"Failed to execute diff tool ({e}): {shlex.join(cmd)}")
+        return True
+
+    try:
+        files_identical = filecmp.cmp(source_path, dest_path, shallow=False)
+    except OSError as e:
+        results.errors.append(
+            f"Error comparing {source_path} and {dest_path} after running diff tool: {e}"
+        )
+        return True
+
+    if files_identical:
+        print(
+            f"{source_path} and {dest_path} are different files but"
+            + " have the same contents; deleting and linking"
+        )
+        safe_unlink(unlink_me=dest_path, dryrun=options.dryrun)
+        safe_link(
+            source_filename=source_path,
+            dest_filename=dest_path,
+            dryrun=options.dryrun,
+        )
+        return True
+
+    return False
 
 
 def remove_ignore_file_patterns(*, files: list[str], options: Options) -> list[str]:
@@ -524,6 +625,14 @@ def link_files(
                 dest_filename=dest_path,
                 dryrun=options.dryrun,
             )
+            continue
+
+        if options.diff_tool and resolve_diff_with_tool(
+            source_path=source_path,
+            dest_path=dest_path,
+            options=options,
+            results=results,
+        ):
             continue
 
         results.diffs.extend(diff(old_filename=source_path, new_filename=dest_path))
@@ -797,6 +906,17 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
             (default: %(default)s)"""),
     )
     argv_parser.add_argument(
+        "--diff_tool",
+        "--difftool",
+        action="store",
+        dest="diff_tool",
+        default=None,
+        metavar="COMMAND",
+        help=textwrap.fill(
+            "Command to run to resolve diffs between files (default: %(default)s)"
+        ),
+    )
+    argv_parser.add_argument(
         "args",
         nargs="+",
         metavar="DIRECTORIES",
@@ -818,6 +938,17 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
             "Cannot enable --delete_unexpected_files without "
             + "--ignore_unexpected_children"
         )
+    if options.diff_tool is not None:
+        if not options.diff_tool.strip():
+            messages.append("--diff_tool cannot be empty")
+        else:
+            has_source = "{source}" in options.diff_tool
+            has_dest = "{dest}" in options.diff_tool
+            if has_source != has_dest:
+                messages.append(
+                    "Both {source} and {dest} must be specified if either is used in "
+                    + "--diff_tool"
+                )
     return (options, messages)
 
 

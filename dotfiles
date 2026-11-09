@@ -16,7 +16,7 @@ list_config_snippets() {
 main() {
   local IGNORE_FILENAME=".dotfiles.ignore"
   readonly IGNORE_FILENAME
-  local flags=("--ignore_symlinks") later_flags=()
+  local flags=("--ignore_symlinks" "--diff_tool=nvim -d") later_flags=()
   local return_early=0 run_config_snippets=1 opt
   while getopts ":dfhnrRX" opt "$@"; do
     case "${opt}" in

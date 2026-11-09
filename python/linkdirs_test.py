@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import filecmp
 import io
 import os
 import re
 import stat
+import subprocess
 import sys
 import textwrap
 import unittest
 from pathlib import Path
+from typing import cast
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -584,6 +587,285 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         self.assertEqual([], actual)
         self.assert_files_are_linked(src_file, dest_file)
 
+    def test_diff_tool_dryrun(self):
+        """Test diff_tool in dryrun mode."""
+        src_file = "/a/b/c/file"
+        dest_file = "/z/y/x/file"
+        files_to_create = f"""
+        {src_file}:qwerty
+        {dest_file}:asdf
+        """
+        self.create_files(files_to_create)
+
+        with (
+            mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout,
+            mock.patch.object(subprocess, "run") as mock_run,
+        ):
+            actual = linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--diff_tool",
+                    "vimdiff",
+                    "--dryrun",
+                    os.path.dirname(src_file),
+                    os.path.dirname(dest_file),
+                ]
+            )
+            mock_run.assert_not_called()
+            actual = [re.sub(r"\t.*$", "\t", x) for x in actual]
+            expected = [
+                f"--- {dest_file}\t",
+                f"+++ {src_file}\t",
+                "@@ -1 +1 @@",
+                "-asdf",
+                "+qwerty",
+            ]
+            self.assertEqual(expected, actual)
+            self.assertIn(f"vimdiff {src_file} {dest_file}\n", mock_stdout.getvalue())
+
+    def test_diff_tool_resolves_diff(self):
+        """Test diff_tool resolves diff and links files."""
+        src_file = "/a/b/c/file"
+        dest_file = "/z/y/x/file"
+        files_to_create = f"""
+        {src_file}:qwerty
+        {dest_file}:asdf
+        """
+        self.create_files(files_to_create)
+
+        def resolve_diff(
+            _cmd: list[str], **_kwargs: object
+        ) -> subprocess.CompletedProcess[str]:
+            with open(dest_file, "w", encoding="utf8") as fh:
+                fh.write("qwerty")
+            mock_proc = cast(
+                subprocess.CompletedProcess[str],
+                mock.create_autospec(subprocess.CompletedProcess, instance=True),
+            )
+            mock_proc.returncode = 0
+            return mock_proc
+
+        with (
+            mock.patch.object(subprocess, "run", side_effect=resolve_diff) as mock_run,
+            mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout,
+        ):
+            actual = linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--diff_tool",
+                    "vimdiff",
+                    os.path.dirname(src_file),
+                    os.path.dirname(dest_file),
+                ]
+            )
+            self.assertEqual([], actual)
+            self.assert_files_are_linked(src_file, dest_file)
+            mock_run.assert_called_once_with(
+                ["vimdiff", src_file, dest_file], check=False
+            )
+            self.assertIn(
+                f"{src_file} and {dest_file} are different files but have the"
+                + " same contents; deleting and linking\n",
+                mock_stdout.getvalue(),
+            )
+
+    def test_diff_tool_with_placeholders(self):
+        """Test diff_tool with {dest} and {source} placeholders."""
+        src_file = "/a/b/c/file"
+        dest_file = "/z/y/x/file"
+        files_to_create = f"""
+        {src_file}:qwerty
+        {dest_file}:asdf
+        """
+        self.create_files(files_to_create)
+
+        def resolve_diff(
+            _cmd: list[str], **_kwargs: object
+        ) -> subprocess.CompletedProcess[str]:
+            with open(dest_file, "w", encoding="utf8") as fh:
+                fh.write("qwerty")
+            mock_proc = cast(
+                subprocess.CompletedProcess[str],
+                mock.create_autospec(subprocess.CompletedProcess, instance=True),
+            )
+            mock_proc.returncode = 0
+            return mock_proc
+
+        with mock.patch.object(subprocess, "run", side_effect=resolve_diff) as mock_run:
+            actual = linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--difftool",
+                    "nvim -d {dest} {source}",
+                    os.path.dirname(src_file),
+                    os.path.dirname(dest_file),
+                ]
+            )
+            self.assertEqual([], actual)
+            self.assert_files_are_linked(src_file, dest_file)
+            mock_run.assert_called_once_with(
+                ["nvim", "-d", dest_file, src_file], check=False
+            )
+
+    def test_diff_tool_unresolved_diff(self):
+        """Test diff_tool when diff is not resolved."""
+        src_file = "/a/b/c/file"
+        dest_file = "/z/y/x/file"
+        files_to_create = f"""
+        {src_file}:qwerty
+        {dest_file}:asdf
+        """
+        self.create_files(files_to_create)
+
+        mock_proc = cast(
+            subprocess.CompletedProcess[str],
+            mock.create_autospec(subprocess.CompletedProcess, instance=True),
+        )
+        mock_proc.returncode = 0
+        with mock.patch.object(subprocess, "run", return_value=mock_proc) as mock_run:
+            actual = linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--diff_tool",
+                    "vimdiff",
+                    os.path.dirname(src_file),
+                    os.path.dirname(dest_file),
+                ]
+            )
+            actual = [re.sub(r"\t.*$", "\t", x) for x in actual]
+            expected = [
+                f"--- {dest_file}\t",
+                f"+++ {src_file}\t",
+                "@@ -1 +1 @@",
+                "-asdf",
+                "+qwerty",
+            ]
+            self.assertEqual(expected, actual)
+            self.assertFalse(os.path.samefile(src_file, dest_file))
+            mock_run.assert_called_once_with(
+                ["vimdiff", src_file, dest_file], check=False
+            )
+
+    def test_diff_tool_fails_returncode(self):
+        """Test diff_tool when command exits with non-zero status."""
+        src_file = "/a/b/c/file"
+        dest_file = "/z/y/x/file"
+        files_to_create = f"""
+        {src_file}:qwerty
+        {dest_file}:asdf
+        """
+        self.create_files(files_to_create)
+
+        mock_proc = cast(
+            subprocess.CompletedProcess[str],
+            mock.create_autospec(subprocess.CompletedProcess, instance=True),
+        )
+        mock_proc.returncode = 2
+        with mock.patch.object(subprocess, "run", return_value=mock_proc) as mock_run:
+            actual = linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--diff_tool",
+                    "vimdiff",
+                    os.path.dirname(src_file),
+                    os.path.dirname(dest_file),
+                ]
+            )
+            self.assertEqual(
+                [f"Diff tool failed with exit code 2: vimdiff {src_file} {dest_file}"],
+                actual,
+            )
+            self.assertFalse(os.path.samefile(src_file, dest_file))
+            mock_run.assert_called_once_with(
+                ["vimdiff", src_file, dest_file], check=False
+            )
+
+    def test_diff_tool_raises_oserror(self):
+        """Test diff_tool when subprocess.run raises OSError."""
+        src_file = "/a/b/c/file"
+        dest_file = "/z/y/x/file"
+        files_to_create = f"""
+        {src_file}:qwerty
+        {dest_file}:asdf
+        """
+        self.create_files(files_to_create)
+
+        with mock.patch.object(
+            subprocess,
+            "run",
+            side_effect=FileNotFoundError("No such file or directory: 'nonexistent'"),
+        ):
+            actual = linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--diff_tool",
+                    "nonexistent",
+                    os.path.dirname(src_file),
+                    os.path.dirname(dest_file),
+                ]
+            )
+            self.assertEqual(
+                [
+                    (
+                        "Failed to execute diff tool (No such file or directory:"
+                        f" 'nonexistent'): nonexistent {src_file} {dest_file}"
+                    )
+                ],
+                actual,
+            )
+            self.assertFalse(os.path.samefile(src_file, dest_file))
+
+    def test_diff_tool_post_run_compare_error(self):
+        """Test diff_tool handling when filecmp.cmp raises OSError after tool runs."""
+        src_file = "/a/b/c/file"
+        dest_file = "/z/y/x/file"
+        files_to_create = f"""
+        {src_file}:qwerty
+        {dest_file}:asdf
+        """
+        self.create_files(files_to_create)
+
+        mock_proc = cast(
+            subprocess.CompletedProcess[str],
+            mock.create_autospec(subprocess.CompletedProcess, instance=True),
+        )
+        mock_proc.returncode = 0
+        call_count = [0]
+
+        def fake_cmp(
+            f1: Path | str,
+            f2: Path | str,
+            shallow: bool = False,
+        ) -> bool:
+            del f1, f2, shallow
+            if call_count[0] == 0:
+                call_count[0] += 1
+                return False
+            raise OSError("Fake disk error")
+
+        with (
+            mock.patch.object(subprocess, "run", return_value=mock_proc),
+            mock.patch.object(filecmp, "cmp", side_effect=fake_cmp),
+        ):
+            actual = linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--diff_tool",
+                    "vimdiff",
+                    os.path.dirname(src_file),
+                    os.path.dirname(dest_file),
+                ]
+            )
+            self.assertEqual(
+                [
+                    (
+                        f"Error comparing {src_file} and {dest_file} after running"
+                        " diff tool: Fake disk error"
+                    )
+                ],
+                actual,
+            )
+
     def test_argument_handling(self):
         """Bad arguments are caught."""
         self.assertEqual(
@@ -598,6 +880,42 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             argv=["linkdirs", "--delete_unexpected_files", "/asdf", "/qwerty"]
         )
         self.assertEqual(expected, actual)
+        self.assertEqual(
+            ["--diff_tool cannot be empty"],
+            linkdirs.real_main(
+                argv=["linkdirs", "--diff_tool", "   ", "/asdf", "/qwerty"]
+            ),
+        )
+        self.assertEqual(
+            [
+                "Both {source} and {dest} must be specified if either is used in "
+                + "--diff_tool"
+            ],
+            linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--diff_tool",
+                    "vimdiff {source}",
+                    "/asdf",
+                    "/qwerty",
+                ]
+            ),
+        )
+        self.assertEqual(
+            [
+                "Both {source} and {dest} must be specified if either is used in "
+                + "--diff_tool"
+            ],
+            linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--difftool",
+                    "vimdiff {dest}",
+                    "/asdf",
+                    "/qwerty",
+                ]
+            ),
+        )
 
     def test_force_deletes_dest(self):
         """Force deletes existing files and directories."""
@@ -869,6 +1187,37 @@ class TestMisc(fake_filesystem_unittest.TestCase):
         actual = linkdirs.read_ignore_patterns_from_file(filename=filename)
         self.assertEqual(expected, actual)
 
+    def test_format_diff_tool_command(self):
+        """Test formatting of diff tool commands."""
+        source = Path("/path/to/source")
+        dest = Path("/path/to/dest")
+        self.assertEqual(
+            ["vimdiff", "/path/to/source", "/path/to/dest"],
+            linkdirs.format_diff_tool_command(
+                diff_tool="vimdiff", source_path=source, dest_path=dest
+            ),
+        )
+        self.assertEqual(
+            ["nvim", "-d", "/path/to/source", "/path/to/dest"],
+            linkdirs.format_diff_tool_command(
+                diff_tool="nvim -d", source_path=source, dest_path=dest
+            ),
+        )
+        self.assertEqual(
+            ["nvim", "-d", "/path/to/dest", "/path/to/source"],
+            linkdirs.format_diff_tool_command(
+                diff_tool="nvim -d {dest} {source}", source_path=source, dest_path=dest
+            ),
+        )
+        self.assertEqual(
+            ["diff", "--from=/path/to/source", "--to=/path/to/dest"],
+            linkdirs.format_diff_tool_command(
+                diff_tool="diff --from={source} --to={dest}",
+                source_path=source,
+                dest_path=dest,
+            ),
+        )
+
 
 if __name__ == "__main__":  # pragma: no mutate
     unittest.main()
@@ -884,6 +1233,7 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(opts.args, [])
         self.assertFalse(opts.debug_file_exclusion)
         self.assertFalse(opts.delete_unexpected_files)
+        self.assertIsNone(opts.diff_tool)
         self.assertFalse(opts.dryrun)
         self.assertFalse(opts.dump_config)
         self.assertFalse(opts.force)
@@ -913,6 +1263,7 @@ class TestOptions(unittest.TestCase):
             args=["a"],
             debug_file_exclusion=True,
             delete_unexpected_files=True,
+            diff_tool="vimdiff",
             dryrun=True,
             dump_config=True,
             force=True,
@@ -925,6 +1276,7 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(opts2.args, ["a"])
         self.assertTrue(opts2.debug_file_exclusion)
         self.assertTrue(opts2.delete_unexpected_files)
+        self.assertEqual(opts2.diff_tool, "vimdiff")
         self.assertTrue(opts2.dryrun)
         self.assertTrue(opts2.dump_config)
         self.assertTrue(opts2.force)
