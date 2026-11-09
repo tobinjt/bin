@@ -180,6 +180,7 @@ repos:
       args:
       - --strip-extras
       - --quiet
+      - --no-header
       - requirements.in
   # managed-by-populate-pre-commit end: python-requirements.yaml
   # managed-by-populate-pre-commit start: python.yaml
