@@ -4,6 +4,11 @@
 
 set -e -f -u -o pipefail
 
+if [[ "${UID}" -eq 0 ]]; then
+  echo "$0: refusing to install tools as root"
+  exit 0
+fi
+
 if is_mac_os && type brew >& /dev/null; then
   brew-update-brew-cleanup
   brew install python
