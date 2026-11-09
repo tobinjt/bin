@@ -12,4 +12,5 @@
     args:
       - --strip-extras
       - --quiet
+      - --no-header
       - requirements.in
