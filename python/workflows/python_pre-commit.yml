@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install basedpyright black mypy
+          pip install basedpyright black mypy pyrefly
           pip install -r requirements.txt
 
       # keep-sorted start block=true
@@ -52,7 +52,7 @@ jobs:
       - name: Run mypy
         run: mypy --ignore-missing-imports --scripts-are-modules .
       - name: Run pyrefly
-        uses: facebook/pyrefly@main
+        run: pyrefly check --output-format=full-text-with-github
       - name: Run pytest
         run: pytest
       # keep-sorted end
