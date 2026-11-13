@@ -15,8 +15,7 @@ permissions:
 jobs:
   pre-commit-checks:
     name: |
-      Run `black`, `basedpyright`, `mypy`, `pygrep-hooks`,
-      `pyrefly`, and `pytest`.
+      Run `black`, `basedpyright`, `mypy`, `pyrefly`, and `pytest`.
       Commits any changes made by `black`.
     runs-on: ubuntu-latest
     permissions:
@@ -36,7 +35,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7.1.0
         with:
-          python-version: '3.13'
+          python-version: '3.15'
           cache: 'pip'
 
       - name: Install dependencies
