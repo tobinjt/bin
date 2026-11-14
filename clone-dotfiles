@@ -24,4 +24,7 @@ if [[ "${USER}" == "johntobin" ]]; then
   sed -i -e 's!https://github.com/!git@github.com:!' \
     "${HOME}/src/bin/.git/config" \
     "${HOME}/src/dotfiles/.git/config"
+  if [[ ! -f "${HOME}/.ssh/authorized_keys" ]]; then
+    cp "${HOME}/.ssh/johntobin-key.pub" "${HOME}/.ssh/authorized_keys"
+  fi
 fi
