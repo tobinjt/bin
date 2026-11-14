@@ -571,9 +571,17 @@ class TestMarkdownToHtml(unittest.TestCase):
             self.assertEqual(written, [])
 
     def test_copy_stylesheet_if_needed_when_already_exists(self) -> None:
-        """Tests that stylesheet is not overwritten if it already exists."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            output_dir = pathlib.Path(tmp_dir)
+        """Tests that an existing stylesheet is overwritten from the source stylesheet."""
+        with (
+            tempfile.TemporaryDirectory() as tmp_out,
+            tempfile.TemporaryDirectory() as tmp_prog,
+        ):
+            output_dir = pathlib.Path(tmp_out)
+            program_dir = pathlib.Path(tmp_prog)
+            source_css = program_dir / "css/styles.css"
+            source_css.parent.mkdir(parents=True, exist_ok=True)
+            _ = source_css.write_text("/* updated styles */", encoding="utf-8")
+
             existing_css = output_dir / "css/styles.css"
             existing_css.parent.mkdir(parents=True, exist_ok=True)
             _ = existing_css.write_text("/* existing */", encoding="utf-8")
@@ -581,9 +589,30 @@ class TestMarkdownToHtml(unittest.TestCase):
             copied = markdown_to_html.copy_stylesheet_if_needed(
                 output_dir=output_dir,
                 css_rel_path="css/styles.css",
+                program_dir=program_dir,
+            )
+            self.assertTrue(copied)
+            self.assertEqual(
+                existing_css.read_text(encoding="utf-8"), "/* updated styles */"
+            )
+
+    def test_copy_stylesheet_if_needed_same_file(self) -> None:
+        """Tests that copying is skipped when source and destination are the same file."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            base_dir = pathlib.Path(tmp_dir)
+            css_file = base_dir / "css/styles.css"
+            css_file.parent.mkdir(parents=True, exist_ok=True)
+            _ = css_file.write_text("/* source styles */", encoding="utf-8")
+
+            copied = markdown_to_html.copy_stylesheet_if_needed(
+                output_dir=base_dir,
+                css_rel_path="css/styles.css",
+                program_dir=base_dir,
             )
             self.assertFalse(copied)
-            self.assertEqual(existing_css.read_text(encoding="utf-8"), "/* existing */")
+            self.assertEqual(
+                css_file.read_text(encoding="utf-8"), "/* source styles */"
+            )
 
     def test_copy_stylesheet_if_needed_copies_when_missing(self) -> None:
         """Tests that stylesheet is copied from program directory when missing."""
@@ -946,6 +975,8 @@ class TestMarkdownToHtml(unittest.TestCase):
         )
         self.assertIn('<details class="toc-dropdown" id="toc-dropdown">', html_out)
         self.assertIn('class="btn-action toc-summary"', html_out)
+        self.assertIn('<ul class="toc-list">', html_out)
+        self.assertIn('<li class="toc-item">', html_out)
         self.assertIn('href="#guide"', html_out)
         self.assertIn('href="#usage"', html_out)
         self.assertIn('href="#options"', html_out)
@@ -964,6 +995,8 @@ class TestMarkdownToHtml(unittest.TestCase):
         )
         self.assertIn('<aside class="toc-floating" id="toc-floating"', html_out)
         self.assertIn('<details class="toc-floating-card" open>', html_out)
+        self.assertIn('<ul class="toc-list">', html_out)
+        self.assertIn('<li class="toc-item">', html_out)
         self.assertIn('href="#intro"', html_out)
         self.assertIn('href="#advanced"', html_out)
 
@@ -982,9 +1015,12 @@ class TestMarkdownToHtml(unittest.TestCase):
         self.assertNotIn('href="#level-4"', html_out)
 
     def test_build_toc_script(self) -> None:
-        """Tests generating JavaScript event listeners for TOC dropdown dismiss."""
+        """Tests generating JavaScript event listeners for TOC dropdown dismiss and positioning."""
         script = markdown_to_html.build_toc_script()
         self.assertIn("toc-dropdown", script)
+        self.assertIn("positionTocMenu", script)
+        self.assertIn('"toggle"', script)
+        self.assertIn('"resize"', script)
         self.assertIn("Escape", script)
 
     def test_build_header_with_toc(self) -> None:

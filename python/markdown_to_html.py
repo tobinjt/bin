@@ -695,17 +695,19 @@ def build_toc_html(
         return ""
 
     min_level = min(e.level for e in filtered)
-    links: list[str] = []
+    items: list[str] = []
     for entry in filtered:
         indent = entry.level - min_level
         padding = 16 + indent * 12
         escaped_title = html.escape(entry.title)
-        link_tag = (
-            f'<a href="#{entry.slug}" class="toc-link toc-level-{entry.level}" '
+        item_tag = (
+            '<li class="toc-item">'
+            + f'<a href="#{entry.slug}" class="toc-link toc-level-{entry.level}" '
             + f'style="padding-left: {padding}px;" title="{escaped_title}">{escaped_title}</a>'
+            + "</li>"
         )
-        links.append(link_tag)
-    links_html = "\n".join(links)
+        items.append(item_tag)
+    list_html = '<ul class="toc-list">\n' + "\n".join(items) + "\n</ul>"
 
     if style == "floating":
         template = textwrap.dedent("""
@@ -716,12 +718,12 @@ def build_toc_html(
                   <span class="toc-arrow">▾</span>
                 </summary>
                 <nav class="toc-nav" aria-label="Table of contents">
-                  {links_html}
+                  {list_html}
                 </nav>
               </details>
             </aside>
             """).strip()
-        return template.format(links_html=links_html)
+        return template.format(list_html=list_html)
 
     template = textwrap.dedent("""
         <details class="toc-dropdown" id="toc-dropdown">
@@ -735,16 +737,16 @@ def build_toc_html(
               <span class="toc-menu-title">Table of Contents</span>
             </div>
             <nav class="toc-nav" aria-label="Table of contents">
-              {links_html}
+              {list_html}
             </nav>
           </div>
         </details>
         """).strip()
-    return template.format(links_html=links_html)
+    return template.format(list_html=list_html)
 
 
 def build_toc_script() -> str:
-    """Builds JavaScript for table of contents interactions and dismiss handling.
+    """Builds JavaScript for table of contents interactions, positioning, and dismiss handling.
 
     Returns:
         HTML script tag string containing TOC event listeners.
@@ -752,6 +754,67 @@ def build_toc_script() -> str:
     return textwrap.dedent("""
         <script>
           document.addEventListener("DOMContentLoaded", function() {
+            function positionTocMenu() {
+              const dropdown = document.getElementById("toc-dropdown");
+              if (!dropdown) {
+                return;
+              }
+              const menu = dropdown.querySelector(".toc-menu");
+              if (!menu) {
+                return;
+              }
+              if (!dropdown.hasAttribute("open")) {
+                menu.style.left = "";
+                menu.style.right = "";
+                menu.style.maxWidth = "";
+                return;
+              }
+              if (window.getComputedStyle(menu).position !== "absolute") {
+                return;
+              }
+              const padding = 16;
+              const viewportWidth = document.documentElement.clientWidth;
+              const maxMenuWidth = Math.min(760, Math.max(200, viewportWidth - padding * 2));
+              menu.style.maxWidth = maxMenuWidth + "px";
+              menu.style.left = "0px";
+              menu.style.right = "auto";
+
+              const dropdownRect = dropdown.getBoundingClientRect();
+              const menuWidth = menu.getBoundingClientRect().width;
+
+              let desiredLeft;
+              if (
+                dropdownRect.left + menuWidth <= viewportWidth - padding &&
+                dropdownRect.left >= padding
+              ) {
+                desiredLeft = dropdownRect.left;
+              } else if (
+                dropdownRect.right - menuWidth >= padding &&
+                dropdownRect.right <= viewportWidth - padding
+              ) {
+                desiredLeft = dropdownRect.right - menuWidth;
+              } else {
+                const spaceRight = viewportWidth - padding - dropdownRect.left;
+                const spaceLeft = dropdownRect.right - padding;
+                desiredLeft =
+                  spaceRight >= spaceLeft
+                    ? dropdownRect.left
+                    : dropdownRect.right - menuWidth;
+                const minLeft = padding;
+                const maxLeft = Math.max(padding, viewportWidth - padding - menuWidth);
+                desiredLeft = Math.max(minLeft, Math.min(desiredLeft, maxLeft));
+              }
+
+              menu.style.left = (desiredLeft - dropdownRect.left) + "px";
+              menu.style.right = "auto";
+            }
+
+            const tocDropdown = document.getElementById("toc-dropdown");
+            if (tocDropdown) {
+              tocDropdown.addEventListener("toggle", positionTocMenu);
+            }
+            window.addEventListener("resize", positionTocMenu);
+
             document.addEventListener("click", function(event) {
               const dropdown = document.getElementById("toc-dropdown");
               if (dropdown && dropdown.hasAttribute("open")) {
@@ -1212,7 +1275,10 @@ def copy_stylesheet_if_needed(
     css_rel_path: str,
     program_dir: pathlib.Path | None = None,
 ) -> bool:
-    """Copies default stylesheet from program directory to output directory if missing.
+    """Copies default stylesheet from program directory to output directory.
+
+    Overwrites any existing stylesheet at the destination path unless source and
+    destination resolve to the same file.
 
     Args:
         output_dir: Destination directory where HTML files and assets are generated.
@@ -1227,9 +1293,6 @@ def copy_stylesheet_if_needed(
         return False
 
     dest_css_path = output_dir / css_rel_path
-    if dest_css_path.exists():
-        return False
-
     source_base = (
         program_dir
         if program_dir is not None
@@ -1238,6 +1301,9 @@ def copy_stylesheet_if_needed(
     source_css_path = source_base / css_rel_path
     if not source_css_path.is_file():
         print(f"Warning: Stylesheet {source_css_path} not found to copy.")
+        return False
+
+    if source_css_path.resolve() == dest_css_path.resolve():
         return False
 
     dest_css_path.parent.mkdir(parents=True, exist_ok=True)
