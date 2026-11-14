@@ -20,9 +20,8 @@ dotfiles
 # Create some directories that'll be needed.
 mkdir -p "${HOME}/tmp/generated" "${HOME}/.ssh/control"
 if [[ "${USER}" == "johntobin" ]]; then
-  sed -i -e 's!https://github.com/!git@github.com:!' .git/config
   # I need to do this anyway, so might as well do it now.
   sed -i -e 's!https://github.com/!git@github.com:!' \
-    "${HOME}/src/bin/.git/config"
-  (cd "${HOME}/src/bin" && install-pre-commit-hooks)
+    "${HOME}/src/bin/.git/config" \
+    "${HOME}/src/dotfiles/.git/config"
 fi
