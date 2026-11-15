@@ -52,7 +52,7 @@ main() {
 
   # Configure SSH.
   sed -i \
-    -e 's/^\#?PasswordAuthentication.*/PasswordAuthentication no/' \
+    -e 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' \
     /etc/ssh/sshd_config
 
   # Passwordless sudo.
