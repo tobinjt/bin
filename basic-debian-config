@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+# https://docs.wakemeops.com/usage/
+WakeMeOpsUrl="https://raw.githubusercontent.com/upciti/wakemeops/main/assets/install_repository"
+
+packages_to_install() {
+  sed -e '/#/d' <<END_OF_PACKAGES
+    # keep-sorted start
+    aptitude
+    bash-doc
+    bat
+    dlocate
+    etckeeper
+    git
+    inotify-tools
+    jq
+    lazygit
+    markdown
+    neovim
+    python3-venv
+    resticprofile
+    ripgrep
+    shellcheck
+    tmux
+    tree-sitter-cli
+    zsh
+    zsh-doc
+    # keep-sorted end
+END_OF_PACKAGES
+}
+
+main() {
+  # Install packages.
+  apt install curl
+  curl -sSL "${WakeMeOpsUrl}" | bash
+  apt update
+  apt upgrade
+  # shellcheck disable=SC2046
+  apt install $(packages_to_install)
+  apt remove vim-nox vim-common
+  apt autoremove
+
+  # Configure etckeeper.
+  sed -i \
+    -e '/AVOID_DAILY_AUTOCOMMITS/s/^#//' \
+    -e '/AVOID_COMMIT_BEFORE_INSTALL/s/^#//' \
+    /etc/etckeeper/etckeeper.conf
+  # Don't auto-commit.
+  systemctl disable etckeeper.timer
+
+  # Configure SSH.
+  sed -i \
+    -e 's/^\#?PasswordAuthentication.*/PasswordAuthentication no/' \
+    /etc/ssh/sshd_config
+
+  # Passwordless sudo.
+  sed -i -e '/^%sudo/s/ ALL$/ NOPASSWD:ALL/' /etc/sudoers
+
+  etckeeper commit "Initial configuration"
+}
+
+main "$@"
