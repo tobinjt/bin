@@ -6,6 +6,12 @@ set -e -u -f -o pipefail
 PATH="${HOME}/src/bin:/opt/homebrew/bin:/usr/local/bin:${PATH}"
 export PATH
 
+# This means I can run ~johntobin/src/bin/clone-dotfiles as another user and
+# have it work correctly.
+if [[ ! -d "${HOME}/src/bin" ]]; then
+  git clone https://github.com/tobinjt/bin.git "${HOME}/src/bin"
+fi
+
 DESTDIR="${HOME}/src/dotfiles"
 readonly DESTDIR
 if [[ ! -d "${DESTDIR}" ]]; then
