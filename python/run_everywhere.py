@@ -22,6 +22,7 @@ logger = logging.getLogger("run_everywhere")
 
 # Default mapping of hosts to users.
 HOST_USERS: dict[str, list[str]] = {
+    "frankenimac": ["johntobin", "root"],
     "laptop": ["johntobin", "root"],
     "hosting": ["johntobin", "root", "arianetobin"],
     "truenas": ["truenas_admin"],

@@ -157,7 +157,7 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main(argv)
 
         self.assertEqual(return_code, 0)
-        self.assertEqual(mock_update_single_host.call_count, 3)
+        self.assertEqual(mock_update_single_host.call_count, 4)
 
         expected_calls = [
             mock.call("laptop", ["johntobin", "root"], ["do-something", "arg"]),
@@ -177,7 +177,7 @@ class RunEverywhereTest(unittest.TestCase):
         return_code = run_everywhere.main(argv)
 
         self.assertEqual(return_code, 0)
-        self.assertEqual(mock_update_single_host.call_count, 3)
+        self.assertEqual(mock_update_single_host.call_count, 4)
 
         expected_calls = [
             mock.call("laptop", ["johntobin", "root"], ["do-something", "arg"]),
