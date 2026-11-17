@@ -3,9 +3,10 @@
 set -e -f -u -o pipefail
 
 main() {
-  cd "$(git rev-parse --show-toplevel)"
-  source .venv/bin/activate
-  .venv/bin/pytest "$@"
+  local root_dir
+  root_dir="$(git rev-parse --show-toplevel)"
+  source "${root_dir}/.venv/bin/activate"
+  "${root_dir}/.venv/bin/pytest" "$@"
 }
 
 main "$@"
