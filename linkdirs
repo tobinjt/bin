@@ -1,1 +1,9 @@
-python/linkdirs.py
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  "${HOME}/src/bin/.venv/bin/python" "${HOME}/src/bin/python/linkdirs.py" "$@"
+}
+
+main "$@"

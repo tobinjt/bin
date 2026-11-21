@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import cast
 from unittest import mock
 
+import pathspec
 from pyfakefs import fake_filesystem_unittest
 
 import linkdirs
@@ -286,7 +287,7 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
 
         ignore_patterns_filename = "ignore_patterns"
         ignore_patterns_contents = """
-        ignore-some/should-be-ignored
+        **/ignore-some/should-be-ignored
         """
         with open(ignore_patterns_filename, "w", encoding="utf8") as ignore_patterns_fh:
             ignore_patterns_fh.write(ignore_patterns_contents)
@@ -508,6 +509,40 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
         ]
         expected = [os.path.join(dest_dir, x) for x in expected]
         self.assertCountEqual(expected, found_files)
+
+    def test_directory_only_ignore_pattern(self):
+        """A pattern with a trailing slash ignores directories but not files."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        files_to_create = f"""
+        {src_dir}/only_dir/should_be_ignored
+        {src_dir}/sub/only_dir
+        {dest_dir}/sub/nested/only_dir/ignored_unexpected
+        """
+        self.create_files(files_to_create)
+
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                "--ignore_pattern=only_dir/",
+                "--report_unexpected_files",
+                "--ignore_unexpected_children",
+                src_dir,
+                dest_dir,
+            ]
+        )
+        self.assertEqual(
+            [
+                "Unexpected directory: /z/y/x/sub/nested",
+                "rmdir /z/y/x/sub/nested",
+            ],
+            actual,
+        )
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "only_dir")))
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "sub", "only_dir"),
+            os.path.join(dest_dir, "sub", "only_dir"),
+        )
 
     def test_exclusions_do_not_match_cli_arguments(self):
         """Excluding `src` shouldn't exclude cli arguments that include `src`"""
@@ -1087,13 +1122,15 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             )
             output = mock_stdout.getvalue()
             self.assertIn(
-                "DEBUG: Excluding file .git: matched set pattern .git", output
+                f"DEBUG: Excluding {Path(src_dir) / '.git'}: matched ignore pattern .git",
+                output,
             )
             self.assertIn(
-                "DEBUG: Excluding file test.spl: matched glob pattern *.spl", output
+                f"DEBUG: Excluding {Path(src_dir) / 'test.spl'}: matched ignore pattern *.spl",
+                output,
             )
             self.assertIn(
-                f"DEBUG: Excluding path {Path(src_dir) / 'subdir' / 'ignored_path'}: matched full path pattern",
+                f"DEBUG: Excluding {Path(src_dir) / 'subdir' / 'ignored_path'}: matched ignore pattern subdir/ignored_path",
                 output,
             )
             self.assertIn(
@@ -1254,9 +1291,8 @@ class TestOptions(unittest.TestCase):
 
         self.assertEqual(opts.ignore_files, [])
         self.assertEqual(opts.ignore_patterns, [])
-        self.assertEqual(opts.ignore_set, set())
-        self.assertEqual(opts.ignore_globs, [])
-        self.assertEqual(opts.ignore_full_paths, [])
+        self.assertIsInstance(opts.ignore_spec, pathspec.GitIgnoreSpec)
+        self.assertEqual(opts.ignore_spec.patterns, [])
 
         # Test setting values
         opts2 = linkdirs.Options(

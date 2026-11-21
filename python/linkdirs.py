@@ -12,7 +12,6 @@ import argparse
 import dataclasses
 import difflib
 import filecmp
-import fnmatch
 import os
 import pprint
 import shlex
@@ -24,6 +23,8 @@ import textwrap
 import time
 import typing
 from pathlib import Path
+
+import pathspec
 
 __author__ = "johntobin@johntobin.ie (John Tobin)"
 
@@ -119,8 +120,8 @@ class Options(argparse.Namespace):
             dryrun: Perform a trial run.
             dump_config: Dump parsed options.
             force: Remove existing files if necessary.
-            ignore_file: File containing shell patterns to ignore.
-            ignore_pattern: Extra shell patterns to ignore.
+            ignore_file: File containing gitignore patterns to ignore.
+            ignore_pattern: Extra gitignore patterns to ignore.
             ignore_symlinks: Ignore symlinks.
             ignore_unexpected_children: Ignore unexpected child directories.
             report_unexpected_files: Report unexpected files.
@@ -145,40 +146,7 @@ class Options(argparse.Namespace):
 
         self.ignore_files: list[Path] = []
         self.ignore_patterns: list[str] = []
-        self.ignore_set: set[str] = set()
-        self.ignore_globs: list[str] = []
-        self.ignore_full_paths: list[str] = []
-
-
-def bucket_ignore_patterns(
-    ignore_patterns: list[str],
-) -> tuple[set[str], list[str], list[str]]:
-    """Split ignore patterns into sets and globs.
-
-    We can do simple string comparisons on the sets and must use fnmatch
-    to match against the globs.
-
-    Args:
-        ignore_patterns: a list of patterns to ignore.
-
-    Returns:
-        A tuple:
-            ignore_set: a set of directory or filenames to ignore.
-            ignore_globs: a list of glob patterns to ignore.
-            ignore_full_paths: a list of ignore patterns applying to full paths.
-    """
-    ignore_set: set[str] = set()
-    ignore_globs: list[str] = []
-    ignore_full_paths: list[str] = []
-    metacharacters = ["*", "?", "[", "{"]
-    for pattern in ignore_patterns:
-        if "/" in pattern:
-            ignore_full_paths.append(pattern)
-        elif any(c in pattern for c in metacharacters):
-            ignore_globs.append(pattern)
-        else:
-            ignore_set.add(pattern)
-    return ignore_set, ignore_globs, ignore_full_paths
+        self.ignore_spec: pathspec.GitIgnoreSpec = pathspec.GitIgnoreSpec.from_lines([])
 
 
 def options_from_args(args: Options) -> Options:
@@ -191,10 +159,8 @@ def options_from_args(args: Options) -> Options:
         Args.
     """
     args.ignore_files = [Path(x) for x in args.ignore_file]
-    args.ignore_patterns = args.ignore_pattern
-    args.ignore_set = set()
-    args.ignore_globs = []
-    args.ignore_full_paths = []
+    args.ignore_patterns = list(args.ignore_pattern)
+    args.ignore_spec = pathspec.GitIgnoreSpec.from_lines([])
     return args
 
 
@@ -379,67 +345,41 @@ def resolve_diff_with_tool(
     return False
 
 
-def remove_ignore_file_patterns(*, files: list[str], options: Options) -> list[str]:
-    """Remove any files matching shell patterns.
-
-    Args:
-        files: a list of filenames.
-        options: options requested by the user.
-
-    Returns:
-        An array of filenames.
-    """
-
-    unmatched: list[str] = []
-    for filename in files:
-        if filename in options.ignore_set:
-            if options.debug_file_exclusion:
-                print(
-                    f"DEBUG: Excluding file {filename}: matched set pattern {filename}"
-                )
-            continue
-        for pattern in options.ignore_globs:
-            if fnmatch.fnmatch(filename, pattern):
-                if options.debug_file_exclusion:
-                    print(
-                        f"DEBUG: Excluding file {filename}: matched glob pattern {pattern}"
-                    )
-                break
-        else:
-            if options.debug_file_exclusion:
-                print(
-                    f"DEBUG: Including file {filename}: did not match ignore patterns"
-                )
-            unmatched.append(filename)
-    return unmatched
-
-
-def remove_ignore_full_path_patterns(
-    *, paths: list[str], options: Options
+def remove_ignored_entries(
+    *,
+    root: Path,
+    directory: Path,
+    entries: list[str],
+    is_dir: bool,
+    options: Options,
 ) -> list[str]:
-    """Remove any full paths matching shell patterns.
+    """Remove any entries matching ignore patterns.
 
     Args:
-        paths: a list of paths.
+        root: the top-level root directory (source or dest).
+        directory: the directory containing entries.
+        entries: a list of entry names inside directory.
+        is_dir: True if entries are directories, False if they are files.
         options: options requested by the user.
 
     Returns:
-        An array of paths.
+        A list of entry names that are not ignored.
     """
-
     unmatched: list[str] = []
-    for path in paths:
-        for pattern in options.ignore_full_paths:
-            if fnmatch.fnmatch(path, pattern):
-                if options.debug_file_exclusion:
-                    print(
-                        f"DEBUG: Excluding path {path}: matched full path pattern {pattern}"
-                    )
-                break
-        else:
+    for entry in entries:
+        full_path = directory / entry
+        rel_path = full_path.relative_to(root).as_posix()
+        check_path = f"{rel_path}/" if is_dir else rel_path
+        result = options.ignore_spec.check_file(check_path)
+        if result.include:
             if options.debug_file_exclusion:
-                print(f"DEBUG: Including path {path}: did not match full path patterns")
-            unmatched.append(path)
+                assert result.index is not None
+                pattern = options.ignore_patterns[result.index]
+                print(f"DEBUG: Excluding {full_path}: matched ignore pattern {pattern}")
+            continue
+        if options.debug_file_exclusion:
+            print(f"DEBUG: Including {full_path}: did not match ignore patterns")
+        unmatched.append(entry)
     return unmatched
 
 
@@ -463,18 +403,13 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
         directory = Path(directory_str)
         # Remove ignored subdirs.  Assigning to the slice will prevent os.walk
         # from descending into the ignored subdirs.
-        subdirs[:] = remove_ignore_file_patterns(files=subdirs, options=options)
-
-        # Construct the full path to the subdir, then strip the matching CLI arg to get
-        # a relative path. Filter those relative paths, then take the last component of
-        # each to get the new list of subdirs.
-        relative_dirs = [
-            str((directory / subdir).relative_to(source)) for subdir in subdirs
-        ]
-        filtered_relative_dirs = remove_ignore_full_path_patterns(
-            paths=relative_dirs, options=options
+        subdirs[:] = remove_ignored_entries(
+            root=source,
+            directory=directory,
+            entries=subdirs,
+            is_dir=True,
+            options=options,
         )
-        subdirs[:] = [Path(dir).name for dir in filtered_relative_dirs]
         subdirs.sort()
 
         for subdir in subdirs:
@@ -543,19 +478,15 @@ def link_files(
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
-    # Filter on the filename and convert to paths relative to source and dest.
-    relative_paths = [
-        str(directory / filename)
-        for filename in remove_ignore_file_patterns(files=files, options=options)
-    ]
-    # Filter on the relative path.
-    paths = [
-        Path(p)
-        for p in remove_ignore_full_path_patterns(paths=relative_paths, options=options)
-    ]
-    paths.sort()
+    filtered_files = remove_ignored_entries(
+        root=source,
+        directory=directory,
+        entries=files,
+        is_dir=False,
+        options=options,
+    )
+    paths = sorted(directory / filename for filename in filtered_files)
     for source_path in paths:
-        # TODO: why is this relative to source?
         dest_path = dest / source_path.relative_to(source)
         results.expected_files.append(dest_path)
 
@@ -660,9 +591,22 @@ def report_unexpected_files(
     unexpected_paths = UnexpectedPaths(files=[], directories=[])
     for directory_str, subdirs, files in os.walk(dest_dir):
         directory = Path(directory_str)
-        subdirs[:] = remove_ignore_file_patterns(files=subdirs, options=options)
+        # Don't recurse into ignored subdirs.
+        subdirs[:] = remove_ignored_entries(
+            root=dest_dir,
+            directory=directory,
+            entries=subdirs,
+            is_dir=True,
+            options=options,
+        )
         subdirs.sort()
-        filtered_files = remove_ignore_file_patterns(files=files, options=options)
+        filtered_files = remove_ignored_entries(
+            root=dest_dir,
+            directory=directory,
+            entries=files,
+            is_dir=False,
+            options=options,
+        )
         filtered_files.sort()
 
         if directory == dest_dir and options.ignore_unexpected_children:
@@ -679,35 +623,25 @@ def report_unexpected_files(
                     )
                 subdirs.remove(subdir)
 
-        full_subdirs = [str(directory / entry) for entry in subdirs]
-        full_files = [str(directory / entry) for entry in filtered_files]
-        filtered_subdirs = remove_ignore_full_path_patterns(
-            paths=full_subdirs, options=options
-        )
-        # Don't recurse into ignored subdirs.
-        subdirs[:] = [Path(dir).name for dir in filtered_subdirs]
-        filtered_files = remove_ignore_full_path_patterns(
-            paths=full_files, options=options
-        )
-
+        filtered_file_paths = [directory / entry for entry in filtered_files]
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level symlinks.
             if options.debug_file_exclusion:
-                for file in filtered_files:
-                    if Path(file).is_symlink():
+                for file_path in filtered_file_paths:
+                    if file_path.is_symlink():
                         print(
-                            f"DEBUG: Excluding unexpected top-level symlink {file}: ignore_unexpected_children is set"
+                            f"DEBUG: Excluding unexpected top-level symlink {file_path}: ignore_unexpected_children is set"
                         )
-            filtered_files = [
-                file for file in filtered_files if not Path(file).is_symlink()
+            filtered_file_paths = [
+                file_path
+                for file_path in filtered_file_paths
+                if not file_path.is_symlink()
             ]
 
         unexpected_paths.directories.extend(
-            sorted({Path(p) for p in filtered_subdirs} - set(expected_files))
+            sorted({directory / subdir for subdir in subdirs} - expected_files)
         )
-        unexpected_paths.files.extend(
-            sorted({Path(p) for p in filtered_files} - set(expected_files))
-        )
+        unexpected_paths.files.extend(sorted(set(filtered_file_paths) - expected_files))
 
     msgs: Messages = []
     if options.delete_unexpected_files:
@@ -853,7 +787,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         metavar="FILENAME",
         default=[],
         help=textwrap.fill(
-            """File containing shell patterns to ignore.  To specify multiple filenames,
+            """File containing gitignore patterns to ignore.  To specify multiple filenames,
             use this option multiple times."""
         ),
     )
@@ -864,7 +798,7 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         metavar="FILENAME",
         default=DEFAULT_IGNORE_PATTERNS,
         help=textwrap.fill(
-            """Extra shell patterns to ignore (appended to this list: %(default)s).
+            """Extra gitignore patterns to ignore (appended to this list: %(default)s).
             To specify multiple filenames, use this option multiple times."""
         ),
     )
@@ -964,18 +898,7 @@ def real_main(*, argv: list[str]) -> Messages:
         options.ignore_patterns.extend(
             read_ignore_patterns_from_file(filename=filename)
         )
-    options.ignore_set, options.ignore_globs, options.ignore_full_paths = (
-        bucket_ignore_patterns(options.ignore_patterns)
-    )
-    ignore_full_paths = options.ignore_full_paths[:]
-    # Match */pattern
-    options.ignore_full_paths.extend(os.path.join("*", p) for p in ignore_full_paths)
-    # Match */pattern/*
-    options.ignore_full_paths.extend(
-        os.path.join("*", p, "*") for p in ignore_full_paths
-    )
-    # Nuke ignore_patterns so that I can't accidentally use it anywhere.
-    options.ignore_patterns = []
+    options.ignore_spec = pathspec.GitIgnoreSpec.from_lines(options.ignore_patterns)
 
     if options.dump_config:
         print("DEBUG: options:")
