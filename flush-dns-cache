@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  sudo dscacheutil -flushcache
+  sudo killall -HUP mDNSResponder
+}
+
+main "$@"
