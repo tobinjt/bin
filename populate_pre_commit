@@ -1,1 +1,10 @@
-python/populate_pre_commit.py
+#!/bin/bash
+
+set -e -f -u -o pipefail
+
+main() {
+  "${HOME}/src/bin/.venv/bin/python" \
+    "${HOME}/src/bin/python/populate_pre_commit.py" "$@"
+}
+
+main "$@"

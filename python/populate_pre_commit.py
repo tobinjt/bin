@@ -6,29 +6,18 @@ corresponding pre-commit hooks from a central snippets directory. It uses
 markers to identify and update managed sections in .pre-commit-config.yaml.
 """
 
-import os
-import sys
-
-# Ensure execution inside project .venv if present
-_VENV_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))), ".venv"
-)
-_VENV_PYTHON = os.path.join(_VENV_DIR, "bin", "python")
-if os.path.exists(_VENV_PYTHON) and os.path.abspath(sys.prefix) != os.path.abspath(
-    _VENV_DIR
-):
-    os.execv(_VENV_PYTHON, [_VENV_PYTHON] + sys.argv)
-
 import argparse
 import functools
+import os
 import pathlib
 import subprocess
 import textwrap
 from typing import TypedDict, cast
 
-import get_git_root
 import pathspec
 import yaml
+
+import get_git_root
 
 # Path to the directory containing pre-commit snippets.
 SNIPPETS_DIR = pathlib.Path(__file__).resolve().parent / "pre-commit-snippets"
@@ -490,7 +479,10 @@ def populate_pre_commit(
 
     # 6. Write back to file with shebang.
     shebang_args = build_shebang_args(extra_args)
-    script_name = escape_for_env_s(pathlib.Path(script_file).name)
+    # Remove ".py" because the wrapper is named populate_pre_commit but the program is
+    # invoked as populate_pre_commit.py, which 1) isn't in $PATH and 2) needs to be
+    # invoked by the wrapper.
+    script_name = escape_for_env_s(pathlib.Path(script_file).name.removesuffix(".py"))
     shebang = f'#!/usr/bin/env -S "{script_name}"{shebang_args}\n'
 
     with CONFIG_FILE.open("w", encoding="utf-8") as f:

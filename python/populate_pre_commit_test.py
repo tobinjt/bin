@@ -471,7 +471,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.assertFalse(pathlib.Path(".pre-commit-config.yaml").exists())
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=self.mock_snippets,
         )
         self.assertTrue(pathlib.Path(".pre-commit-config.yaml").exists())
@@ -480,7 +480,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             content = f.read()
 
         expected = (
-            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            '#!/usr/bin/env -S "populate_pre_commit_test"\n'
             f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
@@ -499,7 +499,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
         )
 
@@ -507,7 +507,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             content = f.read()
 
         expected = (
-            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            '#!/usr/bin/env -S "populate_pre_commit_test"\n'
             f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
@@ -529,7 +529,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
         )
 
@@ -537,7 +537,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             content = f.read()
 
         expected = (
-            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            '#!/usr/bin/env -S "populate_pre_commit_test"\n'
             f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
@@ -558,7 +558,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
         )
 
@@ -566,7 +566,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             content = f.read()
 
         expected = (
-            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            '#!/usr/bin/env -S "populate_pre_commit_test"\n'
             f"{_EXPECTED_HEADER}"
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
@@ -578,7 +578,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that an empty fixed header does not insert header markers."""
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
             fixed_header="",
         )
@@ -587,7 +587,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             content = f.read()
 
         expected = (
-            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            '#!/usr/bin/env -S "populate_pre_commit_test"\n'
             "repos:\n"
             f"{_EXPECTED_ALWAYS_ENABLED}"
         )
@@ -604,7 +604,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
         )
         with open(".pre-commit-config.yaml", "r") as f:
@@ -612,7 +612,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
         )
         with open(".pre-commit-config.yaml", "r") as f:
@@ -625,7 +625,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
 
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
         )
 
@@ -633,7 +633,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
             content = f.read()
 
         expected = (
-            '#!/usr/bin/env -S "populate_pre_commit_test.py"\n'
+            '#!/usr/bin/env -S "populate_pre_commit_test"\n'
             "# Just a comment\n"
             f"{_EXPECTED_HEADER}"
             "repos:\n"
@@ -652,7 +652,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         ):
             populate_pre_commit.populate_pre_commit(
                 extra_args={},
-                script_file="populate_pre_commit_test.py",
+                script_file="populate_pre_commit_test",
                 snippets=[("empty.yaml", True)],
             )
 
@@ -663,7 +663,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         with self.assertRaisesRegex(OSError, "really_missing.yaml"):
             populate_pre_commit.populate_pre_commit(
                 extra_args={},
-                script_file="populate_pre_commit_test.py",
+                script_file="populate_pre_commit_test",
                 snippets=[("really_missing.yaml", True)],
             )
 
@@ -672,7 +672,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         extra_args = {"debug-statements": "--flag1 --flag2"}
         populate_pre_commit.populate_pre_commit(
             extra_args=extra_args,
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=self.mock_snippets,
         )
 
@@ -725,7 +725,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that markdown_to_html snippet is populated correctly."""
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("markdown_to_html.yaml", True)],
         )
         with open(".pre-commit-config.yaml", "r", encoding="utf-8") as f:
@@ -741,7 +741,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         """Tests that mdformat snippet is populated correctly."""
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("mdformat.yaml", True)],
         )
         with open(".pre-commit-config.yaml", "r", encoding="utf-8") as f:
@@ -807,7 +807,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         )
         with open(".pre-commit-config.yaml", "r") as f:
             first_line = f.readline()
-        self.assertIn("new_script.py", first_line)
+        self.assertIn("new_script", first_line)
         self.assertNotIn("old/shebang", first_line)
 
     def test_build_shebang_args_multiple(self) -> None:
@@ -878,7 +878,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         extra_args = {"debug-statements": "--flag1", "check-hooks-apply": "--flag2"}
         populate_pre_commit.populate_pre_commit(
             extra_args=extra_args,
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=mock_snippets,
         )
 
@@ -922,7 +922,7 @@ class TestPopulatePreCommit(pyfakefs.fake_filesystem_unittest.TestCase):
         self.create_file(".pre-commit-config.yaml", contents=initial_content)
         populate_pre_commit.populate_pre_commit(
             extra_args={},
-            script_file="populate_pre_commit_test.py",
+            script_file="populate_pre_commit_test",
             snippets=[("always_enabled.yaml", True)],
         )
         with open(".pre-commit-config.yaml", "r") as f:
