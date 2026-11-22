@@ -3,6 +3,10 @@
 set -e -f -u -o pipefail
 
 main() {
+  # Bootstrapping support.
+  if [[ ! -f "${HOME}/src/bin/.venv/bin/python" ]]; then
+    (cd "${HOME}/src/bin" && ./setup-venv)
+  fi
   "${HOME}/src/bin/.venv/bin/python" "${HOME}/src/bin/python/linkdirs.py" "$@"
 }
 
