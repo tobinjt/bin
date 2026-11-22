@@ -4,6 +4,60 @@
 Link all files in SOURCE_DIRECTORY [SOURCE_DIRECTORY...] to
 DESTINATION_DIRECTORY, creating the destination directory hierarchy where
 necessary.
+
+Exclusions:
+  Ignore patterns follow .gitignore syntax and are matched against paths
+  relative to each SOURCE_DIRECTORY (when linking) and DESTINATION_DIRECTORY
+  (when checking or deleting unexpected files).  Patterns never match
+  components of the source or destination directory arguments themselves.
+
+  Pattern syntax:
+    - Basename patterns (no '/', or only a trailing '/') match at any depth
+      (e.g., '*.spl', '.git', 'cache/').
+    - Patterns containing a non-trailing '/' are anchored to the root
+      directory (e.g., 'foo/bar' matches only at the root; use '**/foo/bar'
+      to match at any depth).
+    - A trailing '/' matches only directories, not files with the same name.
+    - Wildcards '*', '?', '[...]', and '**' (zero or more directory levels)
+      are supported.
+
+  Re-including paths inside ignored directories:
+    - Prefix a pattern with '!' to re-include files or subdirectories matched
+      by an earlier ignore pattern.
+    - Unlike git, re-including a path inside an ignored directory works
+      directly without manually un-ignoring intermediate parent directories:
+
+        .config/app/
+        !.config/app/settings.toml
+        !.config/app/themes/dark.toml
+
+    - Re-including a subdirectory (e.g., '!.config/app/plugins/') includes its
+      contents; later patterns can re-exclude specific entries inside it.
+    - Ignored ancestor directories are only created in DESTINATION_DIRECTORY
+      (with permissions synced from SOURCE_DIRECTORY) if they contain at least
+      one re-included file or subdirectory.
+    - Unrelated ignored directories (such as '.git/') are still pruned during
+      traversal unless an unanchored negation pattern (e.g., '!keep.conf' or
+      '!**/keep.conf') is used.
+
+  Rule precedence and ignore files:
+    - Patterns are evaluated in order: default patterns, then --ignore_pattern
+      arguments (in order), then --ignore_file files (in file and line order).
+      Later matching patterns override earlier ones.
+    - Ignore files contain one pattern per line.  Leading and trailing
+      whitespace is stripped; blank lines and lines starting with '#' are
+      ignored.
+
+  Interaction with unexpected files and debugging:
+    - Ignored paths in DESTINATION_DIRECTORY are never reported or deleted as
+      unexpected.  Re-included files inside ignored directories are checked,
+      while the ignored parent directories themselves are not reported as
+      unexpected.
+    - With --ignore_unexpected_children, a top-level directory in
+      DESTINATION_DIRECTORY that has no linked entries from any
+      SOURCE_DIRECTORY is still skipped.
+    - Use --debug_file_exclusion to see which ignore or negation pattern
+      matched each path (and which ignored directories are traversed).
 """
 
 from __future__ import annotations
@@ -1054,20 +1108,20 @@ def parse_arguments(*, argv: list[str]) -> tuple[Options, Messages]:
         metavar="FILENAME",
         default=[],
         help=textwrap.fill(
-            """File containing gitignore patterns to ignore.  To specify multiple filenames,
-            use this option multiple times."""
+            """File containing gitignore patterns to ignore (appended after
+            default and --ignore_pattern rules).  To specify multiple
+            filenames, use this option multiple times."""
         ),
     )
     argv_parser.add_argument(
         "--ignore_pattern",
         action="append",
         dest="ignore_pattern",
-        metavar="FILENAME",
+        metavar="PATTERN",
         default=DEFAULT_IGNORE_PATTERNS,
-        help=textwrap.fill(
-            """Extra gitignore patterns to ignore (appended to this list: %(default)s).
-            To specify multiple filenames, use this option multiple times."""
-        ),
+        help=textwrap.fill("""Extra gitignore pattern to ignore (appended to defaults:
+            %(default)s).  To specify multiple patterns, use this option
+            multiple times."""),
     )
     argv_parser.add_argument(
         "--ignore_unexpected_children",

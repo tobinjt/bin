@@ -1496,6 +1496,8 @@ class TestUsage(unittest.TestCase):
         linkdirs.real_main(argv=["argv0", "--help"])
         stdout = mock_stdout.getvalue()
         self.assertIn("[OPTIONS] SOURCE_DIRECTORY [...] ", stdout)
+        self.assertIn("Exclusions:", stdout)
+        self.assertIn("Re-including paths inside ignored directories:", stdout)
 
 
 class TestMisc(fake_filesystem_unittest.TestCase):
