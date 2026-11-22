@@ -54,6 +54,33 @@ class UnexpectedPaths:
     directories: Paths
 
 
+@dataclasses.dataclass(frozen=True)
+class NegatedPattern:
+    """A compiled negated ignore pattern for checking ancestor directories.
+
+    Attributes:
+        unanchored: True if the pattern can match inside any directory.
+        segment_matchers: per-segment GitIgnoreSpec matchers, or None for '**'.
+    """
+
+    unanchored: bool
+    segment_matchers: tuple[pathspec.GitIgnoreSpec | None, ...]
+
+
+@dataclasses.dataclass
+class FilteredSubdirs:
+    """Result of filtering subdirectories against ignore patterns.
+
+    Attributes:
+        included: subdirectories that are not ignored.
+        traversed_ignored: ignored subdirectories that may contain re-included
+            entries and must still be traversed.
+    """
+
+    included: list[str]
+    traversed_ignored: list[str]
+
+
 @dataclasses.dataclass
 class LinkResults:
     """Container for the results of linking files and directories.
@@ -147,6 +174,7 @@ class Options(argparse.Namespace):
         self.ignore_files: list[Path] = []
         self.ignore_patterns: list[str] = []
         self.ignore_spec: pathspec.GitIgnoreSpec = pathspec.GitIgnoreSpec.from_lines([])
+        self.negated_patterns: list[NegatedPattern] = []
 
 
 def options_from_args(args: Options) -> Options:
@@ -161,6 +189,7 @@ def options_from_args(args: Options) -> Options:
     args.ignore_files = [Path(x) for x in args.ignore_file]
     args.ignore_patterns = list(args.ignore_pattern)
     args.ignore_spec = pathspec.GitIgnoreSpec.from_lines([])
+    args.negated_patterns = []
     return args
 
 
@@ -345,42 +374,285 @@ def resolve_diff_with_tool(
     return False
 
 
-def remove_ignored_entries(
-    *,
-    root: Path,
-    directory: Path,
-    entries: list[str],
-    is_dir: bool,
-    options: Options,
-) -> list[str]:
-    """Remove any entries matching ignore patterns.
+def build_negated_patterns(
+    *, patterns: list[str], ignore_spec: pathspec.GitIgnoreSpec
+) -> list[NegatedPattern]:
+    """Extract negated patterns for deciding which ignored directories to traverse.
 
     Args:
-        root: the top-level root directory (source or dest).
-        directory: the directory containing entries.
-        entries: a list of entry names inside directory.
-        is_dir: True if entries are directories, False if they are files.
+        patterns: raw gitignore pattern lines passed to ignore_spec.
+        ignore_spec: the compiled GitIgnoreSpec.
+
+    Returns:
+        A list of NegatedPattern objects.
+    """
+    negated: list[NegatedPattern] = []
+    for raw_pattern, compiled in zip(patterns, ignore_spec.patterns, strict=True):
+        if compiled.include is not False:
+            continue
+        # Strip the leading '!' and any trailing directory slash.
+        inner = raw_pattern[1:].rstrip("/")
+        if "/" not in inner:
+            # Unanchored basename pattern (e.g. '!keep.conf' or '!sub/') can
+            # match inside any directory.
+            negated.append(NegatedPattern(unanchored=True, segment_matchers=()))
+            continue
+        parts = inner.lstrip("/").split("/")
+        if parts[0] == "**":
+            negated.append(NegatedPattern(unanchored=True, segment_matchers=()))
+            continue
+        if len(parts) < 2:
+            # Anchored to root with a single component (e.g. '!/foo'), so it
+            # cannot match inside a subdirectory.
+            continue
+        matchers: list[pathspec.GitIgnoreSpec | None] = []
+        # Only need parent segments (all segments before the last one, or up to '**').
+        for segment in parts[:-1]:
+            if segment == "**":
+                matchers.append(None)
+                break
+            matchers.append(pathspec.GitIgnoreSpec.from_lines([f"/{segment}"]))
+        negated.append(
+            NegatedPattern(unanchored=False, segment_matchers=tuple(matchers))
+        )
+    return negated
+
+
+def may_contain_reincluded_files(
+    *, rel_dir: str, negated_patterns: list[NegatedPattern]
+) -> bool:
+    """Return True if any negated pattern could match a path inside rel_dir.
+
+    Args:
+        rel_dir: POSIX path of a directory relative to the walk root.
+        negated_patterns: compiled negated patterns.
+
+    Returns:
+        True if rel_dir may contain a re-included file or subdirectory.
+    """
+    dir_parts = rel_dir.split("/")
+    for pattern in negated_patterns:
+        if pattern.unanchored:
+            return True
+        for index, dir_part in enumerate(dir_parts):
+            if index >= len(pattern.segment_matchers):
+                break
+            matcher = pattern.segment_matchers[index]
+            if matcher is None:
+                return True
+            if not matcher.match_file(dir_part):
+                break
+        else:
+            return True
+    return False
+
+
+def _matched_ignore_pattern(
+    *,
+    full_path: Path,
+    rel_path: str,
+    is_dir: bool,
+    options: Options,
+) -> str | None:
+    """Check if an entry matches ignore_spec and log debug info for included entries.
+
+    Args:
+        full_path: full path to the entry (used for debug output).
+        rel_path: POSIX path relative to the walk root.
+        is_dir: True if the entry is a directory.
         options: options requested by the user.
 
     Returns:
-        A list of entry names that are not ignored.
+        The matching ignore pattern string if the entry is ignored, or None if
+        the entry is included.
+    """
+    check_path = f"{rel_path}/" if is_dir else rel_path
+    result = options.ignore_spec.check_file(check_path)
+    if result.include:
+        assert result.index is not None
+        return options.ignore_patterns[result.index]
+    if options.debug_file_exclusion:
+        if result.include is False:
+            assert result.index is not None
+            pattern = options.ignore_patterns[result.index]
+            print(f"DEBUG: Including {full_path}: matched negation pattern {pattern}")
+        else:
+            print(f"DEBUG: Including {full_path}: did not match ignore patterns")
+    return None
+
+
+def filter_ignored_subdirs(
+    *,
+    root: Path,
+    directory: Path,
+    subdirs: list[str],
+    options: Options,
+) -> FilteredSubdirs:
+    """Partition subdirectories into included and ignored-but-traversed lists.
+
+    Ignored subdirectories that cannot contain any re-included entries are
+    dropped so callers can prune them from directory traversal.
+
+    Args:
+        root: the top-level root directory (source or dest).
+        directory: the directory containing subdirs.
+        subdirs: a list of subdirectory names inside directory.
+        options: options requested by the user.
+
+    Returns:
+        FilteredSubdirs with included and traversed_ignored lists.
+    """
+    included: list[str] = []
+    traversed_ignored: list[str] = []
+    for subdir in subdirs:
+        full_path = directory / subdir
+        rel_path = full_path.relative_to(root).as_posix()
+        matched_pattern = _matched_ignore_pattern(
+            full_path=full_path,
+            rel_path=rel_path,
+            is_dir=True,
+            options=options,
+        )
+        if matched_pattern is None:
+            included.append(subdir)
+            continue
+        if may_contain_reincluded_files(
+            rel_dir=rel_path, negated_patterns=options.negated_patterns
+        ):
+            if options.debug_file_exclusion:
+                print(
+                    f"DEBUG: Traversing ignored directory {full_path}: "
+                    + f"matched ignore pattern {matched_pattern}, "
+                    + "but may contain re-included entries"
+                )
+            traversed_ignored.append(subdir)
+        elif options.debug_file_exclusion:
+            print(
+                f"DEBUG: Excluding {full_path}: matched ignore pattern {matched_pattern}"
+            )
+    return FilteredSubdirs(included=included, traversed_ignored=traversed_ignored)
+
+
+def remove_ignored_files(
+    *,
+    root: Path,
+    directory: Path,
+    files: list[str],
+    options: Options,
+) -> list[str]:
+    """Remove any files matching ignore patterns.
+
+    Args:
+        root: the top-level root directory (source or dest).
+        directory: the directory containing files.
+        files: a list of filenames inside directory.
+        options: options requested by the user.
+
+    Returns:
+        A list of filenames that are not ignored.
     """
     unmatched: list[str] = []
-    for entry in entries:
-        full_path = directory / entry
+    for filename in files:
+        full_path = directory / filename
         rel_path = full_path.relative_to(root).as_posix()
-        check_path = f"{rel_path}/" if is_dir else rel_path
-        result = options.ignore_spec.check_file(check_path)
-        if result.include:
-            if options.debug_file_exclusion:
-                assert result.index is not None
-                pattern = options.ignore_patterns[result.index]
-                print(f"DEBUG: Excluding {full_path}: matched ignore pattern {pattern}")
-            continue
-        if options.debug_file_exclusion:
-            print(f"DEBUG: Including {full_path}: did not match ignore patterns")
-        unmatched.append(entry)
+        matched_pattern = _matched_ignore_pattern(
+            full_path=full_path,
+            rel_path=rel_path,
+            is_dir=False,
+            options=options,
+        )
+        if matched_pattern is None:
+            unmatched.append(filename)
+        elif options.debug_file_exclusion:
+            print(
+                f"DEBUG: Excluding {full_path}: matched ignore pattern {matched_pattern}"
+            )
     return unmatched
+
+
+def ensure_dest_dir(
+    *,
+    source_dir: Path,
+    dest_dir: Path,
+    options: Options,
+    results: LinkResults,
+) -> None:
+    """Ensure dest_dir exists with the same permissions as source_dir.
+
+    Args:
+        source_dir: the source directory.
+        dest_dir: the destination directory to create or update.
+        options: options requested by the user.
+        results: LinkResults to record expected files and errors into.
+
+    Raises:
+        OSError: a filesystem operation failed.
+    """
+    results.expected_files.append(dest_dir)
+    source_mode = stat.S_IMODE(source_dir.stat().st_mode)
+
+    if dest_dir.is_dir():
+        dest_mode = stat.S_IMODE(dest_dir.stat().st_mode)
+        if dest_mode == source_mode:
+            return
+        if not options.dryrun:
+            dest_dir.chmod(source_mode)
+        else:
+            mode = oct(source_mode).replace("o", "")
+            print(f"chmod {mode} {shlex.quote(str(dest_dir))}")
+        return
+
+    if dest_dir.exists():
+        # Destination isn't a directory.
+        if options.force:
+            safe_unlink(unlink_me=dest_dir, dryrun=options.dryrun)
+        else:
+            results.errors.append(f"{dest_dir} is not a directory")
+            return
+
+    if options.dryrun:
+        print(f"mkdir {shlex.quote(str(dest_dir))}")
+    else:
+        dest_dir.mkdir(mode=source_mode)
+        dest_dir.chmod(source_mode)
+
+
+def ensure_dest_ancestors(
+    *,
+    source: Path,
+    dest: Path,
+    directory: Path,
+    ensured_dirs: set[Path],
+    options: Options,
+    results: LinkResults,
+) -> None:
+    """Ensure all ancestor directories from source to directory exist in dest.
+
+    Args:
+        source: the top-level source directory.
+        dest: the top-level destination directory.
+        directory: the source directory whose ancestors must exist in dest.
+        ensured_dirs: set of source directories already ensured in dest.
+        options: options requested by the user.
+        results: LinkResults to record expected files and errors into.
+
+    Raises:
+        OSError: a filesystem operation failed.
+    """
+    missing: list[Path] = []
+    current = directory
+    while current not in ensured_dirs:
+        missing.append(current)
+        current = current.parent
+    for source_dir in reversed(missing):
+        dest_dir = dest / source_dir.relative_to(source)
+        ensure_dest_dir(
+            source_dir=source_dir,
+            dest_dir=dest_dir,
+            options=options,
+            results=results,
+        )
+        ensured_dirs.add(source_dir)
 
 
 def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
@@ -399,59 +671,56 @@ def link_dir(*, source: Path, dest: Path, options: Options) -> LinkResults:
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
+    ensured_dirs: set[Path] = {source}
     for directory_str, subdirs, files in os.walk(source):
         directory = Path(directory_str)
-        # Remove ignored subdirs.  Assigning to the slice will prevent os.walk
-        # from descending into the ignored subdirs.
-        subdirs[:] = remove_ignored_entries(
+        # Remove ignored subdirs, keeping any that may contain re-included entries.
+        # Assigning to the slice prevents os.walk from descending into pruned subdirs.
+        filtered_subdirs = filter_ignored_subdirs(
             root=source,
             directory=directory,
-            entries=subdirs,
-            is_dir=True,
+            subdirs=subdirs,
             options=options,
         )
-        subdirs.sort()
+        filtered_subdirs.included.sort()
+        subdirs[:] = sorted(
+            filtered_subdirs.included + filtered_subdirs.traversed_ignored
+        )
 
-        for subdir in subdirs:
-            source_dir = directory / subdir
-            dest_dir = dest / source_dir.relative_to(source)
-            results.expected_files.append(dest_dir)
-            source_mode = stat.S_IMODE(source_dir.stat().st_mode)
+        for subdir in filtered_subdirs.included:
+            ensure_dest_ancestors(
+                source=source,
+                dest=dest,
+                directory=directory / subdir,
+                ensured_dirs=ensured_dirs,
+                options=options,
+                results=results,
+            )
 
-            if dest_dir.is_dir():
-                dest_mode = stat.S_IMODE(dest_dir.stat().st_mode)
-                if dest_mode == source_mode:
-                    continue
-                if not options.dryrun:
-                    dest_dir.chmod(source_mode)
-                else:
-                    mode = oct(source_mode).replace("o", "")
-                    print(f"chmod {mode} {shlex.quote(str(dest_dir))}")
-                continue
-
-            if dest_dir.exists():
-                # Destination isn't a directory.
-                if options.force:
-                    safe_unlink(unlink_me=dest_dir, dryrun=options.dryrun)
-                else:
-                    results.errors.append(f"{dest_dir} is not a directory")
-                    continue
-
-            if options.dryrun:
-                print(f"mkdir {shlex.quote(str(dest_dir))}")
-            else:
-                dest_dir.mkdir(mode=source_mode)
-                dest_dir.chmod(source_mode)
-
-        results.extend(
-            link_files(
+        filtered_files = remove_ignored_files(
+            root=source,
+            directory=directory,
+            files=files,
+            options=options,
+        )
+        if filtered_files:
+            ensure_dest_ancestors(
                 source=source,
                 dest=dest,
                 directory=directory,
-                files=files,
+                ensured_dirs=ensured_dirs,
                 options=options,
+                results=results,
             )
-        )
+            results.extend(
+                link_files(
+                    source=source,
+                    dest=dest,
+                    directory=directory,
+                    files=filtered_files,
+                    options=options,
+                )
+            )
 
     return results
 
@@ -469,23 +738,16 @@ def link_files(
     Args:
         source:    the toplevel source directory.
         dest:      the toplevel dest directory.
-        directory: the directory the files are in, relative to source and dest.
-        files:     the files in source/directory.
+        directory: the directory containing the files to link.
+        files:     the non-ignored filenames in directory.
         options:   options requested by the user.
 
     Returns:
-        LinkResults.  expected_files will not include files that are ignored.
+        LinkResults.
     """
 
     results = LinkResults(expected_files=[], diffs=[], errors=[])
-    filtered_files = remove_ignored_entries(
-        root=source,
-        directory=directory,
-        entries=files,
-        is_dir=False,
-        options=options,
-    )
-    paths = sorted(directory / filename for filename in filtered_files)
+    paths = sorted(directory / filename for filename in files)
     for source_path in paths:
         dest_path = dest / source_path.relative_to(source)
         results.expected_files.append(dest_path)
@@ -591,24 +853,26 @@ def report_unexpected_files(
     unexpected_paths = UnexpectedPaths(files=[], directories=[])
     for directory_str, subdirs, files in os.walk(dest_dir):
         directory = Path(directory_str)
-        # Don't recurse into ignored subdirs.
-        subdirs[:] = remove_ignored_entries(
+        # Don't recurse into ignored subdirs unless they may contain re-included
+        # entries.
+        filtered_subdirs = filter_ignored_subdirs(
             root=dest_dir,
             directory=directory,
-            entries=subdirs,
-            is_dir=True,
+            subdirs=subdirs,
             options=options,
         )
-        subdirs.sort()
-        filtered_files = remove_ignored_entries(
+        subdirs[:] = sorted(
+            filtered_subdirs.included + filtered_subdirs.traversed_ignored
+        )
+        filtered_files = remove_ignored_files(
             root=dest_dir,
             directory=directory,
-            entries=files,
-            is_dir=False,
+            files=files,
             options=options,
         )
         filtered_files.sort()
 
+        included_subdirs = filtered_subdirs.included
         if directory == dest_dir and options.ignore_unexpected_children:
             # Remove unexpected top-level directories.
             unexpected = [
@@ -622,6 +886,9 @@ def report_unexpected_files(
                         f"DEBUG: Excluding unexpected top-level directory {directory / subdir}: ignore_unexpected_children is set"
                     )
                 subdirs.remove(subdir)
+            included_subdirs = [
+                subdir for subdir in included_subdirs if subdir in subdirs
+            ]
 
         filtered_file_paths = [directory / entry for entry in filtered_files]
         if directory == dest_dir and options.ignore_unexpected_children:
@@ -639,7 +906,7 @@ def report_unexpected_files(
             ]
 
         unexpected_paths.directories.extend(
-            sorted({directory / subdir for subdir in subdirs} - expected_files)
+            sorted({directory / subdir for subdir in included_subdirs} - expected_files)
         )
         unexpected_paths.files.extend(sorted(set(filtered_file_paths) - expected_files))
 
@@ -899,6 +1166,10 @@ def real_main(*, argv: list[str]) -> Messages:
             read_ignore_patterns_from_file(filename=filename)
         )
     options.ignore_spec = pathspec.GitIgnoreSpec.from_lines(options.ignore_patterns)
+    options.negated_patterns = build_negated_patterns(
+        patterns=options.ignore_patterns,
+        ignore_spec=options.ignore_spec,
+    )
 
     if options.dump_config:
         print("DEBUG: options:")

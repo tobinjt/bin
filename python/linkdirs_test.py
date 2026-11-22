@@ -544,6 +544,321 @@ class TestIntegration(fake_filesystem_unittest.TestCase):
             os.path.join(dest_dir, "sub", "only_dir"),
         )
 
+    def test_reinclude_files_in_ignored_directories(self):
+        """Specific files inside ignored directories can be re-included."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        files_to_create = f"""
+        {src_dir}/foo/keep.conf:keep1
+        {src_dir}/foo/ignored.txt:ignore1
+        {src_dir}/foo/sub/nested_keep.conf:keep2
+        {src_dir}/foo/sub/ignored2.txt:ignore2
+        {src_dir}/foo/other_sub/ignored3.txt:ignore3
+        {src_dir}/bar/a/b.txt:keep3
+        {src_dir}/bar/ignored.txt:ignore4
+        {src_dir}/empty_ignored/ignored.txt:ignore5
+        """
+        self.create_files(files_to_create)
+        os.chmod(os.path.join(src_dir, "foo"), 0o700)
+        os.chmod(os.path.join(src_dir, "foo", "sub"), 0o750)
+
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
+        foo/
+        !foo/keep.conf
+        !foo/sub/nested_keep.conf
+        bar
+        !bar/a/b.txt
+        empty_ignored/
+        !empty_ignored/nonexistent.conf
+        """
+        with open(ignore_patterns_filename, "w", encoding="utf8") as fh:
+            fh.write(ignore_patterns_contents)
+
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                f"--ignore_file={ignore_patterns_filename}",
+                src_dir,
+                dest_dir,
+            ]
+        )
+        self.assertEqual([], actual)
+
+        found_files: list[str] = []
+        for dirpath, _unused_dirs, filenames in os.walk(dest_dir):
+            for filename in filenames:
+                found_files.append(os.path.join(dirpath, filename))
+        expected = [
+            os.path.join(dest_dir, "foo", "keep.conf"),
+            os.path.join(dest_dir, "foo", "sub", "nested_keep.conf"),
+            os.path.join(dest_dir, "bar", "a", "b.txt"),
+        ]
+        self.assertCountEqual(expected, found_files)
+        self.assertEqual(
+            0o700, stat.S_IMODE(os.stat(os.path.join(dest_dir, "foo")).st_mode)
+        )
+        self.assertEqual(
+            0o750, stat.S_IMODE(os.stat(os.path.join(dest_dir, "foo", "sub")).st_mode)
+        )
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "foo", "other_sub")))
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "empty_ignored")))
+
+    def test_reinclude_subdirectory_in_ignored_directory(self):
+        """A subdirectory inside an ignored directory can be re-included."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        files_to_create = f"""
+        {src_dir}/foo/ignored.txt
+        {src_dir}/foo/sub/keep.txt
+        {src_dir}/foo/sub/secret.txt
+        {src_dir}/foo/empty_sub/
+        """
+        self.create_files(files_to_create)
+
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
+        foo/
+        !foo/sub/
+        foo/sub/secret.txt
+        !foo/empty_sub/
+        """
+        with open(ignore_patterns_filename, "w", encoding="utf8") as fh:
+            fh.write(ignore_patterns_contents)
+
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                f"--ignore_file={ignore_patterns_filename}",
+                src_dir,
+                dest_dir,
+            ]
+        )
+        self.assertEqual([], actual)
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "foo", "sub", "keep.txt"),
+            os.path.join(dest_dir, "foo", "sub", "keep.txt"),
+        )
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "foo", "ignored.txt")))
+        self.assertFalse(
+            os.path.exists(os.path.join(dest_dir, "foo", "sub", "secret.txt"))
+        )
+        self.assertTrue(os.path.isdir(os.path.join(dest_dir, "foo", "empty_sub")))
+
+    def test_reinclude_wildcards_and_double_star(self):
+        """Wildcard, double-star, unanchored, and root-anchored negations work."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        files_to_create = f"""
+        {src_dir}/root_only.txt
+        {src_dir}/glob_dir/a.conf
+        {src_dir}/glob_dir/a.txt
+        {src_dir}/glob_dir/sub/b.conf
+        {src_dir}/deep/keep.txt
+        {src_dir}/deep/a/b/keep.txt
+        {src_dir}/deep/a/b/other.txt
+        {src_dir}/deep_anywhere/x/y/anywhere.txt
+        {src_dir}/deep_anywhere/x/y/ignored.txt
+        {src_dir}/unanchored_dir/unanchored.txt
+        {src_dir}/unanchored_dir/ignored.txt
+        """
+        self.create_files(files_to_create)
+
+        # First test anchored wildcards and mid-pattern '**' (no unanchored
+        # negations so unrelated ignored subdirs get pruned).
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
+        root_only.txt
+        !/root_only.txt
+        glob_dir/
+        !glob_dir/*.conf
+        deep/
+        !deep/**/keep.txt
+        deep_anywhere/
+        unanchored_dir/
+        """
+        with open(ignore_patterns_filename, "w", encoding="utf8") as fh:
+            fh.write(ignore_patterns_contents)
+
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                f"--ignore_file={ignore_patterns_filename}",
+                src_dir,
+                dest_dir,
+            ]
+        )
+        self.assertEqual([], actual)
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "root_only.txt"),
+            os.path.join(dest_dir, "root_only.txt"),
+        )
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "glob_dir", "a.conf"),
+            os.path.join(dest_dir, "glob_dir", "a.conf"),
+        )
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "glob_dir", "a.txt")))
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "glob_dir", "sub")))
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "deep", "keep.txt"),
+            os.path.join(dest_dir, "deep", "keep.txt"),
+        )
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "deep", "a", "b", "keep.txt"),
+            os.path.join(dest_dir, "deep", "a", "b", "keep.txt"),
+        )
+        self.assertFalse(
+            os.path.exists(os.path.join(dest_dir, "deep", "a", "b", "other.txt"))
+        )
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "deep_anywhere")))
+        self.assertFalse(os.path.exists(os.path.join(dest_dir, "unanchored_dir")))
+
+        # Next test leading '**/' and unanchored basename negation patterns.
+        ignore_patterns_contents_2 = """
+        deep_anywhere/
+        !**/anywhere.txt
+        """
+        with open(ignore_patterns_filename, "w", encoding="utf8") as fh:
+            fh.write(ignore_patterns_contents_2)
+        dest_dir_2 = "/z/y/x2"
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                f"--ignore_file={ignore_patterns_filename}",
+                src_dir,
+                dest_dir_2,
+            ]
+        )
+        self.assertEqual([], actual)
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "deep_anywhere", "x", "y", "anywhere.txt"),
+            os.path.join(dest_dir_2, "deep_anywhere", "x", "y", "anywhere.txt"),
+        )
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(dest_dir_2, "deep_anywhere", "x", "y", "ignored.txt")
+            )
+        )
+
+        ignore_patterns_contents_3 = """
+        unanchored_dir/
+        !unanchored.txt
+        """
+        with open(ignore_patterns_filename, "w", encoding="utf8") as fh:
+            fh.write(ignore_patterns_contents_3)
+        dest_dir_3 = "/z/y/x3"
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                f"--ignore_file={ignore_patterns_filename}",
+                src_dir,
+                dest_dir_3,
+            ]
+        )
+        self.assertEqual([], actual)
+        self.assert_files_are_linked(
+            os.path.join(src_dir, "unanchored_dir", "unanchored.txt"),
+            os.path.join(dest_dir_3, "unanchored_dir", "unanchored.txt"),
+        )
+        self.assertFalse(
+            os.path.exists(os.path.join(dest_dir_3, "unanchored_dir", "ignored.txt"))
+        )
+
+    def test_reinclude_report_unexpected_files(self):
+        """Unexpected re-included files are reported while ignored siblings are not."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        files_to_create = f"""
+        {src_dir}/foo/keep1.conf
+        {src_dir}/parent/normal.txt
+        {dest_dir}/foo/keep1.conf
+        {dest_dir}/foo/keep2.conf
+        {dest_dir}/foo/extra_ignored.txt
+        {dest_dir}/foo/extra_ignored_dir/file
+        {dest_dir}/parent/ignored_dir/stale.conf
+        {dest_dir}/parent/ignored_dir/ignored_sibling.txt
+        """
+        self.create_files(files_to_create)
+
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
+        foo/
+        !foo/*.conf
+        parent/ignored_dir/
+        !parent/ignored_dir/stale.conf
+        """
+        with open(ignore_patterns_filename, "w", encoding="utf8") as fh:
+            fh.write(ignore_patterns_contents)
+
+        actual = linkdirs.real_main(
+            argv=[
+                "linkdirs",
+                "--report_unexpected_files",
+                "--ignore_unexpected_children",
+                f"--ignore_file={ignore_patterns_filename}",
+                src_dir,
+                dest_dir,
+            ]
+        )
+        expected = [
+            "Unexpected file: /z/y/x/foo/keep2.conf",
+            "Unexpected file: /z/y/x/parent/ignored_dir/stale.conf",
+            "rm /z/y/x/foo/keep2.conf /z/y/x/parent/ignored_dir/stale.conf",
+        ]
+        self.assertEqual(expected, actual)
+
+    def test_debug_file_exclusion_with_reinclusion(self):
+        """Debug output logs traversed ignored dirs and negation matches."""
+        src_dir = "/a/b/c"
+        dest_dir = "/z/y/x"
+        files_to_create = f"""
+        {src_dir}/.git/config
+        {src_dir}/foo/keep.conf
+        {src_dir}/foo/ignored.txt
+        {dest_dir}/
+        """
+        self.create_files(files_to_create)
+
+        ignore_patterns_filename = "ignore_patterns"
+        ignore_patterns_contents = """
+        foo/
+        !foo/keep.conf
+        """
+        with open(ignore_patterns_filename, "w", encoding="utf8") as fh:
+            fh.write(ignore_patterns_contents)
+
+        with mock.patch.object(sys, "stdout", new_callable=io.StringIO) as mock_stdout:
+            linkdirs.real_main(
+                argv=[
+                    "linkdirs",
+                    "--debug_file_exclusion",
+                    f"--ignore_file={ignore_patterns_filename}",
+                    src_dir,
+                    dest_dir,
+                ]
+            )
+            output = mock_stdout.getvalue()
+            self.assertIn(
+                f"DEBUG: Excluding {Path(src_dir) / '.git'}: matched ignore pattern .git",
+                output,
+            )
+            self.assertNotIn(".git/config", output)
+            self.assertIn(
+                f"DEBUG: Traversing ignored directory {Path(src_dir) / 'foo'}: "
+                + "matched ignore pattern foo/, but may contain re-included entries",
+                output,
+            )
+            self.assertIn(
+                f"DEBUG: Including {Path(src_dir) / 'foo' / 'keep.conf'}: "
+                + "matched negation pattern !foo/keep.conf",
+                output,
+            )
+            self.assertIn(
+                f"DEBUG: Excluding {Path(src_dir) / 'foo' / 'ignored.txt'}: "
+                + "matched ignore pattern foo/",
+                output,
+            )
+
     def test_exclusions_do_not_match_cli_arguments(self):
         """Excluding `src` shouldn't exclude cli arguments that include `src`"""
         src_dir = "/a/b/c"
@@ -1293,6 +1608,7 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(opts.ignore_patterns, [])
         self.assertIsInstance(opts.ignore_spec, pathspec.GitIgnoreSpec)
         self.assertEqual(opts.ignore_spec.patterns, [])
+        self.assertEqual(opts.negated_patterns, [])
 
         # Test setting values
         opts2 = linkdirs.Options(
