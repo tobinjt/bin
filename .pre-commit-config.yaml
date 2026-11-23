@@ -171,17 +171,12 @@ repos:
   - repo: local
     hooks:
     - id: python-requirements
-      name: Run `pip-compile` to regenerate requirements.txt.
+      name: Run `pip-compile` to regenerate requirements.txt if necessary.
       priority: generator
       language: system
       pass_filenames: false
       files: (^requirements\.in$|^requirements\.txt$)
-      entry: ./.venv/bin/pip-compile
-      args:
-      - --strip-extras
-      - --quiet
-      - --no-header
-      - requirements.in
+      entry: maybe_pip_compile
   # managed-by-populate-pre-commit end: python-requirements.yaml
   # managed-by-populate-pre-commit start: python.yaml
   - repo: local
