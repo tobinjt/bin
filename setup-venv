@@ -3,6 +3,10 @@
 set -e -f -u -o pipefail
 
 main() {
+  if [[ .venv/bin/activate -nt requirements.txt ]]; then
+    echo "venv looks newer than requirements.txt, skipping setup"
+    return 0
+  fi
   rm -rf .venv
   python3 -m venv .venv
   source .venv/bin/activate
