@@ -3,14 +3,23 @@
 set -e -f -u -o pipefail
 
 main() {
-  if [[ .venv/bin/activate -nt requirements.txt ]]; then
-    echo "venv looks newer than requirements.txt, skipping setup"
+  local requirements_file="requirements.txt"
+  if [[ -x ".venv/bin/pip-compile" ]]; then
+    requirements_file="requirements-dev.txt"
+  fi
+  if [[ ! -f "${requirements_file}" ]]; then
+    echo "Missing ${requirements_file}!" >&1
+    return 1
+  fi
+  if [[ .venv/bin/activate -nt "${requirements_file}" ]]; then
+    echo "venv looks newer than ${requirements_file}, skipping setup"
     return 0
   fi
+
   rm -rf .venv
   python3 -m venv .venv
   source .venv/bin/activate
-  pip install -r requirements.txt
+  pip install -r "${requirements_file}"
 }
 
 main "$@"

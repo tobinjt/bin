@@ -2,10 +2,21 @@
 
 set -e -f -u -o pipefail
 
+compile() {
+  local filename="$1"
+  echo "Compiling ${filename}"
+  #  Note that `--upgrade` deliberately isn't included.
+  ./.venv/bin/pip-compile --strip-extras --quiet \
+    --no-header --no-emit-index-url --no-emit-trusted-host \
+    "${filename}"
+}
+
 main() {
   if [[ "requirements.in" -nt "requirements.txt" ]]; then
-    #  Note that `--upgrade` deliberately isn't included.
-    ./.venv/bin/pip-compile --strip-extras --quiet --no-header requirements.in
+    compile requirements.in
+  fi
+  if [[ "requirements-dev.in" -nt "requirements-dev.txt" ]]; then
+    compile requirements-dev.in
   fi
 }
 

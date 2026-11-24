@@ -6,5 +6,5 @@
     language: system
     pass_filenames: false
     # Match requirements.in OR requirements.txt
-    files: '(^requirements\.in$|^requirements\.txt$)'
+    files: '(^requirements(-dev)?\.(in|txt)$)'
     entry: maybe_pip_compile
