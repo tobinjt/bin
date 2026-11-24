@@ -175,7 +175,7 @@ repos:
       priority: generator
       language: system
       pass_filenames: false
-      files: (^requirements\.in$|^requirements\.txt$)
+      files: (^requirements(-dev)?\.(in|txt)$)
       entry: maybe_pip_compile
   # managed-by-populate-pre-commit end: python-requirements.yaml
   # managed-by-populate-pre-commit start: python.yaml
