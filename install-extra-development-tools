@@ -87,9 +87,9 @@ if [[ -d "${HOME}/.cargo/bin" ]]; then
   fi
 
   # Tooling I wrote :)
-  cargo install colx
-  cargo install path-parents
-  cargo install wrap-command
+  cargo binstall --locked --no-confirm colx
+  cargo binstall --locked --no-confirm path-parents
+  cargo binstall --locked --no-confirm wrap-command
 fi
 
 if [[ -d "${HOME}/tmp/bin/node_modules" ]]; then
