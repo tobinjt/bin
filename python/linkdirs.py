@@ -441,7 +441,7 @@ def build_negated_patterns(
         A list of NegatedPattern objects.
     """
     negated: list[NegatedPattern] = []
-    for raw_pattern, compiled in zip(patterns, ignore_spec.patterns, strict=True):
+    for raw_pattern, compiled in zip(patterns, ignore_spec.patterns):
         if compiled.include is not False:
             continue
         # Strip the leading '!' and any trailing directory slash.
