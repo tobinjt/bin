@@ -2,5 +2,3 @@ pathspec==1.1.1
     # via -r requirements.in
 pyyaml==6.0.3
     # via -r requirements.in
-types-pyyaml==6.0.12.20261113
-    # via -r requirements.in
