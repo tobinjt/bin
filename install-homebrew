@@ -128,7 +128,7 @@ main() {
   # install packages.
   mkdir -p "${HOME}/tmp/bin/node_modules"
   # My website. mdformat is installed separately.
-  brew install hugo markdown
+  brew install dart-sass hugo markdown
 
   # Golang.
   brew install go govulncheck graphviz
